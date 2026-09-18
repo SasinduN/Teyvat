@@ -64,7 +64,7 @@ export const LoginPage: React.FC = () => {
               <ErrorNote>
                 Supabase is not configured. Copy <code>.env.example</code> to{' '}
                 <code>.env.local</code> and set <code>VITE_SUPABASE_URL</code> and{' '}
-                <code>VITE_SUPABASE_ANON_KEY</code>.
+                <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>.
               </ErrorNote>
             </div>
           )}

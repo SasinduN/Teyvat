@@ -14,7 +14,7 @@ import { describeError, isSupabaseConfigured } from '@/lib/supabase';
 
 const MISSING_CONFIG =
   'Supabase is not configured. Copy .env.example to .env.local and set ' +
-  'VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.';
+  'VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.';
 
 export interface SiteContentResult {
   content: SiteContent;

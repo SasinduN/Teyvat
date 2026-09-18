@@ -39,16 +39,20 @@ Schema reference: [`docs/SCHEMA.md`](docs/SCHEMA.md).
 cp .env.example .env.local
 ```
 
-Fill in from **Project Settings → API**:
+Fill in from **Project Settings → API Keys**:
 
 ```
 VITE_SUPABASE_URL=https://<your-project>.supabase.co
-VITE_SUPABASE_ANON_KEY=<anon / publishable key>
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
-The anon key is safe in the browser — every table is protected by Row Level
-Security. **Never** put the `service_role` key in `.env.local` or anywhere under
-`src/`: Vite inlines every `VITE_*` variable into the client bundle.
+Use the **new key format** (`sb_publishable_...`). The legacy `anon` JWT
+(`eyJ...`) is deprecated and stops working at the end of 2026 — do not use it.
+
+The publishable key is safe in the browser — every table is protected by Row
+Level Security. **Never** put the secret key (`sb_secret_...`) or a legacy
+`service_role` key in `.env.local` or anywhere under `src/`: Vite inlines every
+`VITE_*` variable into the client bundle.
 
 ## 3. Create your first admin
 
@@ -177,16 +181,16 @@ into Storage too:
 
 ```bash
 # bash
-SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... npm run images:migrate
+SUPABASE_URL=... SUPABASE_SECRET_KEY=... npm run images:migrate
 
 # PowerShell
 $env:SUPABASE_URL="https://xxxx.supabase.co"
-$env:SUPABASE_SERVICE_ROLE_KEY="eyJ..."
+$env:SUPABASE_SECRET_KEY="sb_secret_..."
 npm run images:migrate
 ```
 
-Add `-- --dry-run` to preview. The service-role key is read from the shell only
-and is never written to a file. Re-running is safe — URLs already in the bucket
+Add `-- --dry-run` to preview. The secret key (`sb_secret_...`) is read from the
+shell only and is never written to a file. Re-running is safe — URLs already in the bucket
 are skipped.
 
 ### Ordering and drafts
@@ -210,6 +214,6 @@ Configure a **SPA fallback** so every path serves `index.html`:
   to `vercel.json`.
 - **Nginx** — `try_files $uri $uri/ /index.html;`
 
-Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in the host's environment
+Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in the host's environment
 variables. In Supabase, add your production origin under
 **Authentication → URL Configuration**.

@@ -237,6 +237,20 @@ Two details worth knowing:
   `with check (status = 'new' and admin_notes is null)` — a visitor cannot forge
   an enquiry that is already marked handled, or inject internal notes.
 
+## API keys
+
+The app uses Supabase's **new API key format** only:
+
+| Key | Prefix | Where | Postgres role |
+| --- | --- | --- | --- |
+| Publishable | `sb_publishable_` | `VITE_SUPABASE_PUBLISHABLE_KEY` in `.env.local`, shipped in the browser bundle | `anon` (or `authenticated` once signed in) |
+| Secret | `sb_secret_` | `SUPABASE_SECRET_KEY` in the shell, server-side scripts only | bypasses RLS |
+
+The `anon` / `authenticated` rows in the table above describe the *roles* RLS
+sees — they are unchanged by the key format. The legacy `anon` and
+`service_role` JWT keys (`eyJ...`) are deprecated by Supabase and will stop
+working at the end of 2026; do not use them.
+
 ## Storage
 
 One public bucket, `media`, capped at 10 MB per object and restricted to
