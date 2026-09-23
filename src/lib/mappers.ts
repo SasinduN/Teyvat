@@ -23,7 +23,7 @@ import type {
   HiddenGemRow,
   PhotoStoryRow,
   TourRow
-} from '@/lib/database.types';
+} from '@shared/database.types';
 
 /** The `EXPERIENCE_CATEGORIES` tiles have no interface in `src/types`. */
 export interface ExperienceCategory {

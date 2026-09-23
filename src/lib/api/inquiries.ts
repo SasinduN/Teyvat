@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { InquiryRow, InquiryStatus } from '@/lib/database.types';
+import type { InquiryRow, InquiryStatus } from '@shared/database.types';
 
 /** What the public `InquiryModal` collects. */
 export interface InquiryDraft {

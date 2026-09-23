@@ -13,7 +13,7 @@ import {
   Sparkles,
   type LucideIcon
 } from 'lucide-react';
-import type { ContentTableName } from '@/lib/database.types';
+import type { ContentTableName } from '@shared/database.types';
 
 export const CATEGORY_OPTIONS = [
   'Beaches',

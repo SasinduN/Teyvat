@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 import { deleteInquiry, listInquiries, updateInquiry } from '@/lib/api/inquiries';
-import type { InquiryRow, InquiryStatus } from '@/lib/database.types';
+import type { InquiryRow, InquiryStatus } from '@shared/database.types';
 import { queryKeys } from '@/lib/queryClient';
 import { describeError } from '@/lib/supabase';
 import {

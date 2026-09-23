@@ -28,6 +28,8 @@
  */
 import '../shared/load-env';
 
+import { connectionTargetFor, privateHostHint } from '../shared/pg-connection';
+
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -69,79 +71,6 @@ function requireDatabaseUrl(): string {
   }
 
   return url;
-}
-
-/**
- * `*.railway.internal` resolves only inside Railway's private network, so the
- * same DATABASE_URL that is correct for the deployed service is a guaranteed
- * ENOTFOUND anywhere else.
- *
- * This is keyed off the actual DNS failure rather than off an environment
- * variable such as RAILWAY_ENVIRONMENT. Those variables can be present in a
- * local shell as well as in a deployed container, so treating them as "we are
- * running inside Railway" suppresses this hint in exactly the case that needs
- * it. The DNS result cannot be wrong about it.
- */
-function explainIfPrivateHost(error: unknown): boolean {
-  const e = error as { code?: string; hostname?: string };
-  const host = e.hostname ?? '';
-
-  if ((e.code !== 'ENOTFOUND' && e.code !== 'EAI_AGAIN') || !host.endsWith('.railway.internal')) {
-    return false;
-  }
-
-  console.error(
-    `\n${host} is on Railway's private network and does not resolve from here.\n\n` +
-      'That URL is the right one for the deployed service, where this runs from\n' +
-      'the start command and the database is reachable privately. It cannot work\n' +
-      'from a local machine.\n\n' +
-      'For a local run, put the Postgres service\'s DATABASE_PUBLIC_URL\n' +
-      '(*.proxy.rlwy.net, from its Variables tab) in .env as DATABASE_URL, with\n' +
-      '`?sslmode=require` appended.'
-  );
-  return true;
-}
-
-interface ConnectionTarget {
-  connectionString: string;
-  ssl: false | { rejectUnauthorized: boolean };
-}
-
-/**
- * Decides TLS here rather than letting the connection string do it.
- *
- * `sslmode` in the URL is interpreted by pg-connection-string, and in pg 8.x
- * `require` is treated as `verify-full` — full certificate verification — while
- * pg 9 will switch it to libpq semantics (encrypt, do not verify). Those are
- * opposite behaviours from the same URL, and whichever one you rely on breaks
- * on upgrade. Worse, the parsed value wins over the `ssl` option passed
- * alongside it, so a relaxed setting there is silently ignored.
- *
- * So: read `sslmode` only as a yes/no signal for "use TLS", strip it, and state
- * the verification policy explicitly.
- *
- * `rejectUnauthorized: false` is deliberate and is a real trade-off. Railway's
- * TCP proxy presents a self-signed certificate that chains to nothing in the
- * default CA store, so verification cannot succeed without pinning their CA.
- * The connection is still encrypted, which defeats passive eavesdropping on the
- * public internet, but it does not authenticate the server — an active
- * machine-in-the-middle would not be detected. That is acceptable for applying
- * migrations from a laptop, and it is another reason the deployed service should
- * use the internal `*.railway.internal` URL, where traffic never leaves
- * Railway's private network and needs no TLS at all.
- */
-function connectionTargetFor(url: string): ConnectionTarget {
-  const parsed = new URL(url);
-  const mode = parsed.searchParams.get('sslmode');
-
-  // Remove anything that would re-engage pg's own SSL handling.
-  parsed.searchParams.delete('sslmode');
-  parsed.searchParams.delete('uselibpqcompat');
-
-  return {
-    connectionString: parsed.toString(),
-    ssl: mode !== null && mode !== 'disable' ? { rejectUnauthorized: false } : false
-  };
 }
 
 function listMigrationFiles(): string[] {
@@ -291,7 +220,9 @@ main().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
   console.error(`\nMigration failed: ${message}`);
 
-  if (explainIfPrivateHost(error)) {
+  const hint = privateHostHint(error);
+  if (hint) {
+    console.error(hint);
     process.exit(1);
   }
 

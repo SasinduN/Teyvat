@@ -103,17 +103,36 @@ screen, and Postgres refuses their writes regardless of what the browser does.
 
 ## 4. Run it
 
+Development needs **two processes**: the API, and Vite for the client. In
+production a single Express service serves both, so there is one origin and no
+CORS — the dev proxy reproduces that arrangement locally.
+
 ```bash
 npm install
-npm run dev          # http://localhost:5173  (admin at /admin)
+npm run dev:server   # API on http://localhost:8081
+npm run dev          # client on http://localhost:5173  (admin at /admin)
+```
+
+Vite proxies `/api` to port 8081 (`vite.config.ts`). 8081 rather than 8080
+because a local Apache/XAMPP commonly holds 8080; change both together if you
+move it.
+
+To run exactly what deploys:
+
+```bash
+npm run build && npm start   # everything on http://localhost:8081
 ```
 
 | Script | What it does |
 | --- | --- |
-| `npm run dev` | Vite dev server |
-| `npm run build` | Typecheck, then production build |
-| `npm run preview` | Serve the production build |
-| `npm run typecheck` | `tsc --noEmit` |
+| `npm run dev` | Vite dev server (client only) |
+| `npm run dev:server` | API with reload on change |
+| `npm run build` | Typecheck, build the client, bundle the server |
+| `npm run build:server` | Bundle the server only (esbuild) |
+| `npm start` | Run the built server — serves `/api/*` and `dist/` |
+| `npm run migrate` | Apply pending migrations |
+| `npm run typecheck` | `tsc --noEmit` across client, server, shared and scripts |
+| `npm run preview` | Vite's own preview of the client build |
 | `npm run seed:generate` | Regenerate `0002_seed.sql` from `src/data/*.ts` |
 | `npm run verify:roundtrip` | Assert the DB round-trip renders identical content |
 | `npm run images:migrate` | Optional: pull seeded Unsplash images into Storage |
@@ -246,3 +265,31 @@ Configure a **SPA fallback** so every path serves `index.html`:
 Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in the host's environment
 variables. In Supabase, add your production origin under
 **Authentication → URL Configuration**.
+
+---
+
+## Launch checklist
+
+Work through this before the site goes live.
+
+- [ ] **Rotate the Postgres credentials.** The database password was exposed
+      during setup — it was read out of Railway's variables into a local
+      assistant session, and it has since travelled in `.env`, in shell
+      history, and over the public TCP proxy. None of that is a breach on its
+      own; all of it is reason not to carry the original password into
+      production. Rotate in Railway (Postgres service → *Settings* → rotate the
+      password, or redeploy the service with a new `POSTGRES_PASSWORD`), then
+      confirm the API service's `DATABASE_URL` reference still resolves and
+      re-run `npm run migrate` locally with the new public URL.
+- [ ] **Remove the public TCP proxy**, or accept it. It exists only so
+      migrations can be applied from a laptop. Once deploys run
+      `npm run migrate` themselves, the database does not need to be reachable
+      from the internet at all.
+- [ ] **Never run `0002_seed.sql` by hand** — see the warning in
+      [§1](#1-database). It is an upsert over all 63 seeded rows and will
+      silently discard every content edit made through the admin panel.
+- [ ] **Check `DATABASE_URL` on the API service is the internal reference**
+      (`*.railway.internal`), not the public proxy URL, so database traffic
+      stays on the private network.
+- [ ] **Confirm no `.env` file is committed.** `git check-ignore -v .env`
+      should print a matching rule.

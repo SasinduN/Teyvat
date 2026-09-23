@@ -12,7 +12,7 @@ import type {
   ContentTables,
   Insert,
   Update
-} from '@/lib/database.types';
+} from '@shared/database.types';
 
 /** Rows are listed in editing order: by `sort_order`, then id. */
 export async function listRows<T extends ContentTableName>(

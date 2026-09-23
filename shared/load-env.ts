@@ -22,11 +22,37 @@
  * injected DATABASE_URL always wins over a stray file in the image.
  * ---------------------------------------------------------------------------
  */
+import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config } from 'dotenv';
 
-const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+/**
+ * Walk up to the directory holding package.json.
+ *
+ * A fixed number of `..` hops cannot work here: this module sits in `shared/`
+ * when run from source through tsx, but esbuild inlines it into
+ * `server/dist/index.js` for the built server — so the same `resolve(dir, '..')`
+ * means the repo root in one layout and `server/` in the other. That mismatch
+ * made the built server look for `server/.env`, find nothing, and die on a
+ * missing DATABASE_URL while the file sat in the root the whole time.
+ */
+function findProjectRoot(): string {
+  let dir = dirname(fileURLToPath(import.meta.url));
+
+  for (let i = 0; i < 10; i += 1) {
+    if (existsSync(resolve(dir, 'package.json'))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+
+  // Nothing found (an unusual deployment layout) — the working directory is the
+  // best remaining guess, and dotenv no-ops if there is no file there either.
+  return process.cwd();
+}
+
+const PROJECT_ROOT = findProjectRoot();
 
 /**
  * `.env.local` first, then `.env` — the same precedence Vite applies to the

@@ -9,7 +9,7 @@ import React, {
 } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import type { AdminRow } from '@/lib/database.types';
+import type { AdminRow } from '@shared/database.types';
 
 /**
  * Supabase Auth session + admin-role resolution.

@@ -35,7 +35,7 @@ import type {
   HiddenGemRow,
   PhotoStoryRow,
   TourRow
-} from '../src/lib/database.types';
+} from '../shared/database.types';
 
 /* --------------------------------------------------- comparison utilities */
 

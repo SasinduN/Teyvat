@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import type { ContentTableName, InquiryStatus } from '@/lib/database.types';
+import type { ContentTableName, InquiryStatus } from '@shared/database.types';
 
 /**
  * One QueryClient for the whole app.

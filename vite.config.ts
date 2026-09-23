@@ -10,9 +10,21 @@ const __dirname = path.dirname(__filename);
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // The API runs as a separate process in dev. In production the same Express
+  // service serves both /api/* and the built client, so there is one origin
+  // and no CORS anywhere.
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:8081",
+        changeOrigin: false,
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
+      "@shared": path.resolve(__dirname, "shared"),
     },
   },
   build: {

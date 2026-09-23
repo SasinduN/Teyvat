@@ -26,7 +26,7 @@ import type {
   HiddenGemRow,
   PhotoStoryRow,
   TourRow
-} from '@/lib/database.types';
+} from '@shared/database.types';
 import type {
   Article,
   Destination,
