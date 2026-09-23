@@ -3,10 +3,11 @@ dist
 dist-ssr
 *.local
 
-# Environment — real keys must never be committed
+# Environment — real keys must never be committed.
+# Broad on purpose: DATABASE_URL and the R2 credentials live in these.
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # Editor / OS
 .vscode/*
@@ -27,6 +28,3 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Supabase CLI local state
-supabase/.branches
-supabase/.temp

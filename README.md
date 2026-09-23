@@ -16,22 +16,51 @@ Schema reference: [`docs/SCHEMA.md`](docs/SCHEMA.md).
 
 ---
 
-## 1. Create the Supabase project
+## 1. Database
 
-1. Create a project at <https://supabase.com/dashboard>.
-2. Open **SQL Editor** and run, in order:
-   - `supabase/migrations/0001_init.sql` — tables, constraints, RLS policies,
-     the `media` storage bucket and its policies.
-   - `supabase/migrations/0002_seed.sql` — the approved baseline content
-     (20 destinations, 6 experience types, 4 featured experiences, 4 tours,
-     6 articles, 8 hidden gems, 8 photo stories).
+Migrations live in `db/migrations/` and are applied by the repo's own runner:
 
-   `0002_seed.sql` is generated from `src/data/*.ts` and every statement is an
-   upsert, so it is safe to re-run to restore the baseline.
+```bash
+npm run migrate                 # apply every pending file, in order
+npm run migrate -- --dry-run    # list what would be applied, change nothing
+```
 
-> If your project restricts policy changes on `storage.objects`, section 7 of
-> `0001_init.sql` may error. Create the four `media` policies from
-> **Storage → Policies** in the dashboard instead; everything else still applies.
+Applied files are tracked in `public.schema_migrations`, so this is safe to run
+on every boot — it is part of the Railway start command. It needs `DATABASE_URL`
+in the environment.
+
+- **Deployed:** Railway injects it as a reference to the Postgres service's
+  internal `DATABASE_URL`, so traffic stays on the private network.
+- **Local:** put the Postgres service's `DATABASE_PUBLIC_URL`
+  (`*.proxy.rlwy.net`) in `.env` as `DATABASE_URL`, with `?sslmode=require`
+  appended. The internal host does not resolve outside Railway.
+
+The files:
+
+- `0001_init.sql` — tables, CHECK constraints, `updated_at` triggers, the
+  `users`/`sessions` auth tables and the single-row `site_settings`. Idempotent:
+  re-running it is a no-op and never overwrites live data.
+- `0002_seed.sql` — the approved baseline content: 63 rows across all nine
+  content tables (20 destinations, 6 experience types, 4 featured experiences,
+  4 tours, 6 articles, 8 hidden gems, 8 photo stories, 3 hero slides,
+  4 pillars). Generated from `src/data/*.ts` by `npm run seed:generate`.
+
+> [!WARNING]
+> **Never run `0002_seed.sql` by hand against production after go-live.**
+>
+> Every statement in it is `on conflict (id) do update`, keyed on the slug. That
+> makes it safe and useful *before* go-live — it resets content to the approved
+> baseline — but afterwards it is a destructive overwrite. Re-running it silently
+> replaces every edit an admin has made to any of those 63 rows: rewritten
+> copy, reordered `sort_order`, unpublished drafts flipped back to published, and
+> uploaded images reverted to the original Unsplash URLs. There is no undo and no
+> warning; the run reports success.
+>
+> The runner will not do this to you — `schema_migrations` records the file as
+> applied and skips it forever after. The danger is only in pasting the file into
+> a SQL console, or in deleting its `schema_migrations` row. Content edits made
+> through the admin panel are not in version control; the seed file is. Treat it
+> as a first-boot fixture, not a repair tool.
 
 ## 2. Configure the app
 

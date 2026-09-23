@@ -1,8 +1,14 @@
 -- =============================================================================
 -- Teyvat / Travel Eye Sri Lanka — initial schema
 -- =============================================================================
--- Run this in the Supabase SQL editor (or via `supabase db push`) BEFORE
--- 0002_seed.sql.
+-- Self-managed Postgres (Railway). Applied by the repo's own runner:
+--
+--     npm run migrate                 # applies every pending file in order
+--     npm run migrate -- --dry-run    # lists what would be applied
+--
+-- This file runs BEFORE 0002_seed.sql. It is idempotent — every statement is
+-- `create ... if not exists`, `create or replace`, or an `on conflict do
+-- nothing` insert — so a re-run is a no-op and never clobbers live data.
 --
 -- Conventions used throughout:
 --   * Content tables use a human-readable text slug as the primary key, so ids
@@ -15,10 +21,26 @@
 --     `sort_order` — NOT by a hardcoded id list in the component. The six rows
 --     seeded with featured = true are exactly the six the approved design
 --     shows, at sort_order 0-5, so the rendered order is unchanged.
---   * RLS is enabled on every table. Anonymous users may read published rows
---     and insert enquiries; everything else requires an authenticated admin.
+--   * There are NO row-level security policies, and RLS is not enabled on any
+--     table. Every connection to this database is the API service using one
+--     Postgres role, so a policy would have nothing to discriminate on.
+--     Authorisation lives in Express middleware (`requireAdmin`), and the API
+--     is the only thing that ever holds a credential — the browser never talks
+--     to Postgres. Do not re-add policies here expecting them to protect
+--     anything: they would be evaluated against the service role and pass
+--     unconditionally, which is worse than no policy at all because it reads
+--     like protection.
+--   * Two guarantees the dropped policies used to enforce are now the API's
+--     job, and nothing in this file can hold the line on them:
+--       - the public enquiry endpoint must build its INSERT from a whitelist
+--         of visitor-supplied fields, so `status` stays 'new' and
+--         `admin_notes` stays null (was: the `anyone can submit an inquiry`
+--         policy's WITH CHECK);
+--       - the public content endpoint must filter `published = true` itself
+--         (was: the `public read published` policy's USING clause).
 -- =============================================================================
 
+begin;
 -- -----------------------------------------------------------------------------
 -- 0. Extensions
 -- -----------------------------------------------------------------------------
@@ -38,35 +60,6 @@ begin
   return new;
 end;
 $$;
-
--- Admin allow-list. A row here is what grants write access; simply having an
--- auth.users account is not enough.
-create table if not exists public.admins (
-  id          uuid primary key references auth.users (id) on delete cascade,
-  email       text not null,
-  full_name   text,
-  created_at  timestamptz not null default now()
-);
-
-comment on table public.admins is
-  'Allow-list of auth users permitted to manage content. Insert a row here after creating the auth user.';
-
--- SECURITY DEFINER so policies can consult `admins` without every caller
--- needing select rights on it, and so the lookup does not recurse through RLS.
-create or replace function public.is_admin()
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1 from public.admins a where a.id = auth.uid()
-  );
-$$;
-
-revoke all on function public.is_admin() from public;
-grant execute on function public.is_admin() to anon, authenticated;
 
 -- -----------------------------------------------------------------------------
 -- 2. Reference value lists (kept as CHECK constraints to mirror the TS unions)
@@ -331,131 +324,167 @@ end;
 $$;
 
 -- -----------------------------------------------------------------------------
--- 6. Row Level Security
+-- 6. Authentication
 -- -----------------------------------------------------------------------------
-alter table public.admins                enable row level security;
-alter table public.destinations          enable row level security;
-alter table public.experience_categories enable row level security;
-alter table public.featured_experiences  enable row level security;
-alter table public.tours                 enable row level security;
-alter table public.articles              enable row level security;
-alter table public.hidden_gems           enable row level security;
-alter table public.photo_stories         enable row level security;
-alter table public.hero_slides           enable row level security;
-alter table public.pillars               enable row level security;
-alter table public.inquiries             enable row level security;
+-- Replaces the Supabase `admins` allow-list. There is no external identity
+-- provider any more: this table IS the user store, and a row here is what
+-- grants access to /admin.
+--
+-- `password_hash` holds a PHC-format argon2id string produced by the API
+-- (`@node-rs/argon2`), e.g.
+--     $argon2id$v=19$m=19456,t=2,p=1$<salt>$<digest>
+-- The CHECK on its prefix is deliberate: it makes it structurally impossible to
+-- store a plaintext password, a bcrypt hash, or an argon2i/argon2d hash in this
+-- column by mistake. The cost parameters live inside the string, so they can be
+-- raised later without invalidating hashes already stored.
+create table if not exists public.users (
+  id            uuid primary key default gen_random_uuid(),
+  email         text not null check (email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$'),
+  password_hash text not null check (password_hash like '$argon2id$%'),
+  full_name     text,
+  last_login_at timestamptz,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
 
--- 6.1 admins: an admin may read the allow-list (needed by the admin UI to
---     confirm its own role). Nobody may write it from the client — add admins
---     via the SQL editor / service role only.
-drop policy if exists "admins read own row" on public.admins;
-create policy "admins read own row"
-  on public.admins for select
-  to authenticated
-  using (id = auth.uid());
+-- Login is by email. The old `admins` table had no unique constraint on it at
+-- all — two rows sharing an address would have made "which user is this?"
+-- depend on physical row order. Lower()ed so `Hello@x.lk` cannot shadow
+-- `hello@x.lk`; the API lowercases on lookup to match.
+create unique index if not exists users_email_key on public.users (lower(email));
 
--- 6.2 Content tables: anonymous + authenticated may read PUBLISHED rows;
---     admins may read everything and write everything.
-do $$
-declare
-  t text;
-begin
-  foreach t in array array[
-    'destinations','experience_categories','featured_experiences',
-    'tours','articles','hidden_gems','photo_stories',
-    'hero_slides','pillars'
-  ]
-  loop
-    execute format('drop policy if exists "public read published" on public.%I;', t);
-    execute format($f$
-      create policy "public read published" on public.%I
-        for select to anon, authenticated
-        using (published = true or public.is_admin());
-    $f$, t);
+comment on table public.users is
+  'Admin users. A row here grants access to /admin; there is no other user store.';
 
-    execute format('drop policy if exists "admin insert" on public.%I;', t);
-    execute format($f$
-      create policy "admin insert" on public.%I
-        for insert to authenticated
-        with check (public.is_admin());
-    $f$, t);
+-- Server-side sessions. This table is what makes logout mean something:
+-- invalidation is a DELETE, not an expiry the client is trusted to respect.
+--     one row                -> log out of this browser
+--     by user_id             -> log out everywhere
+--     on password change     -> delete every row for that user
+--
+-- `token_hash` is the SHA-256 (hex, 64 chars) of the random 32-byte token the
+-- cookie carries — never the token itself. A database dump or a read-only SQL
+-- injection therefore yields nothing a caller can present as a session. The
+-- length CHECK enforces that: a raw base64url token is 43 characters and would
+-- be rejected outright. SHA-256 rather than argon2 is correct here because the
+-- input is already full-entropy random, so there is no search space to slow an
+-- attacker down, and this hash is recomputed on every authenticated request.
+--
+-- `expires_at` is authoritative and must be re-checked in the lookup
+-- (`where expires_at > now()`). The cookie's own Max-Age is a client-side
+-- convenience and is not trusted.
+create table if not exists public.sessions (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references public.users (id) on delete cascade,
+  token_hash   text not null unique check (length(token_hash) = 64),
+  user_agent   text check (user_agent is null or length(user_agent) <= 400),
+  ip           inet,
+  created_at   timestamptz not null default now(),
+  last_seen_at timestamptz not null default now(),
+  expires_at   timestamptz not null check (expires_at > created_at)
+);
 
-    execute format('drop policy if exists "admin update" on public.%I;', t);
-    execute format($f$
-      create policy "admin update" on public.%I
-        for update to authenticated
-        using (public.is_admin()) with check (public.is_admin());
-    $f$, t);
+create index if not exists sessions_user_idx    on public.sessions (user_id);
+create index if not exists sessions_expires_idx on public.sessions (expires_at);
 
-    execute format('drop policy if exists "admin delete" on public.%I;', t);
-    execute format($f$
-      create policy "admin delete" on public.%I
-        for delete to authenticated
-        using (public.is_admin());
-    $f$, t);
-  end loop;
-end;
+comment on column public.sessions.token_hash is
+  'SHA-256 hex of the cookie token. The token itself is never stored.';
+
+-- `sessions` deliberately gets no set_updated_at trigger: it tracks
+-- `last_seen_at`, which the session middleware advances on purpose.
+--
+-- Attached as plain statements rather than by extending the array in section 5,
+-- so that loop stays exactly as it was for the ten content/enquiry tables.
+drop trigger if exists set_updated_at on public.users;
+create trigger set_updated_at before update on public.users
+for each row execute function public.set_updated_at();
+
+-- -----------------------------------------------------------------------------
+-- 7. Site settings
+-- -----------------------------------------------------------------------------
+-- Single-row table — the CHECK on `id` is what enforces "single" — not
+-- key/value.
+--
+-- Key/value would have thrown away per-field validation, which is the one thing
+-- this schema leans on everywhere else: a contact email, a phone number and
+-- seven links each have a different shape, and a lone `value text` column
+-- cannot express that. One row also maps 1:1 onto a TypeScript interface and
+-- onto the existing schema-driven admin form, so `select * from site_settings`
+-- is already the shape the API returns. The cost is one migration line per new
+-- setting, which is cheaper than it looks: adding a setting always means
+-- touching the shared types, the admin field descriptors and the component
+-- anyway, so the "no migration needed" flexibility of key/value is largely
+-- illusory.
+--
+-- Every value here was hardcoded in `src/components/Footer.tsx`. The defaults
+-- below are those exact strings, including the dead `#instagram`-style anchors,
+-- so wiring the Footer to this table changes nothing on screen.
+create or replace function public.is_link(val text)
+returns boolean
+language sql
+immutable
+as $$
+  select val is not null
+     and length(val) <= 500
+     and val ~ '^(https?://[^\s]+|/[^\s]*|#[A-Za-z0-9_-]+)$';
 $$;
 
--- 6.3 Enquiries: anyone may submit one; only admins may read or manage them.
-drop policy if exists "anyone can submit an inquiry" on public.inquiries;
-create policy "anyone can submit an inquiry"
-  on public.inquiries for insert
-  to anon, authenticated
-  with check (status = 'new' and admin_notes is null);
+comment on function public.is_link(text) is
+  'Accepts an absolute http(s) URL, a root-relative path, or a #fragment. The '
+  'fragment form is what lets the current placeholder links seed unchanged.';
 
-drop policy if exists "admin read inquiries" on public.inquiries;
-create policy "admin read inquiries"
-  on public.inquiries for select
-  to authenticated
-  using (public.is_admin());
+create table if not exists public.site_settings (
+  id                 boolean primary key default true check (id),
+  postal_address     text not null check (length(btrim(postal_address)) between 1 and 300),
+  phone              text not null check (length(btrim(phone)) between 1 and 40),
+  contact_email      text not null check (contact_email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$'),
+  instagram_url      text not null check (public.is_link(instagram_url)),
+  facebook_url       text not null check (public.is_link(facebook_url)),
+  tiktok_url         text not null check (public.is_link(tiktok_url)),
+  youtube_url        text not null check (public.is_link(youtube_url)),
+  privacy_url        text not null check (public.is_link(privacy_url)),
+  terms_url          text not null check (public.is_link(terms_url)),
+  sustainability_url text not null check (public.is_link(sustainability_url)),
+  created_at         timestamptz not null default now(),
+  updated_at         timestamptz not null default now()
+);
 
-drop policy if exists "admin update inquiries" on public.inquiries;
-create policy "admin update inquiries"
-  on public.inquiries for update
-  to authenticated
-  using (public.is_admin()) with check (public.is_admin());
+comment on table public.site_settings is
+  'Exactly one row, enforced by the CHECK on `id`. UPDATE it; never INSERT.';
 
-drop policy if exists "admin delete inquiries" on public.inquiries;
-create policy "admin delete inquiries"
-  on public.inquiries for delete
-  to authenticated
-  using (public.is_admin());
-
--- -----------------------------------------------------------------------------
--- 7. Storage bucket for admin-uploaded media
--- -----------------------------------------------------------------------------
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values (
-  'media', 'media', true, 10485760,
-  array['image/jpeg','image/png','image/webp','image/avif','image/gif']
+-- `do nothing`, not `do update`: this seeds the initial values only. Re-running
+-- this file must never overwrite settings an admin has since edited — unlike
+-- 0002_seed.sql, which is a deliberate reset-to-baseline and is upsert-shaped
+-- on purpose.
+insert into public.site_settings (
+  id,
+  postal_address,
+  phone,
+  contact_email,
+  instagram_url,
+  facebook_url,
+  tiktok_url,
+  youtube_url,
+  privacy_url,
+  terms_url,
+  sustainability_url
+) values (
+  true,
+  'Level 12, Galle Face Terrace, Colombo 03, Sri Lanka',  -- Footer.tsx:81
+  '+94 11 234 5678',                                      -- Footer.tsx:85
+  'hello@traveleye.lk',                                   -- Footer.tsx:89-90
+  '#instagram',                                           -- Footer.tsx:39
+  '#facebook',                                            -- Footer.tsx:42
+  '#tiktok',                                              -- Footer.tsx:45
+  '#youtube',                                             -- Footer.tsx:48
+  '#privacy',                                             -- Footer.tsx:137
+  '#terms',                                               -- Footer.tsx:138
+  '#sustainability'                                       -- Footer.tsx:139
 )
-on conflict (id) do update
-  set public             = excluded.public,
-      file_size_limit    = excluded.file_size_limit,
-      allowed_mime_types = excluded.allowed_mime_types;
+on conflict (id) do nothing;
 
-drop policy if exists "media public read" on storage.objects;
-create policy "media public read"
-  on storage.objects for select
-  to anon, authenticated
-  using (bucket_id = 'media');
+drop trigger if exists set_updated_at on public.site_settings;
+create trigger set_updated_at before update on public.site_settings
+for each row execute function public.set_updated_at();
 
-drop policy if exists "media admin insert" on storage.objects;
-create policy "media admin insert"
-  on storage.objects for insert
-  to authenticated
-  with check (bucket_id = 'media' and public.is_admin());
-
-drop policy if exists "media admin update" on storage.objects;
-create policy "media admin update"
-  on storage.objects for update
-  to authenticated
-  using (bucket_id = 'media' and public.is_admin())
-  with check (bucket_id = 'media' and public.is_admin());
-
-drop policy if exists "media admin delete" on storage.objects;
-create policy "media admin delete"
-  on storage.objects for delete
-  to authenticated
-  using (bucket_id = 'media' and public.is_admin());
+commit;

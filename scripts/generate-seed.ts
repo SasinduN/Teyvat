@@ -1,5 +1,5 @@
 /**
- * Generates `supabase/migrations/0002_seed.sql` from the original hardcoded
+ * Generates `db/migrations/0002_seed.sql` from the original hardcoded
  * data files in `src/data/`.
  *
  *   npm run seed:generate
@@ -24,7 +24,7 @@ import { HERO_SLIDES } from '../src/data/heroSlides';
 import { PILLARS } from '../src/data/pillars';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const OUT = resolve(__dirname, '../supabase/migrations/0002_seed.sql');
+const OUT = resolve(__dirname, '../db/migrations/0002_seed.sql');
 
 /* ------------------------------------------------------------------ helpers */
 
