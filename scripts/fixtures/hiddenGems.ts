@@ -1,4 +1,4 @@
-import { HiddenGem } from '../types';
+import { HiddenGem } from '../../src/types';
 
 export const HIDDEN_GEMS: HiddenGem[] = [
   {

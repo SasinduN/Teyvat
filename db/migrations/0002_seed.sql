@@ -3,7 +3,7 @@
 -- =============================================================================
 -- GENERATED FILE — do not edit by hand.
 -- Regenerate with:  npm run seed:generate
--- Source of truth:  src/data/*.ts (the original approved demo content)
+-- Source of truth:  scripts/fixtures/*.ts (the original approved demo content)
 --
 -- Safe to re-run: every statement is an upsert keyed on the slug id, so this
 -- restores the approved baseline content without duplicating rows.

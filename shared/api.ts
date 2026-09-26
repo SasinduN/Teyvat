@@ -13,8 +13,11 @@ import type {
   DestinationRow,
   ExperienceCategoryRow,
   FeaturedExperienceRow,
+  HeroSlideRow,
   HiddenGemRow,
   PhotoStoryRow,
+  PillarRow,
+  SiteSettingsRow,
   TourRow
 } from './database.types';
 
@@ -35,11 +38,6 @@ export const API_ROUTES = {
  * Only published rows appear here, ordered by `sort_order` then `id`. Both were
  * guaranteed by RLS before the move off Supabase and are now the route
  * handler's responsibility — see the header of `db/migrations/0001_init.sql`.
- *
- * `hero_slides` and `pillars` are seeded in the database but deliberately absent
- * from this payload: `HeroSection` and `WhyTravelEye` still hold inline copies,
- * and wiring them is phase 2b. Adding them here early would ship a payload field
- * nothing reads.
  */
 export interface SiteContentPayload {
   destinations: DestinationRow[];
@@ -49,7 +47,35 @@ export interface SiteContentPayload {
   articles: ArticleRow[];
   hiddenGems: HiddenGemRow[];
   photoStories: PhotoStoryRow[];
+  heroSlides: HeroSlideRow[];
+  pillars: PillarRow[];
+  siteSettings: PublicSiteSettings;
 }
+
+/**
+ * The `site_settings` columns the public Footer renders, and nothing else.
+ *
+ * An allow-list rather than the whole row: the route selects exactly these
+ * columns by name, so a setting added later for admin use only cannot reach
+ * `/api/content` without someone adding it here on purpose.
+ */
+export const PUBLIC_SITE_SETTINGS_COLUMNS = [
+  'postal_address',
+  'phone',
+  'contact_email',
+  'instagram_url',
+  'facebook_url',
+  'tiktok_url',
+  'youtube_url',
+  'privacy_url',
+  'terms_url',
+  'sustainability_url'
+] as const satisfies readonly (keyof SiteSettingsRow)[];
+
+export type PublicSiteSettings = Pick<
+  SiteSettingsRow,
+  (typeof PUBLIC_SITE_SETTINGS_COLUMNS)[number]
+>;
 
 /** `GET /api/health` — for Railway's healthcheck and for "is the API up?". */
 export interface HealthPayload {

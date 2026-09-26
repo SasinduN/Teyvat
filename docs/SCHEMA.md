@@ -15,7 +15,7 @@ schema-driven rather than hand-built per collection.
 
 | Column | Type | Why |
 | --- | --- | --- |
-| `id` | `text` PK | A human-readable slug, **not** a UUID. The approved front-end references specific ids — `DestinationSpotlight` hardcodes `['ella','sigiriya','galle','mirissa','kandy','jaffna']` — so keeping the original slugs preserves that behaviour exactly. |
+| `id` | `text` PK | A human-readable slug, **not** a UUID. Keeping the original slugs keeps the seed, the fixtures and the admin URLs readable. |
 | `sort_order` | `integer` | Seeded with the record's index in its original hardcoded array. Ordering by it reproduces the approved page order. Editable from the list view's arrow buttons. |
 | `published` | `boolean` | Drafts stay in the database but vanish from the public site. |
 | `created_at` / `updated_at` | `timestamptz` | `updated_at` is maintained by a trigger, not the client. |
@@ -61,12 +61,12 @@ and optional chaining. `npm run verify:roundtrip` asserts this.
 | `rating` | `numeric(3,2)` | `rating` | `CHECK` 0–5; holds `4.95` |
 | `elevation` | `text` NULL | `elevation?` | free text, e.g. `"1,041 m"` |
 | `ideal_for` | `text[]` | `idealFor` | |
-| `featured` | `boolean` | `featured?` | `NOT NULL DEFAULT false`; no component currently reads it |
+| `featured` | `boolean` | `featured?` | `NOT NULL DEFAULT false`; `DestinationSpotlight` shows the first 6 featured rows by `sort_order` |
 
 ## `experience_categories` → `ExperienceCategory` (6 rows)
 
 The "what kind of journey" tiles. This had no interface in `src/types` — it was
-an inline literal in `src/data/experiences.ts` — so the mapper declares
+an inline literal in the original data file (now `scripts/fixtures/experiences.ts`) — so the mapper declares
 `ExperienceCategory` in `src/lib/mappers.ts`.
 
 | Column | Type | Domain field |

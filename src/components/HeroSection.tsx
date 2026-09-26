@@ -1,42 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown, Compass, MapPin } from 'lucide-react';
+import { useHeroSlides } from '@/hooks/useSiteContent';
+import { HeroSlide } from '../types';
 
 interface HeroSectionProps {
   onExploreClick: () => void;
   onPlanClick: () => void;
 }
 
-const HERO_IMAGES = [
-  {
-    url: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&q=80&w=2000',
-    title: 'Ella Central Highlands',
-    caption: 'Misty Mountains & Tea Valleys'
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&q=80&w=2000',
-    title: 'Sigiriya Ancient Rock Citadel',
-    caption: '2,500 Years of Sacred History'
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=2000',
-    title: 'Mirissa Palm Shoreline',
-    caption: 'Indian Ocean Sunset Bay'
-  }
-];
-
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onExploreClick,
   onPlanClick
 }) => {
+  const HERO_IMAGES = useHeroSlides();
   const [currentBg, setCurrentBg] = useState(0);
+  // Undefined only when no slide is published: the section then keeps its
+  // background colour and copy, and drops the caption instead of crashing.
+  const current: HeroSlide | undefined = HERO_IMAGES[currentBg];
 
   useEffect(() => {
+    // The slide count comes from the database, so restart from the first
+    // slide whenever it changes, and don't cycle through zero slides.
+    setCurrentBg(0);
+    if (HERO_IMAGES.length === 0) return;
     const timer = setInterval(() => {
       setCurrentBg((prev) => (prev + 1) % HERO_IMAGES.length);
     }, 7000);
     return () => clearInterval(timer);
-  }, []);
+  }, [HERO_IMAGES.length]);
 
   return (
     <section id="hero" className="relative w-full h-screen min-h-[700px] flex items-center justify-center overflow-hidden bg-[#0F2E23]">
@@ -121,15 +113,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         </motion.div>
 
         {/* Location Indicator Caption */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="mt-12 hidden sm:flex items-center justify-center space-x-2 text-xs text-white/70"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-          <span>Currently featured: {HERO_IMAGES[currentBg].title} ({HERO_IMAGES[currentBg].caption})</span>
-        </motion.div>
+        {current && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2 }}
+            className="mt-12 hidden sm:flex items-center justify-center space-x-2 text-xs text-white/70"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+            <span>Currently featured: {current.title} ({current.caption})</span>
+          </motion.div>
+        )}
       </div>
 
       {/* Bottom Scroll Indicator */}

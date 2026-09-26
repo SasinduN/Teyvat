@@ -1,38 +1,34 @@
 /**
- * Public (anon-key) reads for the marketing site.
+ * Public reads for the marketing site: one call to `GET /api/content`.
  *
- * Every query relies on the `public read published` RLS policy, so unpublished
- * rows are filtered server-side; the explicit `.eq('published', true)` keeps
- * the behaviour identical when an admin is signed in and browsing the public
- * site (admins can see drafts through RLS, but the public page should not
- * change shape just because someone is logged in).
+ * The route returns only published rows, in `sort_order` then `id` order (see
+ * `server/src/routes/content.ts`). This side only maps rows to the shapes the
+ * approved components expect.
  */
-import { supabase } from '@/lib/supabase';
+import { API_ROUTES, type SiteContentPayload } from '@shared/api';
 import {
   toArticle,
   toDestination,
   toExperienceCategory,
   toExperienceItem,
+  toHeroSlide,
   toHiddenGem,
   toPhotoStory,
+  toPillar,
+  toSiteSettings,
   toTourPackage,
   type ExperienceCategory
 } from '@/lib/mappers';
-import type {
-  ArticleRow,
-  DestinationRow,
-  ExperienceCategoryRow,
-  FeaturedExperienceRow,
-  HiddenGemRow,
-  PhotoStoryRow,
-  TourRow
-} from '@shared/database.types';
+import { getJson } from '@/lib/api/http';
 import type {
   Article,
   Destination,
   ExperienceItem,
+  HeroSlide,
   HiddenGem,
   PhotoStory,
+  Pillar,
+  SiteSettings,
   TourPackage
 } from '@/types';
 
@@ -45,8 +41,16 @@ export interface SiteContent {
   articles: Article[];
   hiddenGems: HiddenGem[];
   photoStories: PhotoStory[];
+  heroSlides: HeroSlide[];
+  pillars: Pillar[];
+  siteSettings: SiteSettings;
 }
 
+/**
+ * What the hooks return before the fetch resolves. The public route does not
+ * render any section until content has loaded (`PublicSiteRoute` in App.tsx),
+ * so no approved component ever paints with these values.
+ */
 export const EMPTY_CONTENT: SiteContent = {
   destinations: [],
   experienceCategories: [],
@@ -54,56 +58,36 @@ export const EMPTY_CONTENT: SiteContent = {
   tours: [],
   articles: [],
   hiddenGems: [],
-  photoStories: []
+  photoStories: [],
+  heroSlides: [],
+  pillars: [],
+  siteSettings: {
+    postalAddress: '',
+    phone: '',
+    contactEmail: '',
+    instagramUrl: '',
+    facebookUrl: '',
+    tiktokUrl: '',
+    youtubeUrl: '',
+    privacyUrl: '',
+    termsUrl: '',
+    sustainabilityUrl: ''
+  }
 };
 
-/**
- * `sort_order` mirrors the index each record had in the original hardcoded
- * array, so ordering by it reproduces the approved page order exactly. `id` is
- * the tiebreaker so the order stays stable if two rows share a sort_order.
- */
-async function selectPublished<T>(table: string): Promise<T[]> {
-  const { data, error } = await supabase
-    .from(table)
-    .select('*')
-    .eq('published', true)
-    .order('sort_order', { ascending: true })
-    .order('id', { ascending: true });
-
-  if (error) throw error;
-  return (data ?? []) as T[];
-}
-
-/**
- * Loads all site content in parallel. Rejects if any table fails, so the
- * caller can show one coherent error instead of a half-rendered page.
- */
 export async function fetchSiteContent(): Promise<SiteContent> {
-  const [
-    destinations,
-    experienceCategories,
-    featuredExperiences,
-    tours,
-    articles,
-    hiddenGems,
-    photoStories
-  ] = await Promise.all([
-    selectPublished<DestinationRow>('destinations'),
-    selectPublished<ExperienceCategoryRow>('experience_categories'),
-    selectPublished<FeaturedExperienceRow>('featured_experiences'),
-    selectPublished<TourRow>('tours'),
-    selectPublished<ArticleRow>('articles'),
-    selectPublished<HiddenGemRow>('hidden_gems'),
-    selectPublished<PhotoStoryRow>('photo_stories')
-  ]);
+  const payload = await getJson<SiteContentPayload>(API_ROUTES.content);
 
   return {
-    destinations: destinations.map(toDestination),
-    experienceCategories: experienceCategories.map(toExperienceCategory),
-    featuredExperiences: featuredExperiences.map(toExperienceItem),
-    tours: tours.map(toTourPackage),
-    articles: articles.map(toArticle),
-    hiddenGems: hiddenGems.map(toHiddenGem),
-    photoStories: photoStories.map(toPhotoStory)
+    destinations: payload.destinations.map(toDestination),
+    experienceCategories: payload.experienceCategories.map(toExperienceCategory),
+    featuredExperiences: payload.featuredExperiences.map(toExperienceItem),
+    tours: payload.tours.map(toTourPackage),
+    articles: payload.articles.map(toArticle),
+    hiddenGems: payload.hiddenGems.map(toHiddenGem),
+    photoStories: payload.photoStories.map(toPhotoStory),
+    heroSlides: payload.heroSlides.map(toHeroSlide),
+    pillars: payload.pillars.map(toPillar),
+    siteSettings: toSiteSettings(payload.siteSettings)
   };
 }

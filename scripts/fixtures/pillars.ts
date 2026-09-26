@@ -1,15 +1,13 @@
-import { Pillar } from '../types';
+import { Pillar } from '../../src/types';
 
 /**
  * Seed source of truth for `public.pillars`.
  *
- * Copied verbatim from the `pillars` literal in
- * `src/components/WhyTravelEye.tsx`, except that the lucide component
- * reference (`Users`) becomes its name (`'Users'`) — a database cannot store a
- * React component. The component resolves the name back through a lookup map.
- *
- * That component still holds its own copy; Phase 2 deletes it and reads these
- * rows from the database instead.
+ * Copied verbatim from the `pillars` literal that `WhyTravelEye` held before
+ * phase 2b, except that the lucide component reference (`Users`) becomes its
+ * name (`'Users'`) — a database cannot store a React component. The component
+ * now reads these rows from `/api/content` and resolves the name back through
+ * its `PILLAR_ICONS` map.
  */
 export const PILLARS: Pillar[] = [
   {

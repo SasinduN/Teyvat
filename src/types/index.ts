@@ -1,3 +1,5 @@
+import type { PillarIconName } from '@shared/database.types';
+
 export type CategoryType = 'All' | 'Beaches' | 'Mountains' | 'Culture' | 'Wildlife' | 'Adventure' | 'Food' | 'Hidden Gems';
 
 export interface Destination {
@@ -108,29 +110,11 @@ export interface HeroSlide {
 }
 
 /**
- * Allowed `Pillar.icon` values. Mirrors the CHECK constraint on
- * `public.pillars.icon` and the lookup map in `WhyTravelEye`; adding an icon
- * means changing all three together.
+ * Allowed `Pillar.icon` values: the CHECK constraint on `public.pillars.icon`,
+ * declared once in `shared/database.types.ts`. Adding an icon means changing
+ * that constraint, that type, and the icon map in `WhyTravelEye` together.
  */
-export type PillarIcon =
-  | 'Users'
-  | 'Compass'
-  | 'Sliders'
-  | 'Leaf'
-  | 'Heart'
-  | 'ShieldCheck'
-  | 'Star'
-  | 'MapPin'
-  | 'Camera'
-  | 'Globe'
-  | 'Sparkles'
-  | 'Award'
-  | 'Clock'
-  | 'Handshake'
-  | 'Mountain'
-  | 'Waves'
-  | 'Utensils'
-  | 'Binoculars';
+export type PillarIcon = PillarIconName;
 
 /** A "Why Travel Eye" value proposition. */
 export interface Pillar {
@@ -139,4 +123,18 @@ export interface Pillar {
   icon: PillarIcon;
   title: string;
   desc: string;
+}
+
+/** The contact details and links the Footer renders, from `site_settings`. */
+export interface SiteSettings {
+  postalAddress: string;
+  phone: string;
+  contactEmail: string;
+  instagramUrl: string;
+  facebookUrl: string;
+  tiktokUrl: string;
+  youtubeUrl: string;
+  privacyUrl: string;
+  termsUrl: string;
+  sustainabilityUrl: string;
 }

@@ -8,14 +8,20 @@
 import { Router } from 'express';
 import type { QueryResultRow } from 'pg';
 
-import type { SiteContentPayload } from '../../../shared/api';
+import {
+  PUBLIC_SITE_SETTINGS_COLUMNS,
+  type PublicSiteSettings,
+  type SiteContentPayload
+} from '../../../shared/api';
 import type {
   ArticleRow,
   DestinationRow,
   ExperienceCategoryRow,
   FeaturedExperienceRow,
+  HeroSlideRow,
   HiddenGemRow,
   PhotoStoryRow,
+  PillarRow,
   TourRow
 } from '../../../shared/database.types';
 import { pool } from '../db';
@@ -33,7 +39,9 @@ const CONTENT_TABLES = [
   'tours',
   'articles',
   'hidden_gems',
-  'photo_stories'
+  'photo_stories',
+  'hero_slides',
+  'pillars'
 ] as const;
 
 type ContentTable = (typeof CONTENT_TABLES)[number];
@@ -55,12 +63,31 @@ async function selectPublished<T extends QueryResultRow>(table: ContentTable): P
   return rows;
 }
 
+/**
+ * The Footer's settings, by explicit column list rather than `select *`, so a
+ * private setting added to the table later is not published by default. The
+ * column names come from a constant, never from a request.
+ *
+ * The row is created by `0001_init.sql`, so its absence is a broken database,
+ * not an empty state: fail the whole request rather than render a footer with
+ * blanks in it.
+ */
+async function selectSiteSettings(): Promise<PublicSiteSettings> {
+  const { rows } = await pool.query<PublicSiteSettings>(
+    `select ${PUBLIC_SITE_SETTINGS_COLUMNS.join(', ')} from public.site_settings where id`
+  );
+  if (rows.length === 0) {
+    throw new Error('public.site_settings has no row; run `npm run migrate`.');
+  }
+  return rows[0];
+}
+
 export const contentRouter = Router();
 
 contentRouter.get(
   '/content',
   asyncRoute(async (_req, res) => {
-    // One round trip per table, all in flight together. Seven small reads in
+    // One round trip per table, all in flight together. Ten small reads in
     // parallel beat one join that would have to be unpicked client-side.
     const [
       destinations,
@@ -69,7 +96,10 @@ contentRouter.get(
       tours,
       articles,
       hiddenGems,
-      photoStories
+      photoStories,
+      heroSlides,
+      pillars,
+      siteSettings
     ] = await Promise.all([
       selectPublished<DestinationRow>('destinations'),
       selectPublished<ExperienceCategoryRow>('experience_categories'),
@@ -77,7 +107,10 @@ contentRouter.get(
       selectPublished<TourRow>('tours'),
       selectPublished<ArticleRow>('articles'),
       selectPublished<HiddenGemRow>('hidden_gems'),
-      selectPublished<PhotoStoryRow>('photo_stories')
+      selectPublished<PhotoStoryRow>('photo_stories'),
+      selectPublished<HeroSlideRow>('hero_slides'),
+      selectPublished<PillarRow>('pillars'),
+      selectSiteSettings()
     ]);
 
     const payload: SiteContentPayload = {
@@ -87,7 +120,10 @@ contentRouter.get(
       tours,
       articles,
       hiddenGems,
-      photoStories
+      photoStories,
+      heroSlides,
+      pillars,
+      siteSettings
     };
 
     // No caching headers on purpose. An admin save must show on the public site

@@ -11,8 +11,11 @@ import type {
   Article,
   Destination,
   ExperienceItem,
+  HeroSlide,
   HiddenGem,
   PhotoStory,
+  Pillar,
+  SiteSettings,
   TourPackage
 } from '@/types';
 import type {
@@ -20,10 +23,13 @@ import type {
   DestinationRow,
   ExperienceCategoryRow,
   FeaturedExperienceRow,
+  HeroSlideRow,
   HiddenGemRow,
   PhotoStoryRow,
+  PillarRow,
   TourRow
 } from '@shared/database.types';
+import type { PublicSiteSettings } from '@shared/api';
 
 /** The `EXPERIENCE_CATEGORIES` tiles have no interface in `src/types`. */
 export interface ExperienceCategory {
@@ -156,4 +162,32 @@ export const toPhotoStory = (r: PhotoStoryRow): PhotoStory => ({
   image: r.image,
   caption: r.caption,
   aspect: opt(r.aspect)
+});
+
+/** The column is `image` like every other table; the carousel's prop is `url`. */
+export const toHeroSlide = (r: HeroSlideRow): HeroSlide => ({
+  id: r.id,
+  url: r.image,
+  title: r.title,
+  caption: r.caption
+});
+
+export const toPillar = (r: PillarRow): Pillar => ({
+  id: r.id,
+  icon: r.icon,
+  title: r.title,
+  desc: r.description
+});
+
+export const toSiteSettings = (r: PublicSiteSettings): SiteSettings => ({
+  postalAddress: r.postal_address,
+  phone: r.phone,
+  contactEmail: r.contact_email,
+  instagramUrl: r.instagram_url,
+  facebookUrl: r.facebook_url,
+  tiktokUrl: r.tiktok_url,
+  youtubeUrl: r.youtube_url,
+  privacyUrl: r.privacy_url,
+  termsUrl: r.terms_url,
+  sustainabilityUrl: r.sustainability_url
 });

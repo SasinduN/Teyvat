@@ -1,4 +1,4 @@
-import { ExperienceItem } from '../types';
+import { ExperienceItem } from '../../src/types';
 
 export const EXPERIENCE_CATEGORIES = [
   {

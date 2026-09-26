@@ -12,9 +12,9 @@ export const DestinationSpotlight: React.FC<DestinationSpotlightProps> = ({
   onSelectDestination
 }) => {
   const DESTINATIONS = useDestinations();
-  // Select the 6 featured spotlight destinations
-  const spotlightIds = ['ella', 'sigiriya', 'galle', 'mirissa', 'kandy', 'jaffna'];
-  const spotlightDestinations = DESTINATIONS.filter((d) => spotlightIds.includes(d.id));
+  // The first 6 featured destinations, already in sort_order from the API.
+  // Capped because the six-card grid is part of the approved design.
+  const spotlightDestinations = DESTINATIONS.filter((d) => d.featured).slice(0, 6);
 
   return (
     <section id="destinations" className="py-24 bg-[#FBF9F6] relative overflow-hidden">

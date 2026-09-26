@@ -1,4 +1,4 @@
-import { Article } from '../types';
+import { Article } from '../../src/types';
 
 export const ARTICLES: Article[] = [
   {

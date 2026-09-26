@@ -140,6 +140,59 @@ export interface PhotoStoryRow extends Timestamps, Orderable {
   aspect: PhotoAspect | null;
 }
 
+export interface HeroSlideRow extends Timestamps, Orderable {
+  id: string;
+  image: string;
+  title: string;
+  caption: string;
+}
+
+/**
+ * Allowed `pillars.icon` values: the column's CHECK constraint. Same list as
+ * `PillarIcon` in `src/types` and the icon map in `WhyTravelEye`.
+ */
+export type PillarIconName =
+  | 'Users'
+  | 'Compass'
+  | 'Sliders'
+  | 'Leaf'
+  | 'Heart'
+  | 'ShieldCheck'
+  | 'Star'
+  | 'MapPin'
+  | 'Camera'
+  | 'Globe'
+  | 'Sparkles'
+  | 'Award'
+  | 'Clock'
+  | 'Handshake'
+  | 'Mountain'
+  | 'Waves'
+  | 'Utensils'
+  | 'Binoculars';
+
+export interface PillarRow extends Timestamps, Orderable {
+  id: string;
+  icon: PillarIconName;
+  title: string;
+  description: string;
+}
+
+/** The single `site_settings` row. */
+export interface SiteSettingsRow extends Timestamps {
+  id: true;
+  postal_address: string;
+  phone: string;
+  contact_email: string;
+  instagram_url: string;
+  facebook_url: string;
+  tiktok_url: string;
+  youtube_url: string;
+  privacy_url: string;
+  terms_url: string;
+  sustainability_url: string;
+}
+
 export interface InquiryRow extends Timestamps {
   id: string;
   name: string;

@@ -1,6 +1,6 @@
 /**
  * Generates `db/migrations/0002_seed.sql` from the original hardcoded
- * data files in `src/data/`.
+ * data files in `scripts/fixtures/`.
  *
  *   npm run seed:generate
  *
@@ -14,14 +14,14 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { DESTINATIONS } from '../src/data/destinations';
-import { EXPERIENCE_CATEGORIES, FEATURED_EXPERIENCES } from '../src/data/experiences';
-import { HIDDEN_GEMS } from '../src/data/hiddenGems';
-import { ARTICLES } from '../src/data/journal';
-import { PHOTO_STORIES } from '../src/data/photoStories';
-import { TOURS } from '../src/data/tours';
-import { HERO_SLIDES } from '../src/data/heroSlides';
-import { PILLARS } from '../src/data/pillars';
+import { DESTINATIONS } from './fixtures/destinations';
+import { EXPERIENCE_CATEGORIES, FEATURED_EXPERIENCES } from './fixtures/experiences';
+import { HIDDEN_GEMS } from './fixtures/hiddenGems';
+import { ARTICLES } from './fixtures/journal';
+import { PHOTO_STORIES } from './fixtures/photoStories';
+import { TOURS } from './fixtures/tours';
+import { HERO_SLIDES } from './fixtures/heroSlides';
+import { PILLARS } from './fixtures/pillars';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, '../db/migrations/0002_seed.sql');
@@ -189,7 +189,7 @@ const sql = `-- ================================================================
 -- =============================================================================
 -- GENERATED FILE — do not edit by hand.
 -- Regenerate with:  npm run seed:generate
--- Source of truth:  src/data/*.ts (the original approved demo content)
+-- Source of truth:  scripts/fixtures/*.ts (the original approved demo content)
 --
 -- Safe to re-run: every statement is an upsert keyed on the slug id, so this
 -- restores the approved baseline content without duplicating rows.

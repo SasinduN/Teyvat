@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { InquiryRow, InquiryStatus } from '@shared/database.types';
 
 /** What the public `InquiryModal` collects. */
@@ -18,6 +18,13 @@ export interface InquiryDraft {
  * enquiry that is already marked handled, nor write `admin_notes`.
  */
 export async function submitInquiry(draft: InquiryDraft): Promise<void> {
+  // Until phase 6 moves enquiries onto /api, a deployment without Supabase
+  // credentials cannot accept them. Say so plainly instead of letting a request
+  // to the placeholder URL fail with a bare "Failed to fetch".
+  if (!isSupabaseConfigured) {
+    throw new Error('Enquiries can’t be sent right now. Please try again later.');
+  }
+
   const { error } = await supabase.from('inquiries').insert({
     name: draft.name.trim(),
     email: draft.email.trim(),

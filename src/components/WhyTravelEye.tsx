@@ -1,30 +1,57 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Users, Compass, Sliders, Leaf } from 'lucide-react';
+import {
+  Award,
+  Binoculars,
+  Camera,
+  Clock,
+  Compass,
+  Globe,
+  Handshake,
+  Heart,
+  Leaf,
+  MapPin,
+  Mountain,
+  ShieldCheck,
+  Sliders,
+  Sparkles,
+  Star,
+  Users,
+  Utensils,
+  Waves,
+  type LucideIcon
+} from 'lucide-react';
+import { usePillars } from '@/hooks/useSiteContent';
+import { PillarIcon } from '../types';
+
+/**
+ * The database stores an icon's name; this turns it back into the component.
+ * Same list as the CHECK on `pillars.icon` and `PillarIconName` in
+ * `shared/database.types.ts`: add an icon to all three together.
+ */
+const PILLAR_ICONS: Record<PillarIcon, LucideIcon> = {
+  Users,
+  Compass,
+  Sliders,
+  Leaf,
+  Heart,
+  ShieldCheck,
+  Star,
+  MapPin,
+  Camera,
+  Globe,
+  Sparkles,
+  Award,
+  Clock,
+  Handshake,
+  Mountain,
+  Waves,
+  Utensils,
+  Binoculars
+};
 
 export const WhyTravelEye: React.FC = () => {
-  const pillars = [
-    {
-      icon: Users,
-      title: 'Local Knowledge',
-      desc: 'Discover Sri Lanka through the eyes of island natives who possess deep generational heritage, secret trails, and insider connections.'
-    },
-    {
-      icon: Compass,
-      title: 'Authentic Experiences',
-      desc: 'Go beyond predictable tourist hotspots. Access secluded waterfalls, ancestral spice gardens, and private cultural encounters.'
-    },
-    {
-      icon: Sliders,
-      title: 'Flexible Journeys',
-      desc: 'Build every day around your rhythm and curiosity—from high-energy mountain climbs to unhurried beach stays.'
-    },
-    {
-      icon: Leaf,
-      title: 'Responsible Travel',
-      desc: 'Explore while actively respecting wildlife habitats, conserving fragile ecosystems, and empowering rural island communities.'
-    }
-  ];
+  const pillars = usePillars();
 
   return (
     <section className="py-24 bg-[#FBF9F6] relative overflow-hidden">
@@ -43,7 +70,9 @@ export const WhyTravelEye: React.FC = () => {
         {/* 4 Pillars Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {pillars.map((p, i) => {
-            const IconComponent = p.icon;
+            // The fallback only matters if the lists above ever drift apart:
+            // a missing icon would otherwise crash the section.
+            const IconComponent = PILLAR_ICONS[p.icon] ?? Compass;
             return (
               <motion.div
                 key={p.title}

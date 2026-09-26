@@ -1,4 +1,4 @@
-import { TourPackage } from '../types';
+import { TourPackage } from '../../src/types';
 
 export const TOURS: TourPackage[] = [
   {

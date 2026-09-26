@@ -1,4 +1,4 @@
-import { PhotoStory } from '../types';
+import { PhotoStory } from '../../src/types';
 
 export const PHOTO_STORIES: PhotoStory[] = [
   {

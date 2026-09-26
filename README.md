@@ -43,7 +43,7 @@ The files:
 - `0002_seed.sql` — the approved baseline content: 63 rows across all nine
   content tables (20 destinations, 6 experience types, 4 featured experiences,
   4 tours, 6 articles, 8 hidden gems, 8 photo stories, 3 hero slides,
-  4 pillars). Generated from `src/data/*.ts` by `npm run seed:generate`.
+  4 pillars). Generated from `scripts/fixtures/*.ts` by `npm run seed:generate`.
 
 > [!WARNING]
 > **Never run `0002_seed.sql` by hand against production after go-live.**
@@ -67,6 +67,10 @@ The files:
 ```bash
 cp .env.example .env.local
 ```
+
+These are only needed for the admin panel and the enquiry form, which move off
+Supabase in later phases. The public site reads everything from `/api/content`
+and renders without them; the enquiry form then says it can't send.
 
 Fill in from **Project Settings → API Keys**:
 
@@ -133,7 +137,7 @@ npm run build && npm start   # everything on http://localhost:8081
 | `npm run migrate` | Apply pending migrations |
 | `npm run typecheck` | `tsc --noEmit` across client, server, shared and scripts |
 | `npm run preview` | Vite's own preview of the client build |
-| `npm run seed:generate` | Regenerate `0002_seed.sql` from `src/data/*.ts` |
+| `npm run seed:generate` | Regenerate `0002_seed.sql` from `scripts/fixtures/*.ts` |
 | `npm run verify:roundtrip` | Assert the DB round-trip renders identical content |
 | `npm run images:migrate` | Optional: pull seeded Unsplash images into Storage |
 
@@ -143,35 +147,38 @@ npm run build && npm start   # everything on http://localhost:8081
 
 ### Keeping the public design untouched
 
-The approved components were not redesigned. Each one previously did:
+The approved components were not redesigned. Each one previously imported or
+held its content as a constant:
 
 ```ts
 import { DESTINATIONS } from '../data/destinations';
 ```
 
-and now does:
+and now reads it under the same name:
 
 ```ts
 const DESTINATIONS = useDestinations();
 ```
 
-That is the entire change — no JSX was modified.
-`src/hooks/useSiteContent.ts` fetches all seven collections in one TanStack
-Query, so every component reads from a single shared cache entry.
+`src/hooks/useSiteContent.ts` makes one `GET /api/content` request through
+TanStack Query, so every component reads from a single shared cache entry. That
+covers the nine content collections plus the Footer's contact details and links
+from `site_settings`. Review any change to the components against the approved
+design with `git diff demo-baseline -- src/components/`.
 
 `npm run verify:roundtrip` proves this is lossless: it pushes the original
-`src/data/*.ts` content through the same shape transformation the seed performs,
+`scripts/fixtures/*.ts` content through the same shape transformation the seed performs,
 back through the runtime mappers, and asserts deep equality against what the
 components used to import — ordering, optional-field presence and the article
 date strings included.
 
-`src/data/*.ts` is retained as the seed's source of truth and as that test's
-fixture. Nothing in the running app imports it.
+`scripts/fixtures/*.ts` is retained as the seed's source of truth and as that
+test's fixture. It lives outside `src/` so the running app cannot import it.
 
 ### Data flow
 
 ```
-Postgres ──RLS SELECT (anon)──▶ lib/api/content.ts ──mappers──▶ useSiteContent ──▶ components
+Postgres ──published rows──▶ GET /api/content ──▶ lib/api/content.ts ──mappers──▶ useSiteContent ──▶ components
 
 InquiryModal ──RLS INSERT (anon)──▶ public.inquiries ◀──RLS (admin)── /admin/inquiries
 

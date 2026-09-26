@@ -3,7 +3,7 @@
  *
  *   npm run verify:roundtrip
  *
- * Takes the original approved content from `src/data/*.ts`, pushes it through
+ * Takes the original approved content from `scripts/fixtures/*.ts`, pushes it through
  * the same shape transformation the seed performs (TS object -> database row),
  * then back through the runtime mappers the app uses (row -> domain object),
  * and asserts the result is deep-equal to what the components used to import.
@@ -11,20 +11,24 @@
  * If this passes, every value the approved components render is unchanged —
  * including ordering, optional-field presence, and the article date strings.
  */
-import { DESTINATIONS } from '../src/data/destinations';
-import { EXPERIENCE_CATEGORIES, FEATURED_EXPERIENCES } from '../src/data/experiences';
-import { HIDDEN_GEMS } from '../src/data/hiddenGems';
-import { ARTICLES } from '../src/data/journal';
-import { PHOTO_STORIES } from '../src/data/photoStories';
-import { TOURS } from '../src/data/tours';
+import { DESTINATIONS } from './fixtures/destinations';
+import { EXPERIENCE_CATEGORIES, FEATURED_EXPERIENCES } from './fixtures/experiences';
+import { HIDDEN_GEMS } from './fixtures/hiddenGems';
+import { ARTICLES } from './fixtures/journal';
+import { PHOTO_STORIES } from './fixtures/photoStories';
+import { TOURS } from './fixtures/tours';
+import { HERO_SLIDES } from './fixtures/heroSlides';
+import { PILLARS } from './fixtures/pillars';
 
 import {
   toArticle,
   toDestination,
   toExperienceCategory,
   toExperienceItem,
+  toHeroSlide,
   toHiddenGem,
   toPhotoStory,
+  toPillar,
   toTourPackage
 } from '../src/lib/mappers';
 import type {
@@ -32,8 +36,10 @@ import type {
   DestinationRow,
   ExperienceCategoryRow,
   FeaturedExperienceRow,
+  HeroSlideRow,
   HiddenGemRow,
   PhotoStoryRow,
+  PillarRow,
   TourRow
 } from '../shared/database.types';
 
@@ -214,6 +220,22 @@ const photoStoryRows: PhotoStoryRow[] = PHOTO_STORIES.map((p, i) => ({
   aspect: nullable(p.aspect)
 }));
 
+const heroSlideRows: HeroSlideRow[] = HERO_SLIDES.map((h, i) => ({
+  ...meta(i),
+  id: h.id,
+  image: h.url,
+  title: h.title,
+  caption: h.caption
+}));
+
+const pillarRows: PillarRow[] = PILLARS.map((p, i) => ({
+  ...meta(i),
+  id: p.id,
+  icon: p.icon,
+  title: p.title,
+  description: p.desc
+}));
+
 /* -------------------------------------------------------------------- run */
 
 console.log('Verifying data -> database row -> mapper round-trip\n');
@@ -231,6 +253,8 @@ compare('tours', TOURS, tourRows.map(toTourPackage));
 compare('articles', ARTICLES, articleRows.map(toArticle));
 compare('hidden gems', HIDDEN_GEMS, hiddenGemRows.map(toHiddenGem));
 compare('photo stories', PHOTO_STORIES, photoStoryRows.map(toPhotoStory));
+compare('hero slides', HERO_SLIDES, heroSlideRows.map(toHeroSlide));
+compare('pillars', PILLARS, pillarRows.map(toPillar));
 
 if (failures > 0) {
   console.error(`\n${failures} collection(s) did not round-trip cleanly.`);

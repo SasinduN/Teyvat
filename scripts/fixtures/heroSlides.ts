@@ -1,11 +1,10 @@
-import { HeroSlide } from '../types';
+import { HeroSlide } from '../../src/types';
 
 /**
  * Seed source of truth for `public.hero_slides`.
  *
- * Copied verbatim from the `HERO_IMAGES` literal in
- * `src/components/HeroSection.tsx`. That component still holds its own copy;
- * Phase 2 deletes it and reads these rows from the database instead.
+ * Copied verbatim from the `HERO_IMAGES` literal that `HeroSection` held
+ * before phase 2b. The component now reads these rows from `/api/content`.
  */
 export const HERO_SLIDES: HeroSlide[] = [
   {

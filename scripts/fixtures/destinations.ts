@@ -1,4 +1,4 @@
-import { Destination } from '../types';
+import { Destination } from '../../src/types';
 
 export const DESTINATIONS: Destination[] = [
   {
