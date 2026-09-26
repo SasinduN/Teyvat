@@ -26,9 +26,26 @@ Update the Status column when a phase lands.
 
 ### Notes for later phases
 
+- **Phase 3:** lazy-load the `/admin` route (`React.lazy` + `Suspense`) so the
+  public bundle doesn't ship the admin panel. Report the public bundle size
+  before and after.
+  - As of 2b, `/admin` is already lazy (`src/App.tsx`), and `AdminApp` is its
+    own chunk. What the public page still ships is the Supabase chunk
+    (~224 kB, modulepreloaded). `AuthProvider` wraps every route and
+    `InquiryModal` imports it. Replacing Supabase Auth is what removes it.
+    Measure the entry chunk plus everything `dist/index.html` preloads.
 - **Phase 4:** the destinations admin must show "only the first 6 featured
   destinations are displayed". `DestinationSpotlight` caps at 6 by
   `sort_order` because the six-card grid is part of the approved design.
+- **Phase 4:** `site_settings` URLs become admin-editable and render into
+  `href`. Validate on write:
+  - `https://` only for the social and legal URLs.
+  - A real email for `contact_email`.
+  - Zod on the API, plus a CHECK constraint in a new migration.
+  - As of 2b, the live rows still hold the `#instagram`-style placeholders,
+    which `public.is_link` allows. An https-only CHECK would fail against
+    them and break the deploy-time migration. Either set real URLs first, or
+    add the constraint `NOT VALID` and validate it once they are replaced.
 
 ### Where things live
 
