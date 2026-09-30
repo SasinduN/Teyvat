@@ -1,6 +1,7 @@
 # Phase 6 plan: enquiries on our own API, and Supabase removed
 
-Status: DRAFT, waiting for approval. No code has been written.
+Status: APPROVED: decisions 1–9 as written, retention 12 months, with the
+changes in "Approved changes" below.
 
 Scope:
 
@@ -10,6 +11,18 @@ Scope:
 
 Also covered: how an admin notices a new enquiry, and the privacy rules for
 enquiry data. The full README clean-up stays in phase 7.
+
+## Approved changes
+
+1. **CSV phone column exception.** A phone value that strictly matches a phone
+   number (only digits, spaces, `+`, `-`, `(` and `)`, nothing else) is not
+   prefixed with `'`. Every other cell, and any phone value that doesn't
+   match, keeps the escaping. Tests cover both.
+2. **Old Supabase project: left alone.** You'll check whether it holds real
+   enquiries; phase 7 deletes it. The open question below is settled that way.
+3. **Notifications: build steps 1 and 2 of section 5.** You'll create the
+   Resend account. The test-sender rule is confirmed against Resend's docs
+   (section 5).
 
 ## Decisions in this plan
 
@@ -82,19 +95,11 @@ These need a yes or no before any code is written:
    `mailto:${encodeURIComponent(email)}`, and `tel:` keeps only `+`, digits
    and spaces.
 
-### Open question: enquiries already in Supabase
+### Enquiries already in Supabase (settled)
 
-Removing the Supabase client from the code doesn't touch the Supabase project
-itself. If the old project holds real enquiries (from before the Railway
-move), they're not in Railway and won't show in the new inbox. Options:
-
-- (a) Export them from the Supabase dashboard (CSV) and import them with a
-  one-off script, mapped to the new statuses.
-- (b) Leave them in Supabase, and delete the project in phase 7 once you've
-  looked.
-
-I can't see the Supabase project from here. Tell me whether it holds any
-enquiries you want to keep.
+Left in the old project for now (approved change 2). Removing the client code
+doesn't touch the project. Phase 7 deletes it after you've checked it for real
+enquiries.
 
 ## Findings that shape the plan
 
@@ -231,9 +236,16 @@ Proposal, in three steps. Each works without the next.
    HTTP API, called with `fetch` (no SDK dependency).
    - Without a verified domain, Resend only sends from
      `onboarding@resend.dev`, and only *to the account owner's own address*.
-     For notifying the site owner, that is enough. (This is Resend's
-     documented test-sending rule as I understand it. I'll confirm it
-     against their current docs before building.)
+     For notifying the site owner, that is enough.
+   - **Confirmed** against Resend's docs ("403 Error Using resend.dev
+     Domain"): "You can only send testing emails to your own email address".
+     Any other recipient gets a 403 until a domain is verified. The API is
+     `POST https://api.resend.com/emails` with `Authorization: Bearer re_…`,
+     a JSON body of `from`, `to`, `subject` and `text`, and an optional
+     `Idempotency-Key` header; success is 200 `{ id }`.
+   - A 403 from Resend is logged as "Resend refused the recipient: with the
+     test sender, `NOTIFY_EMAIL_TO` must be the Resend account's own
+     address", so a mismatched address is easy to spot.
    - Variables: `RESEND_API_KEY`, `NOTIFY_EMAIL_TO`, `NOTIFY_EMAIL_FROM`
      (optional; defaults to the onboarding sender).
 3. **Before go-live:** a verified sending domain, which needs the domain the
@@ -264,8 +276,10 @@ new one.
 - **Formula injection:** any cell that starts with `=`, `+`, `-`, `@`, a tab
   or a carriage return gets a leading `'`. That covers OWASP's list; tab and
   CR are included because Excel also acts on them.
-  - Trade-off: phone numbers such as `+94 77 …` show as `'+94 77 …` in Excel.
-    I accept that; the alternative is a formula hole.
+  - **Phone column exception** (approved change 1): a phone value that
+    matches `^[0-9 +()-]+$` exactly is not prefixed. It can't hold a
+    function call or a reference, so there's nothing to inject. Any other
+    phone value is escaped like every other cell.
 - Sent with `Content-Disposition: attachment;
   filename="enquiries-YYYY-MM-DD.csv"` and `Cache-Control: no-store`.
 - `csv.ts` is a pure function, unit-tested.
@@ -328,6 +342,10 @@ new one.
 - **CSV:**
   - cells starting with `=`, `+`, `-`, `@`, a tab or a CR get the `'`
     prefix;
+  - a phone of only digits, spaces and `+ - ( )` (`+94 77 123 4567`,
+    `(011) 234-5678`) is not prefixed. A phone with anything else
+    (`+94 77 123 4567 =1+1`, `-2+3;cmd`, `@SUM(A1)`) is. The same
+    `+94 …` text in the message column is still prefixed;
   - quotes and newlines survive quoting;
   - the BOM is present;
   - a submitted message `=HYPERLINK("http://evil","x")` comes out escaped in
