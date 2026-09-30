@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { COLLECTIONS } from '@/admin/collections';
 import { describeError } from '@/lib/errors';
+import { useInquiryCounts, useUnreadTitle } from '@/admin/useInquiryCounts';
 import { cn } from '@/utils/cn';
 
 const NavItem: React.FC<{
@@ -23,8 +24,10 @@ const NavItem: React.FC<{
   icon: LucideIcon;
   label: string;
   end?: boolean;
+  /** A count shown on the right, e.g. unread enquiries. Hidden when 0. */
+  badge?: number;
   onNavigate?: () => void;
-}> = ({ to, icon: Icon, label, end, onNavigate }) => (
+}> = ({ to, icon: Icon, label, end, badge, onNavigate }) => (
   <NavLink
     to={to}
     end={end}
@@ -40,6 +43,14 @@ const NavItem: React.FC<{
   >
     <Icon className="h-4 w-4 shrink-0" />
     <span className="truncate">{label}</span>
+    {badge ? (
+      <span
+        className="ml-auto rounded-full bg-[#D4AF37] px-2 py-0.5 text-[10px] font-bold text-[#0F2E23]"
+        aria-label={`${badge} new`}
+      >
+        {badge}
+      </span>
+    ) : null}
   </NavLink>
 );
 
@@ -47,6 +58,8 @@ export const AdminLayout: React.FC = () => {
   const { user, signOut, signOutEverywhere } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const unread = useInquiryCounts().data?.new ?? 0;
+  useUnreadTitle(unread);
 
   // If the request fails the session is still live on the server, so stay put
   // and say so rather than pretending the sign-out happened.
@@ -72,7 +85,13 @@ export const AdminLayout: React.FC = () => {
 
       <nav className="flex-1 space-y-1 overflow-y-auto">
         <NavItem to="/admin" icon={LayoutDashboard} label="Dashboard" end onNavigate={closeMobile} />
-        <NavItem to="/admin/inquiries" icon={Inbox} label="Enquiries" onNavigate={closeMobile} />
+        <NavItem
+          to="/admin/inquiries"
+          icon={Inbox}
+          label="Enquiries"
+          badge={unread}
+          onNavigate={closeMobile}
+        />
 
         <div className="px-3 pb-1 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#F5EFEB]/40">
           Content

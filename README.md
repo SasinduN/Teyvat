@@ -7,8 +7,8 @@ panel that manages its content.
   from the database.
 - **Admin panel** — `/admin` — email/password sign-in on the API's own
   sessions, full CRUD for all nine content collections and the site settings
-  through `/api/admin/*`, and a media library backed by Cloudflare R2. The
-  enquiry inbox returns in phase 6.
+  through `/api/admin/*`, a media library backed by Cloudflare R2, and the
+  enquiry inbox.
 
 Stack: Vite 7 · React 19 · TypeScript 5.9 (strict) · Tailwind CSS v4 ·
 Framer Motion · Leaflet · React Router v7 · Supabase (Postgres, Auth, Storage) ·
@@ -47,6 +47,8 @@ The files:
   `https://…`. The `#instagram`-style placeholders become NULL, and the Footer
   renders an unset link without an `href`.
 - `0005_media.sql` — the media library: one row per image uploaded to R2.
+- `0006_inquiries.sql` — enquiry statuses become new / contacted / closed,
+  plus `closed_at`, the `spam` flag, and the enquiry form's rate-limit table.
 - `0002_seed.sql` — the approved baseline content: 63 rows across all nine
   content tables (20 destinations, 6 experience types, 4 featured experiences,
   4 tours, 6 articles, 8 hidden gems, 8 photo stories, 3 hero slides,
@@ -70,6 +72,8 @@ The files:
 > as a first-boot fixture, not a repair tool.
 
 ## 2. Configure the app
+
+> **Out of date:** Supabase was removed from the code in phase 6. This section is rewritten in phase 7.
 
 ```bash
 cp .env.example .env.local
@@ -186,7 +190,6 @@ npm run build && npm start   # everything on http://localhost:8081
 | `npm run preview` | Vite's own preview of the client build |
 | `npm run seed:generate` | Regenerate `0002_seed.sql` from `scripts/fixtures/*.ts` |
 | `npm run verify:roundtrip` | Assert the DB round-trip renders identical content |
-| `npm run images:migrate` | Legacy: pulls seeded images into Supabase Storage. Not used; phase 7 removes it with Supabase |
 
 ---
 
@@ -227,7 +230,7 @@ test's fixture. It lives outside `src/` so the running app cannot import it.
 ```
 Postgres ──published rows──▶ GET /api/content ──▶ lib/api/content.ts ──mappers──▶ useSiteContent ──▶ components
 
-InquiryModal ──RLS INSERT (anon)──▶ public.inquiries ◀──RLS (admin)── /admin/inquiries
+InquiryModal ──POST /api/inquiries (whitelisted fields)──▶ public.inquiries ◀──/api/admin/inquiries── /admin/inquiries
 
 /admin/login ──POST /api/auth/login──▶ session cookie ──GET /api/auth/me──▶ AuthContext
 
@@ -325,7 +328,59 @@ phase 3 deploy):
    the same address, or a private one such as `10.x` or `100.64.x`, then
    `req.ip` is the proxy. Fix `trust proxy` before relying on the limits.
 
-### Security model (Supabase side, until phases 5–6)
+### Enquiries
+
+The public form posts to `POST /api/inquiries`. The server builds the insert
+from the visitor's fields only (name, email, phone, travellers, dates,
+subject, message), so `status` is always `new` and `admin_notes` always empty.
+That replaces the guarantee the old RLS policy gave.
+
+- **Spam.** A hidden honeypot field: anything that fills it is stored as spam
+  (not discarded: autofill can fill a honeypot by accident), hidden from the
+  inbox under a **Spam** filter, and never triggers an email.
+- **Rate limit.** 5 submissions per 15 minutes and 20 per 24 hours per IP.
+  These are generous, because mobile networks put many people behind one
+  address.
+- **Inbox:** *Admin → Enquiries*.
+  - Filter by status (new, contacted, closed) or spam.
+  - Change status, write notes, delete permanently.
+  - Export CSV. Cells that start with `=`, `+`, `-`, `@`, a tab or CR get a
+    leading `'`, so Excel can't run a stranger's formula; plain phone
+    numbers are left as they are.
+- **Getting noticed.** The sidebar shows the number of new enquiries, as does
+  the browser tab title, refreshed every minute. With `RESEND_API_KEY` and
+  `NOTIFY_EMAIL_TO` set, a short email also goes out: at most one every 15
+  minutes, with no enquiry details in it.
+  - Until a sending domain is verified, Resend only delivers from its test
+    sender (`onboarding@resend.dev`) to the Resend account's own address, so
+    `NOTIFY_EMAIL_TO` must be that address.
+  - `PUBLIC_SITE_URL` adds a link to the inbox.
+
+### Privacy: what the enquiry form keeps
+
+For the privacy policy page:
+
+- **Collected:** what the visitor types into the form (name, email, phone if
+  given, travellers, dates, subject, message) and the time it arrived.
+- **Why:** to reply about the trip they asked about.
+- **Who can see it:** signed-in admins only.
+- **How long:**
+  - closed enquiries are deleted automatically 12 months after they were
+    closed;
+  - enquiries marked spam, after 30 days;
+  - enquiries still open are kept until someone closes or deletes them;
+  - an admin can delete any enquiry permanently at any time.
+- **Not kept with the enquiry:** the visitor's IP address. The rate limit
+  stores IP addresses on their own, with a time and nothing else, for 24
+  hours.
+- **Not copied anywhere else:** notification emails say only that something
+  arrived. The server logs never contain names, emails or messages; errors
+  are logged by code only.
+
+### Security model (Supabase side)
+
+> **Out of date:** Supabase was removed from the code in phase 6. This section is rewritten in phase 7.
+
 
 The table below describes the parts of the site that still run on Supabase:
 the enquiry form and inbox, and image storage. Sign-in and content editing no
@@ -429,6 +484,8 @@ sixth "Featured · not shown".
 
 ## Deployment
 
+> **Out of date:** Supabase was removed from the code in phase 6. This section is rewritten in phase 7.
+
 `vite-plugin-singlefile` was removed: it inlines the whole app into one
 `index.html`, which cannot serve `/admin/*` deep links. The build is now a normal
 multi-asset SPA.
@@ -483,6 +540,13 @@ Work through this before the site goes live.
 - [ ] **Publish a real privacy policy page** and set its URL in
       *Admin → Settings*. The site collects enquiries (names, emails, phone
       numbers), so it needs one before go-live. Until the URL is set, the
-      footer's "Privacy Policy" link has no destination.
+      footer's "Privacy Policy" link has no destination. State the retention
+      periods from [Privacy: what the enquiry form keeps](#privacy-what-the-enquiry-form-keeps):
+      closed enquiries 12 months, spam 30 days.
+- [ ] **Verify a sending domain in Resend** once the domain exists, and set
+      `NOTIFY_EMAIL_FROM` to an address on it. Until then, new-enquiry emails
+      can only go to the Resend account's own address.
+- [ ] **Delete the old Supabase project** (phase 7), after checking it for
+      real enquiries from before the move to Railway.
 - [ ] **Confirm no `.env` file is committed.** `git check-ignore -v .env`
       should print a matching rule.

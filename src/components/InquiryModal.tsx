@@ -16,7 +16,8 @@ const blankForm = (subject: string) => ({
   phone: '',
   travelers: '2 Adults',
   dates: 'Next 3 Months',
-  message: subject ? `I would like to inquire about: ${subject}` : ''
+  message: subject ? `I would like to inquire about: ${subject}` : '',
+  website: ''
 });
 
 export const InquiryModal: React.FC<InquiryModalProps> = ({
@@ -121,6 +122,13 @@ export const InquiryModal: React.FC<InquiryModalProps> = ({
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Spam trap: off-screen, hidden from screen readers and the Tab key. Must stay the first child. */}
+                <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', top: 'auto', width: 1, height: 1, overflow: 'hidden' }}>
+                  <label>
+                    Leave this field empty
+                    <input type="text" name="leave_blank_hp" tabIndex={-1} autoComplete="off" value={formData.website} onChange={(e) => setFormdata({ ...formData, website: e.target.value })} />
+                  </label>
+                </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold uppercase text-[#1C4737]">Your Full Name</label>
                   <div className="relative">

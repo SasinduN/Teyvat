@@ -28,13 +28,12 @@ export default defineConfig({
     },
   },
   build: {
-    // Keep Leaflet and the Supabase SDK out of the entry chunk so the first
-    // paint of the marketing site stays small.
+    // Keep Leaflet out of the entry chunk so the first paint of the
+    // marketing site stays small.
     rollupOptions: {
       output: {
         manualChunks: {
           leaflet: ["leaflet", "react-leaflet"],
-          supabase: ["@supabase/supabase-js"],
         },
       },
     },

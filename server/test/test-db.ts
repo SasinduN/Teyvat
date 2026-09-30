@@ -79,3 +79,9 @@ process.env.NODE_ENV = 'test';
 for (const name of Object.keys(process.env)) {
   if (name.startsWith('R2_')) delete process.env[name];
 }
+
+// Likewise the Resend key: no test may send a real email. Tests that check
+// notifications pass their own fake sender.
+for (const name of ['RESEND_API_KEY', 'NOTIFY_EMAIL_TO', 'NOTIFY_EMAIL_FROM', 'PUBLIC_SITE_URL']) {
+  delete process.env[name];
+}

@@ -4,9 +4,7 @@
  * `sameOrigin` is applied to every state-changing `/api` request in app.ts, so
  * it is not repeated here.
  */
-import { isIP } from 'node:net';
-
-import { Router, type Request } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
 
 import type { AuthUserPayload } from '../../../shared/api';
@@ -16,7 +14,7 @@ import { getDummyHash, passwords } from '../auth/passwords';
 import { createSession, revokeSessionByToken, revokeUserSessions } from '../auth/sessions';
 import { clearEmailFailures, emailHash, recordAttempt, secondsUntilAllowed } from '../auth/throttle';
 import { pool } from '../db';
-import { asyncRoute, sendError } from '../http';
+import { asyncRoute, clientIp, sendError } from '../http';
 
 /**
  * The email is trimmed and lowercased here, the same normalisation
@@ -29,16 +27,6 @@ const loginBody = z.object({
 });
 
 const BAD_CREDENTIALS = 'Incorrect email or password.';
-
-/**
- * The caller's address as Railway's proxy saw it. `trust proxy` is 1, so this
- * is the right-most `X-Forwarded-For` entry, the one the proxy appended. If it
- * is somehow not an address `inet` accepts, fall back to the socket.
- */
-function clientIp(req: Request): string {
-  if (req.ip && isIP(req.ip)) return req.ip;
-  return req.socket.remoteAddress ?? '0.0.0.0';
-}
 
 function tooManyMessage(seconds: number): string {
   const minutes = Math.max(1, Math.ceil(seconds / 60));

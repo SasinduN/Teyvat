@@ -14,13 +14,15 @@ import express, { type Express } from 'express';
 
 import { API_ROUTES } from '../../shared/api';
 import { sameOrigin } from './auth/middleware';
-import { isProduction } from './env';
+import { isProduction, notifyConfig } from './env';
+import { createNotifier, OFF, resendSender, type Notifier } from './inquiries/notify';
 import { errorHandler, sendError } from './http';
 import { mediaFromEnv, type MediaConfig } from './media/media';
 import { adminRouter } from './routes/admin';
 import { authRouter } from './routes/auth';
 import { contentRouter } from './routes/content';
 import { healthRouter } from './routes/health';
+import { inquiriesRouter } from './routes/inquiries';
 import { mediaRouter } from './routes/media';
 
 /**
@@ -40,12 +42,22 @@ export interface AppOptions {
    * pass a memory store, or `null`.
    */
   media?: MediaConfig | null;
+  /**
+   * New-enquiry emails. Defaults to Resend from the environment, or off when
+   * it isn't configured. Tests pass a notifier with a fake sender.
+   */
+  notifier?: Notifier;
 }
 
 export function createApp(options: AppOptions = {}): Express {
   const app = express();
 
   app.locals.media = options.media === undefined ? mediaFromEnv() : options.media;
+  app.locals.notifier =
+    options.notifier ??
+    (notifyConfig
+      ? createNotifier(resendSender(notifyConfig), { siteUrl: notifyConfig.siteUrl })
+      : OFF);
 
   /**
    * Railway terminates TLS at its edge and forwards over HTTP. Without this,
@@ -70,7 +82,8 @@ export function createApp(options: AppOptions = {}): Express {
   app.use('/api', contentRouter);
   app.use('/api', authRouter);
   // Before the admin router, which would otherwise run requireAdmin a second
-  // time for every /api/admin/media request on its way past.
+  // time for every /api/admin/media and /api/admin/inquiries request.
+  app.use('/api', inquiriesRouter);
   app.use('/api', mediaRouter);
   app.use('/api', adminRouter);
 

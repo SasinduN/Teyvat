@@ -26,7 +26,9 @@ export type StoredCategory =
 
 export type PhotoAspect = 'square' | 'portrait' | 'landscape';
 
-export type InquiryStatus = 'new' | 'in_progress' | 'responded' | 'closed' | 'archived';
+/** Since 0006_inquiries. `closed_at` is set exactly when the status is `closed`. */
+export const INQUIRY_STATUSES = ['new', 'contacted', 'closed'] as const;
+export type InquiryStatus = (typeof INQUIRY_STATUSES)[number];
 
 export interface ItineraryDayRow {
   day: number;
@@ -211,6 +213,9 @@ export interface InquiryRow extends Timestamps {
   message: string;
   status: InquiryStatus;
   admin_notes: string | null;
+  /** Set when the form's hidden honeypot field was filled in. */
+  spam: boolean;
+  closed_at: string | null;
 }
 
 /** `public.users`. Every user is an admin; there is no role column. */

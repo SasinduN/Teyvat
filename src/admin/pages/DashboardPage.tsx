@@ -1,14 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Settings } from 'lucide-react';
+import { ArrowUpRight, Inbox, Settings } from 'lucide-react';
 
 import { COLLECTIONS } from '@/admin/collections';
 import { countRows } from '@/lib/api/admin';
 import { describeError } from '@/lib/errors';
 import { queryKeys } from '@/lib/queryClient';
 import { useAuth } from '@/context/AuthContext';
-import { Card, ErrorNote, PageHeader, Spinner } from '@/admin/components/ui';
+import { useInquiryCounts } from '@/admin/useInquiryCounts';
+import { Badge, Card, ErrorNote, PageHeader, Spinner } from '@/admin/components/ui';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -24,7 +25,9 @@ export const DashboardPage: React.FC = () => {
   });
 
   const firstName = (user?.fullName || user?.email || '').split(/[ @]/)[0];
-  const error = counts.error;
+  const inquiries = useInquiryCounts();
+  const newInquiries = inquiries.data?.new ?? 0;
+  const error = counts.error ?? inquiries.error;
 
   return (
     <div>
@@ -43,7 +46,32 @@ export const DashboardPage: React.FC = () => {
         <Spinner label="Loading overview" />
       ) : (
         <div className="space-y-6">
-          {/* Enquiry counts return with the inbox in phase 6. */}
+          {/* Enquiries callout */}
+          <Link to="/admin/inquiries" className="block">
+            <Card className="flex items-center justify-between p-5 transition-colors hover:border-[#1C4737]/50">
+              <div className="flex items-center gap-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0F2E23] text-[#D4AF37]">
+                  <Inbox className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="font-heading text-lg font-bold text-[#0F2E23]">
+                    Traveller enquiries
+                  </div>
+                  <div className="mt-0.5 text-xs font-light text-[#1A1A1A]/60">
+                    {newInquiries > 0
+                      ? `${newInquiries} awaiting a reply`
+                      : 'Nothing new'}
+                    {inquiries.data && ` · ${inquiries.data.contacted} contacted · ${inquiries.data.closed} closed`}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {newInquiries > 0 && <Badge tone="gold">{newInquiries} new</Badge>}
+                <ArrowUpRight className="h-4 w-4 text-[#1C4737]" />
+              </div>
+            </Card>
+          </Link>
+
           <Link to="/admin/settings" className="block">
             <Card className="flex items-center gap-4 p-5 transition-colors hover:border-[#1C4737]/50">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0F2E23] text-[#D4AF37]">

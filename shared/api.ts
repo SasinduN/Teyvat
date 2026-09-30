@@ -24,6 +24,8 @@ import type {
 export const API_ROUTES = {
   health: '/api/health',
   content: '/api/content',
+  /** `POST`: the public enquiry form. */
+  inquiries: '/api/inquiries',
   auth: {
     login: '/api/auth/login',
     me: '/api/auth/me',
@@ -35,7 +37,9 @@ export const API_ROUTES = {
     content: '/api/admin/content',
     siteSettings: '/api/admin/site-settings',
     /** `POST ?folder=`, `GET`, `GET /usage?url=`, `DELETE /:id[?force=true]`. */
-    media: '/api/admin/media'
+    media: '/api/admin/media',
+    /** `GET ?status=&search=&spam=`, `GET /counts`, `GET /export.csv`, `GET|PATCH|DELETE /:id`. */
+    inquiries: '/api/admin/inquiries'
   }
 } as const;
 
@@ -184,6 +188,14 @@ export interface MediaItem {
 export interface MediaLibraryPayload {
   uploadsEnabled: boolean;
   items: MediaItem[];
+}
+
+/** `GET /api/admin/inquiries/counts`. `new` excludes spam; so do the others. */
+export interface InquiryCounts {
+  new: number;
+  contacted: number;
+  closed: number;
+  spam: number;
 }
 
 /** `GET /api/admin/content/:table/count`. */

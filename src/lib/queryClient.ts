@@ -25,6 +25,7 @@ export const queryClient = new QueryClient({
 export interface InquiryFilters {
   status: InquiryStatus | 'all';
   search: string;
+  spam: boolean;
 }
 
 /**

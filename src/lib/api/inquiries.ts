@@ -1,13 +1,10 @@
-import type { InquiryRow, InquiryStatus } from '@shared/database.types';
-
 /**
- * The Supabase client, loaded on first use rather than imported.
- *
- * `InquiryModal` is part of the public page, and a static import here would
- * put the whole SDK (~224 kB) in the marketing site's bundle for a form most
- * visitors never submit. Phase 6 moves enquiries onto `/api` and deletes this.
+ * Enquiries: the public form's submission, and the admin inbox's reads and
+ * writes, through our own API.
  */
-const loadSupabase = () => import('@/lib/supabase');
+import { API_ROUTES, type InquiryCounts } from '@shared/api';
+import type { InquiryRow, InquiryStatus } from '@shared/database.types';
+import { deleteJson, getJson, patchJson, postJson } from '@/lib/api/http';
 
 /** What the public `InquiryModal` collects. */
 export interface InquiryDraft {
@@ -18,34 +15,21 @@ export interface InquiryDraft {
   dates: string;
   subject: string;
   message: string;
+  /**
+   * The form's hidden honeypot. A person never sees it, so it stays empty;
+   * the server stores anything that fills it as spam.
+   */
+  website?: string;
 }
 
 /**
- * Public submission. Allowed for anon by the `anyone can submit an inquiry`
- * RLS policy, which also pins `status` to 'new' — a visitor cannot create an
- * enquiry that is already marked handled, nor write `admin_notes`.
+ * Public submission. The server takes only the visitor's fields from this:
+ * status, admin notes and the spam flag are always its own to set. A 400 or
+ * 429 comes back with a message written for the visitor, which the modal
+ * shows as it is.
  */
 export async function submitInquiry(draft: InquiryDraft): Promise<void> {
-  const { isSupabaseConfigured, supabase } = await loadSupabase();
-
-  // Until phase 6 moves enquiries onto /api, a deployment without Supabase
-  // credentials cannot accept them. Say so plainly instead of letting a request
-  // to the placeholder URL fail with a bare "Failed to fetch".
-  if (!isSupabaseConfigured) {
-    throw new Error('Enquiries can’t be sent right now. Please try again later.');
-  }
-
-  const { error } = await supabase.from('inquiries').insert({
-    name: draft.name.trim(),
-    email: draft.email.trim(),
-    phone: draft.phone.trim() || null,
-    travelers: draft.travelers,
-    dates: draft.dates,
-    subject: draft.subject.trim(),
-    message: draft.message.trim()
-  });
-
-  if (error) throw error;
+  await postJson(API_ROUTES.inquiries, draft);
 }
 
 /* -------------------------------------------------------------- admin side */
@@ -53,53 +37,48 @@ export async function submitInquiry(draft: InquiryDraft): Promise<void> {
 export interface InquiryQuery {
   status?: InquiryStatus | 'all';
   search?: string;
+  /** true: only spam. false (the default): only real enquiries. */
+  spam?: boolean;
 }
 
-export async function listInquiries(query: InquiryQuery = {}): Promise<InquiryRow[]> {
-  const { supabase } = await loadSupabase();
-  let q = supabase.from('inquiries').select('*').order('created_at', { ascending: false });
-
-  if (query.status && query.status !== 'all') {
-    q = q.eq('status', query.status);
-  }
-
-  const term = query.search?.trim();
-  if (term) {
-    // Escape PostgREST's `or` filter separators before interpolating.
-    const safe = term.replace(/[,()\\]/g, ' ');
-    q = q.or(`name.ilike.%${safe}%,email.ilike.%${safe}%,subject.ilike.%${safe}%`);
-  }
-
-  const { data, error } = await q;
-  if (error) throw error;
-  return (data ?? []) as InquiryRow[];
+function queryString(query: InquiryQuery): string {
+  const params = new URLSearchParams();
+  if (query.status && query.status !== 'all') params.set('status', query.status);
+  if (query.search?.trim()) params.set('search', query.search.trim());
+  if (query.spam) params.set('spam', 'true');
+  const text = params.toString();
+  return text ? `?${text}` : '';
 }
 
-export async function updateInquiry(
+const base = API_ROUTES.admin.inquiries;
+
+export function listInquiries(query: InquiryQuery = {}): Promise<InquiryRow[]> {
+  return getJson<InquiryRow[]>(`${base}${queryString(query)}`);
+}
+
+/**
+ * `expectedUpdatedAt` is the `updated_at` the inbox loaded. If someone else
+ * has changed the enquiry since, the API refuses with 409.
+ */
+export function updateInquiry(
   id: string,
-  patch: { status?: InquiryStatus; admin_notes?: string | null }
-): Promise<void> {
-  const { supabase } = await loadSupabase();
-  const { error } = await supabase.from('inquiries').update(patch).eq('id', id);
-  if (error) throw error;
+  patch: { status?: InquiryStatus; admin_notes?: string | null; spam?: boolean },
+  expectedUpdatedAt: string
+): Promise<InquiryRow> {
+  return patchJson<InquiryRow>(`${base}/${encodeURIComponent(id)}`, { ...patch, expectedUpdatedAt });
 }
 
+/** Permanent. */
 export async function deleteInquiry(id: string): Promise<void> {
-  const { supabase } = await loadSupabase();
-  const { error } = await supabase.from('inquiries').delete().eq('id', id);
-  if (error) throw error;
+  await deleteJson<null>(`${base}/${encodeURIComponent(id)}`);
 }
 
-/** Counts for the admin dashboard tiles. */
-export async function countInquiriesByStatus(): Promise<Record<string, number>> {
-  const { supabase } = await loadSupabase();
-  const { data, error } = await supabase.from('inquiries').select('status');
-  if (error) throw error;
+/** New, contacted and closed exclude spam; spam is counted on its own. */
+export function countInquiries(): Promise<InquiryCounts> {
+  return getJson<InquiryCounts>(`${base}/counts`);
+}
 
-  const counts: Record<string, number> = { total: 0 };
-  for (const row of (data ?? []) as { status: InquiryStatus }[]) {
-    counts.total += 1;
-    counts[row.status] = (counts[row.status] ?? 0) + 1;
-  }
-  return counts;
+/** A same-origin link: the session cookie goes with it, so the browser downloads the file. */
+export function exportUrl(query: InquiryQuery): string {
+  return `${base}/export.csv${queryString(query)}`;
 }

@@ -39,6 +39,8 @@ interface CdpMessage {
 export interface Page {
   /** Evaluates `expression` (which may return a promise) and returns its JSON value. */
   evaluate<T>(expression: string): Promise<T>;
+  /** Any DevTools Protocol command on this page (viewport, screenshots, key presses). */
+  send(method: string, params?: object): Promise<Record<string, unknown>>;
 }
 
 export interface Chrome {
@@ -110,6 +112,7 @@ export async function launchChrome(executable: string): Promise<Chrome> {
       };
 
       return {
+        send: (method: string, params: object = {}) => send(method, params, sessionId),
         async evaluate<T>(expression: string): Promise<T> {
           const result = (await send(
             'Runtime.evaluate',

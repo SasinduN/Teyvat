@@ -4,16 +4,18 @@ import { toast } from 'sonner';
 import {
   CalendarDays,
   ChevronDown,
+  Download,
   Inbox,
   Mail,
   Phone,
   Search,
+  ShieldCheck,
   Trash2,
   Users
 } from 'lucide-react';
 
-import { deleteInquiry, listInquiries, updateInquiry } from '@/lib/api/inquiries';
-import type { InquiryRow, InquiryStatus } from '@shared/database.types';
+import { deleteInquiry, exportUrl, listInquiries, updateInquiry } from '@/lib/api/inquiries';
+import { INQUIRY_STATUSES, type InquiryRow, type InquiryStatus } from '@shared/database.types';
 import { queryKeys } from '@/lib/queryClient';
 import { describeError } from '@/lib/errors';
 import {
@@ -30,23 +32,31 @@ import {
 } from '@/admin/components/ui';
 import { cn } from '@/utils/cn';
 
-const STATUSES: InquiryStatus[] = ['new', 'in_progress', 'responded', 'closed', 'archived'];
+const STATUSES = INQUIRY_STATUSES;
 
 const STATUS_LABEL: Record<InquiryStatus, string> = {
   new: 'New',
-  in_progress: 'In progress',
-  responded: 'Responded',
-  closed: 'Closed',
-  archived: 'Archived'
+  contacted: 'Contacted',
+  closed: 'Closed'
 };
 
 const STATUS_TONE: Record<InquiryStatus, 'gold' | 'neutral' | 'success' | 'muted'> = {
   new: 'gold',
-  in_progress: 'neutral',
-  responded: 'success',
-  closed: 'muted',
-  archived: 'muted'
+  contacted: 'neutral',
+  closed: 'muted'
 };
+
+/** The filter: a status, all of them, or the spam folder. */
+type Filter = InquiryStatus | 'all' | 'spam';
+
+/**
+ * Contact links built from text a stranger typed. The email CHECK allows `?`
+ * and `&`, which in a raw `mailto:` would add a subject or body of their
+ * choosing; encoded, the whole value is the address. `tel:` keeps only what
+ * a phone number can hold.
+ */
+const mailtoHref = (email: string) => `mailto:${encodeURIComponent(email)}`;
+const telHref = (phone: string) => `tel:${phone.replace(/[^0-9+]/g, '')}`;
 
 const formatWhen = (iso: string): string =>
   new Date(iso).toLocaleString(undefined, {
@@ -58,34 +68,14 @@ const formatWhen = (iso: string): string =>
   });
 
 /**
- * Until phase 6 the enquiry inbox has no API to read from. It used to query
- * Supabase directly, which the deployed build has no credentials for, so it
- * could only fail. This notice stands in for it.
+ * The enquiry inbox. Everything here is text a stranger wrote, so it is only
+ * ever rendered as text: React escapes it, and nothing uses
+ * `dangerouslySetInnerHTML`.
  */
-export const InquiriesPage: React.FC = () => (
-  <div>
-    <PageHeader
-      title="Enquiries"
-      description="Traveller enquiries sent from the public site's enquiry form."
-    />
-    <Card>
-      <EmptyState icon={Inbox} title="The enquiry inbox is moving">
-        The inbox moves onto the site's own API in the next update (phase 6). Until then,
-        enquiries can't be viewed here.
-      </EmptyState>
-    </Card>
-  </div>
-);
-
-/**
- * The inbox itself, on Supabase. Not routed until phase 6 moves it onto
- * `/api/admin/inquiries`; kept so that phase changes its data calls rather
- * than rebuilding the page.
- */
-export const InquiriesInbox: React.FC = () => {
+export const InquiriesPage: React.FC = () => {
   const qc = useQueryClient();
 
-  const [statusFilter, setStatusFilter] = useState<InquiryStatus | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [openId, setOpenId] = useState<string | null>(null);
@@ -97,7 +87,12 @@ export const InquiriesInbox: React.FC = () => {
     return () => clearTimeout(handle);
   }, [search]);
 
-  const filters = { status: statusFilter, search: debouncedSearch };
+  const spam = statusFilter === 'spam';
+  const filters = {
+    status: spam ? ('all' as const) : statusFilter,
+    search: debouncedSearch,
+    spam
+  };
 
   const list = useQuery({
     queryKey: queryKeys.admin.inquiries(filters),
@@ -111,17 +106,23 @@ export const InquiriesInbox: React.FC = () => {
 
   const patch = useMutation({
     mutationFn: ({
-      id,
+      row,
       changes
     }: {
-      id: string;
-      changes: { status?: InquiryStatus; admin_notes?: string | null };
-    }) => updateInquiry(id, changes),
+      row: InquiryRow;
+      changes: { status?: InquiryStatus; admin_notes?: string | null; spam?: boolean };
+    }) => updateInquiry(row.id, changes, row.updated_at),
     onSuccess: (_d, { changes }) => {
       invalidate();
-      toast.success(changes.status ? 'Status updated' : 'Notes saved');
+      toast.success(
+        changes.spam === false ? 'Moved to the inbox' : changes.status ? 'Status updated' : 'Notes saved'
+      );
     },
-    onError: (e) => toast.error(describeError(e))
+    // A 409 means someone else changed it; the reload shows their version.
+    onError: (e) => {
+      toast.error(describeError(e));
+      invalidate();
+    }
   });
 
   const remove = useMutation({
@@ -135,7 +136,7 @@ export const InquiriesInbox: React.FC = () => {
   });
 
   const busyId =
-    (patch.isPending && patch.variables?.id) || (remove.isPending && remove.variables) || null;
+    (patch.isPending && patch.variables?.row.id) || (remove.isPending && remove.variables) || null;
 
   const rows = list.data;
 
@@ -143,7 +144,14 @@ export const InquiriesInbox: React.FC = () => {
     <div>
       <PageHeader
         title="Traveller Enquiries"
-        description="Every submission from the “Plan Your Sri Lanka Journey” form on the public site."
+        description="Every submission from the “Plan Your Sri Lanka Journey” form on the public site. Closed enquiries are deleted automatically 12 months after closing; spam after 30 days."
+        actions={
+          <a href={exportUrl(filters)} download>
+            <Button type="button" variant="secondary" icon={Download}>
+              Export CSV
+            </Button>
+          </a>
+        }
       />
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row">
@@ -159,7 +167,7 @@ export const InquiriesInbox: React.FC = () => {
         <Select
           className="sm:w-48"
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as InquiryStatus | 'all')}
+          onChange={(e) => setStatusFilter(e.target.value as Filter)}
         >
           <option value="all">All statuses</option>
           {STATUSES.map((s) => (
@@ -167,6 +175,7 @@ export const InquiriesInbox: React.FC = () => {
               {STATUS_LABEL[s]}
             </option>
           ))}
+          <option value="spam">Spam</option>
         </Select>
       </div>
 
@@ -181,9 +190,11 @@ export const InquiriesInbox: React.FC = () => {
       ) : !rows || rows.length === 0 ? (
         <Card>
           <EmptyState icon={Inbox} title="No enquiries here">
-            {debouncedSearch || statusFilter !== 'all'
-              ? 'Try a different search or status filter.'
-              : 'Submissions from the public enquiry form will land here.'}
+            {spam
+              ? 'Nothing caught by the spam filter.'
+              : debouncedSearch || statusFilter !== 'all'
+                ? 'Try a different search or status filter.'
+                : 'Submissions from the public enquiry form will land here.'}
           </EmptyState>
         </Card>
       ) : (
@@ -204,7 +215,11 @@ export const InquiriesInbox: React.FC = () => {
                       <span className="font-heading text-sm font-bold text-[#0F2E23]">
                         {row.name}
                       </span>
-                      <Badge tone={STATUS_TONE[row.status]}>{STATUS_LABEL[row.status]}</Badge>
+                      {row.spam ? (
+                        <Badge tone="muted">Spam</Badge>
+                      ) : (
+                        <Badge tone={STATUS_TONE[row.status]}>{STATUS_LABEL[row.status]}</Badge>
+                      )}
                     </div>
                     <p className="mt-0.5 truncate text-[11px] font-light text-[#1A1A1A]/60">
                       {row.subject || 'General enquiry'}
@@ -228,7 +243,7 @@ export const InquiriesInbox: React.FC = () => {
                     <div className="grid gap-3 sm:grid-cols-2">
                       <Detail icon={Mail} label="Email">
                         <a
-                          href={`mailto:${row.email}`}
+                          href={mailtoHref(row.email)}
                           className="text-[#1C4737] underline decoration-[#1C4737]/30 underline-offset-2"
                         >
                           {row.email}
@@ -237,7 +252,7 @@ export const InquiriesInbox: React.FC = () => {
                       <Detail icon={Phone} label="Phone">
                         {row.phone ? (
                           <a
-                            href={`tel:${row.phone}`}
+                            href={telHref(row.phone)}
                             className="text-[#1C4737] underline decoration-[#1C4737]/30 underline-offset-2"
                           >
                             {row.phone}
@@ -275,7 +290,7 @@ export const InquiriesInbox: React.FC = () => {
                           disabled={isBusy}
                           onChange={(e) =>
                             patch.mutate({
-                              id: row.id,
+                              row,
                               changes: { status: e.target.value as InquiryStatus }
                             })
                           }
@@ -293,6 +308,9 @@ export const InquiriesInbox: React.FC = () => {
                           Internal notes
                         </div>
                         <Textarea
+                          // Remount on every saved version, so a reload after
+                          // someone else's change shows their notes.
+                          key={row.updated_at}
                           rows={3}
                           defaultValue={row.admin_notes ?? ''}
                           placeholder="Notes for your team — never shown to the traveller."
@@ -300,7 +318,7 @@ export const InquiriesInbox: React.FC = () => {
                           onBlur={(e) => {
                             const next = e.target.value.trim() || null;
                             if (next !== (row.admin_notes ?? null)) {
-                              patch.mutate({ id: row.id, changes: { admin_notes: next } });
+                              patch.mutate({ row, changes: { admin_notes: next } });
                             }
                           }}
                         />
@@ -308,9 +326,21 @@ export const InquiriesInbox: React.FC = () => {
                     </div>
 
                     <div className="mt-5 flex items-center justify-between border-t border-[#D4C3B5]/45 pt-4">
-                      <span className="text-[11px] font-light text-[#1A1A1A]/45">
-                        Received {formatWhen(row.created_at)}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[11px] font-light text-[#1A1A1A]/45">
+                          Received {formatWhen(row.created_at)}
+                        </span>
+                        {row.spam && (
+                          <Button
+                            variant="secondary"
+                            icon={ShieldCheck}
+                            disabled={isBusy}
+                            onClick={() => patch.mutate({ row, changes: { spam: false } })}
+                          >
+                            Not spam
+                          </Button>
+                        )}
+                      </div>
 
                       {confirmId === row.id ? (
                         <div className="flex items-center gap-2">

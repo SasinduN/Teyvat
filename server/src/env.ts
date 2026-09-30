@@ -100,3 +100,49 @@ export function readR2Config(source: NodeJS.ProcessEnv): R2Config | null {
 }
 
 export const r2Config = readR2Config(process.env);
+
+/* ------------------------------------------------------------ notifications */
+
+export interface NotifyConfig {
+  resendApiKey: string;
+  to: string;
+  from: string;
+  /** For the link in the email. Optional: without it the email just names the page. */
+  siteUrl: string | null;
+}
+
+/**
+ * Resend's test sender. Until a domain is verified, Resend only delivers mail
+ * from it to the address the Resend account was created with.
+ */
+export const RESEND_TEST_SENDER = 'Travel Eye <onboarding@resend.dev>';
+
+/**
+ * New-enquiry emails are optional, like image uploads. RESEND_API_KEY and
+ * NOTIFY_EMAIL_TO together turn them on; one without the other turns them off
+ * with a warning. NOTIFY_EMAIL_FROM defaults to Resend's test sender.
+ */
+export function readNotifyConfig(source: NodeJS.ProcessEnv): NotifyConfig | null {
+  const resendApiKey = source.RESEND_API_KEY?.trim() ?? '';
+  const to = source.NOTIFY_EMAIL_TO?.trim() ?? '';
+
+  if (!resendApiKey && !to) return null;
+  if (!resendApiKey || !to) {
+    console.warn(
+      `[notify] new-enquiry emails are off: ${!resendApiKey ? 'RESEND_API_KEY' : 'NOTIFY_EMAIL_TO'} is not set.`
+    );
+    return null;
+  }
+
+  const rawSite = source.PUBLIC_SITE_URL?.trim() ?? '';
+  const siteUrl = /^https:\/\/[^\s/]+/.test(rawSite) ? normaliseBaseUrl(rawSite) : null;
+
+  return {
+    resendApiKey,
+    to,
+    from: source.NOTIFY_EMAIL_FROM?.trim() || RESEND_TEST_SENDER,
+    siteUrl
+  };
+}
+
+export const notifyConfig = readNotifyConfig(process.env);
