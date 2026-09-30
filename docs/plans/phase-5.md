@@ -41,7 +41,7 @@ These need a yes or no before any code is written:
 1. **A `media` table in Postgres** (section 2) records every upload. The
    library reads it instead of listing the bucket, and "is this ours?" means
    "its URL is under `R2_PUBLIC_BASE_URL/` **and** it has a `media` row". The
-   table also gives cleanup something to lock (decision 8).
+   table also gives a library delete something to lock (decision 8).
 2. **`aws4fetch` signs the R2 requests** (new server-only dependency, small,
    no transitive dependencies), rather than `@aws-sdk/client-s3`. R2 speaks the
    S3 API, and we need three calls: PUT, DELETE and a HEAD for the health
@@ -409,7 +409,7 @@ Used by every `image` and `imageList` field, replacing the phase 4 URL boxes:
 - Bundle: the public page must be unchanged; report the admin chunk before and
   after.
 - README: R2 setup (bucket, a token scoped to it, a public domain, the five
-  variables), the media library, cleanup rules, and a launch-checklist entry
+  variables), the media library, the no-automatic-deletion rule, and a launch-checklist entry
   for a custom domain in place of `r2.dev`. CLAUDE.md: the phase table, the
   Railway variable list and notes.
 - Commit locally, show the results, and ask before pushing. You set the R2
