@@ -1,10 +1,30 @@
 # Phase 5 plan: image uploads to Cloudflare R2
 
-Status: DRAFT, waiting for approval. No code has been written.
+Status: APPROVED, with the five changes in "Approved changes" below merged in.
 
 Scope: admins upload images through our API into an R2 bucket, pick them from
-a media library, or keep pasting `https://` URLs. Replaced and deleted images
-are cleaned up when nothing else uses them. `src/components/` does not change.
+a media library, or keep pasting `https://` URLs. Nothing is deleted from R2
+automatically: an image leaves the bucket only when an admin deletes it from
+the library. `src/components/` does not change.
+
+## Approved changes
+
+1. `R2_PUBLIC_BASE_URL` is the bucket's `r2.dev` address for now. A custom
+   domain is required before go-live, and that is on the launch checklist.
+2. **No automatic deletion** (replaces the draft's decision 9 and its cleanup
+   step). When an image is replaced, or its row is deleted, it shows as
+   "Unused" in the library. Objects leave R2 only when an admin deletes them
+   there, and deleting one that is in use still gets the 409.
+3. **Phone photos.**
+   - A HEIC file the browser can't decode gets a clear message telling the
+     admin to export it as JPEG.
+   - A photo too large for the browser's canvas (48 MP, iPhone Safari's
+     limits) is either downscaled safely or refused with a clear message.
+     Never a silent failure (section 6).
+4. **A test proves a portrait phone photo keeps its orientation** after the
+   re-encode. It runs in a real headless Chrome (section 8).
+5. **`R2_PUBLIC_BASE_URL` is normalised**: with or without a trailing slash,
+   the same base is used.
 
 Already decided (not revisited here):
 
@@ -39,9 +59,11 @@ These need a yes or no before any code is written:
 5. **The browser always re-encodes**, even an image already under 2000 px.
    Re-encoding through a canvas drops EXIF metadata, including the GPS
    location phone cameras embed, which would otherwise be published on the
-   site. The one exception: if the browser can't decode the file (an AVIF on
-   an older browser), the original bytes go up and the server still checks
-   them.
+   site. The one exception: if the browser can't decode a JPEG, PNG, WebP or
+   AVIF (an AVIF on an older browser), the original bytes go up and the
+   server still checks them. A HEIC the browser can't decode is refused in
+   the browser instead, because the server doesn't accept HEIC bytes
+   (section 6).
 6. **The server checks type and size but doesn't re-encode or measure pixels.**
    Doing either needs an image library with a native binary (`sharp`), which is
    a new build risk on Railway. The 2000 px limit is therefore a browser
@@ -54,39 +76,31 @@ These need a yes or no before any code is written:
 8. **A content save that references one of our URLs must reference a live
    `media` row.** Otherwise it gets 400 "That image was deleted from the
    library." The save takes a share lock on those `media` rows inside its
-   transaction, and cleanup takes an update lock. So "admin A's cleanup
-   deletes an image" and "admin B's save starts using it" can't interleave.
-9. **Cleanup is immediate, with no undo.** Replace an image, save, and the old
-   object is gone if nothing else used it. An image uploaded but never saved
-   into a row (say, the form was cancelled) is never deleted automatically; it
-   stays in the library, marked "Unused".
+   transaction, and a library delete takes an update lock. So "admin A
+   deletes an unused image" and "admin B's save starts using it" can't
+   interleave: whichever commits first, the other sees it.
+9. **Nothing is deleted automatically** (approved change 2). An image that
+   no row uses shows as "Unused" in the library until an admin deletes it.
 10. **Folders are an allow-list**: the `folder` values already on the image
     fields in `shared/content-schema.ts` (`destinations`, `experiences`,
     `tours`, `journal`, `authors`, `hidden-gems`, `photo-stories`, `hero`),
     plus `library` for uploads made from the library page. Any other value is
     400, so a key can never contain a path the client chose.
 
-### Open question: the public URL for R2
+### The public URL for R2 (settled)
 
-`R2_PUBLIC_BASE_URL` can be the bucket's `r2.dev` address or a custom domain.
-Cloudflare rate-limits `r2.dev` and describes it as for development, so
-production should be a custom domain (for example `media.<site domain>`). The
-brand is undecided and I won't invent a domain. Options:
-
-- (a) Start on `r2.dev` and switch to a custom domain later. Switching means
-  rewriting stored URLs, because the base URL is part of every one. That's a
-  one-off `update … replace(…)` script, which I'd add to the plan when the
-  domain exists.
-- (b) Wait for the domain before the first real upload.
-
-I recommend (a) for testing and (b) before go-live, and would add it to the
-launch checklist.
+`r2.dev` for now (approved change 1). Switching to a custom domain later
+means rewriting stored URLs, because the base is part of every one. That's a
+one-off `update … replace(…)` script, written when the domain exists.
 
 ## Findings that shape the plan
 
 - **The old client-side cleanup was wrong in two ways.** `isStorageUrl` ran in
   the browser, and `deleteImageByUrl` deleted an image even when another row
   still used it. Both go, along with the rest of `src/lib/storage.ts`.
+- **`.env` now holds real R2 credentials**, and the tests load `.env`. The
+  test setup (`server/test/test-db.ts`) clears every `R2_*` variable, just as
+  it replaces `DATABASE_URL`, so no test can ever reach the real bucket.
 - **No CSP exists**, so `<img>` tags can load from the R2 domain without a
   policy change.
 - **Uploaded files are served from R2's domain, not ours.** That's good
@@ -121,6 +135,9 @@ New optional variables. They must be all set or all unset:
   variables. The server does not exit: a typo in an image setting must not
   take the whole site down.
 - `R2_PUBLIC_BASE_URL` must start with `https://`, or it counts as missing.
+  Trailing slashes are stripped once, at boot, so `https://x.r2.dev` and
+  `https://x.r2.dev/` give the same base. Every URL is built as
+  `base + '/' + key`, and "ours" is tested against `base + '/'`.
 - `ApiErrorCode` gains `not_configured` (503), `payload_too_large` (413) and
   `unsupported_media_type` (415).
 - Railway variables to add in the dashboard (not the CLI): the five above.
@@ -160,7 +177,7 @@ Idempotent, like the others.
   - `Cache-Control: public, max-age=31536000, immutable` (keys never repeat,
     so a year is safe);
   - `Content-Type` from the sniffed bytes.
-- `sniff.ts` (section 4). `usage.ts` and `cleanup.ts` (section 7).
+- `sniff.ts` (section 4). `usage.ts` (section 7).
 - `GET /api/health` reports `media: 'up' | 'down' | 'not_configured'`. It's
   informational: the health check still passes on the database alone, so an
   R2 outage can't fail a Railway deploy.
@@ -198,7 +215,7 @@ All routes are `requireAdmin` + `Cache-Control: no-store`; writes also pass
 | `POST /api/admin/media?folder=<folder>` | raw body. 201 `{ id, url, key, contentType, bytes }`; 400 bad folder or empty; 413; 415; 503 |
 | `GET /api/admin/media` | the library, newest first, each with `usedBy: { table, id, title }[]` |
 | `GET /api/admin/media/usage?url=…` | rows using that URL (used by the image field before replacing) |
-| `DELETE /api/admin/media/:id` | 204 if unused; 409 `{ usedBy }` if used; `?force=true` deletes anyway; 503 |
+| `DELETE /api/admin/media/:id` | 204 if unused; 409 `{ usedBy }` if used; `?force=true` deletes anyway; 502 if R2 refuses; 503 |
 
 Upload order:
 
@@ -209,26 +226,65 @@ Upload order:
 If the insert fails after the put, the object is deleted again (best effort,
 logged), so there's no row-less object.
 
+Library delete, in one transaction:
+
+1. Lock the `media` row (`for update`).
+2. Run the usage check. If the image is in use and there's no `force`, 409.
+3. `store.delete(key)` while the lock is held. If R2 refuses, roll back and
+   answer 502 "Couldn't delete it from storage. Try again." The row stays, so
+   the library still shows the image and the admin can retry.
+4. Delete the row and commit.
+
+`ApiErrorCode` also gains `bad_gateway` (502) for that case.
+
 ## 6. Browser side
 
 `src/lib/media.ts`:
 
 - `prepareImage(file)`:
-  - Refuses anything that isn't JPEG, PNG, WebP or AVIF by type and by header,
-    and anything over 40 MB (decision 4). SVG gets the scripts message.
-  - `createImageBitmap(file, { imageOrientation: 'from-image' })`, so phone
-    photos keep their rotation once EXIF is dropped.
-  - Scales to at most 2000 px wide, keeping the aspect ratio, and never
-    upscales.
+  - Reads the first bytes to identify the file. JPEG, PNG, WebP and AVIF are
+    accepted, and so is HEIC as *input* (from `ftyp` brands `heic`, `heix`,
+    `hevc`, `hevx`, `heim`, `heis`, or `mif1`/`msf1` without an AVIF brand).
+    SVG gets the scripts message; anything else is refused. The 40 MB input
+    limit applies (decision 4).
+  - Decodes with `createImageBitmap(file, { imageOrientation: 'from-image' })`,
+    so the EXIF rotation is applied to the pixels before EXIF is dropped. A
+    portrait phone photo stays portrait.
+  - **HEIC the browser can't decode** (Chrome, Firefox, Edge; Safari usually
+    can): refused with "This is a HEIC photo, which this browser can't read.
+    Export it as JPEG first (on an iPhone: Settings → Camera → Formats → Most
+    Compatible, or share the photo and save it as JPEG), then upload that." A
+    HEIC Safari decodes goes through the normal re-encode, so the server
+    only ever receives WebP or JPEG from it.
+  - **Photos too large for the canvas.** The output canvas is at most 2000 px
+    wide and at most 16 777 216 px in area (iOS Safari's canvas limit). So a
+    tall panorama is scaled down until it fits both limits, never upscaled.
+    Large sources (48 MP) are handled in two steps:
+    1. A full-size decode is tried.
+    2. If it throws (out of memory), a second try asks the decoder to
+       downsample directly: `createImageBitmap(file, { resizeWidth, … })`.
+    3. If both fail: "This photo is too large for this browser to process.
+       Try a smaller export, or use a desktop browser." Never a silent
+       failure.
+  - **Guards against the silent kinds of failure:**
+    - `toBlob` returning `null`;
+    - an empty blob;
+    - a canvas that comes back fully transparent from an opaque source (JPEG
+      or HEIC). iOS Safari draws nothing when it runs out of canvas memory.
+
+    Each raises the "too large" message instead of uploading a blank image.
+    Canvases are released (width and height set to 0) after use, because iOS
+    counts canvas memory across the page.
+  - Scales to at most 2000 px wide and keeps the aspect ratio.
   - Encodes with `canvas.toBlob('image/webp', 0.85)`. If the browser can't
     encode WebP, the blob comes back as another type, so this checks
     `blob.type` and falls back to `image/jpeg` at 0.85.
-  - If decoding fails, returns the original file (decision 5).
   - If the result is still over 10 MB, refuses with a clear message.
 - `uploadImage(blob, folder, onProgress)`: XHR `POST` with upload progress,
   and the same error parsing as `http.ts`.
-- The target-size calculation is a pure function in `shared/`, unit-tested.
-  The canvas path is checked in the browser.
+- The target-size calculation (width limit plus area limit) is a pure
+  function in `shared/`, unit-tested in Node. The decode and encode path is
+  tested in headless Chrome (section 8).
 
 ### One image field: `src/admin/components/ImagePicker.tsx`
 
@@ -248,7 +304,8 @@ Used by every `image` and `imageList` field, replacing the phase 4 URL boxes:
 ### Media library page: `/admin/media`
 
 - A grid of every upload with its thumbnail, folder, size and date, and "Used
-  by N" or "Unused".
+  by N" or "Unused". A filter shows only the unused ones: those are what an
+  admin clears out, since nothing is deleted automatically.
 - An upload button with progress; it uploads into the `library` folder.
 - Copy URL.
 - Delete:
@@ -257,30 +314,21 @@ Used by every `image` and `imageList` field, replacing the phase 4 URL boxes:
     show a broken image, then deletes with `force`.
 - A sidebar item under "Site".
 
-## 7. Usage and cleanup, on the server
+## 7. Usage, on the server
 
 - **Where images live.** `usage.ts` builds its query from the `image` and
   `imageList` fields in `shared/content-schema.ts`, so a new image column is
-  covered with no extra code. Unpublished rows count as usage.
-- **What counts as ours.** The URL starts with `R2_PUBLIC_BASE_URL + '/'`,
-  with the slash: `https://media.example.lk.evil.com/…` isn't ours. It must
-  also match a `media` row.
-- **On saves.** After a successful `PUT` or `DELETE` of a content row, the old
-  row's image URLs that are no longer present are candidates for cleanup. The
-  row's own other columns count as usage too. For each candidate, in its own
-  transaction:
-  1. `select … from media where url = $1 for update`; skip it if there's no
-     row (not ours).
-  2. Run the usage query; skip it if the image is still used anywhere.
-  3. Delete the `media` row and commit.
-  4. `store.delete(key)`. A failure here is logged and doesn't fail the save;
-     the object is orphaned, which is harmless.
-- **The same save** takes `for key share` on the `media` rows of every one of
-  our URLs it writes, and gets 400 if one has no row (decision 8).
-- **When R2 isn't configured**, cleanup is skipped and logged. Nothing is
-  deleted from the database either, so it can run later.
+  covered with no extra code. Unpublished rows count as usage. The library's
+  "Used by" / "Unused" and the delete 409 both come from it.
+- **What counts as ours.** The URL starts with `R2_PUBLIC_BASE_URL + '/'`
+  (normalised, section 1), with the slash: `https://media.example.lk.evil.com/…`
+  isn't ours. It must also match a `media` row.
+- **Nothing is deleted on save** (approved change 2). A replaced image, or the
+  images of a deleted row, simply become "Unused".
+- **A content save** takes `for key share` on the `media` rows of every one
+  of our URLs it writes, and gets 400 if one has no row (decision 8).
 - **Unchanged:** the phase 4 rules (409 on a stale version, the last hero
-  slide, reorder). Cleanup only runs after a save that succeeded.
+  slide, reorder).
 
 ## 8. Tests (no real bucket)
 
@@ -312,22 +360,44 @@ Used by every `image` and `imageList` field, replacing the phase 4 URL boxes:
 - **Ownership:** an R2-prefixed URL with no `media` row isn't ours; the
   `…example.lk.evil.com` prefix trick isn't ours; an Unsplash URL is never
   deleted.
-- **Cleanup:**
-  - replacing a row's image deletes the old object when it's unused and keeps
-    it when another row uses it;
-  - deleting a row cleans up its gallery;
-  - a store failure during cleanup doesn't fail the save.
+- **No automatic deletion:** replacing a row's image, or deleting the row,
+  leaves the old object in the store and its `media` row in place, and the
+  library shows it "Unused".
 - **Race guard:** a save referencing an R2 URL whose `media` row was deleted
   gets 400.
-- **Library delete:** unused → 204; used → 409 with `usedBy`; with `force` →
-  204 and the object is gone.
+- **Library delete:**
+  - unused → 204, and the object is gone;
+  - used → 409 with `usedBy`, and nothing is gone;
+  - with `force` → 204;
+  - a store that refuses the delete → 502, and the row is still listed.
+- **Base URL:** `R2_PUBLIC_BASE_URL` with and without a trailing slash builds
+  identical URLs and ownership checks.
+- **Test isolation:** after `test-db.ts` runs, no `R2_*` variable is set.
 - **Resize maths:** the target-size function (wide, tall, already small,
-  exactly 2000 px).
+  exactly 2000 px, a 48 MP photo, a panorama over the area limit).
+- **In headless Chrome** (`server/test/browser-image.test.ts`). It drives the
+  installed Chrome over the DevTools protocol with Node's built-in WebSocket,
+  so there's no new dependency. `src/lib/media.ts` is bundled with esbuild,
+  which is already a dev dependency. `CHROME_PATH` overrides the location;
+  with no Chrome found, the test is skipped with a message saying so.
+  - **Orientation:** a JPEG is built in the page, 60×40 stored pixels, red on
+    the left half and blue on the right, with an EXIF APP1 segment spliced in
+    saying Orientation 6 ("rotate 90° clockwise to view"). After
+    `prepareImage`, the output must be 40×60 (portrait), red on top and blue
+    at the bottom, with no EXIF left in the output bytes.
+  - **HEIC:** HEIC `ftyp` bytes give the "export as JPEG" message, not an
+    upload and not a generic error.
+  - **Large photo:** an 8000×6000 (48 MP) image comes out at most 2000 px
+    wide. With the area limit forced low, it still comes out within it,
+    or gets the clear "too large" error, never a blank image.
+  - **Encoding:** the output is WebP in Chrome, and every output is at most
+    2000 px wide.
 
 ## 9. Removed
 
 - `src/lib/storage.ts` (the Supabase uploader) and its `isStorageUrl` /
   `deleteImageByUrl`.
+- `cleanup.ts` from the draft: not written (approved change 2).
 - `scripts/migrate-images.ts` and `npm run images:migrate` are still
   Supabase-only. Phase 7 removes them with the rest of Supabase. Moving the
   seeded Unsplash images into R2 isn't in scope; say if you want it.
