@@ -3,9 +3,8 @@ import { Controller, type Control, type FieldErrors } from 'react-hook-form';
 import { CircleAlert } from 'lucide-react';
 import type { Field } from '@/admin/collections';
 import { FieldHelp, FieldLabel, Input, Select, Textarea } from '@/admin/components/ui';
+import { ImageListPicker, ImagePicker } from '@/admin/components/ImagePicker';
 import {
-  ImageField,
-  ImageListField,
   type ItineraryDay,
   ItineraryField,
   MultiSelectField,
@@ -216,9 +215,10 @@ function renderControl(
 
     case 'image':
       return (
-        <ImageField
+        <ImagePicker
           id={id}
           value={asString(value)}
+          folder={field.folder}
           invalid={invalid}
           shape={field.name === 'author_avatar' ? 'square' : 'wide'}
           onBlur={onBlur}
@@ -227,7 +227,7 @@ function renderControl(
       );
 
     case 'imageList':
-      return <ImageListField value={asStringArray(value)} onChange={onChange} />;
+      return <ImageListPicker value={asStringArray(value)} folder={field.folder} onChange={onChange} />;
 
     case 'email':
       return (

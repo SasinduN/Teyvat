@@ -33,7 +33,9 @@ export const API_ROUTES = {
   admin: {
     /** `/api/admin/content/:table`, then `/count`, `/order`, `/:id`, `/:id/published`. */
     content: '/api/admin/content',
-    siteSettings: '/api/admin/site-settings'
+    siteSettings: '/api/admin/site-settings',
+    /** `POST ?folder=`, `GET`, `GET /usage?url=`, `DELETE /:id[?force=true]`. */
+    media: '/api/admin/media'
   }
 } as const;
 
@@ -93,6 +95,11 @@ export interface HealthPayload {
   status: 'ok';
   /** Whether the database answered a trivial query, not merely that it is configured. */
   database: 'up' | 'down';
+  /**
+   * Image uploads. Informational only: the healthcheck passes on the database
+   * alone, so an R2 outage can't fail a deploy.
+   */
+  media: 'up' | 'down' | 'not_configured';
   uptimeSeconds: number;
 }
 
@@ -154,6 +161,31 @@ export interface ReorderRequest {
   ids: string[];
 }
 
+/** A row that uses an image, for the library's "Used by" and the delete 409. */
+export interface MediaUsage {
+  table: string;
+  id: string;
+  title: string;
+}
+
+/** One upload, as `GET /api/admin/media` lists it. */
+export interface MediaItem {
+  id: string;
+  key: string;
+  url: string;
+  folder: string;
+  contentType: string;
+  bytes: number;
+  createdAt: string;
+  usedBy: MediaUsage[];
+}
+
+/** `GET /api/admin/media`. `uploadsEnabled` is false when R2 isn't configured. */
+export interface MediaLibraryPayload {
+  uploadsEnabled: boolean;
+  items: MediaItem[];
+}
+
 /** `GET /api/admin/content/:table/count`. */
 export interface CountPayload {
   count: number;
@@ -167,4 +199,12 @@ export type ApiErrorCode =
   | 'conflict'
   /** HTTP 429. Sent with a `Retry-After` header, in seconds. */
   | 'too_many_requests'
-  | 'internal';
+  /** HTTP 413. */
+  | 'payload_too_large'
+  /** HTTP 415: the bytes are not an image type we accept. */
+  | 'unsupported_media_type'
+  | 'internal'
+  /** HTTP 502: a service we depend on (R2) refused the request. */
+  | 'bad_gateway'
+  /** HTTP 503: the feature needs configuration this server doesn't have. */
+  | 'not_configured';

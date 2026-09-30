@@ -7,8 +7,8 @@ panel that manages its content.
   from the database.
 - **Admin panel** — `/admin` — email/password sign-in on the API's own
   sessions, full CRUD for all nine content collections and the site settings
-  through `/api/admin/*`. Images are pasted as `https://` URLs until uploads
-  arrive in phase 5. The enquiry inbox returns in phase 6.
+  through `/api/admin/*`, and a media library backed by Cloudflare R2. The
+  enquiry inbox returns in phase 6.
 
 Stack: Vite 7 · React 19 · TypeScript 5.9 (strict) · Tailwind CSS v4 ·
 Framer Motion · Leaflet · React Router v7 · Supabase (Postgres, Auth, Storage) ·
@@ -46,6 +46,7 @@ The files:
 - `0004_site_settings_links.sql` — each footer link becomes NULL or
   `https://…`. The `#instagram`-style placeholders become NULL, and the Footer
   renders an unset link without an `href`.
+- `0005_media.sql` — the media library: one row per image uploaded to R2.
 - `0002_seed.sql` — the approved baseline content: 63 rows across all nine
   content tables (20 destinations, 6 experience types, 4 featured experiences,
   4 tours, 6 articles, 8 hidden gems, 8 photo stories, 3 hero slides,
@@ -159,6 +160,12 @@ default host or port, unless `TEST_DATABASE_URL`:
 Create the database once with `createdb -p <port> teyvat_test` (or
 `create database teyvat_test;` in psql).
 
+The tests never touch R2: the test setup clears every `R2_*` variable, and
+the upload tests use an in-memory store. `server/test/browser-image.test.ts`
+checks the browser's image preparation (EXIF rotation, HEIC, large photos) in
+a real headless Chrome. It finds the installed Chrome, or `CHROME_PATH`, and is
+skipped with a message if there is none.
+
 To run exactly what deploys:
 
 ```bash
@@ -179,7 +186,7 @@ npm run build && npm start   # everything on http://localhost:8081
 | `npm run preview` | Vite's own preview of the client build |
 | `npm run seed:generate` | Regenerate `0002_seed.sql` from `scripts/fixtures/*.ts` |
 | `npm run verify:roundtrip` | Assert the DB round-trip renders identical content |
-| `npm run images:migrate` | Legacy: pulls seeded images into Supabase Storage. Unused since phase 4; phase 5 replaces it |
+| `npm run images:migrate` | Legacy: pulls seeded images into Supabase Storage. Not used; phase 7 removes it with Supabase |
 
 ---
 
@@ -358,11 +365,54 @@ become a backstop rather than the first line of defence.
 The admin bundle is lazy-loaded, so a traveller on the marketing site never
 downloads the CMS — Zod, React Hook Form and Sonner all ship in that chunk.
 
-### Images
+### Images and the media library
 
-Until phase 5 brings uploads (Cloudflare R2), every image field is a URL box
-with a live preview. The API accepts `https://` URLs only. The seeded records
-reference their original Unsplash URLs, which keep working.
+Every image field offers three ways in: **Upload** a file, pick one from the
+**Library**, or paste an `https://` **URL**. The seeded Unsplash URLs keep
+working as plain URLs.
+
+**Uploads** go browser → `POST /api/admin/media` → Cloudflare R2. The browser
+never sees R2 credentials.
+
+- **In the browser**, before upload, the image is:
+  - rotated by its EXIF orientation;
+  - scaled to at most 2000 px wide (and within iOS Safari's canvas limit);
+  - re-encoded as WebP, or JPEG where WebP encoding isn't available.
+
+  Re-encoding also strips EXIF, including a phone's GPS location. Originals up
+  to 40 MB are accepted for resizing. A HEIC photo the browser can't read gets
+  a message to export it as JPEG. A photo too large for the browser's canvas is
+  downscaled, or refused with a message: never uploaded blank.
+- **On the server**, the file type is decided from the bytes: JPEG, PNG, WebP
+  and AVIF only. SVG is refused, because it can carry scripts. The limit is
+  10 MB, and the name and `Content-Type` sent with the file are ignored.
+- Objects are stored as `<folder>/<timestamp>-<random>.<ext>` with
+  `Cache-Control: public, max-age=31536000, immutable`, because keys never
+  repeat.
+
+**Nothing is deleted automatically.** When an image is replaced, or its row is
+deleted, it shows as **Unused** in *Admin → Media library*. It leaves R2 only
+when an admin deletes it there.
+
+- Deleting an image that a row still uses lists those rows and asks again.
+- A save that references an image deleted from the library is refused, on the
+  field that holds it.
+
+**Setting up R2:**
+
+1. Create a bucket and allow public access, through its `r2.dev` address for
+   now (a custom domain before go-live; see the launch checklist).
+2. Create an R2 API token with *Object Read & Write*, limited to that bucket.
+3. Set five variables, in `.env` locally and in the Railway service:
+   `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`,
+   `R2_PUBLIC_BASE_URL` (the public `https://…` address; a trailing slash is
+   fine).
+
+With none of them set, the site runs normally, uploads answer "not
+configured", and the Library and URL options keep working. With only some
+set, it runs the same way and logs a warning naming the missing ones.
+`/api/health` reports `media: up | down | not_configured`, for information
+only; the health check passes on the database alone.
 
 ### Ordering and drafts
 
@@ -424,6 +474,12 @@ Work through this before the site goes live.
       If it is the proxy's address, the per-IP sign-in limit locks everyone out.
 - [ ] **Create the first admin** with `npm run admin:create` (§3). Use an
       address other than the public `contact_email`.
+- [ ] **Put R2 on a custom domain.** Images are served from the bucket's
+      `r2.dev` address for now, which Cloudflare rate-limits and describes as
+      for development. Connect a custom domain to the bucket, set
+      `R2_PUBLIC_BASE_URL` to it, and rewrite the stored URLs (a one-off
+      `update … replace(url, old_base, new_base)` over `media.url` and every
+      image column).
 - [ ] **Publish a real privacy policy page** and set its URL in
       *Admin → Settings*. The site collects enquiries (names, emails, phone
       numbers), so it needs one before go-live. Until the URL is set, the

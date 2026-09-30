@@ -16,10 +16,12 @@ import { API_ROUTES } from '../../shared/api';
 import { sameOrigin } from './auth/middleware';
 import { isProduction } from './env';
 import { errorHandler, sendError } from './http';
+import { mediaFromEnv, type MediaConfig } from './media/media';
 import { adminRouter } from './routes/admin';
 import { authRouter } from './routes/auth';
 import { contentRouter } from './routes/content';
 import { healthRouter } from './routes/health';
+import { mediaRouter } from './routes/media';
 
 /**
  * Resolved from the repo root rather than from `import.meta.url`, because the
@@ -31,8 +33,19 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const CLIENT_DIST = join(REPO_ROOT, 'dist');
 const CLIENT_INDEX = join(CLIENT_DIST, 'index.html');
 
-export function createApp(): Express {
+export interface AppOptions {
+  /**
+   * Where uploads go. Defaults to R2 from the environment, or `null` (uploads
+   * off, 503 on the routes that need them) when R2 isn't configured. Tests
+   * pass a memory store, or `null`.
+   */
+  media?: MediaConfig | null;
+}
+
+export function createApp(options: AppOptions = {}): Express {
   const app = express();
+
+  app.locals.media = options.media === undefined ? mediaFromEnv() : options.media;
 
   /**
    * Railway terminates TLS at its edge and forwards over HTTP. Without this,
@@ -56,6 +69,9 @@ export function createApp(): Express {
   app.use('/api', healthRouter);
   app.use('/api', contentRouter);
   app.use('/api', authRouter);
+  // Before the admin router, which would otherwise run requireAdmin a second
+  // time for every /api/admin/media request on its way past.
+  app.use('/api', mediaRouter);
   app.use('/api', adminRouter);
 
   /**

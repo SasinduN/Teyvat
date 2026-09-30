@@ -72,3 +72,10 @@ export const TEST_DATABASE_NAME = decodeURIComponent(
 // the test database in this process.
 process.env.DATABASE_URL = TEST_DATABASE_URL;
 process.env.NODE_ENV = 'test';
+
+// .env also holds the real R2 credentials. No test may reach the real
+// bucket, so they go before server/src/env.ts reads them: the default app has
+// uploads off, and tests that need a store pass their own.
+for (const name of Object.keys(process.env)) {
+  if (name.startsWith('R2_')) delete process.env[name];
+}

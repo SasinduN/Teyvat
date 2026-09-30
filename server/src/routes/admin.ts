@@ -28,6 +28,7 @@ import { CONTENT_TABLE_NAMES, type ContentTableName } from '../../../shared/data
 import { requireAdmin } from '../auth/middleware';
 import { pool } from '../db';
 import { ApiError, asyncRoute, sendError } from '../http';
+import { fieldPathsFor, imageUrlsIn, isUnderBase, mediaOf } from '../media/media';
 
 /* ---------------------------------------------------------------- helpers */
 
@@ -120,6 +121,36 @@ async function keepOneHeroSlide(client: PoolClient, id: string): Promise<void> {
 async function rowExists(table: ContentTableName, id: string): Promise<boolean> {
   const { rowCount } = await pool.query(`select 1 from public.${table} where id = $1`, [id]);
   return (rowCount ?? 0) > 0;
+}
+
+const IMAGE_DELETED = 'That image was deleted from the library. Choose another.';
+
+/**
+ * Every image of ours a write is about to save must still be in the library.
+ * Takes `for key share` on those `media` rows for the rest of the write's
+ * transaction: a library delete (`for update`) of one of them waits until
+ * this commits, then sees the new use and answers 409. If the delete got
+ * there first, the row is gone and this refuses the save.
+ */
+async function holdOurImages(
+  client: PoolClient,
+  req: Request,
+  table: ContentTableName,
+  values: Record<string, unknown>
+): Promise<void> {
+  const media = mediaOf(req);
+  const ours = [...new Set(imageUrlsIn(table, values).filter((u) => isUnderBase(media, u)))];
+  if (ours.length === 0) return;
+
+  const { rows } = await client.query<{ url: string }>(
+    'select url from public.media where url = any($1::text[]) for key share',
+    [ours]
+  );
+  const present = new Set(rows.map((r) => r.url));
+  const gone = new Set(ours.filter((u) => !present.has(u)));
+  if (gone.size > 0) {
+    throw new ApiError('bad_request', IMAGE_DELETED, fieldPathsFor(table, values, gone, IMAGE_DELETED));
+  }
 }
 
 const CHANGED_SINCE =
@@ -225,16 +256,21 @@ adminRouter.post(
     const values = parseOrThrow(schemaForTable(table, 'create'), req.body) as Record<string, unknown>;
     const columns = writableColumns(table, 'create');
 
-    // New rows go to the end of the list.
-    const { rows } = await pool.query(
-      `insert into public.${table} (${columns.map((c) => `"${c}"`).join(', ')}, sort_order)
-       values (${columns.map((c, i) => placeholder(c, i + 1)).join(', ')},
-               (select coalesce(max(sort_order) + 1, 0) from public.${table}))
-       returning *`,
-      columns.map((c) => sqlValue(c, values[c]))
-    );
+    const row = await withTransaction(async (client) => {
+      await holdOurImages(client, req, table, values);
 
-    res.status(201).json(rows[0]);
+      // New rows go to the end of the list.
+      const { rows } = await client.query(
+        `insert into public.${table} (${columns.map((c) => `"${c}"`).join(', ')}, sort_order)
+         values (${columns.map((c, i) => placeholder(c, i + 1)).join(', ')},
+                 (select coalesce(max(sort_order) + 1, 0) from public.${table}))
+         returning *`,
+        columns.map((c) => sqlValue(c, values[c]))
+      );
+      return rows[0];
+    });
+
+    res.status(201).json(row);
   })
 );
 
@@ -262,6 +298,7 @@ adminRouter.put(
       if (table === 'hero_slides' && values.published === false) {
         await keepOneHeroSlide(client, id);
       }
+      await holdOurImages(client, req, table, values);
 
       const { rows } = await client.query(
         `update public.${table}

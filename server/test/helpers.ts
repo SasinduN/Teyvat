@@ -48,8 +48,9 @@ export async function assertConnectedToTestDatabase(): Promise<void> {
   }
 }
 
+/** `media` too: its `uploaded_by` references `users`. */
 export async function resetAuthTables(): Promise<void> {
-  await pool.query('truncate public.login_attempts, public.sessions, public.users');
+  await pool.query('truncate public.login_attempts, public.sessions, public.media, public.users');
 }
 
 const CONTENT_TABLES = [

@@ -1,0 +1,145 @@
+/**
+ * Just enough of the Chrome DevTools Protocol to run code in a real headless
+ * Chrome: launch it, open a page, evaluate an async expression, close it.
+ *
+ * Browser behaviour (EXIF orientation, canvas encoding, what decodes) can
+ * only be tested in a browser. This drives the installed Chrome directly with
+ * Node's built-in WebSocket, so the tests need no new dependency and no
+ * browser download.
+ */
+import { spawn, type ChildProcess } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
+
+const CANDIDATES = [
+  process.env.CHROME_PATH,
+  'C:/Program Files/Google/Chrome/Application/chrome.exe',
+  'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+  process.env.LOCALAPPDATA && join(process.env.LOCALAPPDATA, 'Google/Chrome/Application/chrome.exe'),
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/usr/bin/google-chrome',
+  '/usr/bin/google-chrome-stable',
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser'
+];
+
+export function findChrome(): string | null {
+  for (const path of CANDIDATES) if (path && existsSync(path)) return path;
+  return null;
+}
+
+interface CdpMessage {
+  id?: number;
+  result?: Record<string, unknown>;
+  error?: { message: string };
+}
+
+export interface Page {
+  /** Evaluates `expression` (which may return a promise) and returns its JSON value. */
+  evaluate<T>(expression: string): Promise<T>;
+}
+
+export interface Chrome {
+  newPage(): Promise<Page>;
+  close(): Promise<void>;
+}
+
+export async function launchChrome(executable: string): Promise<Chrome> {
+  const profile = mkdtempSync(join(tmpdir(), 'teyvat-chrome-'));
+  const child: ChildProcess = spawn(
+    executable,
+    [
+      '--headless=new',
+      '--no-first-run',
+      '--no-default-browser-check',
+      '--disable-extensions',
+      `--user-data-dir=${profile}`,
+      '--remote-debugging-port=0',
+      'about:blank'
+    ],
+    { stdio: 'ignore' }
+  );
+
+  // Chrome writes the port it picked, and the browser endpoint, here.
+  const portFile = join(profile, 'DevToolsActivePort');
+  let endpoint = '';
+  for (let i = 0; i < 100 && !endpoint; i += 1) {
+    if (existsSync(portFile)) {
+      const [port, path] = readFileSync(portFile, 'utf8').split('\n');
+      if (port && path) endpoint = `ws://127.0.0.1:${port.trim()}${path.trim()}`;
+    }
+    if (!endpoint) await sleep(100);
+  }
+  if (!endpoint) {
+    child.kill();
+    throw new Error('Chrome did not start its DevTools endpoint within 10 s.');
+  }
+
+  const socket = new WebSocket(endpoint);
+  await new Promise<void>((resolve, reject) => {
+    socket.addEventListener('open', () => resolve(), { once: true });
+    socket.addEventListener('error', () => reject(new Error('Could not connect to Chrome.')), { once: true });
+  });
+
+  let nextId = 1;
+  const pending = new Map<number, (message: CdpMessage) => void>();
+  socket.addEventListener('message', (event) => {
+    const message = JSON.parse(String(event.data)) as CdpMessage;
+    if (message.id !== undefined) pending.get(message.id)?.(message);
+  });
+
+  function send(method: string, params: object = {}, sessionId?: string): Promise<Record<string, unknown>> {
+    const id = nextId++;
+    return new Promise((resolve, reject) => {
+      pending.set(id, (message) => {
+        pending.delete(id);
+        if (message.error) reject(new Error(`${method}: ${message.error.message}`));
+        else resolve(message.result ?? {});
+      });
+      socket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }));
+    });
+  }
+
+  return {
+    async newPage() {
+      const { targetId } = (await send('Target.createTarget', { url: 'about:blank' })) as { targetId: string };
+      const { sessionId } = (await send('Target.attachToTarget', { targetId, flatten: true })) as {
+        sessionId: string;
+      };
+
+      return {
+        async evaluate<T>(expression: string): Promise<T> {
+          const result = (await send(
+            'Runtime.evaluate',
+            { expression, awaitPromise: true, returnByValue: true },
+            sessionId
+          )) as {
+            result: { value?: unknown };
+            exceptionDetails?: { exception?: { description?: string }; text?: string };
+          };
+          if (result.exceptionDetails) {
+            const d = result.exceptionDetails;
+            throw new Error(d.exception?.description ?? d.text ?? 'evaluation failed');
+          }
+          return result.result.value as T;
+        }
+      };
+    },
+
+    async close() {
+      await send('Browser.close').catch(() => undefined);
+      socket.close();
+      await new Promise<void>((resolve) => {
+        if (child.exitCode !== null) resolve();
+        else child.once('exit', () => resolve());
+        setTimeout(() => {
+          child.kill();
+          resolve();
+        }, 5000).unref();
+      });
+      rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    }
+  };
+}

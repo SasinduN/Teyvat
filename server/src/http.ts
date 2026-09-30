@@ -12,7 +12,11 @@ const STATUS_BY_CODE: Record<ApiErrorCode, number> = {
   not_found: 404,
   conflict: 409,
   too_many_requests: 429,
-  internal: 500
+  payload_too_large: 413,
+  unsupported_media_type: 415,
+  internal: 500,
+  bad_gateway: 502,
+  not_configured: 503
 };
 
 /**
@@ -69,6 +73,12 @@ export function errorHandler(
 
   if (error instanceof ApiError) {
     sendError(res, error.code, error.message, error.fields);
+    return;
+  }
+
+  // body-parser's own limit (the media route's 10 MB, everywhere else 100 kB).
+  if ((error as { type?: string }).type === 'entity.too.large') {
+    sendError(res, 'payload_too_large', 'That is too large to upload.');
     return;
   }
 

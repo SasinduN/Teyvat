@@ -18,18 +18,20 @@ this file or anywhere else in git.
 | 2b | Public site reads `/api/content`: hero slides, pillars, site settings, spotlight from `featured` | done |
 | 3 | Auth on our own `users` / `sessions` tables (replaces Supabase Auth) | done |
 | 4 | Admin CRUD endpoints (replaces Supabase queries in `src/admin`) | done |
-| 5 | Image uploads to Cloudflare R2 (replaces Supabase Storage) | next |
-| 6 | Inquiries endpoints: public submit and admin inbox | |
+| 5 | Image uploads to Cloudflare R2 (replaces Supabase Storage) | done |
+| 6 | Inquiries endpoints: public submit and admin inbox | next |
 | 7 | Remove Supabase entirely, update docs, deploy | |
 
 Update the Status column when a phase lands.
 
 ### Notes for later phases
 
-- **Phase 5:** image fields are `https://` URL boxes until uploads exist
-  (`ImageField` / `ImageListField` in `src/admin/components/fields.tsx`).
-  `src/lib/storage.ts` is the old Supabase uploader, unused since phase 4;
-  replace it rather than revive it.
+- **Images:** every form uses `ImagePicker` / `ImageListPicker`
+  (`src/admin/components/ImagePicker.tsx`): upload, library or URL. Nothing is
+  deleted from R2 automatically; only a library delete removes an object.
+  The R2 custom domain is on the README launch checklist.
+- **Phase 7:** `scripts/migrate-images.ts` and `npm run images:migrate` are
+  still Supabase-only. Remove them with the rest of Supabase.
 - **Phase 6:** `InquiriesPage` shows a placeholder. The old Supabase inbox UI
   is kept, unrouted, as `InquiriesInbox` in the same file, so phase 6 swaps
   its data calls rather than rebuilding it. Put the dashboard's enquiry counts
@@ -60,6 +62,9 @@ Update the Status column when a phase lands.
   - `NPM_CONFIG_PRODUCTION=false`. Without it, `npm ci` skips vite and
     typescript and the build fails.
   - Do not set `PORT`. Railway injects it.
+  - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`,
+    `R2_PUBLIC_BASE_URL`: image uploads. All five or none; missing ones turn
+    uploads off without stopping the site.
 - **The local API runs on port 8081**, because Apache holds 8080. Vite proxies
   `/api` there.
 - **The brand is undecided.** The code says "Travel Eye". Don't rename it, and

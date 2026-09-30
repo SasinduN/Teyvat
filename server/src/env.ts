@@ -45,3 +45,58 @@ if (!parsed.success) {
 export const env = parsed.data;
 
 export const isProduction = env.NODE_ENV === 'production';
+
+/* ------------------------------------------------------------------ R2 */
+
+export interface R2Config {
+  accountId: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  bucket: string;
+  /** `https://…` with no trailing slash. Object URLs are `${publicBaseUrl}/${key}`. */
+  publicBaseUrl: string;
+}
+
+const R2_VARIABLES = [
+  'R2_ACCOUNT_ID',
+  'R2_ACCESS_KEY_ID',
+  'R2_SECRET_ACCESS_KEY',
+  'R2_BUCKET',
+  'R2_PUBLIC_BASE_URL'
+] as const;
+
+/** Trailing slashes off, so `https://x.r2.dev` and `https://x.r2.dev/` agree. */
+export function normaliseBaseUrl(url: string): string {
+  return url.trim().replace(/\/+$/, '');
+}
+
+/**
+ * Image uploads are optional. All five variables set: uploads on. None set:
+ * off, quietly. Some set, or a base URL that isn't https: off, with one
+ * warning naming the problem. Never an exit: a typo in an image setting must
+ * not take the whole site down with it.
+ */
+export function readR2Config(source: NodeJS.ProcessEnv): R2Config | null {
+  const values = R2_VARIABLES.map((name) => source[name]?.trim() ?? '');
+  const missing = R2_VARIABLES.filter((_, i) => !values[i]);
+
+  if (missing.length === R2_VARIABLES.length) return null;
+
+  if (missing.length > 0) {
+    console.warn(
+      `[media] image uploads are off: ${missing.join(', ')} ${missing.length === 1 ? 'is' : 'are'} not set.`
+    );
+    return null;
+  }
+
+  const [accountId, accessKeyId, secretAccessKey, bucket, rawBase] = values;
+  const publicBaseUrl = normaliseBaseUrl(rawBase);
+  if (!/^https:\/\/[^\s/]+/.test(publicBaseUrl)) {
+    console.warn('[media] image uploads are off: R2_PUBLIC_BASE_URL must start with https://.');
+    return null;
+  }
+
+  return { accountId, accessKeyId, secretAccessKey, bucket, publicBaseUrl };
+}
+
+export const r2Config = readR2Config(process.env);
