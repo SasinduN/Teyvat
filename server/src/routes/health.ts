@@ -3,7 +3,8 @@
  *
  * Railway points its healthcheck here. It reports 200 only when the database
  * answers, so a deploy that comes up with a broken DATABASE_URL is caught at
- * rollout instead of by the first visitor.
+ * rollout instead of by the first visitor. The database is the only thing
+ * that can fail it: the `media` field is information, never a verdict.
  */
 import { Router } from 'express';
 
@@ -19,17 +20,33 @@ import { mediaOf, type MediaConfig } from '../media/media';
 const MEDIA_PING_TTL_MS = 60_000;
 let lastPing: { at: number; store: MediaConfig['store']; up: boolean } | null = null;
 
+const MEDIA_PING_TIMEOUT_MS = 3000;
+
+/**
+ * Never throws and never waits more than 3 s. Whatever the store does (says
+ * no, rejects, throws, hangs), the answer is 'down', so only the database can
+ * fail the healthcheck. An R2 outage must not take the site down or block a
+ * deploy.
+ */
 async function mediaStatus(media: MediaConfig | null): Promise<HealthPayload['media']> {
   if (!media) return 'not_configured';
   if (lastPing && lastPing.store === media.store && Date.now() - lastPing.at < MEDIA_PING_TTL_MS) {
     return lastPing.up ? 'up' : 'down';
   }
-  const up = await Promise.race([
-    media.store.ping(),
-    new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 3000).unref())
-  ]);
-  lastPing = { at: Date.now(), store: media.store, up };
-  return up ? 'up' : 'down';
+
+  let up: boolean;
+  try {
+    up = await Promise.race([
+      // Inside a promise, so a synchronous throw is caught the same way.
+      Promise.resolve().then(() => media.store.ping()),
+      new Promise<boolean>((resolve) => setTimeout(() => resolve(false), MEDIA_PING_TIMEOUT_MS).unref())
+    ]);
+  } catch {
+    up = false;
+  }
+
+  lastPing = { at: Date.now(), store: media.store, up: up === true };
+  return up === true ? 'up' : 'down';
 }
 
 export const healthRouter = Router();
