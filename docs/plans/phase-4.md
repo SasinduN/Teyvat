@@ -1,6 +1,7 @@
 # Phase 4 plan: admin CRUD on our own API
 
-Status: DRAFT, waiting for approval. No code has been written.
+Status: APPROVED, with the links change below ("Links may be empty") replacing
+the open question the draft asked.
 
 Scope: `/api/admin/*` for the nine content tables and the `site_settings` row,
 and the admin panel switched from Supabase to those endpoints. Image uploads
@@ -39,25 +40,26 @@ These need a yes or no from you before any code is written:
    of calling Supabase. In production it already fails: the build has no
    Supabase credentials. The dashboard drops its enquiries tile until phase 6.
 
-### Open question: the social and legal links
+### Links may be empty (approved change)
 
-The NOT VALID constraint (section 4) skips the existing row, but Postgres
-checks it on every UPDATE of that row. The Zod schema does the same. So **the
-first settings save must supply real `https://` URLs for all seven links at
-once**: Instagram, Facebook, TikTok, YouTube, privacy, terms and
-sustainability. Until then, even fixing a typo in the phone number is refused.
+The draft asked how to handle a NOT VALID constraint. It was replaced by:
 
-If some of those pages don't exist yet (say, no TikTok account), there is no
-valid value to enter. Allowing "empty = hide the icon" would need a Footer
-change, which the frozen design rules out. Options:
-
-- (a) Have all seven URLs ready before the first save. This is the plan as
-  written.
-- (b) Save contact details (address, phone, email) and links through two
-  separate endpoints, so the contact details can change first. The constraint
-  would still block the first link save until all seven are real.
-
-I recommend (a) unless you know some of the pages won't exist at launch.
+- The rule for all seven link columns (`instagram_url`, `facebook_url`,
+  `tiktok_url`, `youtube_url`, `privacy_url`, `terms_url`,
+  `sustainability_url`) is **NULL or `https://…`**.
+- Migration 0004 sets the `#…` placeholders to NULL, then adds the CHECK fully
+  validated. No NOT VALID.
+- An empty link field in the admin form saves as NULL.
+- `Footer.tsx` does not change. The mapper turns NULL into `undefined`, so
+  React leaves out the `href` attribute and the link renders without one.
+  Visible effects:
+  - the cursor over those links is the default arrow rather than a pointer,
+    because the classes have no `cursor-pointer`;
+  - the links can't be reached with Tab;
+  - clicking one does nothing, where `#instagram` used to jump to the top of
+    the page.
+- Launch checklist: the site needs a real privacy policy page before go-live,
+  because it collects enquiries.
 
 ## Findings that shape the plan
 
@@ -200,19 +202,30 @@ bodies move from Supabase to `fetch`. `updateRow` gains `expectedUpdatedAt`
   only through its dynamic import. So the SDK also drops out of the admin
   chunk's static imports. The bundle report covers both chunks.
 
-## 4. Migration `0004_site_settings_https.sql`
+## 4. Migration `0004_site_settings_links.sql`
 
-- `CHECK (col ~ '^https://[^\s]+$' and length(col) <= 500)` on
-  `instagram_url`, `facebook_url`, `tiktok_url`, `youtube_url`, `privacy_url`,
-  `terms_url` and `sustainability_url`, added `NOT VALID`, so the live row's
-  `#instagram`-style placeholders don't fail the deploy-time migration.
-- Wrapped in a `pg_constraint` existence check so re-running is a no-op,
-  like 0001 and 0003.
+One transaction, re-runnable:
+
+1. Drop 0001's `site_settings_<col>_check` constraints on the seven link
+   columns (`drop constraint if exists`). They call `public.is_link()`, which
+   is false for NULL, so they would reject an empty link. `is_link()` itself
+   is left in place.
+2. `alter column … drop not null` on the seven columns.
+3. Set each link that starts with `#` to NULL. Only `#…` placeholders: any
+   other non-https value makes step 4 fail the deploy loudly rather than
+   being silently erased.
+4. Add `site_settings_<col>_https` CHECK
+   (`col is null or (col ~ '^https://[^\s]+$' and length(col) <= 500)`),
+   fully validated, each guarded by a `pg_constraint` existence check.
+
 - `contact_email` already has an email CHECK in 0001; the API adds `z.email()`.
-- A later migration runs `validate constraint` once the real URLs are in. I'll
-  add it to the notes in CLAUDE.md so it isn't forgotten.
-- The API's Zod: `https://` URLs only (which rejects `http:`, `#…`, `/…` and
-  `javascript:`), up to 500 chars.
+- `SiteSettingsRow` and `PublicSiteSettings` link fields become
+  `string | null`, and `SiteSettings` (in `src/types`) becomes
+  `string | undefined`. `toSiteSettings` maps NULL to `undefined`, as the
+  other mappers already do. `Footer.tsx` compiles unchanged: `href` accepts
+  `undefined`.
+- The API's Zod: empty or blank becomes `null`; otherwise an `https://` URL
+  (which rejects `http:`, `#…`, `/…` and `javascript:`), up to 500 chars.
 
 ## 5. Public site
 
@@ -269,9 +282,10 @@ about 0002 still applies to production.
 - **`site_settings` URLs:**
   - rejected: `http://`, `#instagram`, `/privacy`, `javascript:`, a bad
     `contact_email`;
-  - accepted: `https://…` for all seven;
-  - a direct SQL `update` with an `http://` link violates the new constraint,
-    even though the placeholder row predates it (NOT VALID).
+  - accepted: `https://…` for all seven, and empty, which is stored as NULL;
+  - after migrating, the seeded placeholders are NULL, and a direct SQL
+    `update` with an `http://` link violates the constraint;
+  - `/api/content` returns `null` for an empty link.
 
 ## 8. Checks and wrap-up
 
@@ -279,6 +293,7 @@ about 0002 still applies to production.
 - `git diff demo-baseline -- src/components/` unchanged by this phase.
 - Bundle sizes for the public page and the admin chunk, before and after.
 - Update the phase table and notes in `CLAUDE.md`, and the admin and security
-  sections of the README.
+  sections of the README. Add to the README launch checklist: a real privacy
+  policy page before go-live, because the site collects enquiries.
 - Commit locally, show the results, and ask before pushing. You check the live
   site after the deploy, as in phase 3.
