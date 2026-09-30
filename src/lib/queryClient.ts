@@ -34,6 +34,9 @@ export interface InquiryFilters {
 export const queryKeys = {
   siteContent: ['site-content'] as const,
 
+  /** Outside the `admin` prefix, so clearing the admin cache on sign-out keeps it. */
+  currentUser: ['auth', 'me'] as const,
+
   admin: {
     all: ['admin'] as const,
     collection: (table: ContentTableName) => ['admin', 'collection', table] as const,

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle2, Send, Compass, User, Mail, Phone, Loader2, AlertCircle } from 'lucide-react';
 import { submitInquiry } from '@/lib/api/inquiries';
-import { describeError } from '@/lib/supabase';
+import { describeError } from '@/lib/errors';
 
 interface InquiryModalProps {
   isOpen: boolean;

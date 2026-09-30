@@ -5,8 +5,11 @@ panel that manages its content.
 
 - **Public site** — `/` — the approved marketing design, now rendered entirely
   from the database.
-- **Admin panel** — `/admin` — Supabase Auth behind an allow-list, full CRUD for
-  every content collection, image uploads, and the enquiry inbox.
+- **Admin panel** — `/admin` — email/password sign-in on the API's own
+  sessions, full CRUD for every content collection, image uploads, and the
+  enquiry inbox. (Phase 3 moved sign-in only. The dashboard, collections and
+  inbox still query Supabase and will error until phase 4 moves them onto
+  `/api`.)
 
 Stack: Vite 7 · React 19 · TypeScript 5.9 (strict) · Tailwind CSS v4 ·
 Framer Motion · Leaflet · React Router v7 · Supabase (Postgres, Auth, Storage) ·
@@ -89,21 +92,27 @@ Level Security. **Never** put the secret key (`sb_secret_...`) or a legacy
 
 ## 3. Create your first admin
 
-Being signed in is not the same as being an admin. Two steps:
+Every user is an admin; a row in `public.users` is what grants access to
+`/admin`. There is no sign-up page and no HTTP route that creates a user. Use
+the script:
 
-1. **Authentication → Users → Add user** — create an email/password user and
-   tick *Auto Confirm User*.
-2. **SQL Editor** — add that user to the allow-list:
+```bash
+npm run admin:create -- --email you@example.lk --name "Your Name"
+```
 
-   ```sql
-   insert into public.admins (id, email, full_name)
-   select id, email, 'Your Name'
-   from auth.users
-   where email = 'you@traveleye.lk';
-   ```
+It asks for the password twice at a hidden prompt (12–1024 characters). The
+password is never accepted as an argument, so it cannot end up in shell history.
 
-Anyone who signs in without a row in `public.admins` sees a "no admin access"
-screen, and Postgres refuses their writes regardless of what the browser does.
+- **It runs against `DATABASE_URL`.** In the local `.env` that is production, and
+  that is how the first admin gets into the deployed site. The script prints
+  which database it connected to before it asks for anything.
+- **After the phase 3 deploy, nobody can sign in until this has been run.** The
+  `users` table starts empty.
+- An existing email is refused. To replace its password, add
+  `--reset-password`. That also ends all of that user's sessions and clears
+  the email's failed sign-in attempts.
+- It warns if the email is `site_settings.contact_email`. The Footer shows that
+  address to every visitor, so it makes a poor login.
 
 ## 4. Run it
 
@@ -121,6 +130,32 @@ Vite proxies `/api` to port 8081 (`vite.config.ts`). 8081 rather than 8080
 because a local Apache/XAMPP commonly holds 8080; change both together if you
 move it.
 
+### Tests
+
+```bash
+npm test
+```
+
+The API tests (`server/test/`, `node:test` through tsx) start the real app on a
+random port and call it with `fetch`. They need a local Postgres database of
+their own, named in `.env`:
+
+```
+TEST_DATABASE_URL=postgresql://postgres:<password>@localhost:<port>/teyvat_test
+```
+
+The tests apply every migration to it and empty `users`, `sessions` and
+`login_attempts` between cases. So they refuse to start, with no fallback to a
+default host or port, unless `TEST_DATABASE_URL`:
+
+- is set,
+- points at `localhost`,
+- names a database ending in `_test`,
+- includes an explicit port.
+
+Create the database once with `createdb -p <port> teyvat_test` (or
+`create database teyvat_test;` in psql).
+
 To run exactly what deploys:
 
 ```bash
@@ -135,6 +170,8 @@ npm run build && npm start   # everything on http://localhost:8081
 | `npm run build:server` | Bundle the server only (esbuild) |
 | `npm start` | Run the built server — serves `/api/*` and `dist/` |
 | `npm run migrate` | Apply pending migrations |
+| `npm run admin:create` | Create an admin, or `--reset-password` for an existing one |
+| `npm test` | API tests against `TEST_DATABASE_URL` |
 | `npm run typecheck` | `tsc --noEmit` across client, server, shared and scripts |
 | `npm run preview` | Vite's own preview of the client build |
 | `npm run seed:generate` | Regenerate `0002_seed.sql` from `scripts/fixtures/*.ts` |
@@ -182,14 +219,73 @@ Postgres ──published rows──▶ GET /api/content ──▶ lib/api/conten
 
 InquiryModal ──RLS INSERT (anon)──▶ public.inquiries ◀──RLS (admin)── /admin/inquiries
 
-/admin/* ──Supabase Auth + public.admins──▶ lib/api/admin.ts ──RLS ALL──▶ Postgres
+/admin/login ──POST /api/auth/login──▶ session cookie ──GET /api/auth/me──▶ AuthContext
+
+/admin/* (until phase 4) ──Supabase client──▶ lib/api/admin.ts ──RLS──▶ Supabase Postgres
 ```
 
 Admin mutations invalidate the query keys they touch (`src/lib/queryClient.ts`),
 including `siteContent` — so a save is reflected on the public site without a
 reload. Reordering is optimistic and rolls back if the write fails.
 
-### Security model
+### Sign-in and sessions
+
+- **Passwords** are argon2id (19 MiB, 2 passes, 1 lane) via `@node-rs/argon2`.
+- **Sessions** live in `public.sessions`. The cookie is
+  `__Host-teyvat_session` (`HttpOnly; Secure; SameSite=Strict; Path=/`) and
+  carries a random 32-byte token. The table stores only its SHA-256.
+  - A session lasts 7 days from sign-in; activity does not extend it.
+  - *Sign out* deletes the session. *Sign out everywhere* deletes all of the
+    user's sessions.
+- **Every state-changing `/api` request** must carry an `Origin` equal to the
+  site's own origin, or `Sec-Fetch-Site: same-origin` if there is no Origin.
+  Otherwise it gets 403.
+- **Unknown email and wrong password** give the same 401, "Incorrect email or
+  password." Both run exactly one argon2 verify; an unknown email is checked
+  against a dummy hash, so the timing doesn't reveal which case it was.
+- **Brute-force limits.** Failures are counted in `public.login_attempts` over a
+  rolling 15 minutes:
+  - 5 per (email, IP),
+  - 20 per IP,
+  - 50 per email across all IPs.
+
+  Past a limit, sign-in returns 429 with `Retry-After`, checked before any
+  password is verified. A successful sign-in clears that email's failures.
+- **Housekeeping.** Expired sessions and attempts older than 24 hours are swept
+  at boot and hourly.
+
+### Security: check that `req.ip` is the real visitor
+
+The per-IP limit counts failures by `req.ip`. Express derives it from
+`X-Forwarded-For` because of `app.set('trust proxy', 1)` in
+`server/src/app.ts`, which trusts exactly one proxy hop: Railway's edge.
+
+If Railway's proxy arrangement ever changes so that `req.ip` becomes the
+proxy's own address, every visitor shares one "IP". "20 failures per IP" then
+becomes **a site-wide sign-in lockout** that anyone can trigger with 20 wrong
+passwords.
+
+After every deploy that touches the proxy settings (and once after the first
+phase 3 deploy):
+
+1. Enter one wrong password at `/admin/login` from a laptop.
+2. Enter one wrong password from a phone on **mobile data**, not the same
+   Wi-Fi.
+3. Look at the stored addresses:
+
+   ```sql
+   select ip, attempted_at from public.login_attempts order by attempted_at desc limit 5;
+   ```
+
+   The two attempts must show **two different public addresses**. If they show
+   the same address, or a private one such as `10.x` or `100.64.x`, then
+   `req.ip` is the proxy. Fix `trust proxy` before relying on the limits.
+
+### Security model (Supabase side, until phases 4–6)
+
+The table below describes the parts of the site that still run on Supabase:
+admin content CRUD, the enquiry inbox and image storage. Sign-in no longer
+does.
 
 | Actor | Content tables | `inquiries` | `media` bucket |
 | --- | --- | --- | --- |
@@ -298,5 +394,10 @@ Work through this before the site goes live.
 - [ ] **Check `DATABASE_URL` on the API service is the internal reference**
       (`*.railway.internal`), not the public proxy URL, so database traffic
       stays on the private network.
+- [ ] **Check `req.ip` is the real visitor address** — see
+      [Security: check that `req.ip` is the real visitor](#security-check-that-reqip-is-the-real-visitor).
+      If it is the proxy's address, the per-IP sign-in limit locks everyone out.
+- [ ] **Create the first admin** with `npm run admin:create` (§3). Use an
+      address other than the public `contact_email`.
 - [ ] **Confirm no `.env` file is committed.** `git check-ignore -v .env`
       should print a matching rule.

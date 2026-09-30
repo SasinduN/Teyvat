@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Lock, LogIn, Mail } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { describeError, isSupabaseConfigured } from '@/lib/supabase';
+import { describeError } from '@/lib/errors';
 import { Button, Card, ErrorNote, FieldLabel, Input } from '@/admin/components/ui';
 
 interface LocationState {
@@ -10,7 +10,7 @@ interface LocationState {
 }
 
 export const LoginPage: React.FC = () => {
-  const { signIn, session, isAdmin, initializing } = useAuth();
+  const { signIn, user, initializing } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -21,12 +21,12 @@ export const LoginPage: React.FC = () => {
 
   const destination = (location.state as LocationState | null)?.from ?? '/admin';
 
-  // Already signed in as an admin? Skip the form.
+  // Already signed in? Skip the form.
   useEffect(() => {
-    if (!initializing && session && isAdmin) {
+    if (!initializing && user) {
       navigate(destination, { replace: true });
     }
-  }, [initializing, session, isAdmin, destination, navigate]);
+  }, [initializing, user, destination, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +38,8 @@ export const LoginPage: React.FC = () => {
       await signIn(email, password);
       navigate(destination, { replace: true });
     } catch (err) {
+      // The server's own wording, e.g. "Incorrect email or password." or the
+      // 429's "Too many sign-in attempts. Try again in N minutes."
       setError(describeError(err));
       setSubmitting(false);
     }
@@ -58,16 +60,6 @@ export const LoginPage: React.FC = () => {
           <p className="mt-1 text-xs font-light text-[#1A1A1A]/60">
             Use the email and password for your Travel Eye admin account.
           </p>
-
-          {!isSupabaseConfigured && (
-            <div className="mt-4">
-              <ErrorNote>
-                Supabase is not configured. Copy <code>.env.example</code> to{' '}
-                <code>.env.local</code> and set <code>VITE_SUPABASE_URL</code> and{' '}
-                <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>.
-              </ErrorNote>
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div className="space-y-2">
@@ -114,7 +106,6 @@ export const LoginPage: React.FC = () => {
               type="submit"
               icon={LogIn}
               loading={submitting}
-              disabled={!isSupabaseConfigured}
               className="w-full py-3"
             >
               Sign in

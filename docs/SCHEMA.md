@@ -201,17 +201,42 @@ New — the `InquiryModal` previously discarded submissions.
 
 Indexed on `created_at desc` and `status` — the two orderings the inbox uses.
 
-## `admins`
+## `users`, `sessions`, `login_attempts`
+
+Sign-in, on the API's own tables (`db/migrations/0001_init.sql`,
+`0003_login_attempts.sql`). These replace the Supabase `admins` allow-list and
+Supabase Auth.
+
+**`users`**: every user is an admin; there is no role column.
 
 | Column | Type | Notes |
 | --- | --- | --- |
-| `id` | `uuid` PK | FK → `auth.users(id)`, `ON DELETE CASCADE` |
-| `email` | `text` | |
+| `id` | `uuid` PK | |
+| `email` | `text` | unique on `lower(email)`; stored trimmed and lowercased |
+| `password_hash` | `text` | argon2id PHC string; a CHECK requires the `$argon2id$` prefix |
 | `full_name` | `text` NULL | |
+| `last_login_at` | `timestamptz` NULL | set on each successful sign-in |
 
-A row here is what grants write access. Having an `auth.users` account is not
-enough. Populate it from the SQL editor — there is deliberately no client-side
-path to add an admin.
+**`sessions`**: one row per signed-in browser. Deleting the row is signing out.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `user_id` | `uuid` | FK → `users`, `ON DELETE CASCADE` |
+| `token_hash` | `text` | SHA-256 hex of the cookie's token; the token is never stored |
+| `user_agent`, `ip` | `text`, `inet` | recorded at sign-in |
+| `last_seen_at` | `timestamptz` | advanced at most every 5 minutes |
+| `expires_at` | `timestamptz` | sign-in + 7 days, fixed; checked on every request |
+
+**`login_attempts`**: the sign-in throttle's counters.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `email_hash` | `text` | SHA-256 hex of the trimmed, lowercased submitted email |
+| `ip` | `inet` | `req.ip` |
+| `succeeded` | `boolean` | only failures count toward the limits |
+| `attempted_at` | `timestamptz` | rows older than 24 hours are swept hourly |
+
+Create users with `npm run admin:create` (README §3).
 
 ---
 

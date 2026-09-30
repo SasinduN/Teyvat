@@ -1,5 +1,13 @@
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { InquiryRow, InquiryStatus } from '@shared/database.types';
+
+/**
+ * The Supabase client, loaded on first use rather than imported.
+ *
+ * `InquiryModal` is part of the public page, and a static import here would
+ * put the whole SDK (~224 kB) in the marketing site's bundle for a form most
+ * visitors never submit. Phase 6 moves enquiries onto `/api` and deletes this.
+ */
+const loadSupabase = () => import('@/lib/supabase');
 
 /** What the public `InquiryModal` collects. */
 export interface InquiryDraft {
@@ -18,6 +26,8 @@ export interface InquiryDraft {
  * enquiry that is already marked handled, nor write `admin_notes`.
  */
 export async function submitInquiry(draft: InquiryDraft): Promise<void> {
+  const { isSupabaseConfigured, supabase } = await loadSupabase();
+
   // Until phase 6 moves enquiries onto /api, a deployment without Supabase
   // credentials cannot accept them. Say so plainly instead of letting a request
   // to the placeholder URL fail with a bare "Failed to fetch".
@@ -46,6 +56,7 @@ export interface InquiryQuery {
 }
 
 export async function listInquiries(query: InquiryQuery = {}): Promise<InquiryRow[]> {
+  const { supabase } = await loadSupabase();
   let q = supabase.from('inquiries').select('*').order('created_at', { ascending: false });
 
   if (query.status && query.status !== 'all') {
@@ -68,17 +79,20 @@ export async function updateInquiry(
   id: string,
   patch: { status?: InquiryStatus; admin_notes?: string | null }
 ): Promise<void> {
+  const { supabase } = await loadSupabase();
   const { error } = await supabase.from('inquiries').update(patch).eq('id', id);
   if (error) throw error;
 }
 
 export async function deleteInquiry(id: string): Promise<void> {
+  const { supabase } = await loadSupabase();
   const { error } = await supabase.from('inquiries').delete().eq('id', id);
   if (error) throw error;
 }
 
 /** Counts for the admin dashboard tiles. */
 export async function countInquiriesByStatus(): Promise<Record<string, number>> {
+  const { supabase } = await loadSupabase();
   const { data, error } = await supabase.from('inquiries').select('status');
   if (error) throw error;
 

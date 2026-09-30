@@ -30,20 +30,46 @@ function isErrorPayload(body: unknown): body is ApiErrorPayload {
   );
 }
 
-export async function getJson<T>(path: string): Promise<T> {
+async function request(path: string, init: RequestInit): Promise<{ res: Response; body: unknown }> {
   let res: Response;
   try {
-    res = await fetch(path, { headers: { Accept: 'application/json' } });
+    res = await fetch(path, {
+      ...init,
+      headers: { Accept: 'application/json', ...init.headers }
+    });
   } catch {
     throw new ApiRequestError(0, 'unreachable', UNREACHABLE);
   }
 
-  const body: unknown = await res.json().catch(() => undefined);
+  // 204 has no body, and that is success, not a parse failure.
+  const body: unknown = res.status === 204 ? null : await res.json().catch(() => undefined);
 
-  if (res.ok && body !== undefined) return body as T;
+  if (res.ok && body !== undefined) return { res, body };
 
   if (isErrorPayload(body)) {
     throw new ApiRequestError(res.status, body.error.code, body.error.message);
   }
   throw new ApiRequestError(res.status, 'unreachable', UNREACHABLE);
+}
+
+export async function getJson<T>(path: string): Promise<T> {
+  const { body } = await request(path, { method: 'GET' });
+  return body as T;
+}
+
+/**
+ * POST with an optional JSON body. The browser adds `Origin` to a POST on its
+ * own, which is what the server's same-origin check reads, and sends the
+ * session cookie because the request is same-origin.
+ *
+ * Resolves to `null` for a 204.
+ */
+export async function postJson<T>(path: string, payload?: unknown): Promise<T> {
+  const { body } = await request(path, {
+    method: 'POST',
+    ...(payload === undefined
+      ? {}
+      : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+  });
+  return body as T;
 }

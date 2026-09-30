@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Toaster } from 'sonner';
 
+import { AuthProvider } from '@/context/AuthContext';
 import { RequireAdmin } from '@/admin/components/RequireAdmin';
 import { AdminLayout } from '@/admin/components/AdminLayout';
 import { LoginPage } from '@/admin/pages/LoginPage';
@@ -14,12 +15,12 @@ import { RecordEditorPage } from '@/admin/pages/RecordEditorPage';
  * Everything under `/admin`. Loaded lazily from `src/App.tsx`, so this whole
  * subtree — including Zod, React Hook Form and Sonner — ships as its own chunk.
  *
- * Paths here are relative to `/admin/*`. The toaster lives here rather than in
- * the root app so `sonner` stays out of the public bundle: the marketing site
- * has no toasts.
+ * Paths here are relative to `/admin/*`. The toaster and the `AuthProvider`
+ * live here rather than in the root app: the marketing site has no toasts and
+ * no sign-in, so neither belongs in its bundle or its network traffic.
  */
 const AdminApp: React.FC = () => (
-  <>
+  <AuthProvider>
     <Toaster
       position="bottom-right"
       closeButton
@@ -53,7 +54,7 @@ const AdminApp: React.FC = () => (
 
       <Route path="*" element={<Navigate to="/admin" replace />} />
     </Routes>
-  </>
+  </AuthProvider>
 );
 
 export default AdminApp;

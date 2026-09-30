@@ -16,8 +16,8 @@ this file or anywhere else in git.
 | 1 | Railway Postgres, migration runner, `site_settings` | done (`11d77e2`) |
 | 2a | Express API, shared types, `GET /api/content` | done (`d50988d`) |
 | 2b | Public site reads `/api/content`: hero slides, pillars, site settings, spotlight from `featured` | done |
-| 3 | Auth on our own `users` / `sessions` tables (replaces Supabase Auth) | next |
-| 4 | Admin CRUD endpoints (replaces Supabase queries in `src/admin`) | |
+| 3 | Auth on our own `users` / `sessions` tables (replaces Supabase Auth) | done |
+| 4 | Admin CRUD endpoints (replaces Supabase queries in `src/admin`) | next |
 | 5 | Image uploads to Cloudflare R2 (replaces Supabase Storage) | |
 | 6 | Inquiries endpoints: public submit and admin inbox | |
 | 7 | Remove Supabase entirely, update docs, deploy | |

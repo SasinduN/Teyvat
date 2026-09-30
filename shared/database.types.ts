@@ -206,11 +206,15 @@ export interface InquiryRow extends Timestamps {
   admin_notes: string | null;
 }
 
-export interface AdminRow {
+/** `public.users`. Every user is an admin; there is no role column. */
+export interface UserRow {
   id: string;
   email: string;
+  password_hash: string;
   full_name: string | null;
+  last_login_at: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 /**

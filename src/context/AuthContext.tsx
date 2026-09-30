@@ -1,112 +1,79 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState
-} from 'react';
-import type { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
-import type { AdminRow } from '@shared/database.types';
+import React, { createContext, useCallback, useContext, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+
+import type { AuthUser } from '@shared/api';
+import { fetchCurrentUser, login, logout, logoutEverywhere } from '@/lib/api/auth';
+import { queryKeys } from '@/lib/queryClient';
 
 /**
- * Supabase Auth session + admin-role resolution.
+ * Who is signed in to the admin panel, from `GET /api/auth/me`.
  *
- * Being signed in is not the same as being an admin: `isAdmin` is true only
- * when the user also has a row in `public.admins`. The UI uses this to decide
- * what to show; the database enforces the same rule independently through RLS,
- * so a tampered client gains nothing.
+ * Every user is an admin, so a user here is all the UI needs. What it shows is
+ * a convenience: the server checks the session cookie on every admin request
+ * regardless of what this says.
+ *
+ * Provided by `AdminApp`, not the root app, so the public site never calls
+ * `/api/auth` at all.
  */
 
 interface AuthContextValue {
-  session: Session | null;
-  user: User | null;
-  admin: AdminRow | null;
-  isAdmin: boolean;
-  /** True until the initial session + role check has settled. */
+  user: AuthUser | null;
+  /** True until the first `/api/auth/me` has answered. */
   initializing: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Ends every session this user has, on every device. */
+  signOutEverywhere: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [admin, setAdmin] = useState<AdminRow | null>(null);
-  const [initializing, setInitializing] = useState(true);
+  const queryClient = useQueryClient();
 
-  // Guards against a slow role lookup resolving after a newer one.
-  const lookupToken = useRef(0);
+  const me = useQuery({
+    queryKey: queryKeys.currentUser,
+    queryFn: fetchCurrentUser,
+    // A 401 is an answer (null), not an error, so only network trouble
+    // reaches retry. Recheck on focus so a session that expired while the tab
+    // sat in the background sends you to the login page when you come back.
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: true
+  });
 
-  const resolveAdmin = useCallback(async (next: Session | null) => {
-    const token = ++lookupToken.current;
+  /** Forgets the user and everything the admin panel had loaded as them. */
+  const clearLocal = useCallback(() => {
+    queryClient.removeQueries({ queryKey: queryKeys.admin.all });
+    queryClient.setQueryData(queryKeys.currentUser, null);
+  }, [queryClient]);
 
-    if (!next?.user) {
-      if (token === lookupToken.current) setAdmin(null);
-      return;
-    }
-
-    // RLS restricts this to the caller's own row, so an ordinary signed-in
-    // user simply gets nothing back.
-    const { data, error } = await supabase
-      .from('admins')
-      .select('*')
-      .eq('id', next.user.id)
-      .maybeSingle();
-
-    if (token !== lookupToken.current) return;
-    setAdmin(error ? null : ((data ?? null) as AdminRow | null));
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    void (async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!active) return;
-      setSession(data.session);
-      await resolveAdmin(data.session);
-      if (active) setInitializing(false);
-    })();
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
-      setSession(next);
-      void resolveAdmin(next);
-    });
-
-    return () => {
-      active = false;
-      sub.subscription.unsubscribe();
-    };
-  }, [resolveAdmin]);
-
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password
-    });
-    if (error) throw error;
-  }, []);
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      const user = await login({ email, password });
+      queryClient.setQueryData(queryKeys.currentUser, user);
+    },
+    [queryClient]
+  );
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
-    setAdmin(null);
-  }, []);
+    await logout();
+    clearLocal();
+  }, [clearLocal]);
+
+  const signOutEverywhere = useCallback(async () => {
+    await logoutEverywhere();
+    clearLocal();
+  }, [clearLocal]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      session,
-      user: session?.user ?? null,
-      admin,
-      isAdmin: admin !== null,
-      initializing,
+      user: me.data ?? null,
+      initializing: me.isPending,
       signIn,
-      signOut
+      signOut,
+      signOutEverywhere
     }),
-    [session, admin, initializing, signIn, signOut]
+    [me.data, me.isPending, signIn, signOut, signOutEverywhere]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

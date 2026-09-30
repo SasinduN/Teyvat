@@ -7,6 +7,7 @@
  * in-process would start serving first and migrate second.
  */
 import { createApp } from './app';
+import { startSweep } from './auth/sweep';
 import { pool } from './db';
 import { env } from './env';
 
@@ -15,6 +16,8 @@ const app = createApp();
 const server = app.listen(env.PORT, () => {
   console.log(`[api] listening on :${env.PORT} (${env.NODE_ENV})`);
 });
+
+const stopSweep = startSweep();
 
 /**
  * Railway sends SIGTERM and waits before SIGKILL. Closing the listener first
@@ -28,6 +31,7 @@ for (const signal of ['SIGTERM', 'SIGINT'] as const) {
     if (shuttingDown) return;
     shuttingDown = true;
     console.log(`[api] ${signal} received, shutting down`);
+    stopSweep();
 
     server.close(() => {
       void pool.end().then(() => process.exit(0));

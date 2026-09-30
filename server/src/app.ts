@@ -13,8 +13,10 @@ import { fileURLToPath } from 'node:url';
 import express, { type Express } from 'express';
 
 import { API_ROUTES } from '../../shared/api';
+import { sameOrigin } from './auth/middleware';
 import { isProduction } from './env';
 import { errorHandler, sendError } from './http';
+import { authRouter } from './routes/auth';
 import { contentRouter } from './routes/content';
 import { healthRouter } from './routes/health';
 
@@ -34,8 +36,9 @@ export function createApp(): Express {
   /**
    * Railway terminates TLS at its edge and forwards over HTTP. Without this,
    * Express sees an http request and refuses to set `Secure` cookies, and
-   * `req.ip` is the proxy rather than the caller — which matters for the
-   * `sessions.ip` column in phase 3.
+   * `req.ip` is the proxy rather than the caller. The sign-in throttle counts
+   * failures per `req.ip`, so if this ever resolved to the proxy, "20 per IP"
+   * would become a site-wide lockout. README § Security says how to check.
    */
   app.set('trust proxy', 1);
 
@@ -46,8 +49,12 @@ export function createApp(): Express {
 
   /* ------------------------------------------------------------------- api */
 
+  // Before every router: refuses a cross-origin POST/PUT/PATCH/DELETE.
+  app.use('/api', sameOrigin);
+
   app.use('/api', healthRouter);
   app.use('/api', contentRouter);
+  app.use('/api', authRouter);
 
   /**
    * Unknown `/api/*` must be a JSON 404, not the SPA shell. Falling through to

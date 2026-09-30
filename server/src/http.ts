@@ -11,6 +11,7 @@ const STATUS_BY_CODE: Record<ApiErrorCode, number> = {
   forbidden: 403,
   not_found: 404,
   conflict: 409,
+  too_many_requests: 429,
   internal: 500
 };
 

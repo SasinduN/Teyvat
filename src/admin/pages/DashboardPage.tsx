@@ -12,7 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Badge, Card, ErrorNote, PageHeader, Spinner } from '@/admin/components/ui';
 
 export const DashboardPage: React.FC = () => {
-  const { admin, user } = useAuth();
+  const { user } = useAuth();
 
   const counts = useQuery({
     queryKey: queryKeys.admin.counts,
@@ -29,7 +29,7 @@ export const DashboardPage: React.FC = () => {
     queryFn: countInquiriesByStatus
   });
 
-  const firstName = (admin?.full_name || user?.email || '').split(/[ @]/)[0];
+  const firstName = (user?.fullName || user?.email || '').split(/[ @]/)[0];
   const newInquiries = inquiries.data?.new ?? 0;
   const error = counts.error ?? inquiries.error;
 

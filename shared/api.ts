@@ -23,7 +23,13 @@ import type {
 
 export const API_ROUTES = {
   health: '/api/health',
-  content: '/api/content'
+  content: '/api/content',
+  auth: {
+    login: '/api/auth/login',
+    me: '/api/auth/me',
+    logout: '/api/auth/logout',
+    logoutAll: '/api/auth/logout-all'
+  }
 } as const;
 
 /**
@@ -86,6 +92,31 @@ export interface HealthPayload {
 }
 
 /**
+ * The signed-in user, as `/api/auth/*` returns it. Deliberately not the
+ * `users` row: the password hash and bookkeeping columns never leave the
+ * server.
+ *
+ * There is no role field. Every user is an admin, so being signed in is the
+ * whole of the authorisation question.
+ */
+export interface AuthUser {
+  id: string;
+  email: string;
+  fullName: string | null;
+}
+
+/** `POST /api/auth/login` and `GET /api/auth/me`. */
+export interface AuthUserPayload {
+  user: AuthUser;
+}
+
+/** `POST /api/auth/login` request body. Validated on the server with Zod. */
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+/**
  * The single error shape every route returns on a non-2xx, so the client has
  * one thing to parse. `code` is stable and safe to branch on; `message` is
  * human-facing and may be reworded.
@@ -103,4 +134,6 @@ export type ApiErrorCode =
   | 'forbidden'
   | 'not_found'
   | 'conflict'
+  /** HTTP 429. Sent with a `Retry-After` header, in seconds. */
+  | 'too_many_requests'
   | 'internal';

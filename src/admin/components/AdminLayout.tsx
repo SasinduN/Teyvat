@@ -6,11 +6,14 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MonitorOff,
   X,
   type LucideIcon
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { COLLECTIONS } from '@/admin/collections';
+import { describeError } from '@/lib/errors';
 import { cn } from '@/utils/cn';
 
 const NavItem: React.FC<{
@@ -39,13 +42,19 @@ const NavItem: React.FC<{
 );
 
 export const AdminLayout: React.FC = () => {
-  const { admin, user, signOut } = useAuth();
+  const { user, signOut, signOutEverywhere } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/admin/login', { replace: true });
+  // If the request fails the session is still live on the server, so stay put
+  // and say so rather than pretending the sign-out happened.
+  const handleSignOut = async (everywhere: boolean) => {
+    try {
+      await (everywhere ? signOutEverywhere() : signOut());
+      navigate('/admin/login', { replace: true });
+    } catch (e) {
+      toast.error(describeError(e));
+    }
   };
 
   const closeMobile = () => setMobileOpen(false);
@@ -88,15 +97,23 @@ export const AdminLayout: React.FC = () => {
           <span>View live site</span>
         </a>
         <button
-          onClick={() => void handleSignOut()}
+          onClick={() => void handleSignOut(false)}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-[#F5EFEB]/75 transition-colors hover:bg-white/10 hover:text-white"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           <span>Sign out</span>
         </button>
+        <button
+          onClick={() => void handleSignOut(true)}
+          title="Ends your session on every browser and device"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-[#F5EFEB]/75 transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <MonitorOff className="h-4 w-4 shrink-0" />
+          <span>Sign out everywhere</span>
+        </button>
 
         <div className="truncate px-3 pt-3 text-[10px] font-light text-[#F5EFEB]/40">
-          {admin?.full_name || user?.email}
+          {user?.fullName || user?.email}
         </div>
       </div>
     </div>
