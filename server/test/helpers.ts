@@ -5,6 +5,7 @@
  * Import `./test-db` before this file.
  */
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { dirname, resolve } from 'node:path';
@@ -49,6 +50,42 @@ export async function assertConnectedToTestDatabase(): Promise<void> {
 
 export async function resetAuthTables(): Promise<void> {
   await pool.query('truncate public.login_attempts, public.sessions, public.users');
+}
+
+const CONTENT_TABLES = [
+  'destinations',
+  'experience_categories',
+  'featured_experiences',
+  'tours',
+  'articles',
+  'hidden_gems',
+  'photo_stories',
+  'hero_slides',
+  'pillars'
+];
+
+/**
+ * Puts the content back to the approved baseline: empties the nine content
+ * tables, re-runs the 0002 seed, and resets `site_settings` to its 0001
+ * values as 0004 left them (links NULL).
+ *
+ * 0002 is an upsert that must never be run by hand against production. Here
+ * it only ever reaches the database `test-db.ts` has already proven is the
+ * local test database.
+ */
+export async function resetContent(): Promise<void> {
+  await assertConnectedToTestDatabase();
+  await pool.query(`truncate ${CONTENT_TABLES.map((t) => `public.${t}`).join(', ')}`);
+  await pool.query(readFileSync(resolve(REPO_ROOT, 'db/migrations/0002_seed.sql'), 'utf8'));
+  await pool.query(
+    `update public.site_settings
+        set postal_address = 'Level 12, Galle Face Terrace, Colombo 03, Sri Lanka',
+            phone = '+94 11 234 5678',
+            contact_email = 'hello@traveleye.lk',
+            instagram_url = null, facebook_url = null, tiktok_url = null, youtube_url = null,
+            privacy_url = null, terms_url = null, sustainability_url = null
+      where id`
+  );
 }
 
 export interface RunningApp {

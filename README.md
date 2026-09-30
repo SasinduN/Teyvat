@@ -6,10 +6,9 @@ panel that manages its content.
 - **Public site** — `/` — the approved marketing design, now rendered entirely
   from the database.
 - **Admin panel** — `/admin` — email/password sign-in on the API's own
-  sessions, full CRUD for every content collection, image uploads, and the
-  enquiry inbox. (Phase 3 moved sign-in only. The dashboard, collections and
-  inbox still query Supabase and will error until phase 4 moves them onto
-  `/api`.)
+  sessions, full CRUD for all nine content collections and the site settings
+  through `/api/admin/*`. Images are pasted as `https://` URLs until uploads
+  arrive in phase 5. The enquiry inbox returns in phase 6.
 
 Stack: Vite 7 · React 19 · TypeScript 5.9 (strict) · Tailwind CSS v4 ·
 Framer Motion · Leaflet · React Router v7 · Supabase (Postgres, Auth, Storage) ·
@@ -43,6 +42,10 @@ The files:
 - `0001_init.sql` — tables, CHECK constraints, `updated_at` triggers, the
   `users`/`sessions` auth tables and the single-row `site_settings`. Idempotent:
   re-running it is a no-op and never overwrites live data.
+- `0003_login_attempts.sql` — the sign-in throttle's counters.
+- `0004_site_settings_links.sql` — each footer link becomes NULL or
+  `https://…`. The `#instagram`-style placeholders become NULL, and the Footer
+  renders an unset link without an `href`.
 - `0002_seed.sql` — the approved baseline content: 63 rows across all nine
   content tables (20 destinations, 6 experience types, 4 featured experiences,
   4 tours, 6 articles, 8 hidden gems, 8 photo stories, 3 hero slides,
@@ -176,7 +179,7 @@ npm run build && npm start   # everything on http://localhost:8081
 | `npm run preview` | Vite's own preview of the client build |
 | `npm run seed:generate` | Regenerate `0002_seed.sql` from `scripts/fixtures/*.ts` |
 | `npm run verify:roundtrip` | Assert the DB round-trip renders identical content |
-| `npm run images:migrate` | Optional: pull seeded Unsplash images into Storage |
+| `npm run images:migrate` | Legacy: pulls seeded images into Supabase Storage. Unused since phase 4; phase 5 replaces it |
 
 ---
 
@@ -221,12 +224,46 @@ InquiryModal ──RLS INSERT (anon)──▶ public.inquiries ◀──RLS (adm
 
 /admin/login ──POST /api/auth/login──▶ session cookie ──GET /api/auth/me──▶ AuthContext
 
-/admin/* (until phase 4) ──Supabase client──▶ lib/api/admin.ts ──RLS──▶ Supabase Postgres
+/admin/* ──lib/api/admin.ts──▶ /api/admin/* (requireAdmin + same-origin) ──▶ Postgres
 ```
 
 Admin mutations invalidate the query keys they touch (`src/lib/queryClient.ts`),
 including `siteContent` — so a save is reflected on the public site without a
 reload. Reordering is optimistic and rolls back if the write fails.
+
+`GET /api/content` is sent with `Cache-Control: no-cache`: the browser
+revalidates it on every page load, so a save shows up on the next load.
+
+### Admin API
+
+Every route is behind `requireAdmin` and answers with `Cache-Control:
+no-store`. Every write also passes the same-origin check.
+
+| Route | Result |
+| --- | --- |
+| `GET /api/admin/content/:table` | every row, drafts included, in `sort_order` |
+| `GET /api/admin/content/:table/count` | `{ count }` |
+| `GET /api/admin/content/:table/:id` | one row, or 404 |
+| `POST /api/admin/content/:table` | 201; the row is added at the end of the list |
+| `PUT /api/admin/content/:table/:id` | `{ values, expectedUpdatedAt }`; 409 if saved by someone else since |
+| `PATCH /api/admin/content/:table/:id/published` | `{ published }` |
+| `DELETE /api/admin/content/:table/:id` | 204 |
+| `PUT /api/admin/content/:table/order` | `{ ids }`: every id, in order, one transaction |
+| `GET` / `PUT /api/admin/site-settings` | the single row; `PUT` takes `{ values, expectedUpdatedAt }` |
+
+Rules the API enforces:
+
+- **Validation.** Errors are 400 with a message per field, in
+  `error.fields` (`"itinerary.2.title": "Each day needs a title."`).
+- **Slugs.** A slug can't change after a row is created. `count` and `order`
+  are reserved.
+- **Concurrent edits.** Saving a version someone else has already replaced gets
+  409, and the editor offers to load the saved version.
+- **Reorder** is all or nothing. If the list changed underneath (a row added or
+  deleted), it gets 409 and nothing is written.
+- **Hero.** The last published hero slide can't be unpublished or deleted.
+- **Site settings links** are `https://` or empty (stored as NULL);
+  `contact_email` must be an email.
 
 ### Sign-in and sessions
 
@@ -281,11 +318,11 @@ phase 3 deploy):
    the same address, or a private one such as `10.x` or `100.64.x`, then
    `req.ip` is the proxy. Fix `trust proxy` before relying on the limits.
 
-### Security model (Supabase side, until phases 4–6)
+### Security model (Supabase side, until phases 5–6)
 
 The table below describes the parts of the site that still run on Supabase:
-admin content CRUD, the enquiry inbox and image storage. Sign-in no longer
-does.
+the enquiry form and inbox, and image storage. Sign-in and content editing no
+longer do.
 
 | Actor | Content tables | `inquiries` | `media` bucket |
 | --- | --- | --- | --- |
@@ -300,14 +337,17 @@ what to *render*. The anon insert policy on `inquiries` also pins `status` to
 
 ### The admin panel is schema-driven
 
-Every list view and edit form is generated from `src/admin/collections.ts`.
-Adding a column means adding one field descriptor — no new page components.
-Supported field types: `text`, `textarea`, `slug`, `number`, `select`,
-`multiselect`, `image`, `imageList`, `stringList`, `date`, `boolean`,
-`itinerary`.
+Every list view and edit form is generated from field descriptors in
+`shared/content-schema.ts`; `src/admin/collections.ts` adds the icons, labels
+and list-view columns. Adding a column means adding one field descriptor — no
+new page components. Supported field types: `text`, `textarea`, `slug`,
+`number`, `select`, `multiselect`, `image`, `imageList`, `stringList`, `date`,
+`boolean`, `itinerary`, `email`, `link`.
 
-The *same* descriptors generate the Zod schema (`src/admin/validation.ts`), so
-validation can never drift from the UI. That schema is also the coercion layer:
+The *same* descriptors generate the Zod schema (`schemaForTable`), which the
+admin form and the API both run, so validation can never drift between them.
+The API also uses the descriptors as its column allow-list: SQL column names
+never come from a request. That schema is also the coercion layer:
 number inputs arrive as strings and are coerced, text is trimmed, blank optional
 text becomes `null` (so the mapper yields `undefined` and the public component
 renders exactly as it did with hardcoded data), empty list rows are dropped, and
@@ -320,35 +360,20 @@ downloads the CMS — Zod, React Hook Form and Sonner all ship in that chunk.
 
 ### Images
 
-Admins upload files; the DB stores the returned Storage public URL. There is
-deliberately no "paste a URL" input. Uploads go to
-`media/<folder>/<timestamp>-<random>.<ext>` — a fresh key per upload, so
-replacing an image never needs a CDN cache-bust and cannot clobber a file another
-record still points at. Replacing or deleting a record cleans up images we own
-and leaves third-party URLs alone.
-
-The seeded records still reference their original Unsplash URLs. To move those
-into Storage too:
-
-```bash
-# bash
-SUPABASE_URL=... SUPABASE_SECRET_KEY=... npm run images:migrate
-
-# PowerShell
-$env:SUPABASE_URL="https://xxxx.supabase.co"
-$env:SUPABASE_SECRET_KEY="sb_secret_..."
-npm run images:migrate
-```
-
-Add `-- --dry-run` to preview. The secret key (`sb_secret_...`) is read from the
-shell only and is never written to a file. Re-running is safe — URLs already in the bucket
-are skipped.
+Until phase 5 brings uploads (Cloudflare R2), every image field is a URL box
+with a live preview. The API accepts `https://` URLs only. The seeded records
+reference their original Unsplash URLs, which keep working.
 
 ### Ordering and drafts
 
 Every content table has `sort_order` (seeded with the record's original array
 index, which is what preserves the approved page order) and `published`. The
-list views reorder with the arrow buttons and toggle drafts with the eye icon.
+list views reorder with the arrow buttons and toggle drafts with the eye icon;
+the edit form has no sort-order box, so there is one way to reorder.
+
+The destinations list notes that only the first 6 featured destinations are
+displayed (the spotlight's six-card grid), and marks featured rows beyond the
+sixth "Featured · not shown".
 
 ---
 
@@ -399,5 +424,9 @@ Work through this before the site goes live.
       If it is the proxy's address, the per-IP sign-in limit locks everyone out.
 - [ ] **Create the first admin** with `npm run admin:create` (§3). Use an
       address other than the public `contact_email`.
+- [ ] **Publish a real privacy policy page** and set its URL in
+      *Admin → Settings*. The site collects enquiries (names, emails, phone
+      numbers), so it needs one before go-live. Until the URL is set, the
+      footer's "Privacy Policy" link has no destination.
 - [ ] **Confirm no `.env` file is committed.** `git check-ignore -v .env`
       should print a matching rule.

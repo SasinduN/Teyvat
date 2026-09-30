@@ -13,7 +13,9 @@ export class ApiRequestError extends Error {
   constructor(
     readonly status: number,
     readonly code: ApiErrorCode | 'unreachable',
-    message: string
+    message: string,
+    /** Field-level messages from a 400, keyed by path (`itinerary.2.title`). */
+    readonly fields?: Record<string, string>
   ) {
     super(message);
     this.name = 'ApiRequestError';
@@ -47,7 +49,7 @@ async function request(path: string, init: RequestInit): Promise<{ res: Response
   if (res.ok && body !== undefined) return { res, body };
 
   if (isErrorPayload(body)) {
-    throw new ApiRequestError(res.status, body.error.code, body.error.message);
+    throw new ApiRequestError(res.status, body.error.code, body.error.message, body.error.fields);
   }
   throw new ApiRequestError(res.status, 'unreachable', UNREACHABLE);
 }
@@ -58,18 +60,23 @@ export async function getJson<T>(path: string): Promise<T> {
 }
 
 /**
- * POST with an optional JSON body. The browser adds `Origin` to a POST on its
- * own, which is what the server's same-origin check reads, and sends the
- * session cookie because the request is same-origin.
+ * A write with an optional JSON body. The browser adds `Origin` to every
+ * non-GET request on its own, which is what the server's same-origin check
+ * reads, and sends the session cookie because the request is same-origin.
  *
  * Resolves to `null` for a 204.
  */
-export async function postJson<T>(path: string, payload?: unknown): Promise<T> {
+async function sendJson<T>(method: string, path: string, payload?: unknown): Promise<T> {
   const { body } = await request(path, {
-    method: 'POST',
+    method,
     ...(payload === undefined
       ? {}
       : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
   });
   return body as T;
 }
+
+export const postJson = <T>(path: string, payload?: unknown) => sendJson<T>('POST', path, payload);
+export const putJson = <T>(path: string, payload?: unknown) => sendJson<T>('PUT', path, payload);
+export const patchJson = <T>(path: string, payload?: unknown) => sendJson<T>('PATCH', path, payload);
+export const deleteJson = <T>(path: string) => sendJson<T>('DELETE', path);

@@ -15,11 +15,10 @@ import {
   Trash2
 } from 'lucide-react';
 
-import { findCollection } from '@/admin/collections';
+import { findCollection, SPOTLIGHT_NOTICE } from '@/admin/collections';
 import { deleteRow, listRows, reorderRows, setPublished } from '@/lib/api/admin';
+import { describeError } from '@/lib/errors';
 import { queryKeys } from '@/lib/queryClient';
-import { deleteImageByUrl, isStorageUrl } from '@/lib/storage';
-import { describeError } from '@/lib/supabase';
 import {
   Badge,
   Button,
@@ -100,21 +99,10 @@ export const CollectionPage: React.FC = () => {
     onSettled: invalidate
   });
 
+  // Images are pasted URLs until phase 5, so there is nothing of ours to
+  // clean up when a record goes.
   const remove = useMutation({
-    mutationFn: async (row: Row) => {
-      await deleteRow(collection!.table, row.id);
-
-      // Clean up images we own; seeded third-party URLs are left alone.
-      const cover = row[collection!.imageField];
-      if (typeof cover === 'string' && isStorageUrl(cover)) {
-        void deleteImageByUrl(cover);
-      }
-      if (Array.isArray(row.gallery)) {
-        row.gallery
-          .filter((u): u is string => typeof u === 'string' && isStorageUrl(u))
-          .forEach((u) => void deleteImageByUrl(u));
-      }
-    },
+    mutationFn: (row: Row) => deleteRow(collection!.table, row.id),
     onSuccess: () => {
       invalidate();
       setConfirmId(null);
@@ -134,6 +122,31 @@ export const CollectionPage: React.FC = () => {
         .some((f) => String(r[f as string] ?? '').toLowerCase().includes(term))
     );
   }, [rows, search, collection]);
+
+  /**
+   * Destinations: which featured rows the public spotlight actually shows. It
+   * takes the first 6 published, featured rows in sort order
+   * (`DestinationSpotlight`), and the list is already in sort order.
+   */
+  const spotlightIds = useMemo(() => {
+    if (collection?.table !== 'destinations' || !rows) return new Set<string>();
+    return new Set(
+      rows
+        .filter((r) => r.featured === true && r.published)
+        .slice(0, 6)
+        .map((r) => r.id)
+    );
+  }, [collection, rows]);
+
+  /**
+   * Hero slides: the last published slide can't be unpublished or deleted.
+   * The API refuses it regardless; this just says why before anyone tries.
+   */
+  const lastPublishedHeroId = useMemo(() => {
+    if (collection?.table !== 'hero_slides' || !rows) return null;
+    const published = rows.filter((r) => r.published);
+    return published.length === 1 ? published[0].id : null;
+  }, [collection, rows]);
 
   if (!collection) return <Navigate to="/admin" replace />;
 
@@ -167,6 +180,12 @@ export const CollectionPage: React.FC = () => {
         }
       />
 
+      {collection.table === 'destinations' && (
+        <p className="-mt-2 mb-4 text-[11px] font-medium text-[#1C4737]">
+          Spotlight: {SPOTLIGHT_NOTICE}
+        </p>
+      )}
+
       {list.isError && (
         <div className="mb-4">
           <ErrorNote>{describeError(list.error)}</ErrorNote>
@@ -199,7 +218,8 @@ export const CollectionPage: React.FC = () => {
             ) : (
               filtered?.map((row) => {
                 const index = rows.indexOf(row);
-                const image = row[collection.imageField];
+                const image = collection.imageField ? row[collection.imageField] : undefined;
+                const keepsHero = row.id === lastPublishedHeroId;
                 const title = String(row[collection.titleField] ?? row.id);
                 const subtitle = collection.subtitleField
                   ? String(row[collection.subtitleField] ?? '')
@@ -251,7 +271,12 @@ export const CollectionPage: React.FC = () => {
                           {title}
                         </span>
                         {!row.published && <Badge tone="muted">Draft</Badge>}
-                        {row.featured === true && <Badge tone="gold">Featured</Badge>}
+                        {row.featured === true &&
+                          (collection.table !== 'destinations' || spotlightIds.has(row.id) ? (
+                            <Badge tone="gold">Featured</Badge>
+                          ) : (
+                            <Badge tone="muted">Featured · not shown</Badge>
+                          ))}
                       </div>
                       {subtitle && (
                         <p className="mt-0.5 truncate text-[11px] font-light text-[#1A1A1A]/55">
@@ -287,8 +312,14 @@ export const CollectionPage: React.FC = () => {
                       ) : (
                         <>
                           <IconAction
-                            label={row.published ? 'Unpublish' : 'Publish'}
-                            disabled={isBusy}
+                            label={
+                              keepsHero
+                                ? 'The hero needs at least one published slide'
+                                : row.published
+                                  ? 'Unpublish'
+                                  : 'Publish'
+                            }
+                            disabled={isBusy || keepsHero}
                             onClick={() => togglePublished.mutate(row)}
                           >
                             {row.published ? (
@@ -308,9 +339,11 @@ export const CollectionPage: React.FC = () => {
                           </Link>
 
                           <IconAction
-                            label="Delete"
+                            label={
+                              keepsHero ? 'The hero needs at least one published slide' : 'Delete'
+                            }
                             tone="danger"
-                            disabled={isBusy}
+                            disabled={isBusy || keepsHero}
                             onClick={() => setConfirmId(row.id)}
                           >
                             <Trash2 className="h-4 w-4" />

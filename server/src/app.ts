@@ -16,6 +16,7 @@ import { API_ROUTES } from '../../shared/api';
 import { sameOrigin } from './auth/middleware';
 import { isProduction } from './env';
 import { errorHandler, sendError } from './http';
+import { adminRouter } from './routes/admin';
 import { authRouter } from './routes/auth';
 import { contentRouter } from './routes/content';
 import { healthRouter } from './routes/health';
@@ -55,6 +56,7 @@ export function createApp(): Express {
   app.use('/api', healthRouter);
   app.use('/api', contentRouter);
   app.use('/api', authRouter);
+  app.use('/api', adminRouter);
 
   /**
    * Unknown `/api/*` must be a JSON 404, not the SPA shell. Falling through to

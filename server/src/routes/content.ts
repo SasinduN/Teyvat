@@ -126,10 +126,12 @@ contentRouter.get(
       siteSettings
     };
 
-    // No caching headers on purpose. An admin save must show on the public site
-    // without a reload, and TanStack Query already holds this in memory for five
-    // minutes client-side (src/lib/queryClient.ts), so a CDN or browser cache
-    // here would only add a second layer of staleness to reason about.
+    // An admin save must show on the next page load. `no-cache` lets the
+    // browser keep a copy but makes it revalidate every time (the ETag Express
+    // adds turns an unchanged payload into a 304). Nothing else caches this:
+    // TanStack Query holds it in memory for five minutes, which a reload
+    // resets, and an admin save in the same tab invalidates it.
+    res.set('Cache-Control', 'no-cache');
     res.json(payload);
   })
 );

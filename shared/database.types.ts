@@ -1,8 +1,7 @@
 /**
- * Hand-maintained mirror of `supabase/migrations/0001_init.sql`.
+ * Hand-maintained mirror of `db/migrations/*.sql`.
  *
- * Keep this file in sync whenever the schema changes. (If you adopt the
- * Supabase CLI, `supabase gen types typescript` can generate the same shape.)
+ * Keep this file in sync whenever the schema changes.
  */
 
 export type TourCategory = 'Luxury' | 'Culture' | 'Wildlife' | 'Adventure' | 'Full Island';
@@ -149,27 +148,32 @@ export interface HeroSlideRow extends Timestamps, Orderable {
 
 /**
  * Allowed `pillars.icon` values: the column's CHECK constraint. Same list as
- * `PillarIcon` in `src/types` and the icon map in `WhyTravelEye`.
+ * `PillarIcon` in `src/types` and the icon map in `WhyTravelEye`. A runtime
+ * array, not just a type, so the admin can offer it as a dropdown and the API
+ * can validate against it.
  */
-export type PillarIconName =
-  | 'Users'
-  | 'Compass'
-  | 'Sliders'
-  | 'Leaf'
-  | 'Heart'
-  | 'ShieldCheck'
-  | 'Star'
-  | 'MapPin'
-  | 'Camera'
-  | 'Globe'
-  | 'Sparkles'
-  | 'Award'
-  | 'Clock'
-  | 'Handshake'
-  | 'Mountain'
-  | 'Waves'
-  | 'Utensils'
-  | 'Binoculars';
+export const PILLAR_ICON_NAMES = [
+  'Users',
+  'Compass',
+  'Sliders',
+  'Leaf',
+  'Heart',
+  'ShieldCheck',
+  'Star',
+  'MapPin',
+  'Camera',
+  'Globe',
+  'Sparkles',
+  'Award',
+  'Clock',
+  'Handshake',
+  'Mountain',
+  'Waves',
+  'Utensils',
+  'Binoculars'
+] as const;
+
+export type PillarIconName = (typeof PILLAR_ICON_NAMES)[number];
 
 export interface PillarRow extends Timestamps, Orderable {
   id: string;
@@ -178,19 +182,22 @@ export interface PillarRow extends Timestamps, Orderable {
   description: string;
 }
 
-/** The single `site_settings` row. */
+/**
+ * The single `site_settings` row. Each link is NULL (not set; the Footer
+ * renders it without an href) or an https:// URL, per 0004_site_settings_links.
+ */
 export interface SiteSettingsRow extends Timestamps {
   id: true;
   postal_address: string;
   phone: string;
   contact_email: string;
-  instagram_url: string;
-  facebook_url: string;
-  tiktok_url: string;
-  youtube_url: string;
-  privacy_url: string;
-  terms_url: string;
-  sustainability_url: string;
+  instagram_url: string | null;
+  facebook_url: string | null;
+  tiktok_url: string | null;
+  youtube_url: string | null;
+  privacy_url: string | null;
+  terms_url: string | null;
+  sustainability_url: string | null;
 }
 
 export interface InquiryRow extends Timestamps {
@@ -238,6 +245,21 @@ export interface ContentTables {
   articles: ArticleRow;
   hidden_gems: HiddenGemRow;
   photo_stories: PhotoStoryRow;
+  hero_slides: HeroSlideRow;
+  pillars: PillarRow;
 }
 
 export type ContentTableName = keyof ContentTables;
+
+/** Every content table, in admin-menu order. Also the API's table allow-list. */
+export const CONTENT_TABLE_NAMES = [
+  'destinations',
+  'experience_categories',
+  'featured_experiences',
+  'tours',
+  'articles',
+  'hidden_gems',
+  'photo_stories',
+  'hero_slides',
+  'pillars'
+] as const satisfies readonly ContentTableName[];

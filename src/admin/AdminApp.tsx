@@ -10,6 +10,7 @@ import { DashboardPage } from '@/admin/pages/DashboardPage';
 import { InquiriesPage } from '@/admin/pages/InquiriesPage';
 import { CollectionPage } from '@/admin/pages/CollectionPage';
 import { RecordEditorPage } from '@/admin/pages/RecordEditorPage';
+import { SettingsPage } from '@/admin/pages/SettingsPage';
 
 /**
  * Everything under `/admin`. Loaded lazily from `src/App.tsx`, so this whole
@@ -46,7 +47,8 @@ const AdminApp: React.FC = () => (
       >
         <Route index element={<DashboardPage />} />
         <Route path="inquiries" element={<InquiriesPage />} />
-        {/* Static `inquiries` above outranks this dynamic segment. */}
+        <Route path="settings" element={<SettingsPage />} />
+        {/* Static `inquiries` and `settings` above outrank this dynamic segment. */}
         <Route path=":collection" element={<CollectionPage />} />
         <Route path=":collection/new" element={<RecordEditorPage />} />
         <Route path=":collection/:id" element={<RecordEditorPage />} />

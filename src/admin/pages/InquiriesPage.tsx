@@ -15,7 +15,7 @@ import {
 import { deleteInquiry, listInquiries, updateInquiry } from '@/lib/api/inquiries';
 import type { InquiryRow, InquiryStatus } from '@shared/database.types';
 import { queryKeys } from '@/lib/queryClient';
-import { describeError } from '@/lib/supabase';
+import { describeError } from '@/lib/errors';
 import {
   Badge,
   Button,
@@ -57,7 +57,32 @@ const formatWhen = (iso: string): string =>
     minute: '2-digit'
   });
 
-export const InquiriesPage: React.FC = () => {
+/**
+ * Until phase 6 the enquiry inbox has no API to read from. It used to query
+ * Supabase directly, which the deployed build has no credentials for, so it
+ * could only fail. This notice stands in for it.
+ */
+export const InquiriesPage: React.FC = () => (
+  <div>
+    <PageHeader
+      title="Enquiries"
+      description="Traveller enquiries sent from the public site's enquiry form."
+    />
+    <Card>
+      <EmptyState icon={Inbox} title="The enquiry inbox is moving">
+        The inbox moves onto the site's own API in the next update (phase 6). Until then,
+        enquiries can't be viewed here.
+      </EmptyState>
+    </Card>
+  </div>
+);
+
+/**
+ * The inbox itself, on Supabase. Not routed until phase 6 moves it onto
+ * `/api/admin/inquiries`; kept so that phase changes its data calls rather
+ * than rebuilding the page.
+ */
+export const InquiriesInbox: React.FC = () => {
   const qc = useQueryClient();
 
   const [statusFilter, setStatusFilter] = useState<InquiryStatus | 'all'>('all');

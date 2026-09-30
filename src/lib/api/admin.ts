@@ -1,75 +1,68 @@
 /**
- * Authenticated CRUD for the admin panel.
+ * The admin panel's reads and writes, through `/api/admin/*`.
  *
- * These helpers deliberately do NOT check permissions themselves — the
- * database does, via the `admin insert/update/delete` RLS policies, which call
- * `public.is_admin()`. A signed-in user who is not in `public.admins` gets a
- * 42501 from Postgres no matter what the UI allows.
+ * These do not check permissions themselves: the API does, with
+ * `requireAdmin` on every route, so bypassing the UI grants nothing.
  */
-import { supabase } from '@/lib/supabase';
+import { API_ROUTES, type CountPayload, type ReorderRequest, type VersionedUpdate } from '@shared/api';
+import type { SiteSettingsValues } from '@shared/content-schema';
 import type {
   ContentTableName,
   ContentTables,
   Insert,
+  SiteSettingsRow,
   Update
 } from '@shared/database.types';
+import { ApiRequestError, deleteJson, getJson, patchJson, postJson, putJson } from '@/lib/api/http';
 
-/** Rows are listed in editing order: by `sort_order`, then id. */
+const tablePath = (table: ContentTableName) => `${API_ROUTES.admin.content}/${table}`;
+const rowPath = (table: ContentTableName, id: string) =>
+  `${tablePath(table)}/${encodeURIComponent(id)}`;
+
+/** Every row, drafts included, in editing order: by `sort_order`, then id. */
 export async function listRows<T extends ContentTableName>(
   table: T
 ): Promise<ContentTables[T][]> {
-  const { data, error } = await supabase
-    .from(table)
-    .select('*')
-    .order('sort_order', { ascending: true })
-    .order('id', { ascending: true });
-
-  if (error) throw error;
-  return (data ?? []) as ContentTables[T][];
+  return getJson<ContentTables[T][]>(tablePath(table));
 }
 
 export async function getRow<T extends ContentTableName>(
   table: T,
   id: string
 ): Promise<ContentTables[T] | null> {
-  const { data, error } = await supabase.from(table).select('*').eq('id', id).maybeSingle();
-  if (error) throw error;
-  return (data ?? null) as ContentTables[T] | null;
+  try {
+    return await getJson<ContentTables[T]>(rowPath(table, id));
+  } catch (error) {
+    if (error instanceof ApiRequestError && error.status === 404) return null;
+    throw error;
+  }
 }
 
+/** The new row goes to the end of the list. */
 export async function createRow<T extends ContentTableName>(
   table: T,
   values: Insert<ContentTables[T]>
 ): Promise<ContentTables[T]> {
-  const { data, error } = await supabase
-    .from(table)
-    .insert(values as never)
-    .select('*')
-    .single();
-
-  if (error) throw error;
-  return data as ContentTables[T];
+  return postJson<ContentTables[T]>(tablePath(table), values);
 }
 
+/**
+ * `expectedUpdatedAt` is the `updated_at` of the row the form was loaded from.
+ * If anyone has saved the row since, the API refuses with 409 instead of
+ * overwriting their change.
+ */
 export async function updateRow<T extends ContentTableName>(
   table: T,
   id: string,
-  values: Update<ContentTables[T]>
+  values: Update<ContentTables[T]>,
+  expectedUpdatedAt: string
 ): Promise<ContentTables[T]> {
-  const { data, error } = await supabase
-    .from(table)
-    .update(values as never)
-    .eq('id', id)
-    .select('*')
-    .single();
-
-  if (error) throw error;
-  return data as ContentTables[T];
+  const body: VersionedUpdate<Update<ContentTables[T]>> = { values, expectedUpdatedAt };
+  return putJson<ContentTables[T]>(rowPath(table, id), body);
 }
 
 export async function deleteRow(table: ContentTableName, id: string): Promise<void> {
-  const { error } = await supabase.from(table).delete().eq('id', id);
-  if (error) throw error;
+  await deleteJson<null>(rowPath(table, id));
 }
 
 export async function setPublished(
@@ -77,35 +70,38 @@ export async function setPublished(
   id: string,
   published: boolean
 ): Promise<void> {
-  const { error } = await supabase.from(table).update({ published }).eq('id', id);
-  if (error) throw error;
+  await patchJson(`${rowPath(table, id)}/published`, { published });
 }
 
 /**
- * Persists a new ordering. Called after a move-up / move-down in the list
- * views; only the rows whose index actually changed are written.
+ * Persists a new ordering: every id in the table, in order. One transaction
+ * on the server; if the list changed underneath (a row added or deleted),
+ * nothing is written and this throws a 409.
  */
 export async function reorderRows(
   table: ContentTableName,
   orderedIds: readonly string[]
 ): Promise<void> {
-  const writes = orderedIds.map((id, index) =>
-    supabase.from(table).update({ sort_order: index }).eq('id', id)
-  );
-
-  const results = await Promise.all(writes);
-  const failed = results.find((r) => r.error);
-  if (failed?.error) throw failed.error;
+  const body: ReorderRequest = { ids: [...orderedIds] };
+  await putJson<null>(`${tablePath(table)}/order`, body);
 }
 
-/** Row counts for the dashboard, one lightweight HEAD request per table. */
+/** Row count for the dashboard, drafts included. */
 export async function countRows(table: ContentTableName): Promise<number> {
-  const { count, error } = await supabase
-    .from(table)
-    .select('id', { count: 'exact', head: true });
+  const { count } = await getJson<CountPayload>(`${tablePath(table)}/count`);
+  return count;
+}
 
-  if (error) throw error;
-  return count ?? 0;
+export async function getSiteSettings(): Promise<SiteSettingsRow> {
+  return getJson<SiteSettingsRow>(API_ROUTES.admin.siteSettings);
+}
+
+export async function updateSiteSettings(
+  values: SiteSettingsValues,
+  expectedUpdatedAt: string
+): Promise<SiteSettingsRow> {
+  const body: VersionedUpdate<SiteSettingsValues> = { values, expectedUpdatedAt };
+  return putJson<SiteSettingsRow>(API_ROUTES.admin.siteSettings, body);
 }
 
 /**

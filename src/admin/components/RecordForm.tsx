@@ -217,19 +217,42 @@ function renderControl(
     case 'image':
       return (
         <ImageField
+          id={id}
           value={asString(value)}
-          folder={field.folder}
+          invalid={invalid}
           shape={field.name === 'author_avatar' ? 'square' : 'wide'}
+          onBlur={onBlur}
           onChange={onChange}
         />
       );
 
     case 'imageList':
+      return <ImageListField value={asStringArray(value)} onChange={onChange} />;
+
+    case 'email':
       return (
-        <ImageListField
-          value={asStringArray(value)}
-          folder={field.folder}
-          onChange={onChange}
+        <Input
+          id={id}
+          type="email"
+          value={asString(value)}
+          className={errorRing}
+          onBlur={onBlur}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      );
+
+    case 'link':
+      return (
+        <Input
+          id={id}
+          type="url"
+          inputMode="url"
+          spellCheck={false}
+          placeholder="https://… (leave empty if there is none)"
+          value={asString(value)}
+          className={errorRing}
+          onBlur={onBlur}
+          onChange={(e) => onChange(e.target.value)}
         />
       );
 

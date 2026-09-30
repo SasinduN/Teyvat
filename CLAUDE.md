@@ -17,8 +17,8 @@ this file or anywhere else in git.
 | 2a | Express API, shared types, `GET /api/content` | done (`d50988d`) |
 | 2b | Public site reads `/api/content`: hero slides, pillars, site settings, spotlight from `featured` | done |
 | 3 | Auth on our own `users` / `sessions` tables (replaces Supabase Auth) | done |
-| 4 | Admin CRUD endpoints (replaces Supabase queries in `src/admin`) | next |
-| 5 | Image uploads to Cloudflare R2 (replaces Supabase Storage) | |
+| 4 | Admin CRUD endpoints (replaces Supabase queries in `src/admin`) | done |
+| 5 | Image uploads to Cloudflare R2 (replaces Supabase Storage) | next |
 | 6 | Inquiries endpoints: public submit and admin inbox | |
 | 7 | Remove Supabase entirely, update docs, deploy | |
 
@@ -26,26 +26,16 @@ Update the Status column when a phase lands.
 
 ### Notes for later phases
 
-- **Phase 3:** lazy-load the `/admin` route (`React.lazy` + `Suspense`) so the
-  public bundle doesn't ship the admin panel. Report the public bundle size
-  before and after.
-  - As of 2b, `/admin` is already lazy (`src/App.tsx`), and `AdminApp` is its
-    own chunk. What the public page still ships is the Supabase chunk
-    (~224 kB, modulepreloaded). `AuthProvider` wraps every route and
-    `InquiryModal` imports it. Replacing Supabase Auth is what removes it.
-    Measure the entry chunk plus everything `dist/index.html` preloads.
-- **Phase 4:** the destinations admin must show "only the first 6 featured
-  destinations are displayed". `DestinationSpotlight` caps at 6 by
-  `sort_order` because the six-card grid is part of the approved design.
-- **Phase 4:** `site_settings` URLs become admin-editable and render into
-  `href`. Validate on write:
-  - `https://` only for the social and legal URLs.
-  - A real email for `contact_email`.
-  - Zod on the API, plus a CHECK constraint in a new migration.
-  - As of 2b, the live rows still hold the `#instagram`-style placeholders,
-    which `public.is_link` allows. An https-only CHECK would fail against
-    them and break the deploy-time migration. Either set real URLs first, or
-    add the constraint `NOT VALID` and validate it once they are replaced.
+- **Phase 5:** image fields are `https://` URL boxes until uploads exist
+  (`ImageField` / `ImageListField` in `src/admin/components/fields.tsx`).
+  `src/lib/storage.ts` is the old Supabase uploader, unused since phase 4;
+  replace it rather than revive it.
+- **Phase 6:** `InquiriesPage` shows a placeholder. The old Supabase inbox UI
+  is kept, unrouted, as `InquiriesInbox` in the same file, so phase 6 swaps
+  its data calls rather than rebuilding it. Put the dashboard's enquiry counts
+  back too.
+- **Site settings links** are NULL or `https://…` (migration 0004). An unset
+  link renders without an `href`; `Footer.tsx` is unchanged.
 
 ### Where things live
 

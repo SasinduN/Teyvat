@@ -125,16 +125,20 @@ export interface Pillar {
   desc: string;
 }
 
-/** The contact details and links the Footer renders, from `site_settings`. */
+/**
+ * The contact details and links the Footer renders, from `site_settings`.
+ * A link that is not set is `undefined`, so the Footer's `<a>` renders with
+ * no `href` at all.
+ */
 export interface SiteSettings {
   postalAddress: string;
   phone: string;
   contactEmail: string;
-  instagramUrl: string;
-  facebookUrl: string;
-  tiktokUrl: string;
-  youtubeUrl: string;
-  privacyUrl: string;
-  termsUrl: string;
-  sustainabilityUrl: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
+  youtubeUrl?: string;
+  privacyUrl?: string;
+  termsUrl?: string;
+  sustainabilityUrl?: string;
 }

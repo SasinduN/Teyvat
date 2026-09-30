@@ -29,6 +29,11 @@ export const API_ROUTES = {
     me: '/api/auth/me',
     logout: '/api/auth/logout',
     logoutAll: '/api/auth/logout-all'
+  },
+  admin: {
+    /** `/api/admin/content/:table`, then `/count`, `/order`, `/:id`, `/:id/published`. */
+    content: '/api/admin/content',
+    siteSettings: '/api/admin/site-settings'
   }
 } as const;
 
@@ -125,7 +130,33 @@ export interface ApiErrorPayload {
   error: {
     code: ApiErrorCode;
     message: string;
+    /**
+     * Field-level messages for a 400 (and for a 409 on a taken slug), keyed
+     * by path: `{ "itinerary.2.title": "Each day needs a title." }`.
+     */
+    fields?: Record<string, string>;
   };
+}
+
+/**
+ * `PUT /api/admin/content/:table/:id` and `PUT /api/admin/site-settings`.
+ *
+ * `expectedUpdatedAt` is the `updated_at` the editor loaded. If the row has
+ * been saved since, the write is refused with 409 rather than overwriting it.
+ */
+export interface VersionedUpdate<T> {
+  values: T;
+  expectedUpdatedAt: string;
+}
+
+/** `PUT /api/admin/content/:table/order`: every id in the table, in the new order. */
+export interface ReorderRequest {
+  ids: string[];
+}
+
+/** `GET /api/admin/content/:table/count`. */
+export interface CountPayload {
+  count: number;
 }
 
 export type ApiErrorCode =

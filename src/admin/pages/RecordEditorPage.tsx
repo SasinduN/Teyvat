@@ -1,16 +1,17 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ChevronLeft, Save } from 'lucide-react';
+import { ChevronLeft, RotateCcw, Save } from 'lucide-react';
 
 import { findCollection } from '@/admin/collections';
 import { schemaForCollection } from '@/admin/validation';
 import { createRow, getRow, slugify, updateRow } from '@/lib/api/admin';
+import { ApiRequestError } from '@/lib/api/http';
+import { describeError } from '@/lib/errors';
 import { queryKeys } from '@/lib/queryClient';
-import { describeError } from '@/lib/supabase';
 import { RecordForm, type FormValues } from '@/admin/components/RecordForm';
 import { Button, Card, ErrorNote, PageHeader, Spinner } from '@/admin/components/ui';
 
@@ -23,9 +24,12 @@ export const RecordEditorPage: React.FC = () => {
   const isNew = id === undefined;
 
   const schema = useMemo(
-    () => (collection ? schemaForCollection(collection) : null),
-    [collection]
+    () => (collection ? schemaForCollection(collection, isNew ? 'create' : 'update') : null),
+    [collection, isNew]
   );
+
+  /** Set when the server says the row was saved by someone else meanwhile. */
+  const [conflict, setConflict] = useState<string | null>(null);
 
   const existing = useQuery({
     queryKey: collection
@@ -43,7 +47,7 @@ export const RecordEditorPage: React.FC = () => {
     mode: 'onBlur'
   });
 
-  const { control, handleSubmit, reset, watch, setValue, formState } = form;
+  const { control, handleSubmit, reset, watch, setValue, setError, formState } = form;
 
   // Populate the form once the record arrives.
   useEffect(() => {
@@ -76,8 +80,11 @@ export const RecordEditorPage: React.FC = () => {
       if (isNew) {
         return createRow(collection.table, values as never);
       }
+      const loaded = existing.data as { updated_at?: string } | null | undefined;
+      if (!loaded?.updated_at) throw new Error('The record has not finished loading.');
+
       const { id: _slug, ...rest } = values;
-      return updateRow(collection.table, id, rest as never);
+      return updateRow(collection.table, id, rest as never, loaded.updated_at);
     },
     onSuccess: () => {
       if (!collection) return;
@@ -89,8 +96,29 @@ export const RecordEditorPage: React.FC = () => {
       toast.success(isNew ? `${collection.singular} created` : 'Changes saved');
       navigate(`/admin/${collection.slug}`);
     },
-    onError: (e) => toast.error(describeError(e))
+    onError: (e) => {
+      if (e instanceof ApiRequestError && e.fields) {
+        // The server's field messages go under the fields they belong to.
+        for (const [path, message] of Object.entries(e.fields)) {
+          setError(path as never, { type: 'server', message });
+        }
+        toast.error(e.status === 409 ? describeError(e) : 'Please fix the highlighted fields.');
+        return;
+      }
+      if (e instanceof ApiRequestError && e.status === 409) {
+        // Keep the user's edits on screen; they choose whether to discard them.
+        setConflict(describeError(e));
+        return;
+      }
+      toast.error(describeError(e));
+    }
   });
+
+  const loadSavedVersion = async () => {
+    setConflict(null);
+    // A new `existing.data` resets the form through the effect above.
+    await existing.refetch();
+  };
 
   const heading = useMemo(() => {
     if (!collection) return '';
@@ -133,11 +161,28 @@ export const RecordEditorPage: React.FC = () => {
       ) : (
         <form
           onSubmit={handleSubmit(
-            (values) => save.mutate(values),
+            (values) => {
+              setConflict(null);
+              save.mutate(values);
+            },
             () => toast.error('Please fix the highlighted fields.')
           )}
           noValidate
         >
+          {conflict && (
+            <div className="mb-4 space-y-3">
+              <ErrorNote>{conflict}</ErrorNote>
+              <Button
+                type="button"
+                variant="secondary"
+                icon={RotateCcw}
+                onClick={() => void loadSavedVersion()}
+              >
+                Load the saved version (discards your changes)
+              </Button>
+            </div>
+          )}
+
           <Card className="p-5 sm:p-7">
             <RecordForm
               fields={collection.fields}

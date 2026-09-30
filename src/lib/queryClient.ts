@@ -43,6 +43,7 @@ export const queryKeys = {
     record: (table: ContentTableName, id: string) =>
       ['admin', 'record', table, id] as const,
     counts: ['admin', 'counts'] as const,
+    siteSettings: ['admin', 'site-settings'] as const,
     inquiries: (filters: InquiryFilters) => ['admin', 'inquiries', filters] as const,
     inquiryCounts: ['admin', 'inquiry-counts'] as const
   }

@@ -1,177 +1,86 @@
-import React, { useId, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, ImageOff, Plus, Trash2, Upload, X } from 'lucide-react';
-import {
-  ACCEPT_ATTRIBUTE,
-  deleteImageByUrl,
-  isStorageUrl,
-  uploadImage,
-  validateImage
-} from '@/lib/storage';
-import { describeError } from '@/lib/supabase';
-import { Button, ErrorNote, Input, Textarea } from '@/admin/components/ui';
+import React, { useEffect, useId, useState } from 'react';
+import { ArrowDown, ArrowUp, ImageOff, Plus, Trash2 } from 'lucide-react';
+import { Button, Input, Textarea } from '@/admin/components/ui';
 import { cn } from '@/utils/cn';
 
 /* ------------------------------------------------------------- image field */
 
+/** Until uploads arrive (phase 5, Cloudflare R2), images are pasted as URLs. */
+const IMAGE_URL_HELP = 'Paste an image URL (https://). Uploads arrive in a later update.';
+
+/** A thumbnail that says so when the URL doesn't load as an image. */
+const ImagePreview: React.FC<{ url: string; className: string }> = ({ url, className }) => {
+  const [broken, setBroken] = useState(false);
+  useEffect(() => setBroken(false), [url]);
+
+  return (
+    <div
+      className={cn(
+        'flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#D4C3B5]/70 bg-[#F5EFEB]',
+        className
+      )}
+    >
+      {url && !broken ? (
+        <img src={url} alt="" className="h-full w-full object-cover" onError={() => setBroken(true)} />
+      ) : (
+        <ImageOff
+          className="h-5 w-5 text-[#1A1A1A]/25"
+          aria-label={url ? 'This URL does not load as an image' : 'No image'}
+        />
+      )}
+    </div>
+  );
+};
+
 interface ImageFieldProps {
+  id?: string;
   value: string;
   onChange: (url: string) => void;
-  folder: string;
+  onBlur?: () => void;
+  invalid?: boolean;
   /** Square thumb for avatars, wide thumb for cover images. */
   shape?: 'wide' | 'square';
 }
 
-/**
- * Uploads to Supabase Storage and stores the returned public URL.
- * There is intentionally no "paste a URL" input: images must be owned by us.
- */
+/** A URL box with a live preview. The API accepts https:// URLs only. */
 export const ImageField: React.FC<ImageFieldProps> = ({
+  id,
   value,
   onChange,
-  folder,
+  onBlur,
+  invalid,
   shape = 'wide'
-}) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [broken, setBroken] = useState(false);
+}) => (
+  <div className="flex flex-wrap items-start gap-4">
+    <ImagePreview url={value} className={shape === 'square' ? 'h-24 w-24' : 'h-24 w-40'} />
 
-  const handleFile = async (file: File) => {
-    const problem = validateImage(file);
-    if (problem) {
-      setError(problem);
-      return;
-    }
-
-    setBusy(true);
-    setError(null);
-    try {
-      const previous = value;
-      const url = await uploadImage(file, folder);
-      setBroken(false);
-      onChange(url);
-
-      // Only clean up files we own. Seeded Unsplash URLs are left alone.
-      if (previous && isStorageUrl(previous)) {
-        void deleteImageByUrl(previous);
-      }
-    } catch (e) {
-      setError(describeError(e));
-    } finally {
-      setBusy(false);
-      if (inputRef.current) inputRef.current.value = '';
-    }
-  };
-
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-start gap-4">
-        <div
-          className={cn(
-            'flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#D4C3B5]/70 bg-[#F5EFEB]',
-            shape === 'square' ? 'h-24 w-24' : 'h-24 w-40'
-          )}
-        >
-          {value && !broken ? (
-            <img
-              src={value}
-              alt=""
-              className="h-full w-full object-cover"
-              onError={() => setBroken(true)}
-            />
-          ) : (
-            <ImageOff className="h-5 w-5 text-[#1A1A1A]/25" />
-          )}
-        </div>
-
-        <div className="flex min-w-[12rem] flex-1 flex-col gap-2">
-          <input
-            ref={inputRef}
-            type="file"
-            accept={ACCEPT_ATTRIBUTE}
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void handleFile(file);
-            }}
-          />
-
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              icon={Upload}
-              loading={busy}
-              onClick={() => inputRef.current?.click()}
-            >
-              {value ? 'Replace image' : 'Upload image'}
-            </Button>
-
-            {value && (
-              <Button
-                type="button"
-                variant="ghost"
-                icon={X}
-                onClick={() => {
-                  if (isStorageUrl(value)) void deleteImageByUrl(value);
-                  setBroken(false);
-                  onChange('');
-                }}
-              >
-                Remove
-              </Button>
-            )}
-          </div>
-
-          {value && (
-            <p className="break-all text-[11px] font-light text-[#1A1A1A]/45">{value}</p>
-          )}
-          <p className="text-[11px] font-light text-[#1A1A1A]/50">
-            JPEG, PNG, WebP, AVIF or GIF · up to 10 MB
-          </p>
-        </div>
-      </div>
-
-      {error && <ErrorNote>{error}</ErrorNote>}
+    <div className="flex min-w-[12rem] flex-1 flex-col gap-2">
+      <Input
+        id={id}
+        type="url"
+        inputMode="url"
+        spellCheck={false}
+        placeholder="https://…"
+        value={value}
+        className={cn(invalid && 'border-[#B3261E] focus:border-[#B3261E] focus:ring-[#B3261E]')}
+        onBlur={onBlur}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      <p className="text-[11px] font-light text-[#1A1A1A]/50">{IMAGE_URL_HELP}</p>
     </div>
-  );
-};
+  </div>
+);
 
 /* -------------------------------------------------------- image list field */
 
 export const ImageListField: React.FC<{
   value: string[];
   onChange: (urls: string[]) => void;
-  folder: string;
-}> = ({ value, onChange, folder }) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+}> = ({ value, onChange }) => {
+  const setAt = (index: number, url: string) =>
+    onChange(value.map((v, i) => (i === index ? url : v)));
 
-  const handleFiles = async (files: FileList) => {
-    setBusy(true);
-    setError(null);
-    try {
-      const uploaded: string[] = [];
-      for (const file of Array.from(files)) {
-        const problem = validateImage(file);
-        if (problem) throw new Error(`${file.name}: ${problem}`);
-        uploaded.push(await uploadImage(file, folder));
-      }
-      onChange([...value, ...uploaded]);
-    } catch (e) {
-      setError(describeError(e));
-    } finally {
-      setBusy(false);
-      if (inputRef.current) inputRef.current.value = '';
-    }
-  };
-
-  const removeAt = (index: number) => {
-    const url = value[index];
-    if (isStorageUrl(url)) void deleteImageByUrl(url);
-    onChange(value.filter((_, i) => i !== index));
-  };
+  const removeAt = (index: number) => onChange(value.filter((_, i) => i !== index));
 
   const move = (index: number, delta: number) => {
     const next = [...value];
@@ -183,58 +92,36 @@ export const ImageListField: React.FC<{
 
   return (
     <div className="space-y-3">
-      {value.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-          {value.map((url, i) => (
-            <div
-              key={`${url}-${i}`}
-              className="group relative overflow-hidden rounded-xl border border-[#D4C3B5]/70 bg-[#F5EFEB]"
-            >
-              <img src={url} alt="" className="h-24 w-full object-cover" />
-              <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-black/55 p-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-                <div className="flex gap-1">
-                  <IconMini label="Move left" onClick={() => move(i, -1)} disabled={i === 0}>
-                    <ArrowUp className="h-3 w-3 -rotate-90" />
-                  </IconMini>
-                  <IconMini
-                    label="Move right"
-                    onClick={() => move(i, 1)}
-                    disabled={i === value.length - 1}
-                  >
-                    <ArrowDown className="h-3 w-3 -rotate-90" />
-                  </IconMini>
-                </div>
-                <IconMini label="Remove image" onClick={() => removeAt(i)}>
-                  <Trash2 className="h-3 w-3" />
-                </IconMini>
-              </div>
-            </div>
-          ))}
+      {value.map((url, i) => (
+        <div key={i} className="flex items-center gap-3">
+          <ImagePreview url={url} className="h-14 w-20" />
+          <Input
+            type="url"
+            inputMode="url"
+            spellCheck={false}
+            placeholder="https://…"
+            value={url}
+            aria-label={`Image ${i + 1} URL`}
+            onChange={(e) => setAt(i, e.target.value)}
+          />
+          <div className="flex shrink-0 gap-1">
+            <IconMini label="Move up" onClick={() => move(i, -1)} disabled={i === 0}>
+              <ArrowUp className="h-3 w-3" />
+            </IconMini>
+            <IconMini label="Move down" onClick={() => move(i, 1)} disabled={i === value.length - 1}>
+              <ArrowDown className="h-3 w-3" />
+            </IconMini>
+            <IconMini label="Remove image" onClick={() => removeAt(i)}>
+              <Trash2 className="h-3 w-3" />
+            </IconMini>
+          </div>
         </div>
-      )}
+      ))}
 
-      <input
-        ref={inputRef}
-        type="file"
-        accept={ACCEPT_ATTRIBUTE}
-        multiple
-        className="hidden"
-        onChange={(e) => {
-          if (e.target.files?.length) void handleFiles(e.target.files);
-        }}
-      />
-
-      <Button
-        type="button"
-        variant="secondary"
-        icon={Upload}
-        loading={busy}
-        onClick={() => inputRef.current?.click()}
-      >
-        Add images
+      <Button type="button" variant="secondary" icon={Plus} onClick={() => onChange([...value, ''])}>
+        Add image URL
       </Button>
-
-      {error && <ErrorNote>{error}</ErrorNote>}
+      <p className="text-[11px] font-light text-[#1A1A1A]/50">{IMAGE_URL_HELP}</p>
     </div>
   );
 };
@@ -251,7 +138,7 @@ const IconMini: React.FC<{
     title={label}
     onClick={onClick}
     disabled={disabled}
-    className="flex h-6 w-6 items-center justify-center rounded-md bg-white/90 text-[#0F2E23] transition-colors hover:bg-white disabled:opacity-30"
+    className="flex h-7 w-7 items-center justify-center rounded-md text-[#1C4737] transition-colors hover:bg-[#1C4737]/10 disabled:opacity-30"
   >
     {children}
   </button>

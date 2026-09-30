@@ -183,11 +183,12 @@ export const toSiteSettings = (r: PublicSiteSettings): SiteSettings => ({
   postalAddress: r.postal_address,
   phone: r.phone,
   contactEmail: r.contact_email,
-  instagramUrl: r.instagram_url,
-  facebookUrl: r.facebook_url,
-  tiktokUrl: r.tiktok_url,
-  youtubeUrl: r.youtube_url,
-  privacyUrl: r.privacy_url,
-  termsUrl: r.terms_url,
-  sustainabilityUrl: r.sustainability_url
+  // NULL means "not set": undefined, so React leaves the href off entirely.
+  instagramUrl: r.instagram_url ?? undefined,
+  facebookUrl: r.facebook_url ?? undefined,
+  tiktokUrl: r.tiktok_url ?? undefined,
+  youtubeUrl: r.youtube_url ?? undefined,
+  privacyUrl: r.privacy_url ?? undefined,
+  termsUrl: r.terms_url ?? undefined,
+  sustainabilityUrl: r.sustainability_url ?? undefined
 });

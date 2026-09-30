@@ -24,15 +24,21 @@ const STATUS_BY_CODE: Record<ApiErrorCode, number> = {
 export class ApiError extends Error {
   constructor(
     readonly code: ApiErrorCode,
-    message: string
+    message: string,
+    readonly fields?: Record<string, string>
   ) {
     super(message);
     this.name = 'ApiError';
   }
 }
 
-export function sendError(res: Response, code: ApiErrorCode, message: string): void {
-  const body: ApiErrorPayload = { error: { code, message } };
+export function sendError(
+  res: Response,
+  code: ApiErrorCode,
+  message: string,
+  fields?: Record<string, string>
+): void {
+  const body: ApiErrorPayload = { error: { code, message, ...(fields ? { fields } : {}) } };
   res.status(STATUS_BY_CODE[code]).json(body);
 }
 
@@ -62,7 +68,7 @@ export function errorHandler(
   }
 
   if (error instanceof ApiError) {
-    sendError(res, error.code, error.message);
+    sendError(res, error.code, error.message, error.fields);
     return;
   }
 
