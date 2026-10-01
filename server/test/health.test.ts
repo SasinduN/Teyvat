@@ -9,6 +9,7 @@ import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import type { ObjectStore } from '../src/media/store';
 import { assertConnectedToTestDatabase, listen, migrateTestDatabase, type RunningApp } from './helpers';
+import { HOOK_TIMEOUT } from './timeouts';
 
 /**
  * Railway's healthcheck decides whether a deploy goes live. Only the
@@ -42,11 +43,11 @@ async function health(store: ObjectStore | null): Promise<{ status: number; body
 before(async () => {
   migrateTestDatabase();
   await assertConnectedToTestDatabase();
-});
+}, HOOK_TIMEOUT);
 
 after(async () => {
   await pool.end();
-});
+}, HOOK_TIMEOUT);
 
 describe('/api/health', () => {
   test('media not configured: 200', async () => {

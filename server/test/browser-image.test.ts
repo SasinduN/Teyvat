@@ -14,6 +14,7 @@ import { after, before, describe, test } from 'node:test';
 import { build } from 'esbuild';
 
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
+import { HOOK_TIMEOUT } from './timeouts';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const executable = findChrome();
@@ -116,11 +117,11 @@ describe('prepareImage in Chrome', { skip: executable ? false : 'no Chrome found
     page = await chrome.newPage();
     await page.evaluate(await bundleMediaModule());
     await page.evaluate(PAGE_HELPERS);
-  });
+  }, HOOK_TIMEOUT);
 
   after(async () => {
     await chrome?.close();
-  });
+  }, HOOK_TIMEOUT);
 
   test('a portrait phone photo (EXIF orientation 6) stays portrait, and loses its EXIF', async () => {
     const result = await page.evaluate<{

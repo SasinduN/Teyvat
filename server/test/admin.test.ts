@@ -21,6 +21,7 @@ import {
   withSession,
   type RunningApp
 } from './helpers';
+import { HOOK_TIMEOUT } from './timeouts';
 
 type Row = Record<string, unknown> & { id: string; updated_at: string };
 
@@ -37,16 +38,16 @@ before(async () => {
   const res = await login(app, 'admin@example.test', PASSWORD);
   token = sessionTokenFrom(res)!;
   assert.ok(token);
-});
+}, HOOK_TIMEOUT);
 
 beforeEach(async () => {
   await resetContent();
-});
+}, HOOK_TIMEOUT);
 
 after(async () => {
   await app?.close();
   await pool.end();
-});
+}, HOOK_TIMEOUT);
 
 interface CallOptions {
   body?: unknown;

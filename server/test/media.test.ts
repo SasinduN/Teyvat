@@ -29,6 +29,7 @@ import {
   withSession,
   type RunningApp
 } from './helpers';
+import { HOOK_TIMEOUT } from './timeouts';
 
 const BASE = 'https://test-bucket.r2.dev';
 
@@ -50,7 +51,7 @@ before(async () => {
   await createUser();
   token = sessionTokenFrom(await login(app, 'admin@example.test', PASSWORD))!;
   assert.ok(token);
-});
+}, HOOK_TIMEOUT);
 
 beforeEach(async () => {
   await resetContent();
@@ -58,13 +59,13 @@ beforeEach(async () => {
   store.objects.clear();
   store.failures.put = false;
   store.failures.delete = false;
-});
+}, HOOK_TIMEOUT);
 
 after(async () => {
   await app?.close();
   await offApp?.close();
   await pool.end();
-});
+}, HOOK_TIMEOUT);
 
 /* ------------------------------------------------------------------ bytes */
 

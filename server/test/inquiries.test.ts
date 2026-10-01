@@ -35,6 +35,7 @@ import {
   withSession,
   type RunningApp
 } from './helpers';
+import { HOOK_TIMEOUT } from './timeouts';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -51,17 +52,17 @@ before(async () => {
   await createUser();
   token = sessionTokenFrom(await login(app, 'admin@example.test', PASSWORD))!;
   assert.ok(token);
-});
+}, HOOK_TIMEOUT);
 
 beforeEach(async () => {
   await pool.query('truncate public.inquiries, public.inquiry_attempts');
   notified = 0;
-});
+}, HOOK_TIMEOUT);
 
 after(async () => {
   await app?.close();
   await pool.end();
-});
+}, HOOK_TIMEOUT);
 
 /* ------------------------------------------------------------------ calls */
 
@@ -312,14 +313,23 @@ describe('CSV export', () => {
     assert.equal(csvCell(null), '""');
   });
 
-  test('a phone of only digits, spaces and + - ( ) is left alone; anything else is escaped', () => {
+  test('a phone of only digits, spaces and + - ( ) is written as ="…" text; anything else is escaped', () => {
+    // CSV-quoted, the cell ="+94 77 123 4567" is written "=""+94 77 123 4567""".
     for (const phone of ['+94 77 123 4567', '(011) 234-5678', '-94 11 2345678', '0771234567']) {
-      assert.equal(csvCell(phone, { phone: true }), `"${phone}"`, phone);
+      assert.equal(csvCell(phone, { phone: true }), `"=""${phone}"""`, phone);
     }
+    // Not a plain phone number: the usual rule. Formula starts get the apostrophe...
     for (const phone of ['+94 77 123 4567 =1+1', '-2+3;cmd', '@SUM(A1)', '=1+1', '+1 (555) CALL-NOW']) {
       assert.equal(csvCell(phone, { phone: true }), `"'${phone}"`, phone);
     }
-    // The exception is for the phone column only.
+    // ...and anything else is written as it is.
+    assert.equal(csvCell('077 123 4567 ext. 2', { phone: true }), '"077 123 4567 ext. 2"');
+    // A quote can never reach the ="…" form: the pattern doesn't admit one.
+    assert.equal(
+      csvCell('+94"),HYPERLINK("http://evil', { phone: true }),
+      `"'+94""),HYPERLINK(""http://evil"`
+    );
+    // The ="…" form is for the phone column only.
     assert.equal(csvCell('+94 77 123 4567'), `"'+94 77 123 4567"`);
   });
 
@@ -337,7 +347,7 @@ describe('CSV export', () => {
     const [header, line] = text.split('\r\n');
     assert.match(header, /^"Received","Status","Name","Email","Phone"/);
     assert.ok(line.includes(`"'=HYPERLINK(""http://evil.example"",""Click me"")"`), line);
-    assert.ok(line.includes('"+94 77 123 4567"'), line);
+    assert.ok(line.includes('"=""+94 77 123 4567"""'), line);
   });
 
   test('inquiriesCsv on no rows is just the header', () => {

@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit",
     "migrate": "tsx scripts/migrate.ts",
     "admin:create": "tsx scripts/create-admin.ts",
-    "test": "tsx --test --test-concurrency=1 \"server/test/**/*.test.ts\"",
+    "test": "node scripts/run-tests.mjs",
     "seed:generate": "tsx scripts/generate-seed.ts",
     "verify:roundtrip": "tsx scripts/verify-roundtrip.ts"
   },

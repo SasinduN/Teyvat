@@ -164,6 +164,11 @@ default host or port, unless `TEST_DATABASE_URL`:
 Create the database once with `createdb -p <port> teyvat_test` (or
 `create database teyvat_test;` in psql).
 
+`npm test` runs each file in its own process (`scripts/run-tests.mjs`).
+Every test has a 60-second limit and every hook 120 seconds, so a hang fails
+with the test's name instead of blocking the run. `npm test -- media` runs
+only the files whose names contain `media`.
+
 The tests never touch R2: the test setup clears every `R2_*` variable, and
 the upload tests use an in-memory store. `server/test/browser-image.test.ts`
 checks the browser's image preparation (EXIF rotation, HEIC, large photos) in
@@ -185,7 +190,7 @@ npm run build && npm start   # everything on http://localhost:8081
 | `npm start` | Run the built server — serves `/api/*` and `dist/` |
 | `npm run migrate` | Apply pending migrations |
 | `npm run admin:create` | Create an admin, or `--reset-password` for an existing one |
-| `npm test` | API tests against `TEST_DATABASE_URL` |
+| `npm test` | API and browser tests against `TEST_DATABASE_URL`, with per-test time limits |
 | `npm run typecheck` | `tsc --noEmit` across client, server, shared and scripts |
 | `npm run preview` | Vite's own preview of the client build |
 | `npm run seed:generate` | Regenerate `0002_seed.sql` from `scripts/fixtures/*.ts` |

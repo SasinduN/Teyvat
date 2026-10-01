@@ -7,10 +7,13 @@
  * a carriage return (OWASP's list, plus the two whitespace starts Excel also
  * acts on) gets a leading `'`, which Excel reads as "this is text".
  *
- * One exception: a phone number made only of digits, spaces and `+ - ( )`.
- * Those characters can't form a function call or a cell reference, so there
- * is nothing to inject, and `+94 77 123 4567` stays readable. A phone value
- * with anything else in it is escaped like every other cell.
+ * Phone numbers are the exception. Left alone, Excel reads `+94 77 123 4567`
+ * as a formula (the spaces make it an error) and strips the leading zero
+ * from `0771234567`; with a `'` they show the apostrophe. So a phone value
+ * made only of digits, spaces and `+ - ( )` is written as the formula
+ * `="+94 77 123 4567"`, which Excel displays as exactly that text. It is safe
+ * because the pattern admits no `"`, so the value can't leave the string. A
+ * phone value with anything else in it is escaped like every other cell.
  */
 import type { InquiryRow } from '../../../shared/database.types';
 
@@ -19,7 +22,9 @@ const PHONE_ONLY = /^[0-9 +()\-]+$/;
 
 export function csvCell(value: unknown, options: { phone?: boolean } = {}): string {
   let text = value === null || value === undefined ? '' : String(value);
-  if (FORMULA_START.test(text) && !(options.phone && PHONE_ONLY.test(text))) {
+  if (options.phone && PHONE_ONLY.test(text)) {
+    text = `="${text}"`;
+  } else if (FORMULA_START.test(text)) {
     text = `'${text}`;
   }
   // RFC 4180: every field quoted, quotes doubled. Newlines stay inside quotes.

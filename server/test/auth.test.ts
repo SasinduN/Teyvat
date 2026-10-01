@@ -27,6 +27,7 @@ import {
   withSession,
   type RunningApp
 } from './helpers';
+import { HOOK_TIMEOUT } from './timeouts';
 
 const EMAIL = 'admin@example.test';
 const BAD_CREDENTIALS = { error: { code: 'unauthorized', message: 'Incorrect email or password.' } };
@@ -37,17 +38,17 @@ before(async () => {
   migrateTestDatabase();
   await assertConnectedToTestDatabase();
   app = await listen(createApp());
-});
+}, HOOK_TIMEOUT);
 
 beforeEach(async () => {
   await resetAuthTables();
   mock.restoreAll();
-});
+}, HOOK_TIMEOUT);
 
 after(async () => {
   await app?.close();
   await pool.end();
-});
+}, HOOK_TIMEOUT);
 
 function me(token: string): Promise<Response> {
   return fetch(`${app.baseUrl}/api/auth/me`, { headers: withSession(token) });
@@ -324,11 +325,11 @@ describe('requireAdmin', () => {
     });
     throwaway.use(errorHandler);
     guarded = await listen(throwaway);
-  });
+  }, HOOK_TIMEOUT);
 
   after(async () => {
     await guarded?.close();
-  });
+  }, HOOK_TIMEOUT);
 
   const get = (headers: Record<string, string> = {}) =>
     fetch(`${guarded.baseUrl}/guarded`, { headers });

@@ -24,6 +24,7 @@ import { after, before, describe, test } from 'node:test';
 import { build, type Plugin } from 'esbuild';
 
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
+import { HOOK_TIMEOUT } from './timeouts';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -162,11 +163,11 @@ describe('InquiryModal with the honeypot, in Chrome', { skip }, () => {
     css = readFileSync(join(cssDir, cssFile!), 'utf8');
     baselineScript = await bundle('baseline:InquiryModal');
     currentScript = await bundle('@/components/InquiryModal');
-  });
+  }, HOOK_TIMEOUT);
 
   after(async () => {
     await chrome?.close();
-  });
+  }, HOOK_TIMEOUT);
 
   for (const subject of [undefined, 'Experience: Safari in Yala']) {
     test(`looks identical: no pixel differs by more than 2 levels (${subject ? 'prefilled subject' : 'default subject'})`, async () => {
