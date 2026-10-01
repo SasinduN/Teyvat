@@ -48,7 +48,28 @@ export interface Chrome {
   close(): Promise<void>;
 }
 
+/**
+ * How long Chrome gets to open its DevTools endpoint. A cold first launch on a
+ * CI runner has taken over 10 s (it failed CI on main once at 10 s), so: 30 s,
+ * and one retry with a fresh profile. Both fit inside HOOK_TIMEOUT (120 s).
+ */
+const STARTUP_TIMEOUT_MS = 30_000;
+const STARTUP_ATTEMPTS = 2;
+
 export async function launchChrome(executable: string): Promise<Chrome> {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await launchOnce(executable);
+    } catch (error) {
+      if (attempt >= STARTUP_ATTEMPTS || !(error instanceof ChromeStartupError)) throw error;
+      console.warn(`[chrome] ${error.message} Retrying (attempt ${attempt + 1} of ${STARTUP_ATTEMPTS}).`);
+    }
+  }
+}
+
+class ChromeStartupError extends Error {}
+
+async function launchOnce(executable: string): Promise<Chrome> {
   const profile = mkdtempSync(join(tmpdir(), 'teyvat-chrome-'));
   const child: ChildProcess = spawn(
     executable,
@@ -71,7 +92,8 @@ export async function launchChrome(executable: string): Promise<Chrome> {
   // Chrome writes the port it picked, and the browser endpoint, here.
   const portFile = join(profile, 'DevToolsActivePort');
   let endpoint = '';
-  for (let i = 0; i < 100 && !endpoint; i += 1) {
+  const deadline = Date.now() + STARTUP_TIMEOUT_MS;
+  while (!endpoint && Date.now() < deadline) {
     if (existsSync(portFile)) {
       const [port, path] = readFileSync(portFile, 'utf8').split('\n');
       if (port && path) endpoint = `ws://127.0.0.1:${port.trim()}${path.trim()}`;
@@ -80,7 +102,10 @@ export async function launchChrome(executable: string): Promise<Chrome> {
   }
   if (!endpoint) {
     child.kill();
-    throw new Error('Chrome did not start its DevTools endpoint within 10 s.');
+    rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    throw new ChromeStartupError(
+      `Chrome did not start its DevTools endpoint within ${STARTUP_TIMEOUT_MS / 1000} s.`
+    );
   }
 
   const socket = new WebSocket(endpoint);
