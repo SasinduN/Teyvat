@@ -49,13 +49,14 @@ npm ci
 cp .env.example .env
 ```
 
-Locally you need just two variables. The rest (R2, Resend) are optional, and
-the site runs without them.
+Locally you need just two variables. The rest (R2, Resend, CARTO) are
+optional, and the site runs without them.
 
 | Variable | Locally |
 | --- | --- |
 | `DATABASE_URL` | your **local** development database, e.g. `postgresql://postgres:<pw>@localhost:5432/teyvat_dev` |
 | `TEST_DATABASE_URL` | your local **test** database, e.g. `postgresql://postgres:<pw>@localhost:5432/teyvat_test` |
+| `VITE_CARTO_KEY` | optional: the map's tile key. Without it the map shows "API key required" tiles |
 
 Never point `DATABASE_URL` at production for everyday work. Everything you
 run (the dev server, migrations, scripts) acts on whatever it names.
@@ -317,7 +318,7 @@ sends. They don't apply under `npm run dev`, where Vite serves the page.
 | `font-src` | `'self' https://fonts.gstatic.com` | the font files |
 | `img-src` | `'self' https://images.unsplash.com` | the seeded photos |
 | | the `R2_PUBLIC_BASE_URL` origin | uploads; read at boot, so a new domain needs no code change |
-| | `https://*.basemaps.cartocdn.com` | the map tiles |
+| | `https://basemaps.cartocdn.com` | the map tiles (exactly that host; a `*.` wildcard wouldn't match it) |
 | `connect-src` | `'self'` | the browser only calls our own `/api` |
 | `frame-ancestors` | `'none'` | nobody may frame the site |
 | `base-uri` / `form-action` / `object-src` | `'self'` / `'self'` / `'none'` | |
@@ -363,6 +364,17 @@ point-in-time recovery).
 - **Health check:** `/api/health`. Only the database can fail it; the `media`
   field is informational.
 
+**Map tiles.** The map uses CARTO's Voyager basemap
+(`src/lib/mapTiles.ts`), which needs `VITE_CARTO_KEY`.
+
+- **The key is public.** Vite builds it into the page, so it's protected by
+  restriction, not secrecy. **Restrict it by domain in the CARTO dashboard,
+  and add the real domain to it at launch** (launch checklist). Add
+  `localhost` too if local development should show real tiles.
+- **Credit is required.** The map shows "© OpenStreetMap contributors ©
+  CARTO", as the OpenStreetMap licence and CARTO's terms require; don't hide
+  it.
+
 **Variables on the API service:**
 
 | Variable | Value |
@@ -372,6 +384,7 @@ point-in-time recovery).
 | `NPM_CONFIG_PRODUCTION` | `false` (otherwise `npm ci` skips the build tools) |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL` | image uploads: all five or none |
 | `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` (+ optional `NOTIFY_EMAIL_FROM`, `PUBLIC_SITE_URL`) | new-enquiry emails |
+| `VITE_CARTO_KEY` | the map's tile key. Read when the client is **built**, so a change needs a redeploy |
 
 Don't set `PORT`; Railway injects it.
 

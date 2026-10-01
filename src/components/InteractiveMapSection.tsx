@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDestinations } from '@/hooks/useSiteContent';
+import { mapTiles } from '@/lib/mapTiles';
 import { Destination, CategoryType } from '../types';
 import { MapPin, Sparkles, ChevronRight, Compass, ArrowUpRight, CheckCircle2 } from 'lucide-react';
 
@@ -79,17 +80,17 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
           maxZoom: 13,
           zoomControl: false,
           scrollWheelZoom: false,
-          attributionControl: false
+          // Required by the OpenStreetMap licence and CARTO's terms.
+          attributionControl: true
         });
+        // Just the credit itself, without Leaflet's own "Leaflet" prefix.
+        map.attributionControl.setPrefix(false);
 
-        // Custom Light/Sand styled Map Tiles (CartoDB Voyager)
-        L.tileLayer(
-          'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-          {
-            maxZoom: 19,
-            subdomains: 'abcd'
-          }
-        ).addTo(map);
+        // Custom Light/Sand styled Map Tiles (CARTO Voyager, keyed: src/lib/mapTiles.ts)
+        L.tileLayer(mapTiles.url, {
+          maxZoom: 19,
+          attribution: mapTiles.attribution
+        }).addTo(map);
 
         // Add Zoom Control to bottom-right
         L.control.zoom({ position: 'bottomright' }).addTo(map);
