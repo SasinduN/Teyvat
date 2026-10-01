@@ -1,16 +1,10 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { useFeaturedExperiences } from '@/hooks/useSiteContent';
-import { ExperienceItem } from '../types';
+import { paths } from '@shared/site-paths';
+import { MotionLink } from './MotionLink';
 import { Clock, MapPin, Sparkles, ArrowRight, Star } from 'lucide-react';
 
-interface FeaturedExperiencesProps {
-  onSelectExperience: (exp: ExperienceItem) => void;
-}
-
-export const FeaturedExperiences: React.FC<FeaturedExperiencesProps> = ({
-  onSelectExperience
-}) => {
+export const FeaturedExperiences: React.FC = () => {
   const FEATURED_EXPERIENCES = useFeaturedExperiences();
   return (
     <section className="py-24 bg-[#F5EFEB] relative overflow-hidden">
@@ -34,13 +28,13 @@ export const FeaturedExperiences: React.FC<FeaturedExperiencesProps> = ({
         {/* 4 Featured Experience Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {FEATURED_EXPERIENCES.map((item, idx) => (
-            <motion.div
+            <MotionLink
               key={item.id}
+              to={paths.experience(item.id)}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-50px' }}
               transition={{ duration: 0.6, delay: idx * 0.15 }}
-              onClick={() => onSelectExperience(item)}
               className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-[#D4C3B5]/50 flex flex-col sm:flex-row group cursor-pointer"
             >
               {/* Image Column */}
@@ -88,19 +82,16 @@ export const FeaturedExperiences: React.FC<FeaturedExperiencesProps> = ({
                   </div>
                 </div>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectExperience(item);
-                  }}
+                {/* Inside the card's link, so not a button of its own. */}
+                <span
                   className="w-full py-3 bg-[#1C4737] hover:bg-[#0F2E23] text-white rounded-2xl text-xs font-bold flex items-center justify-center space-x-2 shadow-md hover:shadow-lg transition-all"
                 >
                   <span>Discover Experience</span>
                   <ArrowRight className="w-4 h-4" />
-                </button>
+                </span>
               </div>
 
-            </motion.div>
+            </MotionLink>
           ))}
         </div>
 

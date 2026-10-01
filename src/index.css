@@ -18,6 +18,14 @@
   }
 }
 
+/*
+ * A heading or section focused after navigation (src/lib/routeFocus.ts), so
+ * a screen reader announces it. It isn't a control, so no focus ring.
+ */
+[data-route-focus]:focus {
+  outline: none;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

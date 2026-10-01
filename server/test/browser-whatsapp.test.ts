@@ -6,13 +6,12 @@ import './test-db';
  * The WhatsApp chat button, on the real built site in headless Chrome:
  *
  *   - with no number set there is no button and no wa.me link at all;
- *   - the link's message follows what the visitor is looking at: a
- *     destination modal, a tour modal, a tour route while the map is on
- *     screen, or nothing in particular;
- *   - `?destination=` and `?tour=` links open their modal, then leave the
- *     address bar;
+ *   - the link's message follows the page the visitor is on: a
+ *     destination, tour or experience page, a tour route while the home
+ *     map is on screen, or nothing in particular;
+ *   - the old `?destination=` and `?tour=` links land on the pages;
  *   - on a phone it never covers the map's zoom buttons or Quick Jump bar,
- *     the modals' main buttons, or the enquiry form's submit button;
+ *     the pages' main buttons, or an enquiry form's submit button;
  *   - admin Settings shows "Test in WhatsApp" only once a number is saved.
  *
  * Needs `npm run build` and Chrome; skipped with a message otherwise.
@@ -74,8 +73,7 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
       mobile: Boolean(options.mobile)
     });
     await page.send('Page.navigate', { url: `${app.baseUrl}${options.path ?? '/'}` });
-    // At least: an open tour modal (`?tour=`) adds its own h3s inside #tours.
-    await waitFor(page, `document.querySelectorAll('#tours h3').length >= 4`, 'the tour cards');
+    await waitFor(page, `document.querySelector('main h1')`, 'the page');
     // Jumps, not smooth scrolls, so a scroll has landed when it returns.
     await page.evaluate(`document.documentElement.style.scrollBehavior = 'auto', true`);
     return page;
@@ -175,36 +173,46 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     );
   });
 
-  test('the message follows what the visitor is looking at', async () => {
+  /** Clicks the first link whose text is `text`, and waits for `path`. */
+  async function follow(page: Page, scope: string, text: string, path: string): Promise<void> {
+    await page.evaluate(`[...document.querySelectorAll(${JSON.stringify(`${scope} a`)})].find((a) => a.textContent.trim() === ${JSON.stringify(text)}).click(), true`);
+    // The page on screen, not just the URL (see PublicLayout's RouteEffects).
+    await waitFor(page, `document.body.dataset.route === ${JSON.stringify(path)} && document.querySelector('main h1')`, path);
+  }
+
+  test('the message follows the page the visitor is on', async () => {
     const page = await openPage();
-    await expectHref(page, expected({ kind: 'general' }), 'on load: the general message');
+    await expectHref(page, expected({ kind: 'general' }), 'home: the general message');
     assert.equal(
       await page.evaluate<string>(`document.querySelector('${BUTTON}').getAttribute('rel')`),
       'noopener noreferrer'
     );
 
-    // A spotlight card opens the destination modal.
+    // A spotlight card goes to the destination's page.
     const name = await page.evaluate<string>(`(() => {
-      const card = document.querySelector('.group.cursor-pointer');
+      const card = document.querySelector('#destinations a[href^="/destinations/"]');
       card.click();
       return card.querySelector('img').alt;
     })()`);
     const id = await page.evaluate<string>(`fetch('/api/content').then((r) => r.json()).then((c) => c.destinations.find((d) => d.name === ${JSON.stringify(name)}).id)`);
-    await expectHref(page, expected({ kind: 'destination', id, name }), `${name}'s modal`);
-    await page.evaluate(`document.querySelector('[aria-label="Close modal"]').click(), true`);
-    await expectHref(page, expected({ kind: 'general' }), 'modal closed');
+    await waitFor(page, `document.body.dataset.route === '/destinations/${id}'`, `${name}'s page`);
+    await expectHref(page, expected({ kind: 'destination', id, name }), `${name}'s page`);
 
-    // "View Full Journey" opens the tour modal.
-    await page.evaluate(`(() => {
-      const card = [...document.querySelectorAll('#tours h3')].find((h) => h.textContent.trim() === 'Cultural Sri Lanka').closest('.group');
-      [...card.querySelectorAll('button')].find((b) => b.textContent.trim() === 'View Full Journey').click();
-      return true;
-    })()`);
-    await expectHref(page, expected({ kind: 'tour', id: 'cultural-sri-lanka', title: 'Cultural Sri Lanka' }), 'the tour modal');
-    await page.evaluate(`document.querySelector('[aria-label="Close modal"]').click(), true`);
-    await expectHref(page, expected({ kind: 'general' }), 'tour modal closed');
+    // A tour page, from the Tours list.
+    await follow(page, 'nav', 'Tours', '/tours');
+    await expectHref(page, expected({ kind: 'general' }), 'the tours list');
+    await follow(page, '#tours', 'View Full Journey', '/tours/island-in-7-days');
+    await expectHref(page, expected({ kind: 'tour', id: 'island-in-7-days', title: 'Island in 7 Days' }), 'a tour page');
 
-    // A route on the map counts while the map is on screen.
+    // An experience page.
+    await follow(page, 'nav', 'Experiences', '/experiences');
+    await page.evaluate(`document.querySelector('a[href="/experiences/safari-yala"]').click(), true`);
+    await waitFor(page, `document.body.dataset.route === '/experiences/safari-yala'`, 'the experience page');
+    await expectHref(page, expected({ kind: 'experience', id: 'safari-yala', title: 'Safari in Yala' }), 'an experience page');
+
+    // Home again: a route on the map counts while the map is on screen.
+    await follow(page, 'nav', 'Home', '/');
+    await expectHref(page, expected({ kind: 'general' }), 'home again');
     await page.evaluate(`(() => {
       const card = [...document.querySelectorAll('#tours h3')].find((h) => h.textContent.trim() === 'Wild Sri Lanka Expedition').closest('.group');
       [...card.querySelectorAll('button')].find((b) => b.textContent.trim() === 'View route on map').click();
@@ -216,22 +224,18 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     await expectHref(page, expected({ kind: 'general' }), 'route shown but the map scrolled away');
   });
 
-  test('?destination= and ?tour= open their modal and leave the address bar; unknown ids are ignored', async () => {
+  test('old ?destination= and ?tour= links land on the page; unknown ids on the 404', async () => {
     let page = await openPage({ path: '/?destination=ella' });
-    await waitFor(page, `[...document.querySelectorAll('.fixed.inset-0 h2')].some((h) => h.textContent.trim() === 'Ella')`, "Ella's modal");
-    await waitFor(page, `location.search === ''`, 'the parameter to go');
-    await expectHref(page, expected({ kind: 'destination', id: 'ella', name: 'Ella' }), 'the deep-linked destination');
+    await waitFor(page, `location.pathname === '/destinations/ella' && location.search === ''`, "Ella's page");
+    await expectHref(page, expected({ kind: 'destination', id: 'ella', name: 'Ella' }), 'the old destination link');
 
     page = await openPage({ path: '/?tour=island-in-7-days' });
-    await waitFor(page, `[...document.querySelectorAll('.fixed.inset-0 h2')].some((h) => h.textContent.trim() === 'Island in 7 Days')`, 'the tour modal');
-    await waitFor(page, `location.search === ''`, 'the parameter to go');
-    await expectHref(page, expected({ kind: 'tour', id: 'island-in-7-days', title: 'Island in 7 Days' }), 'the deep-linked tour');
+    await waitFor(page, `location.pathname === '/tours/island-in-7-days' && location.search === ''`, 'the tour page');
+    await expectHref(page, expected({ kind: 'tour', id: 'island-in-7-days', title: 'Island in 7 Days' }), 'the old tour link');
 
-    page = await openPage({ path: '/?destination=nowhere&tour=nothing' });
-    await waitFor(page, `location.search === ''`, 'the parameters to go');
-    await sleep(300);
-    assert.equal(await page.evaluate<number>(`document.querySelectorAll('.fixed.inset-0').length`), 0, 'no modal');
-    await expectHref(page, expected({ kind: 'general' }), 'unknown ids');
+    page = await openPage({ path: '/?destination=nowhere' });
+    await waitFor(page, `location.pathname === '/destinations/nowhere' && document.querySelector('[data-not-found]')`, 'the 404 page');
+    await expectHref(page, expected({ kind: 'general' }), 'an unknown id');
   });
 
   test('phone: never over the map zoom buttons or Quick Jump bar, shown again once clear', async () => {
@@ -287,30 +291,32 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     assert.ok(await tappable(page, '.fixed.inset-0 form button[type=submit]'), 'submit takes the tap');
   });
 
-  test("phone: clear of the destination and tour modals' main buttons", async () => {
-    const page = await openPage({ mobile: true, path: '/?destination=ella' });
-    await waitFor(page, `document.querySelector('.fixed.inset-0 [data-keep-clear]')`, "Ella's modal");
-    // Scroll the modal to its end, where its main button reaches the corner.
-    for (let i = 0; i < 2; i += 1) {
-      await page.evaluate(`[...document.querySelectorAll('.fixed.inset-0, .fixed.inset-0 .overflow-y-auto')].forEach((el) => { el.scrollTop = el.scrollHeight; }), true`);
-      await sleep(500);
+  /**
+   * Sweeps the page's scroll so `selector` passes through the bottom of the
+   * viewport, where the button sits; it must never cover it, and it must take
+   * the tap where they would meet.
+   */
+  async function sweepPast(page: Page, selector: string, what: string): Promise<void> {
+    const top = await page.evaluate<number>(`document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect().top + scrollY`);
+    for (let offset = -120; offset <= 160; offset += 20) {
+      await page.evaluate(`window.scrollTo(0, ${top - 844 + offset}), true`);
+      await frames(page);
+      await expectClearOf(page, selector, `${what} covered at ${offset}`);
     }
-    assert.equal(await coversElement(page, '.fixed.inset-0 [data-keep-clear]'), false, 'destination button covered');
-    assert.ok(await tappable(page, '.fixed.inset-0 [data-keep-clear]'), 'destination button takes the tap');
-    await page.evaluate(`document.querySelector('[aria-label="Close modal"]').click(), true`);
+    await page.evaluate(`document.querySelector(${JSON.stringify(selector)}).scrollIntoView({ block: 'end' }), true`);
+    await frames(page);
+    assert.ok(await tappable(page, selector), `${what} takes the tap`);
+  }
 
-    await page.evaluate(`(() => {
-      const card = [...document.querySelectorAll('#tours h3')].find((h) => h.textContent.trim() === 'Island in 7 Days').closest('.group');
-      [...card.querySelectorAll('button')].find((b) => b.textContent.trim() === 'View Full Journey').click();
-      return true;
-    })()`);
-    await waitFor(page, `document.querySelector('.fixed.inset-0 [data-keep-clear]')`, 'the tour modal');
-    for (let i = 0; i < 2; i += 1) {
-      await page.evaluate(`[...document.querySelectorAll('.fixed.inset-0, .fixed.inset-0 .overflow-y-auto')].forEach((el) => { el.scrollTop = el.scrollHeight; }), true`);
-      await sleep(500);
-    }
-    assert.equal(await coversElement(page, '.fixed.inset-0 [data-keep-clear]'), false, 'tour button covered');
-    assert.ok(await tappable(page, '.fixed.inset-0 [data-keep-clear]'), 'tour button takes the tap');
+  test("phone: clear of the pages' main buttons and the About page's form", async () => {
+    let page = await openPage({ mobile: true, path: '/destinations/ella' });
+    await sweepPast(page, 'main [data-keep-clear]', 'Plan A Trip to Ella');
+
+    page = await openPage({ mobile: true, path: '/tours/island-in-7-days' });
+    await sweepPast(page, 'main [data-keep-clear]', 'Book / Inquire This Tour');
+
+    page = await openPage({ mobile: true, path: '/about' });
+    await sweepPast(page, 'main form button[type=submit]', "the About page's submit button");
   });
 
   test('admin Settings: "Test in WhatsApp" only once a number is saved', async () => {

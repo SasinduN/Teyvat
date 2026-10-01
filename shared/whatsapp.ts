@@ -1,3 +1,5 @@
+import { paths } from './site-paths';
+
 /**
  * The WhatsApp chat button: the number rules that the admin form, the API
  * and the database (`0008_site_settings_whatsapp.sql`) all apply, and the
@@ -34,18 +36,21 @@ export function whatsappNumberProblem(digits: string): string | null {
 export type WhatsAppContext =
   | { kind: 'tour'; id: string; title: string }
   | { kind: 'destination'; id: string; name: string }
+  | { kind: 'experience'; id: string; title: string }
   | { kind: 'general' };
 
 /**
- * The message, with a link back to what the visitor was looking at:
- * `?tour=<id>` and `?destination=<id>` open that modal on the public site.
+ * The message, with a link to the page the visitor was looking at, so
+ * whoever answers sees exactly that.
  */
 export function whatsappMessage(context: WhatsAppContext, origin: string): string {
   switch (context.kind) {
     case 'tour':
-      return `Hi! I'm interested in the ${context.title} tour. ${origin}/?tour=${encodeURIComponent(context.id)}`;
+      return `Hi! I'm interested in the ${context.title} tour. ${origin}${paths.tour(context.id)}`;
     case 'destination':
-      return `Hi! I'd like to know more about visiting ${context.name}. ${origin}/?destination=${encodeURIComponent(context.id)}`;
+      return `Hi! I'd like to know more about visiting ${context.name}. ${origin}${paths.destination(context.id)}`;
+    case 'experience':
+      return `Hi! I'm interested in the ${context.title} experience. ${origin}${paths.experience(context.id)}`;
     case 'general':
       return "Hi! I'd like help planning a trip to Sri Lanka.";
   }

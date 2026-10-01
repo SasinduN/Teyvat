@@ -2,12 +2,10 @@ import React, { useState } from 'react';
 import { Logo } from './Logo';
 import { useSiteSettings } from '@/hooks/useSiteContent';
 import { MapPin, Phone, Mail, CheckCircle2, ArrowRight } from 'lucide-react';
+import { NAV_LINKS } from '@shared/site-paths';
+import { SiteLink } from './SiteLink';
 
-interface FooterProps {
-  onNavigateSection: (id: string) => void;
-}
-
-export const Footer: React.FC<FooterProps> = ({ onNavigateSection }) => {
+export const Footer: React.FC = () => {
   const settings = useSiteSettings();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
@@ -59,14 +57,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateSection }) => {
               Navigation
             </h4>
             <ul className="space-y-2.5 text-xs text-white/80 font-medium">
-              {['hero', 'explore-map', 'destinations', 'experiences', 'tours', 'about', 'contact'].map((id) => (
-                <li key={id}>
-                  <button
-                    onClick={() => onNavigateSection(id)}
+              {NAV_LINKS.map((link) => (
+                <li key={link.to}>
+                  <SiteLink
+                    to={link.to}
                     className="hover:text-[#D4AF37] transition-colors capitalize text-left"
                   >
-                    {id.replace('-', ' ')}
-                  </button>
+                    {link.label}
+                  </SiteLink>
                 </li>
               ))}
             </ul>

@@ -3,15 +3,22 @@ import { motion } from 'framer-motion';
 import { useExperienceCategories } from '@/hooks/useSiteContent';
 import { CategoryType } from '../types';
 import { ArrowRight } from 'lucide-react';
+import { MotionLink } from './MotionLink';
 
 interface ExperiencesSectionProps {
-  onSelectCategory: (category: CategoryType) => void;
+  /** On the home page: a card filters the map. */
+  onSelectCategory?: (category: CategoryType) => void;
+  /** On /experiences: a card links here instead (the filtered destinations list). */
+  categoryHref?: (category: CategoryType) => string;
 }
 
 export const ExperiencesSection: React.FC<ExperiencesSectionProps> = ({
-  onSelectCategory
+  onSelectCategory,
+  categoryHref
 }) => {
   const EXPERIENCE_CATEGORIES = useExperienceCategories();
+  // Same card either way; only what it is (a link, or a filter) changes.
+  const Card: React.ElementType = categoryHref ? MotionLink : motion.div;
   return (
     <section id="experiences" className="py-24 bg-[#0F2E23] text-white relative overflow-hidden">
       {/* Background Subtle Pattern */}
@@ -35,13 +42,15 @@ export const ExperiencesSection: React.FC<ExperiencesSectionProps> = ({
         {/* Visual Experience Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {EXPERIENCE_CATEGORIES.map((exp, idx) => (
-            <motion.div
+            <Card
               key={exp.id}
+              {...(categoryHref
+                ? { to: categoryHref(exp.category) }
+                : { onClick: () => onSelectCategory?.(exp.category) })}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-50px' }}
               transition={{ duration: 0.6, delay: idx * 0.1 }}
-              onClick={() => onSelectCategory(exp.category)}
               className="group relative rounded-3xl overflow-hidden shadow-xl border border-white/10 h-[380px] flex flex-col justify-end p-6 sm:p-8 cursor-pointer transform hover:-translate-y-1.5 transition-all duration-500"
             >
               {/* Background Image */}
@@ -80,7 +89,7 @@ export const ExperiencesSection: React.FC<ExperiencesSectionProps> = ({
                 </div>
               </div>
 
-            </motion.div>
+            </Card>
           ))}
         </div>
 

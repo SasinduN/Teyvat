@@ -515,3 +515,59 @@ canonical URL.
    `/destinations?category=<category>`. On the home page they keep
    filtering the map. **Recommended: yes.** The alternative is
    `/#explore-map` with the filter set, which leaves the page.
+
+## As built (8a): differences from this plan
+
+- **`BrowserRouter`, not the data router.** Measured on the built bundle,
+  `createBrowserRouter` put 157.0 KB (gzipped) of JS in the entry every page
+  loads, against 137.3 KB with `BrowserRouter`: about 20 KB on every page,
+  for the one feature the plan wanted from it, `<ScrollRestoration>`. So:
+  - **Scroll restoration** is `src/lib/ScrollRestorer.tsx` (about 60
+    lines). It records positions as the page scrolls, by history entry, and
+    restores them on Back and Forward; a new page opens at the top.
+  - **Pages are `React.lazy` chunks.** Navigations run in a transition, so
+    the current page stays up until the next one's code arrives, as the
+    plan wanted. Only a page's very first load shows a blank area in place
+    of the page, under the Navbar.
+  - **The old-link redirect** is `HomeRoute` (`<Navigate replace>`) instead
+    of a route loader. Same behaviour, tested.
+- **`<body data-route>`.** Because of the transition, the URL changes a
+  moment before the page does. The layout stamps the path of the page
+  actually on screen on `<body>`; the tests wait on it.
+- **`scroll-smooth` is gone from `<html>`.** It made the restored position
+  animate (Back visibly scrolled down from the top). Every in-page scroll
+  already asks for smooth scrolling itself.
+- **Section links focus their section too**, not only after a navigation:
+  the hero's buttons and a Navbar link to a section of the current page.
+- **The plan card** also has "Ask on WhatsApp" (the page's pre-filled
+  chat) when a number is set. Both its buttons, and the inline enquiry
+  form's submit button on `/about`, are `data-keep-clear`.
+- **"View page"** in the admin editor shows only for a published row (an
+  unpublished one has no page).
+- **The destination page's thumbnails** swap the header photo, as they did
+  in the modal.
+- **The Footer test and the map**: as planned, the pixel comparison
+  (`browser-home-baseline`) leaves both out. The test suite's 60 s limit
+  also applies to a `describe` block, so that suite sets its own 5 minutes.
+
+### Bundle size per page type (gzipped, `npm run bundle:report`)
+
+Before phase 8 the site was one page, loading 157.4 KB of JS and 11.3 KB of
+CSS, plus Leaflet's 42.5 KB once the map neared the viewport.
+
+| Page type | JS on load | CSS on load | Map, on demand |
+|---|---:|---:|---:|
+| Home | 163.9 KB | 11.5 KB | + 42.5 KB (Leaflet) |
+| Destinations list | 142.8 KB | 11.5 KB | — |
+| Destination | 146.8 KB | 11.5 KB | — |
+| Experiences list | 142.8 KB | 11.5 KB | — |
+| Experience | 145.6 KB | 11.5 KB | — |
+| Tours list | 142.3 KB | 11.5 KB | — |
+| Tour | 147.9 KB | 11.5 KB | + 42.5 KB (Leaflet) |
+| Article | 143.8 KB | 11.5 KB | — |
+| About | 146.1 KB | 11.5 KB | — |
+| 404 | 141.8 KB | 11.5 KB | — |
+| Admin | 223.0 KB | 11.5 KB | — |
+
+The entry every public page shares is 138.5 KB of JS. Leaflet's
+stylesheet (unpkg) comes with its JS and isn't counted.

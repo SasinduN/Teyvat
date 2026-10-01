@@ -165,6 +165,30 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     );
   });
 
+  test('every page type (phase 8): lists, details, About, the 404', async () => {
+    const pages: [string, string][] = [
+      ['/destinations', `document.querySelector('main a[href^="/destinations/"]')`],
+      ['/destinations/ella', `document.querySelector('main [data-google-maps]')`],
+      ['/experiences', `document.querySelector('main a[href^="/experiences/"]')`],
+      ['/experiences/safari-yala', `document.querySelector('main h1')`],
+      ['/tours', `document.querySelector('#tours h3')`],
+      // The route map loads Leaflet's stylesheet from unpkg, and the tiles.
+      ['/tours/island-in-7-days', `document.querySelectorAll('[data-route-map] img.leaflet-tile').length > 0`],
+      ['/journal/ultimate-ella-guide', `document.querySelector('main article')`],
+      ['/about', `document.querySelector('[data-inline-inquiry] form')`],
+      ['/no-such-page', `document.querySelector('[data-not-found]')`]
+    ];
+    for (const [path, ready] of pages) {
+      await visit(path, ready);
+      const height = await page.evaluate<number>('document.body.scrollHeight');
+      for (let y = 0; y <= height; y += 900) {
+        await page.evaluate(`window.scrollTo(0, ${y})`);
+        await sleep(100);
+      }
+      await collect(`${path} (scrolled)`);
+    }
+  });
+
   test('the admin, signed in: dashboard, editor, media library, enquiries, settings, a toast', async () => {
     await visit('/admin/login', `document.querySelector('#admin-email')`);
 
