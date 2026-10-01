@@ -27,6 +27,12 @@ export default defineConfig({
       "@shared": path.resolve(__dirname, "shared"),
     },
   },
+  // The manifest (dist/.vite/manifest.json) lets `npm run bundle:report` say
+  // what each page loads. express.static ignores dot-directories, so it is
+  // never served.
+  build: {
+    manifest: true,
+  },
   // No manualChunks. Leaflet is loaded with a dynamic import() only when the
   // map nears the viewport (InteractiveMapSection), so Rollup already gives it
   // its own on-demand chunk. Forcing a named "leaflet" chunk made the entry

@@ -235,7 +235,7 @@ describe('tour routes and the destination panel, in Chrome', { skip }, () => {
     assert.equal(inView.inside, inView.total, 'all of them in view');
   });
 
-  test('the Google Maps link carries the coordinates: side panel and modal', async () => {
+  test('the Google Maps link carries the coordinates: side panel and destination page', async () => {
     const page = await openPage();
     await openMap(page);
     const panel = await page.evaluate<{ href: string; target: string; rel: string }>(`(() => {
@@ -244,9 +244,10 @@ describe('tour routes and the destination panel, in Chrome', { skip }, () => {
     })()`);
     assert.deepEqual(panel, { href: ELLA_MAPS, target: '_blank', rel: 'noopener noreferrer' });
 
-    await page.evaluate(`[...document.querySelectorAll('#explore-map button')].find((b) => b.textContent.trim() === 'Explore Ella').click(), true`);
-    await waitFor(page, `document.querySelector('.fixed [data-google-maps]')`, 'the modal');
-    assert.equal(await page.evaluate<string>(`document.querySelector('.fixed [data-google-maps]').href`), ELLA_MAPS);
+    // "Explore Ella" is a link to Ella's page (phase 8), which has the link too.
+    await page.evaluate(`[...document.querySelectorAll('#explore-map .lg\\\\:flex a')].find((a) => a.textContent.trim() === 'Explore Ella').click(), true`);
+    await waitFor(page, `location.pathname === '/destinations/ella' && document.querySelector('main [data-google-maps]')`, "Ella's page");
+    assert.equal(await page.evaluate<string>(`document.querySelector('main [data-google-maps]').href`), ELLA_MAPS);
   });
 
   test('the mobile card has the link too', async () => {

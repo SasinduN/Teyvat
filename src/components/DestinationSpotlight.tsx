@@ -1,16 +1,10 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { useDestinations } from '@/hooks/useSiteContent';
-import { Destination } from '../types';
+import { paths } from '@shared/site-paths';
+import { MotionLink } from './MotionLink';
 import { ArrowUpRight, MapPin } from 'lucide-react';
 
-interface DestinationSpotlightProps {
-  onSelectDestination: (dest: Destination) => void;
-}
-
-export const DestinationSpotlight: React.FC<DestinationSpotlightProps> = ({
-  onSelectDestination
-}) => {
+export const DestinationSpotlight: React.FC = () => {
   const DESTINATIONS = useDestinations();
   // The first 6 featured destinations, already in sort_order from the API.
   // Capped because the six-card grid is part of the approved design.
@@ -38,13 +32,13 @@ export const DestinationSpotlight: React.FC<DestinationSpotlightProps> = ({
         {/* 6 Large Editorial Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {spotlightDestinations.map((dest, idx) => (
-            <motion.div
+            <MotionLink
               key={dest.id}
+              to={paths.destination(dest.id)}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-50px' }}
               transition={{ duration: 0.6, delay: idx * 0.1 }}
-              onClick={() => onSelectDestination(dest)}
               className="group relative rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer bg-[#0F2E23] border border-[#D4C3B5]/40 h-[460px] flex flex-col justify-end"
             >
               {/* Background Image with Hover Zoom */}
@@ -100,7 +94,7 @@ export const DestinationSpotlight: React.FC<DestinationSpotlightProps> = ({
                 </div>
               </div>
 
-            </motion.div>
+            </MotionLink>
           ))}
         </div>
 

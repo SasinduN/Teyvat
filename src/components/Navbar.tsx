@@ -2,17 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Logo } from './Logo';
 import { Search, Menu, X, Compass, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { NAV_LINKS } from '@shared/site-paths';
+import { SiteLink } from './SiteLink';
 
 interface NavbarProps {
   onOpenSearch: () => void;
   onOpenPlanner: () => void;
-  onNavigateSection: (sectionId: string) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   onOpenSearch,
-  onOpenPlanner,
-  onNavigateSection
+  onOpenPlanner
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -30,18 +30,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navLinks = [
-    { name: 'Home', id: 'hero' },
-    { name: 'Explore', id: 'explore-map' },
-    { name: 'Destinations', id: 'destinations' },
-    { name: 'Experiences', id: 'experiences' },
-    { name: 'Tours', id: 'tours' },
-    { name: 'About', id: 'about' },
-    { name: 'Contact', id: 'contact' }
-  ];
-
-  const handleLinkClick = (id: string) => {
-    onNavigateSection(id);
+  const handleLinkClick = () => {
     setMobileMenuOpen(false);
   };
 
@@ -57,25 +46,27 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             {/* Brand Logo */}
-            <button
-              onClick={() => handleLinkClick('hero')}
+            <SiteLink
+              to="/"
+              onClick={handleLinkClick}
               className="text-left focus:outline-none focus:ring-2 focus:ring-[#D4AF37] rounded-lg p-1 transition-transform hover:opacity-90"
               aria-label="Travel Eye Homepage"
             >
               <Logo variant="light" size="md" />
-            </button>
+            </SiteLink>
 
             {/* Desktop Navigation Links */}
             <nav className="hidden lg:flex items-center space-x-7" aria-label="Main Navigation">
-              {navLinks.map((link) => (
-                <button
-                  key={link.id}
-                  onClick={() => handleLinkClick(link.id)}
+              {NAV_LINKS.map((link) => (
+                <SiteLink
+                  key={link.to}
+                  to={link.to}
+                  onClick={handleLinkClick}
                   className="text-sm font-medium tracking-wide text-white/90 hover:text-[#D4AF37] transition-colors relative py-1 group"
                 >
-                  {link.name}
+                  {link.label}
                   <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#D4AF37] transition-all duration-300 group-hover:w-full" />
-                </button>
+                </SiteLink>
               ))}
             </nav>
 
@@ -138,15 +129,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                   Navigation
                 </p>
                 <div className="grid grid-cols-1 gap-2">
-                  {navLinks.map((link) => (
-                    <button
-                      key={link.id}
-                      onClick={() => handleLinkClick(link.id)}
+                  {NAV_LINKS.map((link) => (
+                    <SiteLink
+                      key={link.to}
+                      to={link.to}
+                      onClick={handleLinkClick}
                       className="flex items-center justify-between text-left py-3 text-lg font-heading font-medium text-white/90 hover:text-[#D4AF37] border-b border-white/5"
                     >
-                      <span>{link.name}</span>
+                      <span>{link.label}</span>
                       <ArrowRight className="w-4 h-4 text-white/40" />
-                    </button>
+                    </SiteLink>
                   ))}
                 </div>
               </div>

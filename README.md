@@ -123,6 +123,7 @@ npm run build && npm start     # everything on http://localhost:8081
 | `npm run typecheck` | `tsc --noEmit` over client, server, shared and scripts |
 | `npm test` | All tests (API, database, and headless Chrome), with time limits |
 | `npm run verify:roundtrip` | Proves the database round-trip renders the approved content unchanged |
+| `npm run bundle:report` | After a build: the gzipped JS and CSS each page type loads |
 | `npm run migrate` | Apply pending migrations (`-- --dry-run` to list them) |
 | `npm run seed:generate` | Regenerate `0002_seed.sql` from `scripts/fixtures/*.ts` |
 | `npm run admin:create` | Create an admin, or `--reset-password` for an existing one |
@@ -154,9 +155,10 @@ import).
 Any change in `src/components/` must be called out before it's made. Review
 with `git diff demo-baseline -- src/components/`.
 
-Each section of the page has its own error boundary (`src/pages/PublicSite.tsx`).
+Each section of a page has its own error boundary (`src/pages/Section.tsx`).
 A section that throws disappears and the rest of the page stays; only if the
-whole page fails does the "Something went wrong" screen show.
+whole page fails does the "Something went wrong" screen show, in that page's
+place (`src/pages/PublicLayout.tsx`).
 
 ### Data flow
 

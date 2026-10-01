@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowDown, ArrowUp, CircleAlert, Plus, Trash2 } from 'lucide-react';
 import { MAX_TOUR_STOPS, TOUR_STOP_BOUNDS } from '@shared/tour-stops';
 import { listRows } from '@/lib/api/admin';
+import { loadLeaflet } from '@/lib/leaflet';
 import { mapTiles } from '@/lib/mapTiles';
 import { queryKeys } from '@/lib/queryClient';
 import { Button, Input, Select } from '@/admin/components/ui';
@@ -245,7 +246,7 @@ const StopPreview: React.FC<{ lat: number; lng: number }> = ({ lat, lng }) => {
 
   useEffect(() => {
     let cancelled = false;
-    void import('leaflet').then((L) => {
+    void loadLeaflet().then((L) => {
       if (cancelled || !containerRef.current || mapRef.current) return;
       const at: [number, number] = [latest.current.lat, latest.current.lng];
       const map = L.map(containerRef.current, {

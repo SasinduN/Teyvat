@@ -4,7 +4,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ChevronLeft, RotateCcw, Save } from 'lucide-react';
+import { ChevronLeft, ExternalLink, RotateCcw, Save } from 'lucide-react';
+import type { ContentTableName } from '@shared/database.types';
+import { paths } from '@shared/site-paths';
 
 import { findCollection } from '@/admin/collections';
 import { schemaForCollection } from '@/admin/validation';
@@ -14,6 +16,14 @@ import { describeError } from '@/lib/errors';
 import { queryKeys } from '@/lib/queryClient';
 import { RecordForm, type FormValues } from '@/admin/components/RecordForm';
 import { Button, Card, ErrorNote, PageHeader, Spinner } from '@/admin/components/ui';
+
+/** The tables whose rows have a public page of their own. */
+const PUBLIC_PAGE: Partial<Record<ContentTableName, (id: string) => string>> = {
+  destinations: paths.destination,
+  featured_experiences: paths.experience,
+  tours: paths.tour,
+  articles: paths.article
+};
 
 export const RecordEditorPage: React.FC = () => {
   const { collection: slug, id } = useParams();
@@ -145,6 +155,21 @@ export const RecordEditorPage: React.FC = () => {
 
       <PageHeader
         title={heading}
+        actions={
+          // The saved row's page, once it is published; an edit shows there on the next load.
+          !isNew && id && existing.data?.published && PUBLIC_PAGE[collection.table] ? (
+            <a
+              href={PUBLIC_PAGE[collection.table]!(id)}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-view-page
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[#D4C3B5]/60 bg-white px-4 py-2.5 text-xs font-bold text-[#0F2E23] transition-colors hover:bg-[#F5EFEB]"
+            >
+              View page
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            </a>
+          ) : undefined
+        }
         description={
           isNew
             ? `Create a new ${collection.singular.toLowerCase()}.`

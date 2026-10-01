@@ -1,12 +1,11 @@
 import { Suspense, lazy } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useSearchParams } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 
 import { queryClient } from '@/lib/queryClient';
-import { useSiteContent } from '@/hooks/useSiteContent';
-import { SiteError, SiteLoading } from '@/components/SiteStatus';
-import { PublicSite } from '@/pages/PublicSite';
-import { ErrorBoundary } from '@/lib/ErrorBoundary';
+import { ScrollRestorer } from '@/lib/ScrollRestorer';
+import { PublicLayout } from '@/pages/PublicLayout';
+import { paths } from '@shared/site-paths';
 
 /**
  * The admin panel is code-split: a traveller visiting the marketing site never
@@ -16,43 +15,44 @@ import { ErrorBoundary } from '@/lib/ErrorBoundary';
 const AdminApp = lazy(() => import('@/admin/AdminApp'));
 
 /**
- * Gate the marketing site on its content being loaded.
- *
- * The approved design has no empty or skeleton states, so rather than invent
- * any we hold a brand-coloured splash until the data is in, then paint the
- * page exactly as designed.
+ * Each page is its own chunk. Only the home page's (the interactive map) and
+ * the tour page's (its route map) contain map code; Leaflet itself loads when
+ * a map is about to render (`src/lib/leaflet.ts`). Navigations run in a
+ * transition, so the current page stays on screen while the next one's code
+ * arrives.
  */
-function PublicSiteRoute() {
-  const { loading, error, reload } = useSiteContent();
+const HomePage = lazy(() => import('@/pages/HomePage').then((m) => ({ default: m.HomePage })));
+const DestinationsPage = lazy(() => import('@/pages/DestinationsPage').then((m) => ({ default: m.DestinationsPage })));
+const DestinationPage = lazy(() => import('@/pages/DestinationPage').then((m) => ({ default: m.DestinationPage })));
+const ExperiencesPage = lazy(() => import('@/pages/ExperiencesPage').then((m) => ({ default: m.ExperiencesPage })));
+const ExperiencePage = lazy(() => import('@/pages/ExperiencePage').then((m) => ({ default: m.ExperiencePage })));
+const ToursPage = lazy(() => import('@/pages/ToursPage').then((m) => ({ default: m.ToursPage })));
+const TourPage = lazy(() => import('@/pages/TourPage').then((m) => ({ default: m.TourPage })));
+const ArticlePage = lazy(() => import('@/pages/ArticlePage').then((m) => ({ default: m.ArticlePage })));
+const AboutPage = lazy(() => import('@/pages/AboutPage').then((m) => ({ default: m.AboutPage })));
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
-  if (loading) return <SiteLoading />;
-  if (error) return <SiteError message={error} onRetry={reload} />;
-
-  // Each section has its own boundary (PublicSite.tsx); this catches the rest,
-  // with the same screen a failed content load shows.
-  return (
-    <ErrorBoundary
-      name="public site"
-      fallback={
-        <SiteError
-          message="Something went wrong showing this page. Please try again."
-          onRetry={() => window.location.reload()}
-        />
-      }
-    >
-      <PublicSite />
-    </ErrorBoundary>
-  );
+/**
+ * The home page, unless the URL is an old link: `/?tour=<id>` and
+ * `/?destination=<id>` (the WhatsApp messages sent before phase 8) go to the
+ * page, replacing the history entry. Phase 8b adds the same redirect on the
+ * server, as a 301.
+ */
+function HomeRoute() {
+  const [params] = useSearchParams();
+  const tour = params.get('tour');
+  if (tour) return <Navigate to={paths.tour(tour)} replace />;
+  const destination = params.get('destination');
+  if (destination) return <Navigate to={paths.destination(destination)} replace />;
+  return <HomePage />;
 }
 
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <ScrollRestorer />
         <Routes>
-          {/* -------------------------------------------------- public */}
-          <Route path="/" element={<PublicSiteRoute />} />
-
           {/* --------------------------------------------------- admin */}
           <Route
             path="/admin/*"
@@ -63,8 +63,19 @@ export function App() {
             }
           />
 
-          {/* Unknown paths fall back to the marketing site. */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* -------------------------------------------------- public */}
+          <Route element={<PublicLayout />}>
+            <Route index element={<HomeRoute />} />
+            <Route path="destinations" element={<DestinationsPage />} />
+            <Route path="destinations/:slug" element={<DestinationPage />} />
+            <Route path="experiences" element={<ExperiencesPage />} />
+            <Route path="experiences/:slug" element={<ExperiencePage />} />
+            <Route path="tours" element={<ToursPage />} />
+            <Route path="tours/:slug" element={<TourPage />} />
+            <Route path="journal/:slug" element={<ArticlePage />} />
+            <Route path="about" element={<AboutPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

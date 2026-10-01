@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDestinations } from '@/hooks/useSiteContent';
+import { Link } from 'react-router-dom';
+import { paths } from '@shared/site-paths';
+import { loadLeaflet } from '@/lib/leaflet';
 import { mapTiles } from '@/lib/mapTiles';
 import { MAP_CATEGORIES, MAP_CATEGORY_STYLES, markerHtml, routeStopHtml, type MapCategory } from '@/lib/mapMarkers';
 import { airportTravelTime, googleMapsUrl } from '@/lib/googleMaps';
@@ -26,7 +29,6 @@ import {
 } from 'lucide-react';
 
 interface InteractiveMapSectionProps {
-  onSelectDestination: (dest: Destination) => void;
   activeFilterFromParent?: CategoryType | 'All';
   selectedWhereFromParent?: string;
   /** A tour whose route the map shows ("View route on map"), or null. */
@@ -105,7 +107,6 @@ const PlaceLinks: React.FC<{
 );
 
 export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
-  onSelectDestination,
   activeFilterFromParent,
   selectedWhereFromParent,
   routeTour = null,
@@ -223,7 +224,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
       if (!container || mapInstanceRef.current) return;
 
       try {
-        const L = await import('leaflet');
+        const L = await loadLeaflet();
 
         if (!isMounted || !mapContainerRef.current) return;
 
@@ -753,13 +754,13 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                   </div>
 
                   {/* Primary CTA Button */}
-                  <button
-                    onClick={() => onSelectDestination(activeDest)}
+                  <Link
+                    to={paths.destination(activeDest.id)}
                     className="w-full py-3.5 bg-gradient-to-r from-[#D4AF37] to-[#C5A059] hover:from-[#C5A059] hover:to-[#B89248] text-[#0F2E23] rounded-xl font-bold text-sm shadow-lg flex items-center justify-center space-x-2 transition-all duration-300 transform hover:-translate-y-0.5"
                   >
                     <span>Explore {activeDest.name}</span>
                     <ArrowUpRight className="w-4 h-4" />
-                  </button>
+                  </Link>
                 </motion.div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center text-white/60">
@@ -806,13 +807,13 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                     </span>
                   ))}
                 </div>
-                <button
-                  onClick={() => onSelectDestination(activeDest)}
+                <Link
+                  to={paths.destination(activeDest.id)}
                   className="px-5 py-2.5 bg-[#D4AF37] text-[#0F2E23] rounded-xl font-bold text-xs flex items-center space-x-1 shrink-0"
                 >
                   <span>Explore {activeDest.name}</span>
                   <ChevronRight className="w-4 h-4" />
-                </button>
+                </Link>
               </div>
             </div>
           )}

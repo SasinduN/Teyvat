@@ -26,6 +26,8 @@ this file or anywhere else in git.
 | 6 | Inquiries endpoints: public submit and admin inbox | done |
 | 7a | Clean-up: README/SCHEMA rewrite, CI, security headers, error boundaries, restore guide | done |
 | 7b | Launch decisions: `docs/LAUNCH-CHECKLIST.md` | owner's checklist |
+| 8a | Real pages and links: routes, layout, page types, code splitting (`docs/plans/phase-8-pages.md`) | in review |
+| 8b | Server side of phase 8: head tags, 404 status, 301s, sitemap, robots | planned |
 
 Update the Status column when a phase lands.
 
@@ -44,8 +46,9 @@ Update the Status column when a phase lands.
     importing `'zod'` directly brings back an `eval` probe the CSP reports.
   - A new external host (fonts, tiles, scripts) needs adding to the CSP;
     `server/test/browser-csp.test.ts` fails until it is.
-- **Error boundaries:** each public section is wrapped in `PublicSite.tsx`
-  (renders nothing on error); admin pages fall back to `PageCrash`.
+- **Error boundaries:** each public section is wrapped in `Section`
+  (`src/pages/Section.tsx`, renders nothing on error), and each page in a
+  boundary in `PublicLayout.tsx`; admin pages fall back to `PageCrash`.
 - **Enquiries:**
   - The public insert's column list is `INQUIRY_INSERT_COLUMNS`
     (`shared/inquiry-schema.ts`); never read `status`, `admin_notes`, `spam`
@@ -67,13 +70,30 @@ Update the Status column when a phase lands.
   `shared/whatsapp.ts`):
   - Hidden while `site_settings.whatsapp_number` is NULL. A plain `wa.me`
     link: no widget, no script, no CSP change.
-  - Its message links back with `/?tour=<id>` or `/?destination=<id>`, which
-    `PublicSite.tsx` turns into the open modal.
+  - Its message links to the page the visitor is on (a tour, destination or
+    experience), set by the page with `usePageSubject`.
   - It fades out over the map's zoom buttons and anything marked
     `data-keep-clear`, and hides while the enquiry or search modal is open.
-- **Phase 8 (own pages for tours and destinations):** `/?tour=<id>` and
-  `/?destination=<id>` must redirect to the new page URLs. Those links are
-  already in WhatsApp chats, and they have to keep working.
+- **Old links:** `/?tour=<id>` and `/?destination=<id>` must keep reaching
+  the pages; they are in WhatsApp chats. `HomeRoute` (`src/App.tsx`)
+  redirects them in the browser; phase 8b adds the server's 301. Keep both.
+- **Pages and links** (phase 8):
+  - Routes are in `src/App.tsx`; every public URL is built with `paths`
+    (`shared/site-paths.ts`), and every link is a real `<a href>` (`Link`,
+    or `SiteLink` for the nav, which scrolls instead when the target is on
+    the current page).
+  - `BrowserRouter`, not the data router: that one adds about 20 KB
+    (gzipped) to every page, for scroll restoration we do in
+    `src/lib/ScrollRestorer.tsx`.
+  - Each page is a lazy chunk. Map code is only in the home and tour pages'
+    chunks, and Leaflet (JS and its unpkg stylesheet) loads through
+    `loadLeaflet()` (`src/lib/leaflet.ts`) when a map is about to render.
+    `npm run bundle:report` prints what each page type loads.
+  - Navigations run in a transition: the URL changes a moment before the
+    page. `<body data-route>` names the page actually on screen; tests wait
+    on it.
+  - `server/test/browser-home-baseline.test.ts` compares the home page's
+    changed sections against `bf94e25`, pixel for pixel.
 
 ### Where things live
 

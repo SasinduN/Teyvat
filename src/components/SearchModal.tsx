@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useDestinations } from '@/hooks/useSiteContent';
-import { Destination } from '../types';
+import { paths } from '@shared/site-paths';
 
 interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectDestination: (dest: Destination) => void;
 }
 
 export const SearchModal: React.FC<SearchModalProps> = ({
   isOpen,
-  onClose,
-  onSelectDestination
+  onClose
 }) => {
   // Hooks must run on every render — the `isOpen` early-return lives below
   // them, otherwise opening the modal changes the hook count and React throws.
@@ -76,12 +75,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 
             <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
               {filtered.slice(0, 6).map((dest) => (
-                <div
+                <Link
                   key={dest.id}
-                  onClick={() => {
-                    onClose();
-                    onSelectDestination(dest);
-                  }}
+                  to={paths.destination(dest.id)}
+                  onClick={onClose}
                   className="p-3.5 rounded-2xl bg-[#FBF9F6] hover:bg-[#F5EFEB] border border-[#D4C3B5]/30 flex items-center justify-between cursor-pointer transition-colors group"
                 >
                   <div className="flex items-center space-x-3">
@@ -104,7 +101,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                   </div>
 
                   <ArrowRight className="w-4 h-4 text-[#1C4737] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                </div>
+                </Link>
               ))}
 
               {filtered.length === 0 && (
