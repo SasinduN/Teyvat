@@ -59,6 +59,10 @@ export async function launchChrome(executable: string): Promise<Chrome> {
       '--disable-extensions',
       `--user-data-dir=${profile}`,
       '--remote-debugging-port=0',
+      // GitHub's Ubuntu runners restrict the user namespaces Chrome's sandbox
+      // needs, so there it can't start sandboxed. Only in CI, and only ever
+      // for these tests' own pages.
+      ...(process.env.CI ? ['--no-sandbox'] : []),
       'about:blank'
     ],
     { stdio: 'ignore' }

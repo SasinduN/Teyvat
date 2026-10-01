@@ -8,7 +8,7 @@
  * Messages are written for travellers, because the form shows the server's
  * message as it is.
  */
-import { z } from 'zod';
+import { z } from './zod';
 
 import { INQUIRY_STATUSES } from './database.types';
 

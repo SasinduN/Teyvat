@@ -1,557 +1,387 @@
 # Teyvat — Travel Eye Sri Lanka
 
-Inbound-tourism site for foreign travellers visiting Sri Lanka, plus the admin
-panel that manages its content.
+An inbound-tourism site for travellers visiting Sri Lanka, and the admin panel
+that runs it.
 
-- **Public site** — `/` — the approved marketing design, now rendered entirely
-  from the database.
-- **Admin panel** — `/admin` — email/password sign-in on the API's own
-  sessions, full CRUD for all nine content collections and the site settings
-  through `/api/admin/*`, a media library backed by Cloudflare R2, and the
+- **Public site** (`/`): the approved marketing design, rendered from the
+  database.
+- **Admin panel** (`/admin`): sign-in, editing for all nine content
+  collections and the site settings, a media library on Cloudflare R2, and the
   enquiry inbox.
 
-Stack: Vite 7 · React 19 · TypeScript 5.9 (strict) · Tailwind CSS v4 ·
-Framer Motion · Leaflet · React Router v7 · Supabase (Postgres, Auth, Storage) ·
-TanStack Query · React Hook Form + Zod · Sonner.
+One Express service serves both, plus the API (`/api/*`), from a single
+origin, backed by PostgreSQL on Railway.
 
-Schema reference: [`docs/SCHEMA.md`](docs/SCHEMA.md).
+**Stack:** Vite 7 · React 19 · TypeScript 5.9 (strict) · Tailwind CSS v4 ·
+Framer Motion · Leaflet · React Router 7 · TanStack Query · React Hook Form +
+Zod · Express 5 · PostgreSQL · Cloudflare R2 · Resend.
+
+**More docs:**
+
+- [`docs/SCHEMA.md`](docs/SCHEMA.md): every table.
+- [`docs/RESTORE.md`](docs/RESTORE.md): recovering the database.
+- [`docs/LAUNCH-CHECKLIST.md`](docs/LAUNCH-CHECKLIST.md): what's left before
+  go-live.
+- [`CLAUDE.md`](CLAUDE.md): working rules for this repo.
 
 ---
 
-## 1. Database
+## Getting started
 
-Migrations live in `db/migrations/` and are applied by the repo's own runner:
+### 1. What you need
 
-```bash
-npm run migrate                 # apply every pending file, in order
-npm run migrate -- --dry-run    # list what would be applied, change nothing
-```
+- **Node 22** (`engines` in `package.json`).
+- **PostgreSQL 16 or later**, running locally.
+- **Chrome**, for the browser tests. They're skipped, with a message, if it
+  isn't found; point `CHROME_PATH` at it if it's somewhere unusual.
 
-Applied files are tracked in `public.schema_migrations`, so this is safe to run
-on every boot — it is part of the Railway start command. It needs `DATABASE_URL`
-in the environment.
-
-- **Deployed:** Railway injects it as a reference to the Postgres service's
-  internal `DATABASE_URL`, so traffic stays on the private network.
-- **Local:** put the Postgres service's `DATABASE_PUBLIC_URL`
-  (`*.proxy.rlwy.net`) in `.env` as `DATABASE_URL`, with `?sslmode=require`
-  appended. The internal host does not resolve outside Railway.
-
-The files:
-
-- `0001_init.sql` — tables, CHECK constraints, `updated_at` triggers, the
-  `users`/`sessions` auth tables and the single-row `site_settings`. Idempotent:
-  re-running it is a no-op and never overwrites live data.
-- `0003_login_attempts.sql` — the sign-in throttle's counters.
-- `0004_site_settings_links.sql` — each footer link becomes NULL or
-  `https://…`. The `#instagram`-style placeholders become NULL, and the Footer
-  renders an unset link without an `href`.
-- `0005_media.sql` — the media library: one row per image uploaded to R2.
-- `0006_inquiries.sql` — enquiry statuses become new / contacted / closed,
-  plus `closed_at`, the `spam` flag, and the enquiry form's rate-limit table.
-- `0002_seed.sql` — the approved baseline content: 63 rows across all nine
-  content tables (20 destinations, 6 experience types, 4 featured experiences,
-  4 tours, 6 articles, 8 hidden gems, 8 photo stories, 3 hero slides,
-  4 pillars). Generated from `scripts/fixtures/*.ts` by `npm run seed:generate`.
-
-> [!WARNING]
-> **Never run `0002_seed.sql` by hand against production after go-live.**
->
-> Every statement in it is `on conflict (id) do update`, keyed on the slug. That
-> makes it safe and useful *before* go-live — it resets content to the approved
-> baseline — but afterwards it is a destructive overwrite. Re-running it silently
-> replaces every edit an admin has made to any of those 63 rows: rewritten
-> copy, reordered `sort_order`, unpublished drafts flipped back to published, and
-> uploaded images reverted to the original Unsplash URLs. There is no undo and no
-> warning; the run reports success.
->
-> The runner will not do this to you — `schema_migrations` records the file as
-> applied and skips it forever after. The danger is only in pasting the file into
-> a SQL console, or in deleting its `schema_migrations` row. Content edits made
-> through the admin panel are not in version control; the seed file is. Treat it
-> as a first-boot fixture, not a repair tool.
-
-## 2. Configure the app
-
-> **Out of date:** Supabase was removed from the code in phase 6. This section is rewritten in phase 7.
+### 2. Clone and install
 
 ```bash
-cp .env.example .env.local
+git clone https://github.com/SasinduN/Teyvat.git
+cd Teyvat
+npm ci
 ```
 
-These are only needed for the admin panel and the enquiry form, which move off
-Supabase in later phases. The public site reads everything from `/api/content`
-and renders without them; the enquiry form then says it can't send.
+### 3. Environment
 
-Fill in from **Project Settings → API Keys**:
-
-```
-VITE_SUPABASE_URL=https://<your-project>.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+```bash
+cp .env.example .env
 ```
 
-Use the **new key format** (`sb_publishable_...`). The legacy `anon` JWT
-(`eyJ...`) is deprecated and stops working at the end of 2026 — do not use it.
+Locally you need just two variables. The rest (R2, Resend) are optional, and
+the site runs without them.
 
-The publishable key is safe in the browser — every table is protected by Row
-Level Security. **Never** put the secret key (`sb_secret_...`) or a legacy
-`service_role` key in `.env.local` or anywhere under `src/`: Vite inlines every
-`VITE_*` variable into the client bundle.
+| Variable | Locally |
+| --- | --- |
+| `DATABASE_URL` | your **local** development database, e.g. `postgresql://postgres:<pw>@localhost:5432/teyvat_dev` |
+| `TEST_DATABASE_URL` | your local **test** database, e.g. `postgresql://postgres:<pw>@localhost:5432/teyvat_test` |
 
-## 3. Create your first admin
+Never point `DATABASE_URL` at production for everyday work. Everything you
+run (the dev server, migrations, scripts) acts on whatever it names.
 
-Every user is an admin; a row in `public.users` is what grants access to
-`/admin`. There is no sign-up page and no HTTP route that creates a user. Use
-the script:
+`TEST_DATABASE_URL` is guarded, because the tests empty tables. The tests
+refuse to start unless it:
+
+- points at `localhost`,
+- names a database ending in `_test`,
+- **states its port**.
+
+There's no fallback to a default host or port.
+
+### 4. Databases
+
+```bash
+createdb -p 5432 teyvat_dev
+createdb -p 5432 teyvat_test
+npm run migrate        # applies db/migrations/*, including the seed content
+```
+
+Use the port your PostgreSQL listens on. The test database is migrated by the
+tests themselves.
+
+### 5. An admin login
 
 ```bash
 npm run admin:create -- --email you@example.lk --name "Your Name"
 ```
 
-It asks for the password twice at a hidden prompt (12–1024 characters). The
-password is never accepted as an argument, so it cannot end up in shell history.
+The password is typed twice at a hidden prompt, 12 characters at least. It's
+never accepted as an argument, so it never lands in shell history.
 
-- **It runs against `DATABASE_URL`.** In the local `.env` that is production, and
-  that is how the first admin gets into the deployed site. The script prints
-  which database it connected to before it asks for anything.
-- **After the phase 3 deploy, nobody can sign in until this has been run.** The
-  `users` table starts empty.
-- An existing email is refused. To replace its password, add
-  `--reset-password`. That also ends all of that user's sessions and clears
-  the email's failed sign-in attempts.
-- It warns if the email is `site_settings.contact_email`. The Footer shows that
-  address to every visitor, so it makes a poor login.
-
-## 4. Run it
-
-Development needs **two processes**: the API, and Vite for the client. In
-production a single Express service serves both, so there is one origin and no
-CORS — the dev proxy reproduces that arrangement locally.
+### 6. Test
 
 ```bash
-npm install
-npm run dev:server   # API on http://localhost:8081
-npm run dev          # client on http://localhost:5173  (admin at /admin)
+npm test               # every test file, each in its own process
+npm test -- media      # only files whose names contain "media"
 ```
 
-Vite proxies `/api` to port 8081 (`vite.config.ts`). 8081 rather than 8080
-because a local Apache/XAMPP commonly holds 8080; change both together if you
-move it.
+### 7. Run
 
-### Tests
+Development needs two processes, the API and Vite:
 
 ```bash
-npm test
+npm run dev:server     # API on http://localhost:8081
+npm run dev            # site on http://localhost:5173, admin at /admin
 ```
 
-The API tests (`server/test/`, `node:test` through tsx) start the real app on a
-random port and call it with `fetch`. They need a local Postgres database of
-their own, named in `.env`:
-
-```
-TEST_DATABASE_URL=postgresql://postgres:<password>@localhost:<port>/teyvat_test
-```
-
-The tests apply every migration to it and empty `users`, `sessions` and
-`login_attempts` between cases. So they refuse to start, with no fallback to a
-default host or port, unless `TEST_DATABASE_URL`:
-
-- is set,
-- points at `localhost`,
-- names a database ending in `_test`,
-- includes an explicit port.
-
-Create the database once with `createdb -p <port> teyvat_test` (or
-`create database teyvat_test;` in psql).
-
-`npm test` runs each file in its own process (`scripts/run-tests.mjs`).
-Every test has a 60-second limit and every hook 120 seconds, so a hang fails
-with the test's name instead of blocking the run. `npm test -- media` runs
-only the files whose names contain `media`.
-
-The tests never touch R2: the test setup clears every `R2_*` variable, and
-the upload tests use an in-memory store. `server/test/browser-image.test.ts`
-checks the browser's image preparation (EXIF rotation, HEIC, large photos) in
-a real headless Chrome. It finds the installed Chrome, or `CHROME_PATH`, and is
-skipped with a message if there is none.
-
-To run exactly what deploys:
+Vite proxies `/api` to port 8081 (`vite.config.ts`); 8081 because a local
+Apache often holds 8080. To run exactly what deploys, one process:
 
 ```bash
-npm run build && npm start   # everything on http://localhost:8081
+npm run build && npm start     # everything on http://localhost:8081
 ```
+
+### Scripts
 
 | Script | What it does |
 | --- | --- |
-| `npm run dev` | Vite dev server (client only) |
-| `npm run dev:server` | API with reload on change |
+| `npm run dev` / `dev:server` | Vite (client) / the API with reload |
 | `npm run build` | Typecheck, build the client, bundle the server |
-| `npm run build:server` | Bundle the server only (esbuild) |
-| `npm start` | Run the built server — serves `/api/*` and `dist/` |
-| `npm run migrate` | Apply pending migrations |
-| `npm run admin:create` | Create an admin, or `--reset-password` for an existing one |
-| `npm test` | API and browser tests against `TEST_DATABASE_URL`, with per-test time limits |
-| `npm run typecheck` | `tsc --noEmit` across client, server, shared and scripts |
-| `npm run preview` | Vite's own preview of the client build |
+| `npm start` | Run the built server: `/api/*` and `dist/` |
+| `npm run typecheck` | `tsc --noEmit` over client, server, shared and scripts |
+| `npm test` | All tests (API, database, and headless Chrome), with time limits |
+| `npm run verify:roundtrip` | Proves the database round-trip renders the approved content unchanged |
+| `npm run migrate` | Apply pending migrations (`-- --dry-run` to list them) |
 | `npm run seed:generate` | Regenerate `0002_seed.sql` from `scripts/fixtures/*.ts` |
-| `npm run verify:roundtrip` | Assert the DB round-trip renders identical content |
+| `npm run admin:create` | Create an admin, or `--reset-password` for an existing one |
+| `npm run images:audit` | Read-only: stored image URLs the CSP would block |
+| `npm run media:rebase` | Move stored image URLs to a new R2 base (`--from`, `--to`, `--dry-run`) |
 
 ---
 
-## Architecture
+## How it works
 
-### Keeping the public design untouched
+### The public site and the approved design
 
-The approved components were not redesigned. Each one previously imported or
-held its content as a constant:
-
-```ts
-import { DESTINATIONS } from '../data/destinations';
-```
-
-and now reads it under the same name:
+The public components in `src/components/` are the **approved, frozen design**.
+They read their content through hooks under the names they used for their old
+hard-coded constants, so their markup never changed:
 
 ```ts
 const DESTINATIONS = useDestinations();
 ```
 
-`src/hooks/useSiteContent.ts` makes one `GET /api/content` request through
-TanStack Query, so every component reads from a single shared cache entry. That
-covers the nine content collections plus the Footer's contact details and links
-from `site_settings`. Review any change to the components against the approved
-design with `git diff demo-baseline -- src/components/`.
+`src/hooks/useSiteContent.ts` makes one `GET /api/content` request (published
+rows only, in `sort_order`), and the mappers in `src/lib/mappers.ts` turn rows
+into the exact shapes the components expect.
 
-`npm run verify:roundtrip` proves this is lossless: it pushes the original
-`scripts/fixtures/*.ts` content through the same shape transformation the seed performs,
-back through the runtime mappers, and asserts deep equality against what the
-components used to import — ordering, optional-field presence and the article
-date strings included.
+`npm run verify:roundtrip` proves that conversion is lossless against the
+original content in `scripts/fixtures/` (which nothing under `src/` may
+import).
 
-`scripts/fixtures/*.ts` is retained as the seed's source of truth and as that
-test's fixture. It lives outside `src/` so the running app cannot import it.
+Any change in `src/components/` must be called out before it's made. Review
+with `git diff demo-baseline -- src/components/`.
+
+Each section of the page has its own error boundary (`src/pages/PublicSite.tsx`).
+A section that throws disappears and the rest of the page stays; only if the
+whole page fails does the "Something went wrong" screen show.
 
 ### Data flow
 
 ```
-Postgres ──published rows──▶ GET /api/content ──▶ lib/api/content.ts ──mappers──▶ useSiteContent ──▶ components
-
-InquiryModal ──POST /api/inquiries (whitelisted fields)──▶ public.inquiries ◀──/api/admin/inquiries── /admin/inquiries
-
-/admin/login ──POST /api/auth/login──▶ session cookie ──GET /api/auth/me──▶ AuthContext
-
-/admin/* ──lib/api/admin.ts──▶ /api/admin/* (requireAdmin + same-origin) ──▶ Postgres
+Postgres ─published rows─▶ GET /api/content ─▶ mappers ─▶ useSiteContent ─▶ components
+InquiryModal ─▶ POST /api/inquiries (visitor fields only) ─▶ inquiries ◀─ /api/admin/inquiries ◀─ inbox
+/admin/login ─▶ POST /api/auth/login ─▶ session cookie ─▶ GET /api/auth/me ─▶ AuthContext
+/admin/*     ─▶ /api/admin/* (requireAdmin + same-origin) ─▶ Postgres / R2
 ```
 
-Admin mutations invalidate the query keys they touch (`src/lib/queryClient.ts`),
-including `siteContent` — so a save is reflected on the public site without a
-reload. Reordering is optimistic and rolls back if the write fails.
+`GET /api/content` is sent `Cache-Control: no-cache`, so an admin's save shows
+on the next page load.
 
-`GET /api/content` is sent with `Cache-Control: no-cache`: the browser
-revalidates it on every page load, so a save shows up on the next load.
+### The admin panel
 
-### Admin API
-
-Every route is behind `requireAdmin` and answers with `Cache-Control:
-no-store`. Every write also passes the same-origin check.
+Forms and list views are generated from field descriptors in
+`shared/content-schema.ts`, with icons and labels added in
+`src/admin/collections.ts`. The same descriptors build the Zod schema that both
+the form and the API run, and they are also the API's column allow-list: SQL
+column names never come from a request.
 
 | Route | Result |
 | --- | --- |
 | `GET /api/admin/content/:table` | every row, drafts included, in `sort_order` |
 | `GET /api/admin/content/:table/count` | `{ count }` |
-| `GET /api/admin/content/:table/:id` | one row, or 404 |
-| `POST /api/admin/content/:table` | 201; the row is added at the end of the list |
-| `PUT /api/admin/content/:table/:id` | `{ values, expectedUpdatedAt }`; 409 if saved by someone else since |
+| `GET` / `PUT` / `DELETE /api/admin/content/:table/:id` | one row; `PUT` takes `{ values, expectedUpdatedAt }` |
+| `POST /api/admin/content/:table` | 201; added at the end of the list |
 | `PATCH /api/admin/content/:table/:id/published` | `{ published }` |
-| `DELETE /api/admin/content/:table/:id` | 204 |
-| `PUT /api/admin/content/:table/order` | `{ ids }`: every id, in order, one transaction |
-| `GET` / `PUT /api/admin/site-settings` | the single row; `PUT` takes `{ values, expectedUpdatedAt }` |
+| `PUT /api/admin/content/:table/order` | `{ ids }`: all of them, one transaction |
+| `GET` / `PUT /api/admin/site-settings` | the single settings row |
+| `/api/admin/media` | upload, library, usage, delete (see Images) |
+| `/api/admin/inquiries` | inbox, counts, CSV export (see Enquiries) |
 
 Rules the API enforces:
 
-- **Validation.** Errors are 400 with a message per field, in
-  `error.fields` (`"itinerary.2.title": "Each day needs a title."`).
-- **Slugs.** A slug can't change after a row is created. `count` and `order`
-  are reserved.
-- **Concurrent edits.** Saving a version someone else has already replaced gets
-  409, and the editor offers to load the saved version.
-- **Reorder** is all or nothing. If the list changed underneath (a row added or
-  deleted), it gets 409 and nothing is written.
-- **Hero.** The last published hero slide can't be unpublished or deleted.
-- **Site settings links** are `https://` or empty (stored as NULL);
-  `contact_email` must be an email.
+- **Validation errors** are 400 with a message per field (`error.fields`).
+- **Slugs** can't change after creation; `count` and `order` are reserved.
+- **Concurrent edits:** saving a version that someone else has already
+  replaced gets 409.
+- **Reorder** is all or nothing.
+- **Hero:** the last published hero slide can't be unpublished or deleted.
+- **Destinations:** only the first 6 featured destinations show in the
+  spotlight, and the list marks the rest "Featured · not shown".
+- **Site settings links** are `https://` or empty.
 
-### Sign-in and sessions
-
-- **Passwords** are argon2id (19 MiB, 2 passes, 1 lane) via `@node-rs/argon2`.
-- **Sessions** live in `public.sessions`. The cookie is
-  `__Host-teyvat_session` (`HttpOnly; Secure; SameSite=Strict; Path=/`) and
-  carries a random 32-byte token. The table stores only its SHA-256.
-  - A session lasts 7 days from sign-in; activity does not extend it.
-  - *Sign out* deletes the session. *Sign out everywhere* deletes all of the
-    user's sessions.
-- **Every state-changing `/api` request** must carry an `Origin` equal to the
-  site's own origin, or `Sec-Fetch-Site: same-origin` if there is no Origin.
-  Otherwise it gets 403.
-- **Unknown email and wrong password** give the same 401, "Incorrect email or
-  password." Both run exactly one argon2 verify; an unknown email is checked
-  against a dummy hash, so the timing doesn't reveal which case it was.
-- **Brute-force limits.** Failures are counted in `public.login_attempts` over a
-  rolling 15 minutes:
-  - 5 per (email, IP),
-  - 20 per IP,
-  - 50 per email across all IPs.
-
-  Past a limit, sign-in returns 429 with `Retry-After`, checked before any
-  password is verified. A successful sign-in clears that email's failures.
-- **Housekeeping.** Expired sessions and attempts older than 24 hours are swept
-  at boot and hourly.
-
-### Security: check that `req.ip` is the real visitor
-
-The per-IP limit counts failures by `req.ip`. Express derives it from
-`X-Forwarded-For` because of `app.set('trust proxy', 1)` in
-`server/src/app.ts`, which trusts exactly one proxy hop: Railway's edge.
-
-If Railway's proxy arrangement ever changes so that `req.ip` becomes the
-proxy's own address, every visitor shares one "IP". "20 failures per IP" then
-becomes **a site-wide sign-in lockout** that anyone can trigger with 20 wrong
-passwords.
-
-After every deploy that touches the proxy settings (and once after the first
-phase 3 deploy):
-
-1. Enter one wrong password at `/admin/login` from a laptop.
-2. Enter one wrong password from a phone on **mobile data**, not the same
-   Wi-Fi.
-3. Look at the stored addresses:
-
-   ```sql
-   select ip, attempted_at from public.login_attempts order by attempted_at desc limit 5;
-   ```
-
-   The two attempts must show **two different public addresses**. If they show
-   the same address, or a private one such as `10.x` or `100.64.x`, then
-   `req.ip` is the proxy. Fix `trust proxy` before relying on the limits.
-
-### Enquiries
-
-The public form posts to `POST /api/inquiries`. The server builds the insert
-from the visitor's fields only (name, email, phone, travellers, dates,
-subject, message), so `status` is always `new` and `admin_notes` always empty.
-That replaces the guarantee the old RLS policy gave.
-
-- **Spam.** A hidden honeypot field: anything that fills it is stored as spam
-  (not discarded: autofill can fill a honeypot by accident), hidden from the
-  inbox under a **Spam** filter, and never triggers an email.
-- **Rate limit.** 5 submissions per 15 minutes and 20 per 24 hours per IP.
-  These are generous, because mobile networks put many people behind one
-  address.
-- **Inbox:** *Admin → Enquiries*.
-  - Filter by status (new, contacted, closed) or spam.
-  - Change status, write notes, delete permanently.
-  - Export CSV. Cells that start with `=`, `+`, `-`, `@`, a tab or CR get a
-    leading `'`, so Excel can't run a stranger's formula; plain phone
-    numbers are left as they are.
-- **Getting noticed.** The sidebar shows the number of new enquiries, as does
-  the browser tab title, refreshed every minute. With `RESEND_API_KEY` and
-  `NOTIFY_EMAIL_TO` set, a short email also goes out: at most one every 15
-  minutes, with no enquiry details in it.
-  - Until a sending domain is verified, Resend only delivers from its test
-    sender (`onboarding@resend.dev`) to the Resend account's own address, so
-    `NOTIFY_EMAIL_TO` must be that address.
-  - `PUBLIC_SITE_URL` adds a link to the inbox.
-
-### Privacy: what the enquiry form keeps
-
-For the privacy policy page:
-
-- **Collected:** what the visitor types into the form (name, email, phone if
-  given, travellers, dates, subject, message) and the time it arrived.
-- **Why:** to reply about the trip they asked about.
-- **Who can see it:** signed-in admins only.
-- **How long:**
-  - closed enquiries are deleted automatically 12 months after they were
-    closed;
-  - enquiries marked spam, after 30 days;
-  - enquiries still open are kept until someone closes or deletes them;
-  - an admin can delete any enquiry permanently at any time.
-- **Not kept with the enquiry:** the visitor's IP address. The rate limit
-  stores IP addresses on their own, with a time and nothing else, for 24
-  hours.
-- **Not copied anywhere else:** notification emails say only that something
-  arrived. The server logs never contain names, emails or messages; errors
-  are logged by code only.
-
-### Security model (Supabase side)
-
-> **Out of date:** Supabase was removed from the code in phase 6. This section is rewritten in phase 7.
-
-
-The table below describes the parts of the site that still run on Supabase:
-the enquiry form and inbox, and image storage. Sign-in and content editing no
-longer do.
-
-| Actor | Content tables | `inquiries` | `media` bucket |
-| --- | --- | --- | --- |
-| Anonymous | `SELECT` where `published` | `INSERT` only | read |
-| Signed in, not an admin | same as anonymous | `INSERT` only | read |
-| Admin (`public.admins` row) | full read/write | full read/write | read/write |
-
-Authorisation lives in Postgres. `public.is_admin()` is a `SECURITY DEFINER`
-function consulted by every write policy; the React route guard only decides
-what to *render*. The anon insert policy on `inquiries` also pins `status` to
-`'new'` and forbids `admin_notes`, so a visitor cannot forge a handled enquiry.
-
-### The admin panel is schema-driven
-
-Every list view and edit form is generated from field descriptors in
-`shared/content-schema.ts`; `src/admin/collections.ts` adds the icons, labels
-and list-view columns. Adding a column means adding one field descriptor — no
-new page components. Supported field types: `text`, `textarea`, `slug`,
-`number`, `select`, `multiselect`, `image`, `imageList`, `stringList`, `date`,
-`boolean`, `itinerary`, `email`, `link`.
-
-The *same* descriptors generate the Zod schema (`schemaForTable`), which the
-admin form and the API both run, so validation can never drift between them.
-The API also uses the descriptors as its column allow-list: SQL column names
-never come from a request. That schema is also the coercion layer:
-number inputs arrive as strings and are coerced, text is trimmed, blank optional
-text becomes `null` (so the mapper yields `undefined` and the public component
-renders exactly as it did with hardcoded data), empty list rows are dropped, and
-itinerary days are renumbered 1..n. React Hook Form therefore hands the mutation
-a payload that is ready for Postgres, and the database `CHECK` constraints
-become a backstop rather than the first line of defence.
-
-The admin bundle is lazy-loaded, so a traveller on the marketing site never
-downloads the CMS — Zod, React Hook Form and Sonner all ship in that chunk.
+A page that throws shows an error card in place of the page, and the sidebar
+keeps working.
 
 ### Images and the media library
 
-Every image field offers three ways in: **Upload** a file, pick one from the
-**Library**, or paste an `https://` **URL**. The seeded Unsplash URLs keep
-working as plain URLs.
+Every image field offers three ways in: **upload**, pick from the **library**,
+or paste a **URL**. A pasted URL must be from Unsplash or our R2 bucket (see
+the CSP below).
 
-**Uploads** go browser → `POST /api/admin/media` → Cloudflare R2. The browser
-never sees R2 credentials.
-
-- **In the browser**, before upload, the image is:
+- **Before upload, in the browser:**
   - rotated by its EXIF orientation;
   - scaled to at most 2000 px wide (and within iOS Safari's canvas limit);
-  - re-encoded as WebP, or JPEG where WebP encoding isn't available.
+  - re-encoded as WebP (JPEG where WebP isn't available), which also strips
+    EXIF, including GPS location.
 
-  Re-encoding also strips EXIF, including a phone's GPS location. Originals up
-  to 40 MB are accepted for resizing. A HEIC photo the browser can't read gets
-  a message to export it as JPEG. A photo too large for the browser's canvas is
-  downscaled, or refused with a message: never uploaded blank.
-- **On the server**, the file type is decided from the bytes: JPEG, PNG, WebP
-  and AVIF only. SVG is refused, because it can carry scripts. The limit is
-  10 MB, and the name and `Content-Type` sent with the file are ignored.
-- Objects are stored as `<folder>/<timestamp>-<random>.<ext>` with
-  `Cache-Control: public, max-age=31536000, immutable`, because keys never
-  repeat.
+  HEIC the browser can't read gets an "export as JPEG" message. A photo too
+  large to process is refused with a message, never uploaded blank.
+- **On the server:**
+  - the file type comes from the bytes: JPEG, PNG, WebP and AVIF only;
+  - SVG is refused, because it can carry scripts;
+  - the limit is 10 MB;
+  - objects are stored as `<folder>/<timestamp>-<random>.<ext>` with a
+    one-year immutable cache.
+- **Nothing is deleted automatically.** A replaced image shows as **Unused**
+  in the library until an admin deletes it there. Deleting one still in use
+  lists the rows using it and asks again.
+- **Without R2 configured** the site runs, uploads say "not configured", and
+  the library and URLs keep working.
 
-**Nothing is deleted automatically.** When an image is replaced, or its row is
-deleted, it shows as **Unused** in *Admin → Media library*. It leaves R2 only
-when an admin deletes it there.
+### Enquiries
 
-- Deleting an image that a row still uses lists those rows and asks again.
-- A save that references an image deleted from the library is refused, on the
-  field that holds it.
+- **Public form:** `POST /api/inquiries` inserts the visitor's fields only, so
+  status, notes and the spam flag are always the server's. A hidden honeypot
+  marks bots as spam, and spam is kept for 30 days in case a real person was
+  caught. There's a rate limit of 5 per 15 minutes and 20 per day per IP.
+- **Inbox** (*Admin → Enquiries*):
+  - statuses: new, contacted, closed, plus a Spam filter;
+  - notes, saved with the same 409 rule as content;
+  - permanent delete;
+  - CSV export. Cells starting with `=`, `+`, `-`, `@`, a tab or CR get a
+    leading `'`, so Excel can't run a stranger's formula. Plain phone numbers
+    are written as `="+94 77 123 4567"`, so Excel shows them as text.
+- **Getting noticed:** the sidebar and the tab title show the number of new
+  enquiries. With `RESEND_API_KEY` and `NOTIFY_EMAIL_TO` set, a short email
+  also goes out: at most one every 15 minutes, with no enquiry details in it.
+  Until a sending domain is verified, Resend only delivers to the Resend
+  account's own address.
 
-**Setting up R2:**
+**Privacy (for the privacy policy page):**
 
-1. Create a bucket and allow public access, through its `r2.dev` address for
-   now (a custom domain before go-live; see the launch checklist).
-2. Create an R2 API token with *Object Read & Write*, limited to that bucket.
-3. Set five variables, in `.env` locally and in the Railway service:
-   `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`,
-   `R2_PUBLIC_BASE_URL` (the public `https://…` address; a trailing slash is
-   fine).
-
-With none of them set, the site runs normally, uploads answer "not
-configured", and the Library and URL options keep working. With only some
-set, it runs the same way and logs a warning naming the missing ones.
-`/api/health` reports `media: up | down | not_configured`, for information
-only; the health check passes on the database alone.
-
-### Ordering and drafts
-
-Every content table has `sort_order` (seeded with the record's original array
-index, which is what preserves the approved page order) and `published`. The
-list views reorder with the arrow buttons and toggle drafts with the eye icon;
-the edit form has no sort-order box, so there is one way to reorder.
-
-The destinations list notes that only the first 6 featured destinations are
-displayed (the spotlight's six-card grid), and marks featured rows beyond the
-sixth "Featured · not shown".
-
----
-
-## Deployment
-
-> **Out of date:** Supabase was removed from the code in phase 6. This section is rewritten in phase 7.
-
-`vite-plugin-singlefile` was removed: it inlines the whole app into one
-`index.html`, which cannot serve `/admin/*` deep links. The build is now a normal
-multi-asset SPA.
-
-Configure a **SPA fallback** so every path serves `index.html`:
-
-- **Netlify** — `public/_redirects` is already in the repo.
-- **Vercel** — add `{ "rewrites": [{ "source": "/(.*)", "destination": "/" }] }`
-  to `vercel.json`.
-- **Nginx** — `try_files $uri $uri/ /index.html;`
-
-Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in the host's environment
-variables. In Supabase, add your production origin under
-**Authentication → URL Configuration**.
+- **Collected:** what the visitor types into the form, and when.
+- **Visible to:** signed-in admins only.
+- **Kept:** closed enquiries are deleted 12 months after closing, spam after
+  30 days, and open ones until someone closes or deletes them. An admin can
+  delete any enquiry at any time.
+- **IP addresses** are kept only by the rate limit, apart from the enquiry,
+  for 24 hours.
+- **Logs:** they never contain names, emails or messages. Errors are logged
+  by code only.
 
 ---
 
-## Launch checklist
+## Security
 
-Work through this before the site goes live.
+### Sign-in and sessions
 
-- [ ] **Rotate the Postgres credentials.** The database password was exposed
-      during setup — it was read out of Railway's variables into a local
-      assistant session, and it has since travelled in `.env`, in shell
-      history, and over the public TCP proxy. None of that is a breach on its
-      own; all of it is reason not to carry the original password into
-      production. Rotate in Railway (Postgres service → *Settings* → rotate the
-      password, or redeploy the service with a new `POSTGRES_PASSWORD`), then
-      confirm the API service's `DATABASE_URL` reference still resolves and
-      re-run `npm run migrate` locally with the new public URL.
-- [ ] **Remove the public TCP proxy**, or accept it. It exists only so
-      migrations can be applied from a laptop. Once deploys run
-      `npm run migrate` themselves, the database does not need to be reachable
-      from the internet at all.
-- [ ] **Never run `0002_seed.sql` by hand** — see the warning in
-      [§1](#1-database). It is an upsert over all 63 seeded rows and will
-      silently discard every content edit made through the admin panel.
-- [ ] **Check `DATABASE_URL` on the API service is the internal reference**
-      (`*.railway.internal`), not the public proxy URL, so database traffic
-      stays on the private network.
-- [ ] **Check `req.ip` is the real visitor address** — see
-      [Security: check that `req.ip` is the real visitor](#security-check-that-reqip-is-the-real-visitor).
-      If it is the proxy's address, the per-IP sign-in limit locks everyone out.
-- [ ] **Create the first admin** with `npm run admin:create` (§3). Use an
-      address other than the public `contact_email`.
-- [ ] **Put R2 on a custom domain.** Images are served from the bucket's
-      `r2.dev` address for now, which Cloudflare rate-limits and describes as
-      for development. Connect a custom domain to the bucket, set
-      `R2_PUBLIC_BASE_URL` to it, and rewrite the stored URLs (a one-off
-      `update … replace(url, old_base, new_base)` over `media.url` and every
-      image column).
-- [ ] **Publish a real privacy policy page** and set its URL in
-      *Admin → Settings*. The site collects enquiries (names, emails, phone
-      numbers), so it needs one before go-live. Until the URL is set, the
-      footer's "Privacy Policy" link has no destination. State the retention
-      periods from [Privacy: what the enquiry form keeps](#privacy-what-the-enquiry-form-keeps):
-      closed enquiries 12 months, spam 30 days.
-- [ ] **Verify a sending domain in Resend** once the domain exists, and set
-      `NOTIFY_EMAIL_FROM` to an address on it. Until then, new-enquiry emails
-      can only go to the Resend account's own address.
-- [ ] **Delete the old Supabase project** (phase 7), after checking it for
-      real enquiries from before the move to Railway.
-- [ ] **Confirm no `.env` file is committed.** `git check-ignore -v .env`
-      should print a matching rule.
+- **Every user is an admin.** There's no sign-up page; accounts come from
+  `npm run admin:create`.
+- **Passwords:** argon2id.
+- **Sessions:** the cookie is `__Host-teyvat_session` (`HttpOnly`, `Secure`,
+  `SameSite=Strict`) and carries a random token; the database stores only its
+  SHA-256. A session lasts 7 days from sign-in. There's sign-out and
+  sign-out-everywhere.
+- **Same-origin check:** every state-changing `/api` request must carry our
+  own `Origin` (or `Sec-Fetch-Site: same-origin`), or it gets 403.
+- **Unknown email and wrong password** get the same 401, with the same argon2
+  work, so the response doesn't reveal which it was.
+- **Sign-in limits** over 15 minutes: 5 failures per (email, IP), 20 per IP,
+  50 per email. Past a limit: 429 with `Retry-After`.
+
+The per-IP limits rely on `req.ip` being the visitor, not Railway's proxy
+(`app.set('trust proxy', 1)`). To check it after a proxy change:
+
+1. Make one wrong sign-in from a laptop.
+2. Make one from a phone on mobile data.
+3. Run
+   `select ip from public.login_attempts order by attempted_at desc limit 5;`.
+
+It must show two different public addresses.
+
+### Headers
+
+`server/src/security-headers.ts` sets these on every response the built server
+sends. They don't apply under `npm run dev`, where Vite serves the page.
+
+| Header | Value |
+| --- | --- |
+| `Content-Security-Policy` | below |
+| `Strict-Transport-Security` | `max-age=86400` over HTTPS; raised at launch |
+| `X-Content-Type-Options` | `nosniff` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `X-Frame-Options` | `DENY` |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` |
+| `Cross-Origin-Opener-Policy` | `same-origin` |
+
+**The Content-Security-Policy, and why each source is allowed:**
+
+| Directive | Sources | Why |
+| --- | --- | --- |
+| `script-src` | `'self'` | our own bundles only: no inline scripts, no `eval` |
+| `style-src` | `'self' 'unsafe-inline'` | our CSS, and the `<style>` the admin's toasts inject |
+| | `https://fonts.googleapis.com` | the Google Fonts stylesheet |
+| | `https://unpkg.com` | Leaflet's stylesheet, pinned by an integrity hash |
+| `font-src` | `'self' https://fonts.gstatic.com` | the font files |
+| `img-src` | `'self' https://images.unsplash.com` | the seeded photos |
+| | the `R2_PUBLIC_BASE_URL` origin | uploads; read at boot, so a new domain needs no code change |
+| | `https://*.basemaps.cartocdn.com` | the map tiles |
+| `connect-src` | `'self'` | the browser only calls our own `/api` |
+| `frame-ancestors` | `'none'` | nobody may frame the site |
+| `base-uri` / `form-action` / `object-src` | `'self'` / `'self'` / `'none'` | |
+
+The image hosts live in `shared/image-hosts.ts`, which also drives the admin's
+image-URL validation, so an admin can't save an image the browser would
+refuse. `npm run images:audit` lists any stored image the CSP would block.
+
+Zod runs in `jitless` mode (`shared/zod.ts`). Otherwise it probes for `eval`
+on every admin page, which `script-src 'self'` reports as a violation.
+
+`server/test/browser-csp.test.ts` loads the built site in headless Chrome,
+walks the public page and the signed-in admin, and fails on any CSP
+violation.
+
+---
+
+## Database
+
+Migrations are in `db/migrations/`. They're applied in order by
+`npm run migrate`, which records each one in `public.schema_migrations`, so
+re-running it is safe. Deploys run it on every start. Every table is described
+in [`docs/SCHEMA.md`](docs/SCHEMA.md).
+
+> [!WARNING]
+> **Never run `0002_seed.sql` by hand against production.** Every statement is
+> an upsert keyed on the slug, so it silently overwrites every admin edit to
+> those rows: copy, order, drafts and images. The runner applies it once and
+> never again. The danger is only in pasting it into a SQL console.
+
+**Backups and restore:** see [`docs/RESTORE.md`](docs/RESTORE.md) (Railway
+point-in-time recovery).
+
+---
+
+## Deployment (Railway)
+
+`main` deploys automatically: Railway builds from GitHub.
+
+- **Build:** `npm run build`.
+- **Start:** `npm run migrate && node server/dist/index.js`. A failed
+  migration stops the deploy before any traffic arrives.
+- **Health check:** `/api/health`. Only the database can fail it; the `media`
+  field is informational.
+
+**Variables on the API service:**
+
+| Variable | Value |
+| --- | --- |
+| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (the internal reference) |
+| `NODE_ENV` | `production` |
+| `NPM_CONFIG_PRODUCTION` | `false` (otherwise `npm ci` skips the build tools) |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL` | image uploads: all five or none |
+| `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` (+ optional `NOTIFY_EMAIL_FROM`, `PUBLIC_SITE_URL`) | new-enquiry emails |
+
+Don't set `PORT`; Railway injects it.
+
+**CI:** `.github/workflows/ci.yml` runs on every push and pull request:
+
+1. typecheck;
+2. build;
+3. verify:roundtrip;
+4. the full test suite, against a PostgreSQL service container, with Chrome
+   for the browser tests.
+
+`main` takes changes through pull requests, which must pass CI, and Railway's
+*Wait for CI* holds each deploy until it has passed.

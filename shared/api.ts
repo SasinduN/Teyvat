@@ -52,9 +52,9 @@ export const API_ROUTES = {
  * server instead would move that logic out from under its own regression test
  * for no gain.
  *
- * Only published rows appear here, ordered by `sort_order` then `id`. Both were
- * guaranteed by RLS before the move off Supabase and are now the route
- * handler's responsibility — see the header of `db/migrations/0001_init.sql`.
+ * Only published rows appear here, ordered by `sort_order` then `id`. The
+ * route handler is what guarantees both; nothing in the database does. See
+ * the header of `db/migrations/0001_init.sql`.
  */
 export interface SiteContentPayload {
   destinations: DestinationRow[];
