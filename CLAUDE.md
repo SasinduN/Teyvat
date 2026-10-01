@@ -103,7 +103,7 @@ Update the Status column when a phase lands.
 
 ## Checks
 
-CI runs all of these on every push and pull request.
+CI runs all of these on every pull request and every push to `main`.
 
 - `npm run typecheck`
 - `npm run build`
