@@ -5,7 +5,10 @@
 name: CI
 
 on:
+  # Pushes to main: the run Railway's "Wait for CI" waits for before deploying.
   push:
+    branches: [main]
+  # Everything else is checked through its pull request, once per update.
   pull_request:
 
 # A newer push to the same branch cancels the run it replaces.
