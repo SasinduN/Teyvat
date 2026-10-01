@@ -1,6 +1,17 @@
 # Plan: phase 8, real pages and shareable links
 
-Status: DRAFT, waiting for approval and for the three questions at the end.
+Status: APPROVED (2026-10-01). The three questions are answered at the end,
+and the approval added these:
+
+- **PR 1 redirects `?tour=` and `?destination=` in the browser**, so old
+  links work before PR 2's server redirects exist (see Routes).
+- **Route-based code splitting:** Leaflet and the map code load only on
+  pages that show a map. The bundle size per page type is reported in the PR
+  (see Code splitting).
+- **Focus moves to the page's `<h1>` on every route change** (see Back
+  button and scroll position).
+- **In PR 2, a filtered `/destinations?category=…` uses `/destinations` as
+  its canonical URL** (see Canonical URLs).
 
 Today the public site is one page (`/`), with tours, destinations and
 articles opening as modals, and anything else redirecting to `/`. Phase 8
@@ -40,6 +51,10 @@ Details:
 
   The WhatsApp links already shared keep working. An id that no longer
   exists lands on its 404.
+
+  **PR 1 does this in the browser:** a loader on the `/` route redirects
+  (replacing the history entry) before anything renders. PR 2 adds the
+  server's 301, which also serves link previews and crawlers.
 - **A trailing slash** (`/tours/`) gets a 301 to the same path without it.
 - **No `/journal` index.** It wasn't asked for. The breadcrumb's "Journal"
   goes to the home page's journal section (`/#journal`), so the section gets
@@ -223,9 +238,14 @@ the enquiry modal.
 - **On the home page, the section links scroll smoothly** and *replace* the
   hash rather than pushing it. Clicking Explore three times doesn't take
   three Backs to leave the page.
-- **Page changes are announced.** Focus moves to the new page's `<h1>`, and
-  `document.title` updates. A screen reader hears the navigation, and the
-  browser's history menu shows real titles.
+- **Page changes are announced.** On every route change (not the first
+  load), focus moves to the new page's `<h1>`, with `preventScroll`, so it
+  never fights scroll restoration. The `<h1>` gets `tabindex="-1"` at that
+  moment, from the layout, so the frozen components' markup doesn't change.
+  `document.title` updates too. A screen reader hears the navigation, and
+  the browser's history menu shows real titles.
+- **A hash navigation** (`/#explore-map`, `/about#contact`) focuses the
+  section it scrolls to, the same way.
 
 ### The enquiry form and the WhatsApp button follow the page
 
@@ -312,6 +332,10 @@ replaces the block between the markers:
 
 ### Canonical URLs
 
+A filtered list (`/destinations?category=Beaches`) uses the unfiltered
+page, `/destinations`, as its canonical URL, so search engines see one list
+page, not eight.
+
 The site origin comes from `PUBLIC_SITE_URL`, which is today read only for
 the enquiry emails. It will be read on its own.
 
@@ -336,6 +360,24 @@ Both are built per request from the database, with `Cache-Control: no-cache`.
   Disallow: /api/
   Sitemap: https://<site>/sitemap.xml
   ```
+
+## Code splitting
+
+- **Route-based:** each page is its own chunk, loaded by the route's `lazy`.
+  With the data router, the current page stays on screen until the next
+  one's code has arrived, so there is no blank flash between pages.
+- **The map code** sits only in the chunks of the pages that show a map:
+  - `InteractiveMapSection` and the marker module in the home page's chunk;
+  - `RouteMap` in the tour page's chunk.
+- **Leaflet itself** (JS and CSS) loads only when a map is about to render:
+  - the JS by dynamic `import('leaflet')`, as today;
+  - the CSS from the same unpkg URL and SRI hash as today, but inserted by
+    the map loader (`src/lib/leaflet.ts`) instead of `index.html`, and
+    placed before the site's own stylesheet so the cascade is unchanged.
+  - The admin's stops editor uses the same loader.
+  - The CSP is unchanged: unpkg is already allowed for styles.
+- **`npm run bundle:report`** reads Vite's manifest and prints the gzipped
+  JS and CSS each page type loads. The PR reports it.
 
 ## Admin edits show up on the next load
 
@@ -422,23 +464,43 @@ Its `?tour=` / `?destination=` handling moves to the server's redirects.
   - The CSP test also walks one page of each type, and still reports zero
     violations.
   - `browser-inquiry` against `faed6bc` is unchanged.
-- **The home page:** a pixel comparison against `main` before this phase,
-  like `browser-inquiry`'s. The demo-baseline review stands.
+- **The home page:** a pixel comparison against `main` before this phase
+  (`bf94e25`), like `browser-inquiry`'s
+  (`server/test/browser-home-baseline.test.ts`).
+  - Each home section this phase changes is rendered twice, side by side in
+    headless Chrome with the built CSS: once from `bf94e25` (read with
+    `git show`) and once from now. No pixel may differ beyond the tolerance.
+  - Covered: the Navbar, spotlight cards, featured experiences, tour cards,
+    experience categories, journal cards and the search modal, at desktop
+    and phone widths.
+  - Images are replaced by a solid placeholder and the test runs offline, so
+    nothing depends on the network.
+  - **The Footer is left out**, because question 1 changes its labels on
+    purpose; its before/after screenshots are in the PR.
+  - **So is the map section:** its only change is "Explore <name>" becoming
+    a link, which the Chrome tests check, and its tiles need the network.
+  - The demo-baseline review stands.
 
 ## Delivery
 
 Two PRs, each deployable on its own:
 
 1. **8a: pages and links.** Router, layout, pages, links, modals retired,
-   scroll behaviour, pre-fill and the client-side 404. Screenshots of every
-   page as built.
+   scroll behaviour and focus, pre-fill, the client-side 404, the browser
+   redirects for `?tour=` / `?destination=`, code splitting, page titles,
+   and the admin's "View page" links. Screenshots of every page as built,
+   and the bundle report.
 2. **8b: server side.** Head tags, 404 status, redirects, sitemap and
    robots, and `PUBLIC_SITE_URL`.
 
 Each one runs `typecheck`, `build`, `npm test` and `verify:roundtrip`, then
 opens a PR and stops when CI is green.
 
-## Questions
+## Questions (answered: all as recommended)
+
+The questions as asked, kept for the record. The answers are 1 yes, 2 yes,
+3 yes; for 3, PR 2 also gives filtered lists `/destinations` as their
+canonical URL.
 
 1. **Footer labels.** The Footer's navigation reads "Hero", "Explore Map",
    …, "Contact" (made from section ids). Keep them (no visible change), or
