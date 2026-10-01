@@ -143,7 +143,10 @@ describe('tour routes and the destination panel, in Chrome', { skip }, () => {
 
   test('picked before the map loads: scrolls there and draws the numbered stops, in order, dashed, all in view', async () => {
     const page = await openPage();
-    await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
+    // Jump straight to the tours, as a nav link would. The page scrolls
+    // smoothly by default, and a smooth scroll down passes the map, which
+    // would start it on the way.
+    await page.evaluate(`document.documentElement.style.scrollBehavior = 'auto', document.querySelector('#tours').scrollIntoView(), true`);
     await sleep(500);
     assert.equal(
       await page.evaluate<boolean>(`Boolean(document.querySelector('#explore-map .leaflet-container'))`),
