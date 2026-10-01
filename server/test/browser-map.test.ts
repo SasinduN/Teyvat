@@ -242,6 +242,48 @@ describe('the map, in Chrome', { skip }, () => {
     assert.ok(zoomedOpacities.every((o) => o === '1'), 'every name shows at zoom 9+');
   });
 
+  test('4. phones: a Key button opens the legend (all seven), Escape and a tap outside close it', async () => {
+    const page = await openMap({ mobile: true });
+    const key = `[...document.querySelectorAll('#explore-map button')].find((b) => b.textContent.trim() === 'Key')`;
+    const state = () =>
+      page.evaluate<{ visible: boolean; expanded: string | null; entries: string[] }>(`(() => {
+        const button = ${key};
+        const r = button.getBoundingClientRect();
+        return {
+          visible: r.width > 0 && r.height > 0,
+          expanded: button.getAttribute('aria-expanded'),
+          entries: [...document.querySelectorAll('#map-key-legend [data-legend]')].map((li) => li.dataset.legend)
+        };
+      })()`);
+
+    assert.deepEqual(await state(), { visible: true, expanded: 'false', entries: [] }, 'closed at first');
+
+    await page.evaluate(`(${key}).click(), true`);
+    await sleep(150);
+    assert.deepEqual(await state(), { visible: true, expanded: 'true', entries: Object.keys(MAP_CATEGORY_STYLES) });
+
+    await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+    await sleep(150);
+    assert.equal((await state()).expanded, 'false', 'Escape closes it');
+
+    await page.evaluate(`(${key}).click(), true`);
+    await sleep(150);
+    await page.evaluate(`document.querySelector('#explore-map h2').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })), true`);
+    await sleep(150);
+    assert.equal((await state()).expanded, 'false', 'a tap outside closes it');
+  });
+
+  test('4. desktop: no Key button (the Map Guide shows the legend instead)', async () => {
+    const page = await openMap();
+    const visible = await page.evaluate<boolean>(`(() => {
+      const button = [...document.querySelectorAll('#explore-map button')].find((b) => b.textContent.trim() === 'Key');
+      if (!button) return false;
+      const r = button.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    })()`);
+    assert.equal(visible, false);
+  });
+
   test('2. touch: one finger is left to the page; the map takes two', async () => {
     const page = await openMap({ mobile: true });
     const classes = await page.evaluate<string>(`document.querySelector('#explore-map .leaflet-container').className`);

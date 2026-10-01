@@ -37,6 +37,27 @@ const LEGEND_ICONS: Record<MapCategory, LucideIcon> = {
   'Hidden Gems': Gem
 };
 
+/** The legend list: a marker's colour and icon come from its first category. */
+const MapLegendList: React.FC<{ id?: string; className: string }> = ({ id, className }) => (
+  <ul id={id} className={className} aria-label="Map legend">
+    {MAP_CATEGORIES.map((cat) => {
+      const Icon = LEGEND_ICONS[cat];
+      const style = MAP_CATEGORY_STYLES[cat];
+      return (
+        <li key={cat} className="flex items-center gap-1.5 text-[11px] text-[#1A1A1A]/75" data-legend={cat}>
+          <span
+            className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+            style={{ backgroundColor: style.color }}
+          >
+            <Icon className="w-2.5 h-2.5" style={{ color: style.iconColor }} strokeWidth={2.6} aria-hidden="true" />
+          </span>
+          {cat}
+        </li>
+      );
+    })}
+  </ul>
+);
+
 /** Names show for every marker from this zoom in (and always on hover/focus/active). */
 const LABEL_ZOOM = 9;
 /** Filter changes fit the map to the markers, but never closer than this. */
@@ -63,6 +84,23 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
   // it, the first markers were never drawn until something re-rendered.)
   const [mapReady, setMapReady] = useState(false);
   const [showTouchHint, setShowTouchHint] = useState(false);
+  // Phones: the legend behind the Key button.
+  const [showKey, setShowKey] = useState(false);
+  const keyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showKey) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setShowKey(false);
+    const onPointer = (e: PointerEvent) => {
+      if (keyRef.current && !keyRef.current.contains(e.target as Node)) setShowKey(false);
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('pointerdown', onPointer);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('pointerdown', onPointer);
+    };
+  }, [showKey]);
 
   const categories: (CategoryType | 'All')[] = [
     'All',
@@ -356,24 +394,26 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                   Showing <strong className="text-[#0F2E23]">{filteredDestinations.length}</strong> location markers
                 </span>
               </div>
-              {/* Legend: a marker's colour and icon come from its first category. */}
-              <ul className="mt-2 pt-2 border-t border-[#D4C3B5]/40 grid grid-cols-2 gap-x-3 gap-y-1" aria-label="Map legend">
-                {MAP_CATEGORIES.map((cat) => {
-                  const Icon = LEGEND_ICONS[cat];
-                  const style = MAP_CATEGORY_STYLES[cat];
-                  return (
-                    <li key={cat} className="flex items-center gap-1.5 text-[11px] text-[#1A1A1A]/75" data-legend={cat}>
-                      <span
-                        className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: style.color }}
-                      >
-                        <Icon className="w-2.5 h-2.5" style={{ color: style.iconColor }} strokeWidth={2.6} aria-hidden="true" />
-                      </span>
-                      {cat}
-                    </li>
-                  );
-                })}
-              </ul>
+              <MapLegendList className="mt-2 pt-2 border-t border-[#D4C3B5]/40 grid grid-cols-2 gap-x-3 gap-y-1" />
+            </div>
+
+            {/* Phones, where the Map Guide is hidden: a small Key button that opens the legend. */}
+            <div ref={keyRef} className="absolute top-4 left-4 z-20 sm:hidden">
+              <button
+                type="button"
+                onClick={() => setShowKey((open) => !open)}
+                aria-expanded={showKey}
+                aria-controls="map-key-legend"
+                className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md border border-[#D4C3B5]/40 text-xs font-semibold text-[#0F2E23] flex items-center gap-1"
+              >
+                <Compass className="w-3.5 h-3.5 text-[#1C4737]" aria-hidden="true" />
+                Key
+              </button>
+              {showKey && (
+                <div className="mt-2 bg-white/95 backdrop-blur-md px-3 py-2.5 rounded-2xl shadow-md border border-[#D4C3B5]/40">
+                  <MapLegendList id="map-key-legend" className="grid grid-cols-2 gap-x-3 gap-y-1.5" />
+                </div>
+              )}
             </div>
 
             {/* Touch screens: shown briefly when one finger swipes over the map. */}
