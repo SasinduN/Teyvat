@@ -24,6 +24,7 @@ import { contentRouter } from './routes/content';
 import { healthRouter } from './routes/health';
 import { inquiriesRouter } from './routes/inquiries';
 import { mediaRouter } from './routes/media';
+import { securityHeaders } from './security-headers';
 
 /**
  * Resolved from the repo root rather than from `import.meta.url`, because the
@@ -70,6 +71,9 @@ export function createApp(options: AppOptions = {}): Express {
 
   // No `X-Powered-By: Express`. Free, and there is no reason to advertise it.
   app.disable('x-powered-by');
+
+  // CSP, nosniff, framing, referrer and HSTS on every response.
+  app.use(securityHeaders(app.locals.media as MediaConfig | null));
 
   app.use(express.json({ limit: '100kb' }));
 

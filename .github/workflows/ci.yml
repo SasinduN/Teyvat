@@ -1,0 +1,61 @@
+# Every push and pull request: typecheck, build, the content round-trip, and
+# the full test suite (API, database, headless Chrome) against a real
+# PostgreSQL. `main` requires this job ("checks") to pass, and Railway's
+# "Wait for CI" holds each deploy until it has.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# A newer push to the same branch cancels the run it replaces.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        # Keep the major version in step with production (docs/LAUNCH-CHECKLIST.md, item 5).
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: teyvat_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Satisfies the test guard: localhost, an explicit port, a *_test database.
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/teyvat_test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/teyvat_test
+      # No R2 or Resend here: the tests clear those variables and use fakes.
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The visual test compares InquiryModal against an older commit.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      # Before the tests: the browser tests load the built client.
+      - run: npm run build
+      - run: npm run verify:roundtrip
+      - run: npm test

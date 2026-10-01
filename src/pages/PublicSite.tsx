@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { HeroSection } from '@/components/HeroSection';
 import { QuickSearch } from '@/components/QuickSearch';
@@ -21,6 +21,19 @@ import { InquiryModal } from '@/components/InquiryModal';
 import { SearchModal } from '@/components/SearchModal';
 
 import { Destination, CategoryType, ExperienceItem } from '@/types';
+import { ErrorBoundary } from '@/lib/ErrorBoundary';
+
+/**
+ * One section of the page. If it throws while rendering it shows nothing and
+ * the rest of the page carries on: the approved design has no error states,
+ * and a missing section is closer to it than an invented message. Adds no
+ * markup of its own.
+ */
+const Section: React.FC<{ name: string; children: React.ReactNode }> = ({ name, children }) => (
+  <ErrorBoundary name={name} fallback={null}>
+    {children}
+  </ErrorBoundary>
+);
 
 export function PublicSite() {
   const [activeModalDestination, setActiveModalDestination] = useState<Destination | null>(null);
@@ -67,90 +80,128 @@ export function PublicSite() {
   return (
     <div className="min-h-screen bg-[#FBF9F6] text-[#1A1A1A] font-sans selection:bg-[#1C4737] selection:text-[#F5EFEB]">
       {/* Sticky Header Navigation */}
-      <Navbar
-        onOpenSearch={() => setSearchModalOpen(true)}
-        onOpenPlanner={() => handleOpenInquiry('Custom Travel Journey Request')}
-        onNavigateSection={scrollToSection}
-      />
+      <Section name="Navbar">
+        <Navbar
+          onOpenSearch={() => setSearchModalOpen(true)}
+          onOpenPlanner={() => handleOpenInquiry('Custom Travel Journey Request')}
+          onNavigateSection={scrollToSection}
+        />
+      </Section>
 
       {/* Main Content Sections */}
       <main>
         {/* Full-screen Hero Section */}
-        <HeroSection
-          onExploreClick={() => scrollToSection('explore-map')}
-          onPlanClick={() => scrollToSection('planner')}
-        />
+        <Section name="HeroSection">
+          <HeroSection
+            onExploreClick={() => scrollToSection('explore-map')}
+            onPlanClick={() => scrollToSection('planner')}
+          />
+        </Section>
 
         {/* Floating Quick Search Discovery Bar */}
-        <QuickSearch onSearchSubmit={handleQuickSearch} />
+        <Section name="QuickSearch">
+          <QuickSearch onSearchSubmit={handleQuickSearch} />
+        </Section>
 
         {/* Introduction Section */}
-        <IntroSection />
+        <Section name="IntroSection">
+          <IntroSection />
+        </Section>
 
         {/* Signature Feature: Interactive Sri Lanka Map */}
-        <InteractiveMapSection
-          onSelectDestination={(dest) => setActiveModalDestination(dest)}
-          activeFilterFromParent={activeFilterForMap}
-          selectedWhereFromParent={selectedWhereForMap}
-        />
+        <Section name="InteractiveMapSection">
+          <InteractiveMapSection
+            onSelectDestination={(dest) => setActiveModalDestination(dest)}
+            activeFilterFromParent={activeFilterForMap}
+            selectedWhereFromParent={selectedWhereForMap}
+          />
+        </Section>
 
         {/* Destination Spotlight Cards */}
-        <DestinationSpotlight
-          onSelectDestination={(dest) => setActiveModalDestination(dest)}
-        />
+        <Section name="DestinationSpotlight">
+          <DestinationSpotlight
+            onSelectDestination={(dest) => setActiveModalDestination(dest)}
+          />
+        </Section>
 
         {/* Experience Types Section */}
-        <ExperiencesSection onSelectCategory={handleSelectCategory} />
+        <Section name="ExperiencesSection">
+          <ExperiencesSection onSelectCategory={handleSelectCategory} />
+        </Section>
 
         {/* Featured Unforgettable Moments */}
-        <FeaturedExperiences onSelectExperience={handleSelectExperience} />
+        <Section name="FeaturedExperiences">
+          <FeaturedExperiences onSelectExperience={handleSelectExperience} />
+        </Section>
 
         {/* Multi-Day Tours Section */}
-        <ToursSection onOpenInquiry={handleOpenInquiry} />
+        <Section name="ToursSection">
+          <ToursSection onOpenInquiry={handleOpenInquiry} />
+        </Section>
 
         {/* Interactive Travel Journey Planner */}
-        <TravelPlanner onSavePlan={(planName) => handleOpenInquiry(`Saved Plan: ${planName}`)} />
+        <Section name="TravelPlanner">
+          <TravelPlanner onSavePlan={(planName) => handleOpenInquiry(`Saved Plan: ${planName}`)} />
+        </Section>
 
         {/* Why Travel Eye Pillars */}
-        <WhyTravelEye />
+        <Section name="WhyTravelEye">
+          <WhyTravelEye />
+        </Section>
 
         {/* Hidden Gems Editorial Collection */}
-        <HiddenGemsSection onOpenInquiry={handleOpenInquiry} />
+        <Section name="HiddenGemsSection">
+          <HiddenGemsSection onOpenInquiry={handleOpenInquiry} />
+        </Section>
 
         {/* Photography Stories Gallery */}
-        <PhotoStorySection />
+        <Section name="PhotoStorySection">
+          <PhotoStorySection />
+        </Section>
 
         {/* Travel Eye Journal */}
-        <JournalSection />
+        <Section name="JournalSection">
+          <JournalSection />
+        </Section>
 
         {/* Cinematic Sunset CTA Section */}
-        <CTASection
-          onPlanClick={() => handleOpenInquiry('Custom Trip Inquiry')}
-          onExploreClick={() => scrollToSection('explore-map')}
-        />
+        <Section name="CTASection">
+          <CTASection
+            onPlanClick={() => handleOpenInquiry('Custom Trip Inquiry')}
+            onExploreClick={() => scrollToSection('explore-map')}
+          />
+        </Section>
       </main>
 
       {/* Dark Footer */}
-      <Footer onNavigateSection={scrollToSection} />
+      <Section name="Footer">
+        <Footer onNavigateSection={scrollToSection} />
+      </Section>
 
       {/* Interactive Modals */}
-      <DestinationModal
-        destination={activeModalDestination}
-        onClose={() => setActiveModalDestination(null)}
-        onOpenInquiry={handleOpenInquiry}
-      />
+      <Section name="DestinationModal">
+        <DestinationModal
+          destination={activeModalDestination}
+          onClose={() => setActiveModalDestination(null)}
+          onOpenInquiry={handleOpenInquiry}
+        />
+      </Section>
 
-      <InquiryModal
-        isOpen={inquiryModalOpen}
-        onClose={() => setInquiryModalOpen(false)}
-        prefilledSubject={inquirySubject}
-      />
+      <Section name="InquiryModal">
+        <InquiryModal
+          isOpen={inquiryModalOpen}
+          onClose={() => setInquiryModalOpen(false)}
+          prefilledSubject={inquirySubject}
+        />
+      </Section>
 
-      <SearchModal
-        isOpen={searchModalOpen}
-        onClose={() => setSearchModalOpen(false)}
-        onSelectDestination={(dest) => setActiveModalDestination(dest)}
-      />
+      <Section name="SearchModal">
+        <SearchModal
+          isOpen={searchModalOpen}
+          onClose={() => setSearchModalOpen(false)}
+          onSelectDestination={(dest) => setActiveModalDestination(dest)}
+        />
+      </Section>
     </div>
   );
 }

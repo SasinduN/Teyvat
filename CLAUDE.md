@@ -2,9 +2,13 @@
 
 Teyvat: the Travel Eye Sri Lanka public site (`/`) and its admin panel
 (`/admin`). Vite + React 19 client, plus an Express API in `server/` backed by
-Railway Postgres. Both are served from one origin. We are migrating off
-Supabase in phases. Setup and commands are in `README.md`; the schema is in
-`docs/SCHEMA.md`.
+Railway Postgres, with images on Cloudflare R2. Both are served from one
+origin. The move off Supabase is finished (phases 1–7). Setup and commands are
+in `README.md`; the schema is in `docs/SCHEMA.md`.
+
+- **Restore:** `docs/RESTORE.md`.
+- **What's left before go-live:** `docs/LAUNCH-CHECKLIST.md` (decisions only
+  people can make).
 
 This repo is public. Never put secrets, connection strings, or passwords in
 this file or anywhere else in git.
@@ -20,25 +24,28 @@ this file or anywhere else in git.
 | 4 | Admin CRUD endpoints (replaces Supabase queries in `src/admin`) | done |
 | 5 | Image uploads to Cloudflare R2 (replaces Supabase Storage) | done |
 | 6 | Inquiries endpoints: public submit and admin inbox | done |
-| 7 | Remove Supabase entirely, update docs, deploy | next |
+| 7a | Clean-up: README/SCHEMA rewrite, CI, security headers, error boundaries, restore guide | done |
+| 7b | Launch decisions: `docs/LAUNCH-CHECKLIST.md` | owner's checklist |
 
 Update the Status column when a phase lands.
 
-### Notes for later phases
+### Notes
 
-- **Images:** every form uses `ImagePicker` / `ImageListPicker`
-  (`src/admin/components/ImagePicker.tsx`): upload, library or URL. Nothing is
-  deleted from R2 automatically; only a library delete removes an object.
-  The R2 custom domain is on the README launch checklist.
-- **Phase 7:** `scripts/migrate-images.ts` and `npm run images:migrate` are
-  still Supabase-only. Remove them with the rest of Supabase.
-- **Phase 7:** Supabase is already out of the code (phase 6). What's left:
-  - the README sections marked "Out of date";
-  - `docs/SCHEMA.md`'s RLS and Storage sections;
-  - three historical comments (`SiteStatus.tsx`, `shared/api.ts`,
-    `shared/pg-types.ts`);
-  - deleting the old Supabase project once the user has checked it for real
-    enquiries.
+- **Images:**
+  - Every form uses `ImagePicker` / `ImageListPicker`
+    (`src/admin/components/ImagePicker.tsx`): upload, library or URL.
+  - Nothing is deleted from R2 automatically; only a library delete removes
+    an object.
+  - Image URLs must be on the allow-list in `shared/image-hosts.ts` (Unsplash
+    + the R2 origin). The same list builds the CSP's `img-src`.
+- **CSP** (`server/src/security-headers.ts`):
+  - `script-src 'self'`: no inline scripts, no `eval`.
+  - Anything the admin loads imports Zod from `shared/zod.ts` (jitless);
+    importing `'zod'` directly brings back an `eval` probe the CSP reports.
+  - A new external host (fonts, tiles, scripts) needs adding to the CSP;
+    `server/test/browser-csp.test.ts` fails until it is.
+- **Error boundaries:** each public section is wrapped in `PublicSite.tsx`
+  (renders nothing on error); admin pages fall back to `PageCrash`.
 - **Enquiries:**
   - The public insert's column list is `INQUIRY_INSERT_COLUMNS`
     (`shared/inquiry-schema.ts`); never read `status`, `admin_notes`, `spam`
@@ -49,6 +56,8 @@ Update the Status column when a phase lands.
     `faed6bc`.
 - **Site settings links** are NULL or `https://…` (migration 0004). An unset
   link renders without an `href`; `Footer.tsx` is unchanged.
+- **Tests:** `npm test` runs `scripts/run-tests.mjs`: each file in its own
+  process, 60 s per test, and every hook passes `HOOK_TIMEOUT`.
 
 ### Where things live
 
@@ -65,8 +74,10 @@ Update the Status column when a phase lands.
   before it is written. Review with:
   `git diff demo-baseline -- src/components/`
 - **Never run the Railway CLI.** It is linked at the home directory to a
-  different project (`alluring-warmth`), not Teyvat. We deploy by pushing to
-  `main`, and Railway deploys from GitHub automatically.
+  different project (`alluring-warmth`), not Teyvat.
+- **`main` takes changes through pull requests.** Push a branch, open a PR,
+  and wait for CI (`.github/workflows/ci.yml`, job `checks`). Merging deploys:
+  Railway builds from `main` and *Wait for CI* holds it until CI passes.
 - **Railway API service variables:**
   - `DATABASE_URL = ${{Postgres.DATABASE_URL}}`
   - `NODE_ENV=production`
@@ -88,11 +99,15 @@ Update the Status column when a phase lands.
 - **`db/migrations/0002_seed.sql` is an upsert.** Never run it by hand against
   production. It overwrites admin edits.
 - **Rotate the Postgres password before go-live.** It is on the launch
-  checklist.
+  checklist (`docs/LAUNCH-CHECKLIST.md`), with everything else before launch.
 
 ## Checks
 
+CI runs all of these on every push and pull request.
+
 - `npm run typecheck`
+- `npm run build`
+- `npm test` (the browser tests need the build first)
 - `npm run verify:roundtrip` must pass. It proves the rows the database stores
   map back to exactly the values the approved components render.
 - The public page must look identical to `demo-baseline`.

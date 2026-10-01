@@ -28,6 +28,7 @@ import { CONTENT_TABLE_NAMES, type ContentTableName } from '../../../shared/data
 import { requireAdmin } from '../auth/middleware';
 import { pool } from '../db';
 import { ApiError, asyncRoute, sendError } from '../http';
+import { allowedImageOrigins } from '../../../shared/image-hosts';
 import { fieldPathsFor, imageUrlsIn, isUnderBase, mediaOf } from '../media/media';
 
 /* ---------------------------------------------------------------- helpers */
@@ -153,6 +154,11 @@ async function holdOurImages(
   }
 }
 
+/** The image allow-list for this app: Unsplash, plus R2 when uploads are set up. */
+function imageOriginsFor(req: Request): string[] {
+  return allowedImageOrigins(mediaOf(req)?.publicBaseUrl ?? null);
+}
+
 const CHANGED_SINCE =
   'Someone saved this record after you opened it. Load their version before saving again.';
 
@@ -253,7 +259,10 @@ adminRouter.post(
   '/admin/content/:table',
   asyncRoute(async (req, res) => {
     const table = tableOf(req);
-    const values = parseOrThrow(schemaForTable(table, 'create'), req.body) as Record<string, unknown>;
+    const values = parseOrThrow(
+      schemaForTable(table, 'create', { imageOrigins: imageOriginsFor(req) }),
+      req.body
+    ) as Record<string, unknown>;
     const columns = writableColumns(table, 'create');
 
     const row = await withTransaction(async (client) => {
@@ -287,10 +296,10 @@ adminRouter.put(
       });
     }
 
-    const values = parseOrThrow(schemaForTable(table, 'update'), body.values) as Record<
-      string,
-      unknown
-    >;
+    const values = parseOrThrow(
+      schemaForTable(table, 'update', { imageOrigins: imageOriginsFor(req) }),
+      body.values
+    ) as Record<string, unknown>;
     const columns = writableColumns(table, 'update');
     const params = columns.map((c) => sqlValue(c, values[c]));
 

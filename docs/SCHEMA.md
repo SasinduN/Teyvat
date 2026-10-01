@@ -1,10 +1,31 @@
 # Database schema
 
-Source of truth: [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql).
-TypeScript mirror: [`src/lib/database.types.ts`](../src/lib/database.types.ts).
-Row → domain mapping: [`src/lib/mappers.ts`](../src/lib/mappers.ts).
+**Source of truth:** [`db/migrations/`](../db/migrations), applied in order by
+`npm run migrate`, which records each in `schema_migrations`.
 
-Nine tables: seven content collections, one enquiry inbox, one admin allow-list.
+- **TypeScript mirror:** [`shared/database.types.ts`](../shared/database.types.ts).
+- **What each form may write:** [`shared/content-schema.ts`](../shared/content-schema.ts)
+  (content and settings) and [`shared/inquiry-schema.ts`](../shared/inquiry-schema.ts)
+  (enquiries).
+- **Row to component mapping:** [`src/lib/mappers.ts`](../src/lib/mappers.ts).
+
+| Migration | Adds |
+| --- | --- |
+| `0001_init.sql` | content tables, `inquiries`, `users`, `sessions`, `site_settings`, triggers |
+| `0002_seed.sql` | the approved baseline content (an upsert; never run by hand) |
+| `0003_login_attempts.sql` | the sign-in rate limit |
+| `0004_site_settings_links.sql` | footer links are NULL or `https://…` |
+| `0005_media.sql` | the media library |
+| `0006_inquiries.sql` | enquiry statuses, `closed_at`, `spam`, `inquiry_attempts` |
+
+**Where the rules live.** There is no row-level security: every connection is
+the API's single database role. Rules are enforced in two layers:
+
+1. **The API.** Zod schemas from `shared/`, the column allow-lists, and
+   `requireAdmin` on every admin route. The public routes never filter on a
+   request-supplied column.
+2. **CHECK constraints in the database**, as a backstop in case a bug lets
+   something through.
 
 ---
 
@@ -53,7 +74,7 @@ and optional chaining. `npm run verify:roundtrip` asserts this.
 | `category` | `text[]` | `category` | every element validated by `is_category_array()` |
 | `short_description` | `text` | `shortDescription` | |
 | `long_description` | `text` | `longDescription` | |
-| `image` | `text` | `image` | Storage public URL |
+| `image` | `text` | `image` | an image URL: Unsplash or our R2 bucket (`shared/image-hosts.ts`) |
 | `gallery` | `text[]` | `gallery?` | empty array → `undefined` |
 | `best_time` | `text` | `bestTime` | |
 | `experiences` | `text[]` | `experiences` | |
@@ -182,32 +203,83 @@ and let you later query or group by author.
 
 ---
 
-## `inquiries`
 
-New — the `InquiryModal` previously discarded submissions.
+## `hero_slides` → `HeroSlide` (3 rows)
+
+| Column | Type | Domain field | Notes |
+| --- | --- | --- | --- |
+| `id` | `text` PK | `id` | |
+| `image` | `text` | `url` | named `image` like every other table; the component prop is `url` |
+| `title` | `text` | `title` | |
+| `caption` | `text` | `caption` | |
+
+The API refuses to unpublish or delete the last published slide: the hero
+can't be empty.
+
+## `pillars` → `Pillar` (4 rows)
+
+| Column | Type | Domain field | Notes |
+| --- | --- | --- | --- |
+| `id` | `text` PK | `id` | |
+| `icon` | `text` | `icon` | a Lucide icon **name**, CHECKed against the same list as `PILLAR_ICON_NAMES` and `WhyTravelEye`'s map |
+| `title` | `text` | `title` | |
+| `description` | `text` | `desc` | `desc` is a reserved word in SQL |
+
+## `site_settings` (exactly one row)
+
+The Footer's contact details and links. The CHECK on `id` (always `true`) is
+what makes it single.
 
 | Column | Type | Notes |
 | --- | --- | --- |
-| `id` | `uuid` PK | `gen_random_uuid()` — not a slug; these are not addressable content |
+| `postal_address` | `text` | 1–300 chars |
+| `phone` | `text` | 1–40 chars |
+| `contact_email` | `text` | an email; shown publicly |
+| `instagram_url`, `facebook_url`, `tiktok_url`, `youtube_url`, `privacy_url`, `terms_url`, `sustainability_url` | `text` NULL | NULL (the Footer renders the link without an `href`) or `https://…`, ≤ 500 chars |
+
+`GET /api/content` exposes only the columns in `PUBLIC_SITE_SETTINGS_COLUMNS`
+(`shared/api.ts`), so a setting added later is private until someone adds it
+there.
+
+---
+
+## `inquiries`
+
+Submissions from the public enquiry form (`POST /api/inquiries`). The insert
+names its columns (`INQUIRY_INSERT_COLUMNS`, `shared/inquiry-schema.ts`), so
+`status`, `admin_notes`, `spam` and `closed_at` are always the server's to set.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` PK | `gen_random_uuid()` |
 | `name` | `text` | 1–120 chars |
-| `email` | `text` | regex-validated |
+| `email` | `text` | an email |
 | `phone` | `text` NULL | ≤ 40 chars |
 | `travelers` | `text` | e.g. `"2 Adults"` |
 | `dates` | `text` | e.g. `"Next 3 Months"` |
-| `subject` | `text` | the modal's `prefilledSubject`, e.g. `"Experience: Safari in Yala"` |
+| `subject` | `text` | the modal's subject, e.g. `"Experience: Safari in Yala"` |
 | `message` | `text` | ≤ 5000 chars |
-| `status` | `text` | `new` · `in_progress` · `responded` · `closed` · `archived` |
-| `admin_notes` | `text` NULL | internal only; never returned to the public site |
+| `status` | `text` | `new` · `contacted` · `closed` |
+| `closed_at` | `timestamptz` NULL | set exactly when `status = 'closed'` (a CHECK keeps them in step) |
+| `spam` | `boolean` | the hidden honeypot was filled in |
+| `admin_notes` | `text` NULL | internal only, ≤ 5000 chars |
 
-Indexed on `created_at desc` and `status` — the two orderings the inbox uses.
+Retention, enforced by the hourly sweep (`server/src/auth/sweep.ts`): closed
+enquiries are deleted 12 months after `closed_at`, and spam 30 days after
+arrival. Open enquiries are never deleted automatically.
+
+## `inquiry_attempts`
+
+The enquiry form's rate limit (5 per 15 minutes, 20 per 24 hours, per IP).
+It holds `ip` (`inet`) and `attempted_at` only, swept after 24 hours.
+
+---
 
 ## `users`, `sessions`, `login_attempts`
 
-Sign-in, on the API's own tables (`db/migrations/0001_init.sql`,
-`0003_login_attempts.sql`). These replace the Supabase `admins` allow-list and
-Supabase Auth.
+Sign-in. Every user is an admin; there is no role column.
 
-**`users`**: every user is an admin; there is no role column.
+**`users`**
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -215,89 +287,61 @@ Supabase Auth.
 | `email` | `text` | unique on `lower(email)`; stored trimmed and lowercased |
 | `password_hash` | `text` | argon2id PHC string; a CHECK requires the `$argon2id$` prefix |
 | `full_name` | `text` NULL | |
-| `last_login_at` | `timestamptz` NULL | set on each successful sign-in |
+| `last_login_at` | `timestamptz` NULL | |
 
-**`sessions`**: one row per signed-in browser. Deleting the row is signing out.
+Created only by `npm run admin:create`; there's no HTTP route for it.
+
+**`sessions`**: one row per signed-in browser. Deleting the row signs it out.
 
 | Column | Type | Notes |
 | --- | --- | --- |
-| `user_id` | `uuid` | FK → `users`, `ON DELETE CASCADE` |
-| `token_hash` | `text` | SHA-256 hex of the cookie's token; the token is never stored |
+| `user_id` | `uuid` | → `users`, `ON DELETE CASCADE` |
+| `token_hash` | `text` | SHA-256 of the cookie's token; the token is never stored |
 | `user_agent`, `ip` | `text`, `inet` | recorded at sign-in |
 | `last_seen_at` | `timestamptz` | advanced at most every 5 minutes |
 | `expires_at` | `timestamptz` | sign-in + 7 days, fixed; checked on every request |
 
-**`login_attempts`**: the sign-in throttle's counters.
-
-| Column | Type | Notes |
-| --- | --- | --- |
-| `email_hash` | `text` | SHA-256 hex of the trimmed, lowercased submitted email |
-| `ip` | `inet` | `req.ip` |
-| `succeeded` | `boolean` | only failures count toward the limits |
-| `attempted_at` | `timestamptz` | rows older than 24 hours are swept hourly |
-
-Create users with `npm run admin:create` (README §3).
+**`login_attempts`**: the sign-in rate limit. It holds `email_hash` (SHA-256
+of the submitted email, never the email), `ip`, `succeeded` and
+`attempted_at`. Only failures count; it's swept after 24 hours.
 
 ---
 
-## Row Level Security
+## `media`
 
-Enabled on all nine tables. `public.is_admin()` is a `SECURITY DEFINER` function
-so a policy can consult `admins` without the caller needing `SELECT` on it, and
-without recursing through RLS.
+One row per image uploaded to R2 (`POST /api/admin/media`). A URL under
+`R2_PUBLIC_BASE_URL` is "ours" only if it has a row here.
 
-| Actor | Content tables | `inquiries` | `media` bucket |
-| --- | --- | --- | --- |
-| `anon` | `SELECT` where `published` | `INSERT` only | read |
-| `authenticated`, not an admin | same as `anon` | `INSERT` only | read |
-| Admin | full read/write | full read/write | read/write |
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` PK | |
+| `key` | `text` unique | `<folder>/<timestamp>-<random>.<ext>` (CHECKed) |
+| `url` | `text` unique | `R2_PUBLIC_BASE_URL/key` |
+| `content_type` | `text` | `image/jpeg`, `png`, `webp` or `avif` (from the bytes, not the request) |
+| `bytes` | `integer` | 1 B to 10 MB |
+| `uploaded_by` | `uuid` NULL | → `users`, `ON DELETE SET NULL` |
 
-Two details worth knowing:
+Nothing is deleted automatically. A content save that uses one of our URLs
+takes a share lock on its row, and a library delete takes an update lock, so
+an image can't be deleted at the moment a save starts using it.
 
-- The content read policy is `using (published = true or public.is_admin())`, so
-  an admin can preview drafts. The client still passes `.eq('published', true)`
-  on public reads, so the marketing site does not change shape just because
-  someone happens to be signed in.
-- The anon insert policy on `inquiries` is
-  `with check (status = 'new' and admin_notes is null)` — a visitor cannot forge
-  an enquiry that is already marked handled, or inject internal notes.
+## `schema_migrations`
 
-## API keys
-
-The app uses Supabase's **new API key format** only:
-
-| Key | Prefix | Where | Postgres role |
-| --- | --- | --- | --- |
-| Publishable | `sb_publishable_` | `VITE_SUPABASE_PUBLISHABLE_KEY` in `.env.local`, shipped in the browser bundle | `anon` (or `authenticated` once signed in) |
-| Secret | `sb_secret_` | `SUPABASE_SECRET_KEY` in the shell, server-side scripts only | bypasses RLS |
-
-The `anon` / `authenticated` rows in the table above describe the *roles* RLS
-sees — they are unchanged by the key format. The legacy `anon` and
-`service_role` JWT keys (`eyJ...`) are deprecated by Supabase and will stop
-working at the end of 2026; do not use them.
-
-## Storage
-
-One public bucket, `media`, capped at 10 MB per object and restricted to
-`image/jpeg|png|webp|avif|gif`. Public `SELECT`; insert/update/delete require
-`public.is_admin()`.
-
-Objects are keyed `media/<folder>/<timestamp>-<random>.<ext>`. A fresh key per
-upload means replacing an image never needs a CDN cache-bust and cannot clobber
-a file another record still points at.
-
-The seeded rows still carry their original Unsplash URLs.
-`npm run images:migrate` pulls them into the bucket and rewrites the rows.
+The migration runner's ledger: `filename` and `applied_at`. Never edit it by
+hand; deleting a row makes the runner apply that file again.
 
 ---
 
 ## Changing the schema
 
-1. Add a numbered migration in `supabase/migrations/`.
-2. Update the matching row interface in `src/lib/database.types.ts`.
-3. If the public site reads the column, update `src/lib/mappers.ts`.
-4. Add a field descriptor to the collection in `src/admin/collections.ts` — this
-   generates the admin form control **and** its Zod validation
-   (`src/admin/validation.ts`). No new page components.
-5. Run `npm run verify:roundtrip` to confirm the public site still renders
-   identical content.
+1. Add the next numbered file in `db/migrations/` (`NNNN_name.sql`). It must
+   wrap itself in `begin;` … `commit;` and be safe to re-run.
+2. Update the row type in `shared/database.types.ts`.
+3. If the admin edits the column, add a field descriptor in
+   `shared/content-schema.ts`. That gives you the form control, its Zod
+   validation, the API's column allow-list, and (for image fields) the usage
+   query and the image audit.
+4. If the public site reads it, update `src/lib/mappers.ts` and run
+   `npm run verify:roundtrip`.
+5. `npm test` applies every migration to the test database, so a broken one
+   fails there first.

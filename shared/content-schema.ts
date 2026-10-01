@@ -10,13 +10,14 @@
  * Plain data and Zod only. Icons, list-view columns and other UI settings live
  * in `src/admin/collections.ts`, because the server cannot import React.
  */
-import { z } from 'zod';
+import { z } from './zod';
 
 import {
   PILLAR_ICON_NAMES,
   type ContentTableName,
   type SiteSettingsRow
 } from './database.types';
+import { IMAGE_HOST_REFUSED, isAllowedImageUrl } from './image-hosts';
 
 export const CATEGORY_OPTIONS = [
   'Beaches',
@@ -271,7 +272,23 @@ function isCalendarDate(value: string): boolean {
  * public components render as they did with hardcoded data), number strings
  * become numbers, blank list rows are dropped, itinerary days run 1..n.
  */
-function schemaForField(field: Field): z.ZodTypeAny {
+export interface SchemaOptions {
+  /**
+   * When given, image fields must point at one of these origins (see
+   * `shared/image-hosts.ts`). The API always passes them; the admin form
+   * doesn't know the R2 origin, so it relies on the API's field error.
+   */
+  imageOrigins?: readonly string[];
+}
+
+/** An https URL that, when origins are given, is on the image allow-list. */
+const imageUrl = (message: string, options: SchemaOptions) => {
+  const url = httpsUrl(message, 2000);
+  const origins = options.imageOrigins;
+  return origins ? url.refine((v) => isAllowedImageUrl(v, origins), IMAGE_HOST_REFUSED) : url;
+};
+
+function schemaForField(field: Field, options: SchemaOptions = {}): z.ZodTypeAny {
   switch (field.type) {
     case 'slug':
       return z
@@ -332,13 +349,13 @@ function schemaForField(field: Field): z.ZodTypeAny {
       return z.boolean();
 
     case 'image':
-      return httpsUrl(`${field.label} must be an https:// image URL.`, 2000);
+      return imageUrl(`${field.label} must be an https:// image URL.`, options);
 
     case 'imageList':
       return z
         .array(z.string())
         .transform((items) => items.map((s) => s.trim()).filter(Boolean))
-        .pipe(z.array(httpsUrl('Each image must be an https:// URL.', 2000)).max(50, 'At most 50 images.'));
+        .pipe(z.array(imageUrl('Each image must be an https:// URL.', options)).max(50, 'At most 50 images.'));
 
     case 'stringList':
       // Blank rows the user left behind are dropped rather than rejected.
@@ -374,9 +391,9 @@ function schemaForField(field: Field): z.ZodTypeAny {
   }
 }
 
-function objectSchema(fields: Field[]) {
+function objectSchema(fields: Field[], options: SchemaOptions = {}) {
   const shape: Record<string, z.ZodTypeAny> = {};
-  for (const field of fields) shape[field.name] = schemaForField(field);
+  for (const field of fields) shape[field.name] = schemaForField(field, options);
   return z.object(shape);
 }
 
@@ -384,9 +401,13 @@ function objectSchema(fields: Field[]) {
  * `create` includes the slug; `update` leaves it out, because a slug is
  * permanent once the row exists.
  */
-export function schemaForTable(table: ContentTableName, mode: 'create' | 'update') {
+export function schemaForTable(
+  table: ContentTableName,
+  mode: 'create' | 'update',
+  options: SchemaOptions = {}
+) {
   const fields = FIELDS_BY_TABLE[table].filter((f) => mode === 'create' || f.type !== 'slug');
-  return objectSchema(fields);
+  return objectSchema(fields, options);
 }
 
 export const siteSettingsSchema = objectSchema(SITE_SETTINGS_FIELDS);

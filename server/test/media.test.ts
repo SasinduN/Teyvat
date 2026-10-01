@@ -290,16 +290,40 @@ describe('base URL and ownership', () => {
     assert.equal(isUnderBase(null, `${BASE}/tours/1-ab.png`), false);
   });
 
-  test('saving an R2 URL with no library row is refused; the look-alike host is just an external URL', async () => {
+  test('saving an R2 URL with no library row is refused; so is a look-alike host', async () => {
     const ella = await getRow('destinations', 'ella');
 
     let res = await saveRow('destinations', ella, { image: `${BASE}/destinations/1-00.png` });
     assert.equal(res.status, 400);
-    const body = (await res.json()) as { error: { fields: Record<string, string> } };
-    assert.ok(body.error.fields.image);
+    let body = (await res.json()) as { error: { fields: Record<string, string> } };
+    assert.match(body.error.fields.image, /deleted from the library/);
 
+    // Not under our base and not on the image allow-list.
     res = await saveRow('destinations', ella, { image: `${BASE}.evil.com/destinations/1-00.png` });
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 400);
+    body = (await res.json()) as { error: { fields: Record<string, string> } };
+    assert.equal(body.error.fields.image, 'Images must come from the media library or Unsplash.');
+  });
+});
+
+describe('image allow-list', () => {
+  test('image fields accept Unsplash and our R2 bucket, and nothing else', async () => {
+    const item = await uploaded();
+    const ella = await getRow('destinations', 'ella');
+
+    let res = await saveRow('destinations', ella, {
+      image: 'https://images.unsplash.com/photo-1.jpg',
+      gallery: [item.url, 'https://images.unsplash.com/photo-2.jpg']
+    });
+    assert.equal(res.status, 200, await res.clone().text());
+
+    const saved = (await res.json()) as Row;
+    res = await saveRow('destinations', saved, {
+      gallery: ['https://images.unsplash.com/photo-2.jpg', 'https://cdn.example.com/photo.jpg']
+    });
+    assert.equal(res.status, 400);
+    const body = (await res.json()) as { error: { fields: Record<string, string> } };
+    assert.deepEqual(body.error.fields, { 'gallery.1': 'Images must come from the media library or Unsplash.' });
   });
 });
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   ExternalLink,
   Images,
@@ -17,6 +17,8 @@ import { useAuth } from '@/context/AuthContext';
 import { COLLECTIONS } from '@/admin/collections';
 import { describeError } from '@/lib/errors';
 import { useInquiryCounts, useUnreadTitle } from '@/admin/useInquiryCounts';
+import { PageCrash } from '@/admin/components/PageCrash';
+import { ErrorBoundary } from '@/lib/ErrorBoundary';
 import { cn } from '@/utils/cn';
 
 const NavItem: React.FC<{
@@ -57,6 +59,7 @@ const NavItem: React.FC<{
 export const AdminLayout: React.FC = () => {
   const { user, signOut, signOutEverywhere } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const unread = useInquiryCounts().data?.new ?? 0;
   useUnreadTitle(unread);
@@ -175,7 +178,14 @@ export const AdminLayout: React.FC = () => {
         </div>
 
         <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-          <Outlet />
+          {/* A page that throws shows PageCrash; the sidebar keeps working. */}
+          <ErrorBoundary
+            name="admin page"
+            resetKey={location.pathname}
+            fallback={(reset) => <PageCrash onRetry={reset} />}
+          >
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

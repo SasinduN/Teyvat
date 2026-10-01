@@ -1,0 +1,82 @@
+/**
+ * Lists every stored image URL the Content-Security-Policy would block,
+ * meaning one not on the allow-list in `shared/image-hosts.ts` (Unsplash,
+ * plus our R2 bucket from R2_PUBLIC_BASE_URL).
+ *
+ *   npm run images:audit
+ *
+ * Read-only, and enforced as such: the connection is opened with
+ * `default_transaction_read_only=on`, so Postgres itself refuses any write.
+ * Runs against DATABASE_URL (in the local .env, production). Prints the
+ * target first. Content rows only: no personal data is read.
+ */
+import '../shared/load-env';
+
+import { Client } from 'pg';
+
+import { allowedImageOrigins } from '../shared/image-hosts';
+import { connectionTargetFor, privateHostHint } from '../shared/pg-connection';
+import { r2Config } from '../server/src/env';
+import { auditImages, storedImages } from '../server/src/media/maintenance';
+
+async function main(): Promise<void> {
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error('DATABASE_URL is not set.');
+  const target = connectionTargetFor(url);
+
+  const client = new Client({
+    connectionString: target.connectionString,
+    ssl: target.ssl,
+    application_name: 'teyvat-images-audit',
+    options: '-c default_transaction_read_only=on'
+  });
+  await client.connect();
+
+  try {
+    const where = new URL(target.connectionString);
+    const { rows } = await client.query<{ db: string; ro: string }>(
+      "select current_database() as db, current_setting('default_transaction_read_only') as ro"
+    );
+    console.log(`database: ${rows[0].db} on ${where.hostname}:${where.port || '(default port)'}  read-only: ${rows[0].ro}`);
+    if (rows[0].ro !== 'on') throw new Error('The connection is not read-only. Stopping.');
+
+    const origins = allowedImageOrigins(r2Config?.publicBaseUrl ?? null);
+    console.log(`allowed image origins: ${origins.join(', ')}`);
+    if (!r2Config) console.log('(R2 is not configured in this environment, so uploaded images would count as blocked.)');
+
+    const all = await storedImages(client);
+    const blocked = await auditImages(client, origins);
+    console.log(`\nstored image URLs: ${all.length}`);
+
+    const byOrigin = new Map<string, number>();
+    for (const img of all) {
+      let origin = '(not a URL)';
+      try {
+        origin = new URL(img.url).origin;
+      } catch {
+        // counted under "(not a URL)"
+      }
+      byOrigin.set(origin, (byOrigin.get(origin) ?? 0) + 1);
+    }
+    for (const [origin, n] of [...byOrigin].sort((a, b) => b[1] - a[1])) {
+      console.log(`  ${String(n).padStart(5)}  ${origin}${origins.includes(origin) ? '' : '   <- not allowed'}`);
+    }
+
+    if (blocked.length === 0) {
+      console.log('\nResult: nothing would be blocked. Safe to deploy the CSP.');
+    } else {
+      console.log(`\nResult: ${blocked.length} image URL(s) would be blocked. Re-upload these first:`);
+      for (const img of blocked) console.log(`  ${img.table}/${img.id}  ${img.column}  ${img.url}`);
+      process.exitCode = 2;
+    }
+  } finally {
+    await client.end();
+  }
+}
+
+main().catch((error: unknown) => {
+  console.error(`\nimages:audit failed: ${error instanceof Error ? error.message : error}`);
+  const hint = privateHostHint(error);
+  if (hint) console.error(hint);
+  process.exit(1);
+});

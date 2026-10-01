@@ -6,6 +6,7 @@ import { queryClient } from '@/lib/queryClient';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { SiteError, SiteLoading } from '@/components/SiteStatus';
 import { PublicSite } from '@/pages/PublicSite';
+import { ErrorBoundary } from '@/lib/ErrorBoundary';
 
 /**
  * The admin panel is code-split: a traveller visiting the marketing site never
@@ -27,7 +28,21 @@ function PublicSiteRoute() {
   if (loading) return <SiteLoading />;
   if (error) return <SiteError message={error} onRetry={reload} />;
 
-  return <PublicSite />;
+  // Each section has its own boundary (PublicSite.tsx); this catches the rest,
+  // with the same screen a failed content load shows.
+  return (
+    <ErrorBoundary
+      name="public site"
+      fallback={
+        <SiteError
+          message="Something went wrong showing this page. Please try again."
+          onRetry={() => window.location.reload()}
+        />
+      }
+    >
+      <PublicSite />
+    </ErrorBoundary>
+  );
 }
 
 export function App() {

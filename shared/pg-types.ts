@@ -9,9 +9,10 @@
  * ---------------------------------------------------------------------------
  * Why this file exists
  * ---------------------------------------------------------------------------
- * Supabase served rows through PostgREST, which hands back JSON. node-postgres
- * talks the wire protocol and converts values itself, and its defaults differ
- * in two ways that change what the public site renders. Neither shows up as an
+ * The row types (and the mappers built on them) describe JSON-shaped values.
+ * node-postgres talks the wire protocol and converts values itself, and its
+ * defaults differ from that in two ways that change what the public site
+ * renders. Neither shows up as an
  * error — both produce wrong output that looks plausible.
  * ---------------------------------------------------------------------------
  */

@@ -3,7 +3,7 @@ import { Compass, AlertTriangle, RefreshCw } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 
 /**
- * Boot states for the public site while content loads from Supabase.
+ * Boot states for the public site while content loads from `/api/content`.
  * Uses the approved brand palette so there is no visual jolt when the real
  * page paints.
  */
