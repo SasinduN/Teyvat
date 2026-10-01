@@ -26,6 +26,7 @@ this file or anywhere else in git.
 | 6 | Inquiries endpoints: public submit and admin inbox | done |
 | 7a | Clean-up: README/SCHEMA rewrite, CI, security headers, error boundaries, restore guide | done |
 | 7b | Launch decisions: `docs/LAUNCH-CHECKLIST.md` | owner's checklist |
+| 8 | Real pages and shareable links: routes, head tags, sitemap (`docs/plans/phase-8-pages.md`) | planned |
 
 Update the Status column when a phase lands.
 
