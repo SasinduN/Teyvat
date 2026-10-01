@@ -19,6 +19,7 @@ import { PHOTO_STORIES } from './fixtures/photoStories';
 import { TOURS } from './fixtures/tours';
 import { HERO_SLIDES } from './fixtures/heroSlides';
 import { PILLARS } from './fixtures/pillars';
+import { stopsFromRoute } from './route-stops';
 
 import {
   toArticle,
@@ -39,9 +40,10 @@ import type {
   HeroSlideRow,
   HiddenGemRow,
   PhotoStoryRow,
-  PillarRow,
-  TourRow
+  PillarRow
 } from '../shared/database.types';
+import type { PublicTourRow } from '../shared/api';
+import type { TourStopPayload } from '../shared/tour-stops';
 
 /* --------------------------------------------------- comparison utilities */
 
@@ -137,7 +139,8 @@ const destinationRows: DestinationRow[] = DESTINATIONS.map((d, i) => ({
   rating: d.rating,
   elevation: nullable(d.elevation),
   ideal_for: list(d.idealFor),
-  featured: d.featured ?? false
+  featured: d.featured ?? false,
+  travel_time_from_airport: null
 }));
 
 const experienceCategoryRows: ExperienceCategoryRow[] = EXPERIENCE_CATEGORIES.map((e, i) => ({
@@ -165,13 +168,33 @@ const featuredExperienceRows: FeaturedExperienceRow[] = FEATURED_EXPERIENCES.map
   rating: e.rating
 }));
 
-const tourRows: TourRow[] = TOURS.map((t, i) => ({
+/**
+ * A tour's stops as `GET /api/content` resolves them: the conversion 0007
+ * applied to the fixture's route, with each linked stop taking its
+ * destination's name (unless it has a label) and coordinates.
+ */
+const stopsFor = (tourId: string, route: readonly string[]): TourStopPayload[] =>
+  stopsFromRoute(tourId, route, DESTINATIONS).map((stop, position) => {
+    if (stop.kind === 'custom') {
+      return { position, name: stop.name, lat: stop.lat, lng: stop.lng, destinationId: null };
+    }
+    const dest = DESTINATIONS.find((d) => d.id === stop.destination_id)!;
+    return {
+      position,
+      name: stop.name ?? dest.name,
+      lat: dest.latitude,
+      lng: dest.longitude,
+      destinationId: dest.id
+    };
+  });
+
+const tourRows: PublicTourRow[] = TOURS.map((t, i) => ({
   ...meta(i),
   id: t.id,
   title: t.title,
   subtitle: t.subtitle,
   days: t.days,
-  route: list(t.route),
+  stops: stopsFor(t.id, t.route),
   short_desc: t.shortDesc,
   full_desc: t.fullDesc,
   image: t.image,
@@ -249,7 +272,18 @@ compare('destinations', DESTINATIONS, destinationRows.map(toDestination), (d) =>
 }));
 compare('experience types', EXPERIENCE_CATEGORIES, experienceCategoryRows.map(toExperienceCategory));
 compare('featured experiences', FEATURED_EXPERIENCES, featuredExperienceRows.map(toExperienceItem));
-compare('tours', TOURS, tourRows.map(toTourPackage));
+compare(
+  'tours',
+  TOURS,
+  // `stops` is new (the map draws them); the chips are what the approved card renders.
+  tourRows.map(toTourPackage).map(({ stops: _stops, ...tour }) => tour),
+  // The one approved change: on Island in 7 Days, "South Coast" became
+  // Mirissa and Galle (docs/plans/map-routes.md). Every other chip is unchanged.
+  (t) =>
+    t.id === 'island-in-7-days'
+      ? { ...t, route: t.route.flatMap((p) => (p === 'South Coast' ? ['Mirissa', 'Galle'] : [p])) }
+      : t
+);
 compare('articles', ARTICLES, articleRows.map(toArticle));
 compare('hidden gems', HIDDEN_GEMS, hiddenGemRows.map(toHiddenGem));
 compare('photo stories', PHOTO_STORIES, photoStoryRows.map(toPhotoStory));

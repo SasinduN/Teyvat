@@ -160,11 +160,14 @@ describe('authorisation', () => {
 
 /* ------------------------------------------------------------- the seed */
 
+// Rows are read one at a time, as the editor reads them: a tour's single
+// row carries its route stops, which the list leaves out.
 describe('seeded content', () => {
   test('every seeded row passes its table schema', async () => {
     for (const table of CONTENT_TABLE_NAMES) {
       const schema = schemaForTable(table, 'create');
-      for (const row of await list(table)) {
+      for (const { id } of await list(table)) {
+        const row = await get(table, id);
         const result = schema.safeParse(row);
         assert.ok(
           result.success,
@@ -176,7 +179,7 @@ describe('seeded content', () => {
 
   test('every table: a seeded row saves unchanged through the API', async () => {
     for (const table of CONTENT_TABLE_NAMES) {
-      const [row] = await list(table);
+      const row = await get(table, (await list(table))[0].id);
       const res = await put(table, row);
       assert.equal(res.status, 200, `${table}/${row.id}: ${await res.clone().text()}`);
 
@@ -187,7 +190,8 @@ describe('seeded content', () => {
   });
 
   test('the tour itinerary round-trips as {day, title, description, location}[]', async () => {
-    const [tour] = await list('tours');
+    // One row, not the list: the row carries its route stops, which a save sends back.
+    const tour = await get('tours', (await list('tours'))[0].id);
     const itinerary = [
       { day: 9, title: 'Arrive', description: 'Airport pickup', location: 'Colombo' },
       { day: 3, title: 'Tea country', description: '', location: 'Ella' }
@@ -205,7 +209,7 @@ describe('seeded content', () => {
 
 describe('validation', () => {
   test('400 with field-level errors', async () => {
-    const [tour] = await list('tours');
+    const tour = await get('tours', (await list('tours'))[0].id);
     let res = await put('tours', tour, {
       itinerary: [{ day: 1, title: '', description: '', location: '' }]
     });
@@ -423,8 +427,9 @@ describe('concurrent edits', () => {
   });
 
   test('saving a deleted row is 404', async () => {
-    const row = await get('destinations', 'ella');
-    assert.equal((await call('DELETE', '/content/destinations/ella')).status, 204);
+    // Jaffna: on no tour's route, so it can be deleted.
+    const row = await get('destinations', 'jaffna');
+    assert.equal((await call('DELETE', '/content/destinations/jaffna')).status, 204);
     assert.equal((await put('destinations', row)).status, 404);
   });
 });

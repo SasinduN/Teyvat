@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTours } from '@/hooks/useSiteContent';
 import { TourPackage } from '../types';
-import { Calendar, MapPin, ArrowRight, CheckCircle2, X, Compass } from 'lucide-react';
+import { Calendar, MapPin, ArrowRight, CheckCircle2, X, Compass, Map as MapIcon } from 'lucide-react';
 
 interface ToursSectionProps {
   onOpenInquiry: (tourTitle: string) => void;
+  /** Shows the tour's route on the map (and scrolls there). */
+  onViewRoute?: (tour: TourPackage) => void;
 }
 
-export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry }) => {
+export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onViewRoute }) => {
   const TOURS = useTours();
   const [selectedTour, setSelectedTour] = useState<TourPackage | null>(null);
 
@@ -79,9 +81,21 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry }) => 
 
                   {/* Route Places Flow */}
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#1C4737] block mb-2">
-                      Journey Route:
-                    </span>
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#1C4737] block">
+                        Journey Route:
+                      </span>
+                      {onViewRoute && tour.stops.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => onViewRoute(tour)}
+                          className="text-[11px] font-bold text-[#1C4737] hover:text-[#0F2E23] hover:underline underline-offset-2 flex items-center gap-1 shrink-0 transition-colors"
+                        >
+                          <MapIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span>View route on map</span>
+                        </button>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-1.5">
                       {tour.route.map((place, i) => (
                         <React.Fragment key={i}>

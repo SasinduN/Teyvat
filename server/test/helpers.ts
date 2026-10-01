@@ -65,10 +65,16 @@ const CONTENT_TABLES = [
   'pillars'
 ];
 
+const migration = (name: string) => readFileSync(resolve(REPO_ROOT, 'db/migrations', name), 'utf8');
+
 /**
  * Puts the content back to the approved baseline: empties the nine content
- * tables, re-runs the 0002 seed, and resets `site_settings` to its 0001
- * values as 0004 left them (links NULL).
+ * tables (and the tour stops), re-runs the 0002 seed, and resets
+ * `site_settings` to its 0001 values as 0004 left them (links NULL).
+ *
+ * 0002 writes `tours.route`, which 0007 turned into `tour_stops` and dropped.
+ * So the column comes back for the replay, and 0007 runs again to convert it
+ * exactly as it did on deploy.
  *
  * 0002 is an upsert that must never be run by hand against production. Here
  * it only ever reaches the database `test-db.ts` has already proven is the
@@ -76,8 +82,12 @@ const CONTENT_TABLES = [
  */
 export async function resetContent(): Promise<void> {
   await assertConnectedToTestDatabase();
-  await pool.query(`truncate ${CONTENT_TABLES.map((t) => `public.${t}`).join(', ')}`);
-  await pool.query(readFileSync(resolve(REPO_ROOT, 'db/migrations/0002_seed.sql'), 'utf8'));
+  await pool.query(
+    `truncate public.tour_stops, ${CONTENT_TABLES.map((t) => `public.${t}`).join(', ')}`
+  );
+  await pool.query(`alter table public.tours add column route text[] not null default '{}'`);
+  await pool.query(migration('0002_seed.sql'));
+  await pool.query(migration('0007_tour_stops.sql'));
   await pool.query(
     `update public.site_settings
         set postal_address = 'Level 12, Galle Face Terrace, Colombo 03, Sri Lanka',

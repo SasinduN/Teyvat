@@ -21,6 +21,8 @@ export interface Destination {
   elevation?: string;
   idealFor: string[];
   featured?: boolean;
+  /** e.g. "~4 h"; shown as "~4 h from Colombo airport (CMB)" when set. */
+  travelTimeFromAirport?: string;
 }
 
 export interface ExperienceItem {
@@ -37,12 +39,23 @@ export interface ExperienceItem {
   rating: number;
 }
 
+/** One stop on a tour's route, in order. */
+export interface TourStop {
+  name: string;
+  lat: number;
+  lng: number;
+  /** The linked destination, when it is published. */
+  destinationId?: string;
+}
+
 export interface TourPackage {
   id: string;
   title: string;
   subtitle: string;
   days: number;
+  /** The route chips: the stops' names, in order. */
   route: string[];
+  stops: TourStop[];
   shortDesc: string;
   fullDesc: string;
   image: string;

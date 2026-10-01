@@ -18,6 +18,7 @@ import {
   type SiteSettingsRow
 } from './database.types';
 import { IMAGE_HOST_REFUSED, isAllowedImageUrl } from './image-hosts';
+import { MAX_TOUR_STOPS, STOP_NAME_MAX, TOUR_STOP_BOUNDS } from './tour-stops';
 
 export const CATEGORY_OPTIONS = [
   'Beaches',
@@ -60,7 +61,7 @@ interface FieldBase {
 }
 
 export type Field =
-  | (FieldBase & { type: 'text' | 'textarea' | 'slug'; rows?: number })
+  | (FieldBase & { type: 'text' | 'textarea' | 'slug'; rows?: number; maxLength?: number })
   | (FieldBase & { type: 'number'; min?: number; max?: number; step?: number; integer?: boolean })
   | (FieldBase & { type: 'select'; options: readonly string[]; allowEmpty?: boolean })
   | (FieldBase & { type: 'multiselect'; options: readonly string[] })
@@ -72,7 +73,12 @@ export type Field =
   | (FieldBase & { type: 'itinerary' })
   | (FieldBase & { type: 'email' })
   /** An optional https:// link. Empty means "not set" and is stored as NULL. */
-  | (FieldBase & { type: 'link' });
+  | (FieldBase & { type: 'link' })
+  /**
+   * A tour's route stops. Not a column: they live in `public.tour_stops`, and
+   * the API writes them alongside the row (see `writableColumns`).
+   */
+  | (FieldBase & { type: 'tourStops' });
 
 /* ---------------------------------------------------------------- slugs */
 
@@ -125,6 +131,7 @@ export const FIELDS_BY_TABLE: Record<ContentTableName, Field[]> = {
     { name: 'gallery', label: 'Gallery', type: 'imageList', folder: 'destinations', span: 2, help: 'Optional. Shown inside the destination modal.' },
     { name: 'best_time', label: 'Best time to visit', type: 'text', required: true, span: 1 },
     { name: 'elevation', label: 'Elevation', type: 'text', span: 1, help: 'Optional, e.g. “1,041 m”.' },
+    { name: 'travel_time_from_airport', label: 'Travel time from the airport', type: 'text', maxLength: 30, span: 1, help: 'Optional, e.g. “~4 h”. Shown as “~4 h from Colombo airport (CMB)”.' },
     { name: 'rating', label: 'Rating', type: 'number', step: 0.01, min: 0, max: 5, required: true, span: 1 },
     { name: 'featured', label: 'Featured', type: 'boolean', span: 1, help: `Shows the destination in the spotlight. ${SPOTLIGHT_NOTICE}` },
     { name: 'experiences', label: 'Things to do', type: 'stringList', span: 2, placeholder: 'e.g. Nine Arch Bridge Train Watch' },
@@ -168,7 +175,7 @@ export const FIELDS_BY_TABLE: Record<ContentTableName, Field[]> = {
     { name: 'image', label: 'Cover image', type: 'image', folder: 'tours', required: true, span: 2 },
     { name: 'short_desc', label: 'Short description', type: 'textarea', rows: 3, required: true, span: 2 },
     { name: 'full_desc', label: 'Full description', type: 'textarea', rows: 4, required: true, span: 2 },
-    { name: 'route', label: 'Route', type: 'stringList', span: 2, placeholder: 'e.g. Colombo', help: 'Shown as the route chips on the tour card, in order.' },
+    { name: 'stops', label: 'Route stops', type: 'tourStops', span: 2, help: 'In order. The tour card shows them as the route chips, and “View route on map” draws them.' },
     { name: 'highlights', label: 'Highlights', type: 'stringList', span: 2 },
     { name: 'included_places', label: 'Included places', type: 'stringList', span: 2 },
     { name: 'itinerary', label: 'Day-by-day itinerary', type: 'itinerary', span: 2 },
@@ -301,15 +308,17 @@ function schemaForField(field: Field, options: SchemaOptions = {}): z.ZodTypeAny
           message: `“${RESERVED_SLUGS.join('” and “')}” are reserved. Choose another slug.`
         });
 
-    case 'text':
+    case 'text': {
+      const max = field.maxLength ?? 300;
       return field.required
-        ? z.string().trim().min(1, `${field.label} is required.`).max(300, 'Keep it under 300 characters.')
+        ? z.string().trim().min(1, `${field.label} is required.`).max(max, `Keep it under ${max} characters.`)
         : z
             .string()
             .trim()
-            .max(300, 'Keep it under 300 characters.')
+            .max(max, `Keep it under ${max} characters.`)
             .nullable()
             .transform((v) => (v ? v : null));
+    }
 
     case 'textarea':
       return field.required
@@ -388,8 +397,54 @@ function schemaForField(field: Field, options: SchemaOptions = {}): z.ZodTypeAny
         .nullable()
         .transform((v) => (v ? v : null))
         .pipe(httpsUrl(`${field.label} must start with https://, or be left empty.`, 500).nullable());
+
+    case 'tourStops':
+      return tourStopsSchema;
   }
 }
+
+/** A coordinate inside `TOUR_STOP_BOUNDS`; number boxes hand over strings. */
+const stopCoordinate = (label: string, { min, max }: { min: number; max: number }) =>
+  z.preprocess(
+    blankToUndefined,
+    z.coerce
+      .number({ error: `${label} is required.` })
+      .min(min, `${label} must be between ${min} and ${max} (Sri Lanka).`)
+      .max(max, `${label} must be between ${min} and ${max} (Sri Lanka).`)
+  );
+
+/**
+ * A tour's stops, in order. Mirrors the CHECKs on `public.tour_stops`. That a
+ * linked destination exists is the API's check (it answers with the field).
+ */
+const tourStopsSchema = z
+  .array(
+    z.discriminatedUnion('kind', [
+      z.object({
+        kind: z.literal('destination'),
+        destination_id: z.string().trim().min(1, 'Choose a destination.'),
+        // The chip label; empty means "use the destination's name".
+        name: z
+          .string()
+          .trim()
+          .max(STOP_NAME_MAX, `Keep it under ${STOP_NAME_MAX} characters.`)
+          .nullish()
+          .transform((v) => (v ? v : null))
+      }),
+      z.object({
+        kind: z.literal('custom'),
+        name: z
+          .string()
+          .trim()
+          .min(1, 'A custom stop needs a name.')
+          .max(STOP_NAME_MAX, `Keep it under ${STOP_NAME_MAX} characters.`),
+        lat: stopCoordinate('Latitude', TOUR_STOP_BOUNDS.lat),
+        lng: stopCoordinate('Longitude', TOUR_STOP_BOUNDS.lng)
+      })
+    ])
+  )
+  .min(1, 'Add at least one stop.')
+  .max(MAX_TOUR_STOPS, `At most ${MAX_TOUR_STOPS} stops.`);
 
 function objectSchema(fields: Field[], options: SchemaOptions = {}) {
   const shape: Record<string, z.ZodTypeAny> = {};
@@ -412,10 +467,14 @@ export function schemaForTable(
 
 export const siteSettingsSchema = objectSchema(SITE_SETTINGS_FIELDS);
 
-/** The column names a write may set, for building SQL. Never from a request. */
+/**
+ * The column names a write may set, for building SQL. Never from a request.
+ * A tour's `stops` are validated with the row but are not a column.
+ */
 export function writableColumns(table: ContentTableName, mode: 'create' | 'update'): string[] {
   return FIELDS_BY_TABLE[table]
     .filter((f) => mode === 'create' || f.type !== 'slug')
+    .filter((f) => f.type !== 'tourStops')
     .map((f) => f.name);
 }
 

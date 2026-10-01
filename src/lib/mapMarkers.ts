@@ -129,3 +129,16 @@ export function markerHtml(dest: Pick<Destination, 'name' | 'category'>, active:
       <div class="map-marker-label">${escapeHtml(dest.name)}</div>
     </div>`;
 }
+
+/**
+ * A numbered stop on a tour's route: a cream disc with a dark-green number
+ * and a green ring, so it can't be mistaken for a category marker. Its name
+ * always shows (a route has few stops).
+ */
+export function routeStopHtml(number: number, name: string): string {
+  return `
+    <div class="route-stop">
+      <div class="route-stop-disc">${number}</div>
+      <div class="map-marker-label route-stop-label">${escapeHtml(name)}</div>
+    </div>`;
+}

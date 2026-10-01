@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Destination } from '../types';
-import { X, Sparkles, Star, CheckCircle2, Compass, ArrowRight } from 'lucide-react';
+import { X, Sparkles, Star, CheckCircle2, Compass, ArrowRight, ExternalLink, Plane } from 'lucide-react';
+import { airportTravelTime, googleMapsUrl } from '@/lib/googleMaps';
 
 interface DestinationModalProps {
   destination: Destination | null;
@@ -119,6 +120,27 @@ export const DestinationModal: React.FC<DestinationModalProps> = ({
                 <span className="text-[10px] uppercase font-bold text-[#1C4737] tracking-wider block">Ideal Travel For</span>
                 <span className="text-sm font-semibold text-[#0F2E23]">{destination.idealFor.join(', ')}</span>
               </div>
+            </div>
+
+            {/* Google Maps, and the travel time from the airport when set */}
+            <div className="-mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+              <a
+                href={googleMapsUrl(destination.latitude, destination.longitude)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 font-semibold text-[#1C4737] hover:text-[#0F2E23] hover:underline underline-offset-2"
+                data-google-maps
+              >
+                <span>Open in Google Maps</span>
+                <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                <span className="sr-only">(opens in a new tab)</span>
+              </a>
+              {destination.travelTimeFromAirport && (
+                <span className="inline-flex items-center gap-1.5 text-[#1A1A1A]/70" data-travel-time>
+                  <Plane className="w-4 h-4 text-[#1C4737]" aria-hidden="true" />
+                  <span>{airportTravelTime(destination.travelTimeFromAirport)}</span>
+                </span>
+              )}
             </div>
 
             {/* Top Experiences */}

@@ -58,6 +58,10 @@ Update the Status column when a phase lands.
   link renders without an `href`; `Footer.tsx` is unchanged.
 - **Tests:** `npm test` runs `scripts/run-tests.mjs`: each file in its own
   process, 60 s per test, and every hook passes `HOOK_TIMEOUT`.
+- **Tour routes** live in `tour_stops` (0007 replaced `tours.route`). A
+  destination on a route can't be deleted (409). `resetContent()` re-adds
+  `tours.route` and replays 0002 then 0007; keep 0007 re-runnable.
+  `scripts/route-stops.ts` mirrors its conversion for `verify:roundtrip`.
 
 ### Where things live
 

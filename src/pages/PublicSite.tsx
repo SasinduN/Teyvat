@@ -20,7 +20,7 @@ import { DestinationModal } from '@/components/DestinationModal';
 import { InquiryModal } from '@/components/InquiryModal';
 import { SearchModal } from '@/components/SearchModal';
 
-import { Destination, CategoryType, ExperienceItem } from '@/types';
+import { Destination, CategoryType, ExperienceItem, TourPackage } from '@/types';
 import { ErrorBoundary } from '@/lib/ErrorBoundary';
 
 /**
@@ -43,6 +43,8 @@ export function PublicSite() {
 
   const [activeFilterForMap, setActiveFilterForMap] = useState<CategoryType | 'All'>('All');
   const [selectedWhereForMap, setSelectedWhereForMap] = useState<string>('All');
+  // The tour whose route the map is showing ("View route on map"), if any.
+  const [routeTour, setRouteTour] = useState<TourPackage | null>(null);
 
   // Smooth Section Navigation
   const scrollToSection = (sectionId: string) => {
@@ -54,6 +56,8 @@ export function PublicSite() {
 
   // Quick Search Submission Handler
   const handleQuickSearch = (where: string, experience: CategoryType | 'All', _timing: string) => {
+    // Choosing a filter leaves route mode.
+    setRouteTour(null);
     setSelectedWhereForMap(where);
     setActiveFilterForMap(experience);
     scrollToSection('explore-map');
@@ -61,6 +65,7 @@ export function PublicSite() {
 
   // Category Selection Handler from Experiences Section
   const handleSelectCategory = (category: CategoryType) => {
+    setRouteTour(null);
     setActiveFilterForMap(category);
     scrollToSection('explore-map');
   };
@@ -114,6 +119,8 @@ export function PublicSite() {
             onSelectDestination={(dest) => setActiveModalDestination(dest)}
             activeFilterFromParent={activeFilterForMap}
             selectedWhereFromParent={selectedWhereForMap}
+            routeTour={routeTour}
+            onClearRoute={() => setRouteTour(null)}
           />
         </Section>
 
@@ -136,7 +143,13 @@ export function PublicSite() {
 
         {/* Multi-Day Tours Section */}
         <Section name="ToursSection">
-          <ToursSection onOpenInquiry={handleOpenInquiry} />
+          <ToursSection
+            onOpenInquiry={handleOpenInquiry}
+            onViewRoute={(tour) => {
+              setRouteTour(tour);
+              scrollToSection('explore-map');
+            }}
+          />
         </Section>
 
         {/* Interactive Travel Journey Planner */}

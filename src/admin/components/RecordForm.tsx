@@ -4,6 +4,7 @@ import { CircleAlert } from 'lucide-react';
 import type { Field } from '@/admin/collections';
 import { FieldHelp, FieldLabel, Input, Select, Textarea } from '@/admin/components/ui';
 import { ImageListPicker, ImagePicker } from '@/admin/components/ImagePicker';
+import { type StopDraft, TourStopsField } from '@/admin/components/TourStopsField';
 import {
   type ItineraryDay,
   ItineraryField,
@@ -34,6 +35,8 @@ const asStringArray = (v: unknown): string[] =>
 const asItinerary = (v: unknown): ItineraryDay[] =>
   Array.isArray(v) ? (v as ItineraryDay[]) : [];
 
+const asStops = (v: unknown): StopDraft[] => (Array.isArray(v) ? (v as StopDraft[]) : []);
+
 /* ------------------------------------------------------------------------- */
 
 export const RecordForm: React.FC<RecordFormProps> = ({
@@ -45,7 +48,10 @@ export const RecordForm: React.FC<RecordFormProps> = ({
   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
     {fields.map((field) => {
       const error = errors[field.name];
-      const message = extractMessage(error);
+      // The stops editor shows each row's messages on the row itself; only a
+      // message about the whole list ("Add at least one stop.") goes below.
+      const message =
+        field.type === 'tourStops' ? listMessage(error) : extractMessage(error);
 
       return (
         <div
@@ -63,7 +69,7 @@ export const RecordForm: React.FC<RecordFormProps> = ({
             name={field.name}
             control={control}
             render={({ field: rhf }) =>
-              renderControl(field, rhf.value, rhf.onChange, rhf.onBlur, lockSlug, !!message)
+              renderControl(field, rhf.value, rhf.onChange, rhf.onBlur, lockSlug, !!message, error)
             }
           />
 
@@ -105,13 +111,23 @@ function extractMessage(error: unknown): string | null {
   return null;
 }
 
+/** A message on an array field itself, not on one of its entries. */
+function listMessage(error: unknown): string | null {
+  if (!error || typeof error !== 'object') return null;
+  const e = error as { message?: unknown; root?: { message?: unknown } };
+  if (typeof e.message === 'string' && e.message) return e.message;
+  if (typeof e.root?.message === 'string' && e.root.message) return e.root.message;
+  return null;
+}
+
 function renderControl(
   field: Field,
   value: unknown,
   onChange: (next: unknown) => void,
   onBlur: () => void,
   lockSlug: boolean,
-  invalid: boolean
+  invalid: boolean,
+  error: unknown
 ): React.ReactElement {
   const id = `field-${field.name}`;
   const errorRing = invalid ? 'border-[#B3261E] focus:border-[#B3261E] focus:ring-[#B3261E]' : '';
@@ -268,5 +284,8 @@ function renderControl(
 
     case 'itinerary':
       return <ItineraryField value={asItinerary(value)} onChange={onChange} />;
+
+    case 'tourStops':
+      return <TourStopsField value={asStops(value)} onChange={onChange} errors={error} />;
   }
 }

@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDestinations } from '@/hooks/useSiteContent';
 import { mapTiles } from '@/lib/mapTiles';
-import { MAP_CATEGORIES, MAP_CATEGORY_STYLES, markerHtml, type MapCategory } from '@/lib/mapMarkers';
-import { Destination, CategoryType } from '../types';
+import { MAP_CATEGORIES, MAP_CATEGORY_STYLES, markerHtml, routeStopHtml, type MapCategory } from '@/lib/mapMarkers';
+import { airportTravelTime, googleMapsUrl } from '@/lib/googleMaps';
+import { Destination, CategoryType, TourPackage } from '../types';
 import {
   MapPin,
   Sparkles,
@@ -17,6 +18,10 @@ import {
   PawPrint,
   Utensils,
   Gem,
+  ExternalLink,
+  Plane,
+  Route,
+  X,
   type LucideIcon
 } from 'lucide-react';
 
@@ -24,6 +29,10 @@ interface InteractiveMapSectionProps {
   onSelectDestination: (dest: Destination) => void;
   activeFilterFromParent?: CategoryType | 'All';
   selectedWhereFromParent?: string;
+  /** A tour whose route the map shows ("View route on map"), or null. */
+  routeTour?: TourPackage | null;
+  /** Leaves route mode (the chip's ✕, Escape, or choosing a filter). */
+  onClearRoute?: () => void;
 }
 
 /** The legend's icons: the same Lucide icons the markers draw (src/lib/mapMarkers.ts). */
@@ -62,13 +71,45 @@ const MapLegendList: React.FC<{ id?: string; className: string }> = ({ id, class
 const LABEL_ZOOM = 9;
 /** Filter changes fit the map to the markers, but never closer than this. */
 const FIT_MAX_ZOOM = 9;
+/** A route is framed no closer than this. */
+const ROUTE_MAX_ZOOM = 10;
 /** Start loading Leaflet and tiles this far before the map scrolls into view. */
 const LAZY_MARGIN = '400px 0px';
+
+/** The Google Maps link, and the airport travel time when it's set. */
+const PlaceLinks: React.FC<{
+  dest: Destination;
+  className: string;
+  linkClassName: string;
+  timeClassName: string;
+}> = ({ dest, className, linkClassName, timeClassName }) => (
+  <div className={className}>
+    <a
+      href={googleMapsUrl(dest.latitude, dest.longitude)}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={linkClassName}
+      data-google-maps
+    >
+      <span>Open in Google Maps</span>
+      <ExternalLink className="w-3 h-3" aria-hidden="true" />
+      <span className="sr-only">(opens in a new tab)</span>
+    </a>
+    {dest.travelTimeFromAirport && (
+      <span className={timeClassName} data-travel-time>
+        <Plane className="w-3.5 h-3.5" aria-hidden="true" />
+        <span>{airportTravelTime(dest.travelTimeFromAirport)}</span>
+      </span>
+    )}
+  </div>
+);
 
 export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
   onSelectDestination,
   activeFilterFromParent,
-  selectedWhereFromParent
+  selectedWhereFromParent,
+  routeTour = null,
+  onClearRoute
 }) => {
   const DESTINATIONS = useDestinations();
   const [selectedCategory, setSelectedCategory] = useState<CategoryType | 'All'>('All');
@@ -101,6 +142,32 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
       window.removeEventListener('pointerdown', onPointer);
     };
   }, [showKey]);
+
+  // Route mode. The view from before the route, to go back to on ✕ or Escape.
+  const routeLayerRef = useRef<any>(null);
+  const preRouteViewRef = useRef<{ center: [number, number]; zoom: number } | null>(null);
+  /** How the route was left: ✕ or Escape restore the view; a filter frames itself. */
+  const restoreOnClearRef = useRef(false);
+  const wasRouteRef = useRef(false);
+
+  const clearRoute = (restoreView: boolean) => {
+    restoreOnClearRef.current = restoreView;
+    onClearRoute?.();
+  };
+
+  const chooseCategory = (cat: CategoryType | 'All') => {
+    if (routeTour) clearRoute(false);
+    setSelectedCategory(cat);
+  };
+
+  useEffect(() => {
+    if (!routeTour) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') clearRoute(true);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [routeTour]);
 
   const categories: (CategoryType | 'All')[] = [
     'All',
@@ -149,6 +216,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
 
     let isMounted = true;
     let hintTimer: ReturnType<typeof setTimeout> | undefined;
+    let resizeObserver: ResizeObserver | undefined;
     let onTouchMove: ((e: TouchEvent) => void) | undefined;
 
     async function initMap() {
@@ -207,6 +275,12 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
           container.addEventListener('touchmove', onTouchMove, { passive: true });
         }
 
+        // The map's height follows the side panel's on large screens.
+        if ('ResizeObserver' in window) {
+          resizeObserver = new ResizeObserver(() => map.invalidateSize());
+          resizeObserver.observe(container);
+        }
+
         leafletRef.current = L;
         mapInstanceRef.current = map;
         markersGroupRef.current = L.layerGroup().addTo(map);
@@ -235,6 +309,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
     return () => {
       isMounted = false;
       observer?.disconnect();
+      resizeObserver?.disconnect();
       clearTimeout(hintTimer);
       if (onTouchMove) container.removeEventListener('touchmove', onTouchMove);
       if (mapInstanceRef.current) {
@@ -295,33 +370,144 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
     });
   }, [mapReady, activeDest, filteredDestinations]);
 
-  // A new category filter frames its markers, smoothly.
-  const fittedCategoryRef = useRef<CategoryType | 'All'>('All');
-  useEffect(() => {
+  /** How far down the map the visible top overlays reach, plus a margin. */
+  const topOverlayClearance = (): number => {
+    const container = mapContainerRef.current;
+    if (!container?.parentElement) return 80;
+    const top = container.getBoundingClientRect().top;
+    let clearance = 40;
+    container.parentElement.querySelectorAll('[data-map-overlay]').forEach((el) => {
+      const box = el.getBoundingClientRect();
+      if (box.height > 0) clearance = Math.max(clearance, box.bottom - top + 16);
+    });
+    return Math.round(clearance);
+  };
+
+  /** Frames `points`, smoothly unless the visitor prefers reduced motion. */
+  const fitPoints = (points: [number, number][], maxZoom: number) => {
     const L = leafletRef.current;
     const map = mapInstanceRef.current;
-    if (!mapReady || !L || !map) return;
-    if (fittedCategoryRef.current === selectedCategory) return;
-    fittedCategoryRef.current = selectedCategory;
-
-    const points = filteredDestinations.map((d) => [d.latitude, d.longitude] as [number, number]);
-    if (points.length === 0) return;
+    if (!L || !map || points.length === 0) return;
 
     const animate = !(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
     if (points.length === 1) {
-      map.flyTo(points[0], FIT_MAX_ZOOM, { animate, duration: 0.8 });
+      map.flyTo(points[0], maxZoom, { animate, duration: 0.8 });
       return;
     }
-    // Room for the Map Guide (top left), the Quick Jump bar (bottom) and the
-    // zoom buttons (bottom right).
+    // Room for what sits on the map: the overlays along the top (the Map
+    // Guide, or the Key on phones, and the route chip), measured, and the
+    // Quick Jump bar (bottom) and zoom buttons (bottom right).
     const options = {
-      paddingTopLeft: [40, 80] as [number, number],
+      paddingTopLeft: [40, topOverlayClearance()] as [number, number],
       paddingBottomRight: [64, 90] as [number, number],
-      maxZoom: FIT_MAX_ZOOM
+      maxZoom
     };
     if (animate) map.flyToBounds(L.latLngBounds(points), { ...options, duration: 0.8 });
     else map.fitBounds(L.latLngBounds(points), { ...options, animate: false });
-  }, [mapReady, selectedCategory, filteredDestinations]);
+  };
+
+  // Leaving route mode: ✕ or Escape go back to the view from before the
+  // route; choosing a filter frames that filter (the next effect). Declared
+  // first, so the re-fit is requested before that effect runs.
+  const fittedCategoryRef = useRef<CategoryType | 'All' | null>('All');
+  useEffect(() => {
+    const was = wasRouteRef.current;
+    wasRouteRef.current = Boolean(routeTour);
+    if (!was || routeTour) return;
+
+    const map = mapInstanceRef.current;
+    const saved = preRouteViewRef.current;
+    if (restoreOnClearRef.current) {
+      if (map && saved) {
+        const animate = !(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
+        if (animate) map.flyTo(saved.center, saved.zoom, { duration: 0.8 });
+        else map.setView(saved.center, saved.zoom, { animate: false });
+      }
+    } else {
+      fittedCategoryRef.current = null;
+    }
+    restoreOnClearRef.current = false;
+    preRouteViewRef.current = null;
+  }, [routeTour]);
+
+  // A new category filter frames its markers, smoothly.
+  useEffect(() => {
+    if (!mapReady || routeTour) return;
+    if (fittedCategoryRef.current === selectedCategory) return;
+    fittedCategoryRef.current = selectedCategory;
+    fitPoints(
+      filteredDestinations.map((d) => [d.latitude, d.longitude] as [number, number]),
+      FIT_MAX_ZOOM
+    );
+  }, [mapReady, selectedCategory, filteredDestinations, routeTour]);
+
+  // Route mode: the tour's numbered stops, joined in order by a dashed line,
+  // framed to fit. Waits for the map, so a route picked before it loaded is
+  // drawn as soon as the map is up.
+  useEffect(() => {
+    const L = leafletRef.current;
+    const map = mapInstanceRef.current;
+    const container = mapContainerRef.current;
+    if (!mapReady || !L || !map || !container) return;
+
+    routeLayerRef.current?.remove();
+    routeLayerRef.current = null;
+
+    const stops = routeTour?.stops ?? [];
+    container.classList.toggle('map-route-on', stops.length > 0);
+    if (stops.length === 0) return;
+
+    if (!preRouteViewRef.current) {
+      const center = map.getCenter();
+      preRouteViewRef.current = { center: [center.lat, center.lng], zoom: map.getZoom() };
+    }
+
+    const points = stops.map((s) => [s.lat, s.lng] as [number, number]);
+    const layer = L.layerGroup();
+    L.polyline(points, {
+      color: '#1C4737',
+      weight: 3,
+      dashArray: '8 8',
+      interactive: false,
+      className: 'route-line'
+    }).addTo(layer);
+
+    stops.forEach((stop, i) => {
+      const marker = L.marker([stop.lat, stop.lng], {
+        icon: L.divIcon({
+          html: routeStopHtml(i + 1, stop.name),
+          className: 'route-stop-marker',
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        }),
+        // Tab reaches each stop, which reads out as "Stop 2: Sigiriya".
+        keyboard: true,
+        zIndexOffset: 2000
+      });
+      marker.on('add', () => {
+        const el = marker.getElement();
+        el?.setAttribute('aria-label', `Stop ${i + 1}: ${stop.name}`);
+        el?.setAttribute('role', 'img');
+      });
+      marker.addTo(layer);
+    });
+
+    layer.addTo(map);
+    routeLayerRef.current = layer;
+    fitPoints(points, ROUTE_MAX_ZOOM);
+  }, [mapReady, routeTour]);
+
+  // While a route shows, the faded category markers leave the tab order.
+  useEffect(() => {
+    if (!mapReady) return;
+    markersByIdRef.current.forEach((marker) => {
+      const el = marker.getElement();
+      if (!el) return;
+      el.setAttribute('tabindex', routeTour ? '-1' : '0');
+      if (routeTour) el.setAttribute('aria-hidden', 'true');
+      else el.removeAttribute('aria-hidden');
+    });
+  }, [mapReady, routeTour, filteredDestinations]);
 
   // Center map on active destination if selection changes
   const handleDestinationClick = (dest: Destination) => {
@@ -357,7 +543,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
             return (
               <button
                 key={cat}
-                onClick={() => setSelectedCategory(cat)}
+                onClick={() => chooseCategory(cat)}
                 className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-300 flex items-center space-x-1.5 shadow-xs ${
                   isSelected
                     ? 'bg-[#0F2E23] text-[#D4AF37] shadow-md scale-105 border border-[#368E6B]'
@@ -381,11 +567,11 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
         <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-[#D4C3B5]/60 bg-white grid grid-cols-1 lg:grid-cols-12 min-h-[620px]">
           
           {/* Map Area */}
-          <div className="lg:col-span-8 relative h-[450px] sm:h-[550px] lg:h-[620px] w-full">
+          <div className="lg:col-span-8 relative h-[450px] sm:h-[550px] lg:h-auto lg:min-h-[620px] w-full">
             <div ref={mapContainerRef} className="w-full h-full" />
 
             {/* Map Legend Overlay */}
-            <div className="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-md border border-[#D4C3B5]/40 text-xs hidden sm:block">
+            <div className="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-md border border-[#D4C3B5]/40 text-xs hidden sm:block" data-map-overlay>
               <div className="flex items-center space-x-3">
                 <span className="font-semibold text-[#0F2E23] flex items-center gap-1">
                   <Compass className="w-3.5 h-3.5 text-[#1C4737]" /> Map Guide:
@@ -398,7 +584,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
             </div>
 
             {/* Phones, where the Map Guide is hidden: a small Key button that opens the legend. */}
-            <div ref={keyRef} className="absolute top-4 left-4 z-20 sm:hidden">
+            <div ref={keyRef} className="absolute top-4 left-4 z-20 sm:hidden" data-map-overlay>
               <button
                 type="button"
                 onClick={() => setShowKey((open) => !open)}
@@ -415,6 +601,28 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Route mode: which tour is shown, and ✕ to go back. */}
+            {routeTour && (
+              <div
+                className="absolute top-4 right-4 z-20 max-w-[calc(100%-7.5rem)] sm:max-w-[60%] bg-white/90 backdrop-blur-md pl-3.5 pr-1.5 py-1.5 rounded-2xl shadow-md border border-[#D4C3B5]/40 text-xs flex items-center gap-2"
+                data-route-chip
+                data-map-overlay
+              >
+                <Route className="w-3.5 h-3.5 text-[#1C4737] shrink-0" aria-hidden="true" />
+                <span className="truncate text-[#1A1A1A]/70" role="status">
+                  Showing: <strong className="text-[#0F2E23]">{routeTour.title}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => clearRoute(true)}
+                  aria-label="Clear route"
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-[#0F2E23] hover:bg-[#1C4737]/10 shrink-0 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+              </div>
+            )}
 
             {/* Touch screens: shown briefly when one finger swipes over the map. */}
             <AnimatePresence>
@@ -508,7 +716,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                     </div>
 
                     {/* Best Time & Elevation */}
-                    <div className="grid grid-cols-2 gap-3 p-3 bg-white/5 rounded-xl border border-white/10 text-xs mb-5">
+                    <div className="grid grid-cols-2 gap-3 p-3 bg-white/5 rounded-xl border border-white/10 text-xs mb-3">
                       <div>
                         <span className="text-white/50 block text-[10px] uppercase tracking-wider">Best Time</span>
                         <span className="font-semibold text-white">{activeDest.bestTime}</span>
@@ -518,6 +726,14 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                         <span className="font-semibold text-white">{activeDest.elevation || activeDest.region}</span>
                       </div>
                     </div>
+
+                    {/* Google Maps, and the travel time from the airport when set */}
+                    <PlaceLinks
+                      dest={activeDest}
+                      className="flex flex-col items-start gap-1.5 text-xs mb-5"
+                      linkClassName="inline-flex items-center gap-1.5 font-semibold text-[#D4AF37] hover:text-white transition-colors"
+                      timeClassName="flex items-center gap-1.5 text-white/70"
+                    />
 
                     {/* Top Experiences */}
                     <div>
@@ -573,6 +789,12 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                   </div>
                   <h3 className="font-heading text-xl font-bold text-white">{activeDest.name}</h3>
                   <p className="text-xs text-white/70 line-clamp-2 mt-1">{activeDest.shortDescription}</p>
+                  <PlaceLinks
+                    dest={activeDest}
+                    className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px]"
+                    linkClassName="inline-flex items-center gap-1 font-semibold text-[#D4AF37] hover:text-white transition-colors"
+                    timeClassName="flex items-center gap-1 text-white/70"
+                  />
                 </div>
               </div>
 

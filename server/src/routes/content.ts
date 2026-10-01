@@ -26,6 +26,7 @@ import type {
 } from '../../../shared/database.types';
 import { pool } from '../db';
 import { asyncRoute } from '../http';
+import { publicStopsByTour } from '../tour-stops';
 
 /**
  * Table names are interpolated into SQL, so they come only from this frozen
@@ -99,7 +100,8 @@ contentRouter.get(
       photoStories,
       heroSlides,
       pillars,
-      siteSettings
+      siteSettings,
+      stopsByTour
     ] = await Promise.all([
       selectPublished<DestinationRow>('destinations'),
       selectPublished<ExperienceCategoryRow>('experience_categories'),
@@ -110,14 +112,16 @@ contentRouter.get(
       selectPublished<PhotoStoryRow>('photo_stories'),
       selectPublished<HeroSlideRow>('hero_slides'),
       selectPublished<PillarRow>('pillars'),
-      selectSiteSettings()
+      selectSiteSettings(),
+      publicStopsByTour(pool)
     ]);
 
     const payload: SiteContentPayload = {
       destinations,
       experienceCategories,
       featuredExperiences,
-      tours,
+      // Each tour carries its route stops, resolved, so the client joins nothing.
+      tours: tours.map((tour) => ({ ...tour, stops: stopsByTour.get(tour.id) ?? [] })),
       articles,
       hiddenGems,
       photoStories,
