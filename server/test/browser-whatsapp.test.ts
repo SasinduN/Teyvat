@@ -74,7 +74,8 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
       mobile: Boolean(options.mobile)
     });
     await page.send('Page.navigate', { url: `${app.baseUrl}${options.path ?? '/'}` });
-    await waitFor(page, `document.querySelectorAll('#tours h3').length === 4`, 'the tour cards');
+    // At least: an open tour modal (`?tour=`) adds its own h3s inside #tours.
+    await waitFor(page, `document.querySelectorAll('#tours h3').length >= 4`, 'the tour cards');
     // Jumps, not smooth scrolls, so a scroll has landed when it returns.
     await page.evaluate(`document.documentElement.style.scrollBehavior = 'auto', true`);
     return page;
@@ -97,6 +98,30 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))`);
 
   const shown = (page: Page) => page.evaluate<boolean>(`document.querySelector('${BUTTON}').dataset.state === 'shown'`);
+
+  /**
+   * Waits up to `ms` for the button to settle into `want`. It decides in an
+   * animation frame and React commits after, so on a busy machine a fixed
+   * two frames can sample it mid-update.
+   */
+  async function expectShown(page: Page, want: boolean, what: string, ms = 1_000): Promise<void> {
+    const until = Date.now() + ms;
+    while (Date.now() < until) {
+      if ((await shown(page)) === want) return;
+      await sleep(25);
+    }
+    assert.equal(await shown(page), want, what);
+  }
+
+  /** Waits up to a second for the button to be clear of `selector`. */
+  async function expectClearOf(page: Page, selector: string, what: string): Promise<void> {
+    const until = Date.now() + 1_000;
+    while (Date.now() < until) {
+      if (!(await coversElement(page, selector))) return;
+      await sleep(25);
+    }
+    assert.fail(what);
+  }
 
   /** Whether the button, while shown, overlaps the element `selector` picks. */
   const coversElement = (page: Page, selector: string) =>
@@ -223,8 +248,8 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     for (let offset = -100; offset <= 900; offset += 20) {
       await page.evaluate(`window.scrollTo(0, ${zoomTop - 844 + offset}), true`);
       await frames(page);
-      assert.equal(await coversElement(page, '#explore-map .leaflet-control-zoom'), false, `zoom buttons covered at ${offset}`);
-      assert.equal(await coversElement(page, '#explore-map [data-keep-clear]'), false, `Quick Jump covered at ${offset}`);
+      await expectClearOf(page, '#explore-map .leaflet-control-zoom', `zoom buttons covered at ${offset}`);
+      await expectClearOf(page, '#explore-map [data-keep-clear]', `Quick Jump covered at ${offset}`);
       if (!(await shown(page))) hiddenAtLeastOnce = true;
     }
     assert.ok(hiddenAtLeastOnce, 'the button stepped aside somewhere in the sweep');
@@ -235,28 +260,25 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
       window.scrollBy(0, r.bottom - (innerHeight - 30));
       return true;
     })()`);
-    await frames(page);
-    assert.equal(await shown(page), false);
+    await expectShown(page, false, 'steps aside from the zoom buttons');
     assert.ok(await tappable(page, '#explore-map .leaflet-control-zoom-in'), 'zoom in takes the tap');
     assert.ok(await tappable(page, '#explore-map .leaflet-control-zoom-out'), 'zoom out takes the tap');
 
     // Away from the map, it's back.
     await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
-    await frames(page);
-    assert.equal(await shown(page), true);
+    await expectShown(page, true, 'back once clear of the map');
   });
 
   test('phone: hidden while the enquiry form is open, so the submit button is clear', async () => {
     const page = await openPage({ mobile: true });
     await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
-    await frames(page);
-    assert.equal(await shown(page), true, 'precondition: shown');
+    await expectShown(page, true, 'precondition: shown');
 
     await page.evaluate(`[...document.querySelectorAll('#tours button')].find((b) => b.textContent.trim() === 'Inquire').click(), true`);
     await waitFor(page, `document.querySelector('.fixed.inset-0 form button[type=submit]')`, 'the enquiry form');
     await page.evaluate(`document.querySelector('.fixed.inset-0 form button[type=submit]').scrollIntoView({ block: 'end' }), true`);
-    await sleep(400);
-    assert.equal(await shown(page), false, 'hidden with the form open');
+    await expectShown(page, false, 'hidden with the form open');
+    await sleep(400); // the fade, before checking visibility
     assert.equal(
       await page.evaluate<string>(`getComputedStyle(document.querySelector('${BUTTON}')).visibility`),
       'hidden',
