@@ -76,6 +76,11 @@ process.env.NODE_ENV = 'test';
 // .env also holds the real R2 credentials. No test may reach the real
 // bucket, so they go before server/src/env.ts reads them: the default app has
 // uploads off, and tests that need a store pass their own.
+// The public site's origin and indexing switch: tests pass their own to
+// createApp, so a local .env can't change what they see.
+delete process.env.PUBLIC_SITE_URL;
+delete process.env.SITE_INDEXABLE;
+
 for (const name of Object.keys(process.env)) {
   if (name.startsWith('R2_')) delete process.env[name];
 }

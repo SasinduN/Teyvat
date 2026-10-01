@@ -571,3 +571,56 @@ CSS, plus Leaflet's 42.5 KB once the map neared the viewport.
 
 The entry every public page shares is 138.5 KB of JS. Leaflet's
 stylesheet (unpkg) comes with its JS and isn't counted.
+
+## 8b: additions at approval (2026-10-01)
+
+PR 1 is merged and checked live. PR 2 is built as planned above (Sharing
+and SEO), with these additions:
+
+- **`SITE_INDEXABLE`** (default `false`) keeps search engines out until
+  launch:
+  - while false, `robots.txt` disallows everything, every page carries
+    `<meta name="robots" content="noindex">`, and `/sitemap.xml` is a 404;
+  - when `true`, the normal `robots.txt` (`/admin` and `/api/` disallowed,
+    the sitemap named) and the sitemap apply.
+  - Launch checklist: "set `SITE_INDEXABLE=true`".
+- **Every absolute URL comes from `PUBLIC_SITE_URL`:** canonical, `og:url`,
+  a relative `og:image`, and the sitemap's entries. Changing the domain is
+  one variable. (Unset, as in local runs, the request's own origin is used,
+  and production logs a warning at boot.)
+- **Escaping:** every injected value is HTML-escaped for both attribute and
+  text context, with a test whose title contains quotes, `<` and `&`.
+- **`og:image` is always an absolute https URL**, sized for previews where
+  the host allows it (Unsplash: `w=1200&h=630&fit=crop`, with
+  `og:image:width` and `og:image:height`).
+- **The PR lists the exact Facebook Sharing Debugger URLs** to check after
+  deploy.
+
+## As built (8b): differences from this plan
+
+- **Link previews may still read pages while the site isn't indexable.**
+  `robots.txt` disallows everything for every crawler (`User-agent: *`),
+  then lets the link-preview crawlers in (Facebook's `facebookexternalhit`
+  and `Facebot`, `Twitterbot`, `LinkedInBot`, `WhatsApp`,
+  `Slackbot-LinkExpanding`, `TelegramBot`, `Discordbot`), with `/admin` and
+  `/api/` still disallowed. Otherwise Facebook's Sharing Debugger, and
+  every shared link's preview, would be blocked until launch. Search
+  engines aren't on that list; they get `Disallow: /`, and every page says
+  `noindex` anyway. Removing those lines (`PREVIEW_CRAWLERS` in
+  `server/src/pages/pages.ts`) makes it "everything" literally.
+- **The sitemap is a 404 while the site isn't indexable**, rather than an
+  empty list.
+- **The fixed pages' share images** match their headers: the first featured
+  destination (`/destinations`), the first featured experience
+  (`/experiences`), the first tour (`/tours`), and the first hero slide
+  (the home page and `/about`).
+- **The fixed pages' descriptions** (`PAGE_DESCRIPTIONS`,
+  `shared/page-meta.ts`) are also their headers' subtitles, so the two
+  can't drift.
+- **If the database is down**, a page still gets the shell (which shows its
+  own error), with the default head, `noindex`, and a 503.
+- **`PUBLIC_SITE_URL` must be an https origin with no path.** Anything else
+  is ignored, with a warning at boot. The enquiry emails read it the same
+  way.
+- **A trailing slash is collapsed with any leading ones** (`//host/` gives
+  `/host`, a 404), so the redirect can never point off-site.

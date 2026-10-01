@@ -6,7 +6,7 @@
  * there is no CORS configuration anywhere, and the session cookie can be
  * `SameSite=Strict` without a cross-site exemption.
  */
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,7 +14,7 @@ import express, { type Express } from 'express';
 
 import { API_ROUTES } from '../../shared/api';
 import { sameOrigin } from './auth/middleware';
-import { isProduction, notifyConfig } from './env';
+import { isProduction, notifyConfig, siteConfig, type SiteConfig } from './env';
 import { createNotifier, OFF, resendSender, type Notifier } from './inquiries/notify';
 import { errorHandler, sendError } from './http';
 import { mediaFromEnv, type MediaConfig } from './media/media';
@@ -24,6 +24,7 @@ import { contentRouter } from './routes/content';
 import { healthRouter } from './routes/health';
 import { inquiriesRouter } from './routes/inquiries';
 import { mediaRouter } from './routes/media';
+import { pagesRouter } from './pages/pages';
 import { securityHeaders } from './security-headers';
 
 /**
@@ -48,6 +49,11 @@ export interface AppOptions {
    * it isn't configured. Tests pass a notifier with a fake sender.
    */
   notifier?: Notifier;
+  /**
+   * The public origin and whether search engines may index the site.
+   * Defaults to `PUBLIC_SITE_URL` and `SITE_INDEXABLE`; tests pass their own.
+   */
+  site?: SiteConfig;
 }
 
 export function createApp(options: AppOptions = {}): Express {
@@ -120,21 +126,20 @@ export function createApp(options: AppOptions = {}): Express {
     app.use(express.static(CLIENT_DIST, { index: false, maxAge: '1h' }));
 
     /**
-     * SPA fallback. Registered as middleware rather than a `'*'` route because
-     * Express 5 moved to path-to-regexp v8, where a bare `*` is no longer a
-     * valid pattern and throws at startup.
+     * Every other GET: robots.txt, sitemap.xml, and the page shell with that
+     * page's own status and <head> (server/src/pages/pages.ts). Registered as
+     * middleware rather than a `'*'` route because Express 5 moved to
+     * path-to-regexp v8, where a bare `*` is no longer a valid pattern.
      *
-     * This is what makes `/admin/...` deep links work — the reason
-     * `vite-plugin-singlefile` was dropped.
+     * The shell is read once: a deploy replaces the process, and with it the
+     * file. It is sent `no-cache`, since it names the hashed bundles.
      */
-    app.use((req, res, next) => {
-      if (req.method !== 'GET' && req.method !== 'HEAD') {
-        next();
-        return;
-      }
-      res.set('Cache-Control', 'no-cache');
-      res.sendFile(CLIENT_INDEX);
-    });
+    app.use(
+      pagesRouter({
+        template: readFileSync(CLIENT_INDEX, 'utf8'),
+        site: options.site ?? siteConfig
+      })
+    );
   } else if (isProduction) {
     // In production a missing bundle means the build step did not run. Say so
     // once at boot instead of serving 404s that look like a routing bug.

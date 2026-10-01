@@ -132,13 +132,25 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     })()`);
 
   /** Whether a tap at the middle of `selector` lands on it, not on something above it. */
-  const tappable = (page: Page, selector: string) =>
-    page.evaluate<boolean>(`(() => {
-      const el = document.querySelector(${JSON.stringify(selector)});
-      const r = el.getBoundingClientRect();
-      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-      return Boolean(hit && el.contains(hit));
-    })()`);
+  /**
+   * Whether a tap at the middle of `selector` lands on it, not on something
+   * above it: null when it does, else what is on top. Polls for up to 1.5 s,
+   * since the button's 300 ms fade can start late behind other animations.
+   */
+  async function coveredBy(page: Page, selector: string): Promise<string | null> {
+    const until = Date.now() + 1_500;
+    for (;;) {
+      const on = await page.evaluate<string | null>(`(() => {
+        const el = document.querySelector(${JSON.stringify(selector)});
+        const r = el.getBoundingClientRect();
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return hit && el.contains(hit) ? null : (hit ? hit.outerHTML.slice(0, 120) : 'nothing');
+      })()`);
+      if (on === null || Date.now() > until) return on;
+      await sleep(50);
+    }
+  }
+
 
   const setNumber = (value: string | null) =>
     pool.query('update public.site_settings set whatsapp_number = $1 where id', [value]);
@@ -265,8 +277,8 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
       return true;
     })()`);
     await expectShown(page, false, 'steps aside from the zoom buttons');
-    assert.ok(await tappable(page, '#explore-map .leaflet-control-zoom-in'), 'zoom in takes the tap');
-    assert.ok(await tappable(page, '#explore-map .leaflet-control-zoom-out'), 'zoom out takes the tap');
+    assert.equal(await coveredBy(page, '#explore-map .leaflet-control-zoom-in'), null, 'zoom in takes the tap');
+    assert.equal(await coveredBy(page, '#explore-map .leaflet-control-zoom-out'), null, 'zoom out takes the tap');
 
     // Away from the map, it's back.
     await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
@@ -282,13 +294,9 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     await waitFor(page, `document.querySelector('.fixed.inset-0 form button[type=submit]')`, 'the enquiry form');
     await page.evaluate(`document.querySelector('.fixed.inset-0 form button[type=submit]').scrollIntoView({ block: 'end' }), true`);
     await expectShown(page, false, 'hidden with the form open');
-    await sleep(400); // the fade, before checking visibility
-    assert.equal(
-      await page.evaluate<string>(`getComputedStyle(document.querySelector('${BUTTON}')).visibility`),
-      'hidden',
-      'out of reach, not just transparent'
-    );
-    assert.ok(await tappable(page, '.fixed.inset-0 form button[type=submit]'), 'submit takes the tap');
+    // Out of reach, not just transparent: the 300 ms fade ends in visibility: hidden.
+    await waitFor(page, `getComputedStyle(document.querySelector('${BUTTON}')).visibility === 'hidden'`, 'the fade to finish', 1_500);
+    assert.equal(await coveredBy(page, '.fixed.inset-0 form button[type=submit]'), null, 'submit takes the tap');
   });
 
   /**
@@ -305,7 +313,7 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     }
     await page.evaluate(`document.querySelector(${JSON.stringify(selector)}).scrollIntoView({ block: 'end' }), true`);
     await frames(page);
-    assert.ok(await tappable(page, selector), `${what} takes the tap`);
+    assert.equal(await coveredBy(page, selector), null, `${what} takes the tap`);
   }
 
   test("phone: clear of the pages' main buttons and the About page's form", async () => {

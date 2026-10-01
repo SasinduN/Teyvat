@@ -3,7 +3,7 @@ import { FeaturedExperiences } from '@/components/FeaturedExperiences';
 import { ExperiencesSection } from '@/components/ExperiencesSection';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useFeaturedExperiences } from '@/hooks/useSiteContent';
-import { PAGE_TITLES } from '@shared/page-meta';
+import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
@@ -23,7 +23,7 @@ export function ExperiencesPage() {
         crumbs={[{ label: 'Home', to: paths.home }, { label: 'Experiences' }]}
         eyebrow="Unforgettable Moments"
         title="Experiences"
-        subtitle="Safaris, sunrise hikes, surf breaks and slow afternoons in old forts: what to do once you're here."
+        subtitle={PAGE_DESCRIPTIONS.experiences}
       />
       <Section name="FeaturedExperiences">
         <FeaturedExperiences />

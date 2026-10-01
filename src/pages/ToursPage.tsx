@@ -3,7 +3,7 @@ import { PageHero } from '@/components/PageHero';
 import { ToursSection } from '@/components/ToursSection';
 import { usePageTitle, usePublicSite } from '@/context/PublicSiteContext';
 import { useTours } from '@/hooks/useSiteContent';
-import { PAGE_TITLES } from '@shared/page-meta';
+import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import type { HomeNavigationState } from './HomePage';
 import { Section } from './Section';
@@ -25,7 +25,7 @@ export function ToursPage() {
         crumbs={[{ label: 'Home', to: paths.home }, { label: 'Tours' }]}
         eyebrow="Signature Itineraries"
         title="Tours"
-        subtitle="Multi-day journeys planned by local experts, each one a starting point we tailor to you."
+        subtitle={PAGE_DESCRIPTIONS.tours}
       />
       <Section name="ToursSection">
         <ToursSection
