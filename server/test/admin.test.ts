@@ -503,6 +503,53 @@ describe('site settings', () => {
     );
   });
 
+  test('the WhatsApp number starts empty, and /api/content returns null', async () => {
+    assert.equal((await settings()).whatsapp_number, null);
+    const content = await (await fetch(`${app.baseUrl}/api/content`)).json();
+    assert.equal(content.siteSettings.whatsapp_number, null);
+  });
+
+  test('a WhatsApp number is stored as digits only, and empty saves as NULL', async () => {
+    let res = await save(await settings(), { whatsapp_number: ' +94 (77) 123-4567 ' });
+    assert.equal(res.status, 200);
+    const saved = await json(res);
+    assert.equal(saved.whatsapp_number, '94771234567');
+
+    const content = await (await fetch(`${app.baseUrl}/api/content`)).json();
+    assert.equal(content.siteSettings.whatsapp_number, '94771234567');
+
+    res = await save(saved, { whatsapp_number: '' });
+    assert.equal(res.status, 200);
+    assert.equal((await json(res)).whatsapp_number, null);
+  });
+
+  test('a bad WhatsApp number gets a field error that says why', async () => {
+    const row = await settings();
+    const cases: [string, RegExp][] = [
+      ['0771234567', /country code \(94 for Sri Lanka\), not 0/],
+      ['940771234567', /^Remove the 0 after 94\.$/],
+      ['94abc12345', /digits only/],
+      ['9477123', /8 to 15 digits/],
+      ['9477123456789012', /8 to 15 digits/]
+    ];
+    for (const [bad, message] of cases) {
+      const res = await save(row, { whatsapp_number: bad });
+      assert.equal(res.status, 400, bad);
+      assert.match((await errorFields(res)).whatsapp_number ?? '', message, bad);
+    }
+  });
+
+  test('the database refuses a bad WhatsApp number written directly', async () => {
+    for (const bad of ['0771234567', '940771234567', '+94771234567', '9477123']) {
+      await assert.rejects(
+        pool.query('update public.site_settings set whatsapp_number = $1 where id', [bad]),
+        (error: { code?: string }) => error.code === '23514',
+        bad
+      );
+    }
+    await pool.query("update public.site_settings set whatsapp_number = '94771234567' where id");
+  });
+
   test('a stale settings save is 409', async () => {
     const row = await settings();
     assert.equal((await save(row, { phone: '+94 11 000 0000' })).status, 200);

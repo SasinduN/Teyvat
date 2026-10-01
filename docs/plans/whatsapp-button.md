@@ -1,6 +1,7 @@
 # Plan: WhatsApp chat button
 
-Status: APPROVED as recommended (2026-10-01), with two additions:
+Status: APPROVED as recommended (2026-10-01), with two additions, and built
+(see "As built" at the end):
 
 - numbers starting `940` are rejected too (decision 3);
 - a "Test in WhatsApp" link in admin Settings (see Data).
@@ -220,3 +221,14 @@ Phone and desktop, in `docs/screenshots/whatsapp-*.png`:
 `typecheck`, `build`, `npm test`, `verify:roundtrip`. Then push
 `whatsapp-button`, open a PR against `main` with the screenshots, and stop
 when CI (`checks`) is green.
+
+## As built: differences from this plan
+
+- **None in behaviour.** Two notes:
+  - At 390 px the Quick Jump bar ends left of the button's corner, so on
+    that phone only the zoom buttons make it step aside. The bar stays a
+    keep-clear target for the widths where it does reach the corner.
+  - Over the phone menu (Navbar's drawer) the button sits just right of the
+    footer quote, without covering it (`whatsapp-phone-menu.png`).
+- **Docs:** the `0007` row, missing from the migrations table in
+  `docs/SCHEMA.md`, was added along with `0008`.

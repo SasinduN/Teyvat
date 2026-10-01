@@ -22,6 +22,8 @@ interface RecordFormProps {
   errors: FieldErrors<FormValues>;
   /** Slug is editable on create and locked on edit — the site references ids. */
   lockSlug: boolean;
+  /** Something small to show at the end of a field's label row, by field name. */
+  labelExtras?: Partial<Record<string, React.ReactNode>>;
 }
 
 /* ---------------------------------------------------- coercion for display */
@@ -43,7 +45,8 @@ export const RecordForm: React.FC<RecordFormProps> = ({
   fields,
   control,
   errors,
-  lockSlug
+  lockSlug,
+  labelExtras
 }) => (
   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
     {fields.map((field) => {
@@ -52,6 +55,12 @@ export const RecordForm: React.FC<RecordFormProps> = ({
       // message about the whole list ("Add at least one stop.") goes below.
       const message =
         field.type === 'tourStops' ? listMessage(error) : extractMessage(error);
+      const extra = labelExtras?.[field.name];
+      const label = (
+        <FieldLabel htmlFor={`field-${field.name}`} required={field.required}>
+          {field.label}
+        </FieldLabel>
+      );
 
       return (
         <div
@@ -59,11 +68,15 @@ export const RecordForm: React.FC<RecordFormProps> = ({
           className={cn('space-y-2', (field.span ?? 1) === 2 && 'sm:col-span-2')}
         >
           {/* Toggles carry their own label inside the control. */}
-          {field.type !== 'boolean' && (
-            <FieldLabel htmlFor={`field-${field.name}`} required={field.required}>
-              {field.label}
-            </FieldLabel>
-          )}
+          {field.type !== 'boolean' &&
+            (extra ? (
+              <div className="flex items-center justify-between gap-3">
+                {label}
+                {extra}
+              </div>
+            ) : (
+              label
+            ))}
 
           <Controller
             name={field.name}
@@ -265,6 +278,22 @@ function renderControl(
           inputMode="url"
           spellCheck={false}
           placeholder="https://… (leave empty if there is none)"
+          value={asString(value)}
+          className={errorRing}
+          onBlur={onBlur}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      );
+
+    case 'whatsapp':
+      return (
+        <Input
+          id={id}
+          type="tel"
+          inputMode="tel"
+          autoComplete="off"
+          spellCheck={false}
+          placeholder="94771234567 (leave empty to hide the button)"
           value={asString(value)}
           className={errorRing}
           onBlur={onBlur}

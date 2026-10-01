@@ -184,6 +184,7 @@ export const DestinationModal: React.FC<DestinationModalProps> = ({
                   onClose();
                   onOpenInquiry(name);
                 }}
+                data-keep-clear
                 className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-[#D4AF37] to-[#C5A059] hover:from-[#C5A059] hover:to-[#B89248] text-[#0F2E23] font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center space-x-2"
               >
                 <span>Plan A Trip to {destination.name}</span>

@@ -70,7 +70,8 @@ const migration = (name: string) => readFileSync(resolve(REPO_ROOT, 'db/migratio
 /**
  * Puts the content back to the approved baseline: empties the nine content
  * tables (and the tour stops), re-runs the 0002 seed, and resets
- * `site_settings` to its 0001 values as 0004 left them (links NULL).
+ * `site_settings` to its 0001 values as 0004 left them (links NULL), with no
+ * WhatsApp number (0008).
  *
  * 0002 writes `tours.route`, which 0007 turned into `tour_stops` and dropped.
  * So the column comes back for the replay, and 0007 runs again to convert it
@@ -94,7 +95,8 @@ export async function resetContent(): Promise<void> {
             phone = '+94 11 234 5678',
             contact_email = 'hello@traveleye.lk',
             instagram_url = null, facebook_url = null, tiktok_url = null, youtube_url = null,
-            privacy_url = null, terms_url = null, sustainability_url = null
+            privacy_url = null, terms_url = null, sustainability_url = null,
+            whatsapp_number = null
       where id`
   );
 }

@@ -63,6 +63,18 @@ Update the Status column when a phase lands.
   `tours.route` and replays 0002 then 0007; keep 0007 re-runnable.
   `scripts/route-stops.ts` mirrors its conversion for `verify:roundtrip`.
 
+- **WhatsApp button** (`src/components/WhatsAppButton.tsx`,
+  `shared/whatsapp.ts`):
+  - Hidden while `site_settings.whatsapp_number` is NULL. A plain `wa.me`
+    link: no widget, no script, no CSP change.
+  - Its message links back with `/?tour=<id>` or `/?destination=<id>`, which
+    `PublicSite.tsx` turns into the open modal.
+  - It fades out over the map's zoom buttons and anything marked
+    `data-keep-clear`, and hides while the enquiry or search modal is open.
+- **Phase 8 (own pages for tours and destinations):** `/?tour=<id>` and
+  `/?destination=<id>` must redirect to the new page URLs. Those links are
+  already in WhatsApp chats, and they have to keep working.
+
 ### Where things live
 
 - Seed content: `scripts/fixtures/*.ts`. It feeds `npm run seed:generate` and
