@@ -1,15 +1,48 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDestinations } from '@/hooks/useSiteContent';
 import { mapTiles } from '@/lib/mapTiles';
+import { MAP_CATEGORIES, MAP_CATEGORY_STYLES, markerHtml, type MapCategory } from '@/lib/mapMarkers';
 import { Destination, CategoryType } from '../types';
-import { MapPin, Sparkles, ChevronRight, Compass, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import {
+  MapPin,
+  Sparkles,
+  ChevronRight,
+  Compass,
+  ArrowUpRight,
+  CheckCircle2,
+  Waves,
+  Mountain,
+  Landmark,
+  PawPrint,
+  Utensils,
+  Gem,
+  type LucideIcon
+} from 'lucide-react';
 
 interface InteractiveMapSectionProps {
   onSelectDestination: (dest: Destination) => void;
   activeFilterFromParent?: CategoryType | 'All';
   selectedWhereFromParent?: string;
 }
+
+/** The legend's icons: the same Lucide icons the markers draw (src/lib/mapMarkers.ts). */
+const LEGEND_ICONS: Record<MapCategory, LucideIcon> = {
+  Beaches: Waves,
+  Mountains: Mountain,
+  Culture: Landmark,
+  Wildlife: PawPrint,
+  Adventure: Compass,
+  Food: Utensils,
+  'Hidden Gems': Gem
+};
+
+/** Names show for every marker from this zoom in (and always on hover/focus/active). */
+const LABEL_ZOOM = 9;
+/** Filter changes fit the map to the markers, but never closer than this. */
+const FIT_MAX_ZOOM = 9;
+/** Start loading Leaflet and tiles this far before the map scrolls into view. */
+const LAZY_MARGIN = '400px 0px';
 
 export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
   onSelectDestination,
@@ -24,6 +57,12 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersGroupRef = useRef<any>(null);
+  const leafletRef = useRef<typeof import('leaflet') | null>(null);
+  const markersByIdRef = useRef<Map<string, any>>(new Map());
+  // Markers wait for this: before it there is no map to put them on. (Without
+  // it, the first markers were never drawn until something re-rendered.)
+  const [mapReady, setMapReady] = useState(false);
+  const [showTouchHint, setShowTouchHint] = useState(false);
 
   const categories: (CategoryType | 'All')[] = [
     'All',
@@ -55,31 +94,47 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
   }, [selectedWhereFromParent]);
 
   // Filtered Destinations List
-  const filteredDestinations = DESTINATIONS.filter((d) => {
-    if (selectedCategory === 'All') return true;
-    return d.category.includes(selectedCategory);
-  });
+  const filteredDestinations = useMemo(
+    () =>
+      DESTINATIONS.filter((d) => {
+        if (selectedCategory === 'All') return true;
+        return d.category.includes(selectedCategory);
+      }),
+    [DESTINATIONS, selectedCategory]
+  );
 
-  // Initialize Leaflet Map dynamically
+  // Initialize Leaflet only when the map is about to be seen: until then the
+  // page downloads neither Leaflet nor a single tile.
   useEffect(() => {
+    const container = mapContainerRef.current;
+    if (!container) return;
+
     let isMounted = true;
+    let hintTimer: ReturnType<typeof setTimeout> | undefined;
+    let onTouchMove: ((e: TouchEvent) => void) | undefined;
 
     async function initMap() {
-      if (!mapContainerRef.current || mapInstanceRef.current) return;
+      if (!container || mapInstanceRef.current) return;
 
       try {
         const L = await import('leaflet');
 
         if (!isMounted || !mapContainerRef.current) return;
 
+        // Touch screens: one finger scrolls the page, two fingers move and
+        // zoom the map (Leaflet's pinch handler pans as it zooms). Mouse and
+        // trackpad drag as before.
+        const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+
         // Create Leaflet map centered on Sri Lanka
-        const map = L.map(mapContainerRef.current, {
+        const map = L.map(container, {
           center: [7.8731, 80.7718],
           zoom: 7.8,
           minZoom: 7,
           maxZoom: 13,
           zoomControl: false,
           scrollWheelZoom: false,
+          dragging: !coarsePointer,
           // Required by the OpenStreetMap licence and CARTO's terms.
           attributionControl: true
         });
@@ -95,17 +150,55 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
         // Add Zoom Control to bottom-right
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
+        // Names for every marker once zoomed in.
+        const syncZoom = () => {
+          container.classList.toggle('map-labels-on', map.getZoom() >= LABEL_ZOOM);
+          container.dataset.zoom = String(map.getZoom());
+        };
+        map.on('zoomend', syncZoom);
+        syncZoom();
+
+        if (coarsePointer) {
+          // A one-finger swipe over the map scrolls the page; say how to move it.
+          onTouchMove = (e: TouchEvent) => {
+            if (e.touches.length !== 1) return;
+            setShowTouchHint(true);
+            clearTimeout(hintTimer);
+            hintTimer = setTimeout(() => setShowTouchHint(false), 1500);
+          };
+          container.addEventListener('touchmove', onTouchMove, { passive: true });
+        }
+
+        leafletRef.current = L;
         mapInstanceRef.current = map;
         markersGroupRef.current = L.layerGroup().addTo(map);
+        setMapReady(true);
       } catch (err) {
         console.error('Failed to initialize Leaflet map:', err);
       }
     }
 
-    initMap();
+    let observer: IntersectionObserver | undefined;
+    if ('IntersectionObserver' in window) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.isIntersecting)) {
+            observer?.disconnect();
+            void initMap();
+          }
+        },
+        { rootMargin: LAZY_MARGIN }
+      );
+      observer.observe(container);
+    } else {
+      void initMap();
+    }
 
     return () => {
       isMounted = false;
+      observer?.disconnect();
+      clearTimeout(hintTimer);
+      if (onTouchMove) container.removeEventListener('touchmove', onTouchMove);
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -113,73 +206,84 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
     };
   }, []);
 
-  // Update Markers when active filter or destination changes
+  // Draw the markers for the current filter (and once the map is ready).
   useEffect(() => {
-    if (!mapInstanceRef.current || !markersGroupRef.current) return;
+    const L = leafletRef.current;
+    if (!mapReady || !L || !markersGroupRef.current) return;
 
-    import('leaflet').then((L) => {
-      markersGroupRef.current.clearLayers();
+    markersGroupRef.current.clearLayers();
+    markersByIdRef.current.clear();
 
-      filteredDestinations.forEach((dest) => {
-        const isActive = activeDest?.id === dest.id;
+    filteredDestinations.forEach((dest) => {
+      const isActive = activeDest?.id === dest.id;
 
-        // Category Color Mapping
-        const isBeach = dest.category.includes('Beaches');
-        const isMountain = dest.category.includes('Mountains');
-        const isCulture = dest.category.includes('Culture');
-        const isWildlife = dest.category.includes('Wildlife');
-
-        let badgeBg = '#1C4737'; // Default Forest Green
-        if (isBeach) badgeBg = '#0284C7'; // Cyan/Blue
-        if (isMountain) badgeBg = '#16A34A'; // Mountain Green
-        if (isCulture) badgeBg = '#D97706'; // Terracotta Amber
-        if (isWildlife) badgeBg = '#CA8A04'; // Warm Gold
-
-        // Custom HTML Marker Element
-        const markerHtml = `
-          <div class="relative group cursor-pointer">
-            ${
-              isActive
-                ? `<div class="custom-marker-pulse" style="background-color: ${badgeBg}"></div>`
-                : ''
-            }
-            <div class="relative flex items-center justify-center transition-all duration-300 transform ${
-              isActive ? 'scale-125 z-30' : 'hover:scale-110 z-10'
-            }">
-              <div class="w-8 h-8 rounded-full shadow-lg border-2 border-white flex items-center justify-center font-bold text-xs text-white" style="background-color: ${badgeBg}">
-                ${dest.name.charAt(0)}
-              </div>
-              <div class="absolute top-9 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-[#0F2E23] text-white text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-md border border-white/20 opacity-90 group-hover:opacity-100">
-                ${dest.name}
-              </div>
-            </div>
-          </div>
-        `;
-
-        const customIcon = L.divIcon({
-          html: markerHtml,
+      const marker = L.marker([dest.latitude, dest.longitude], {
+        icon: L.divIcon({
+          html: markerHtml(dest, isActive),
           className: 'custom-leaflet-marker',
           iconSize: [32, 32],
           iconAnchor: [16, 16]
-        });
-
-        const marker = L.marker([dest.latitude, dest.longitude], {
-          icon: customIcon
-        });
-
-        marker.on('click', () => {
-          setActiveDest(dest);
-          if (mapInstanceRef.current) {
-            mapInstanceRef.current.flyTo([dest.latitude, dest.longitude], 9.5, {
-              duration: 1.2
-            });
-          }
-        });
-
-        markersGroupRef.current.addLayer(marker);
+        }),
+        // Tab reaches every marker; Enter opens it.
+        keyboard: true,
+        zIndexOffset: isActive ? 1000 : 0
       });
+
+      marker.on('add', () => {
+        marker.getElement()?.setAttribute('aria-label', dest.name);
+      });
+
+      marker.on('click', () => {
+        setActiveDest(dest);
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.flyTo([dest.latitude, dest.longitude], 9.5, {
+            duration: 1.2
+          });
+        }
+      });
+
+      markersByIdRef.current.set(dest.id, marker);
+      markersGroupRef.current.addLayer(marker);
     });
-  }, [filteredDestinations, activeDest]);
+  }, [mapReady, filteredDestinations]);
+
+  // The active marker: a class toggle, so focus and hover state survive.
+  useEffect(() => {
+    if (!mapReady) return;
+    markersByIdRef.current.forEach((marker, id) => {
+      const active = id === activeDest?.id;
+      marker.getElement()?.querySelector('.map-marker')?.classList.toggle('is-active', active);
+      marker.setZIndexOffset(active ? 1000 : 0);
+    });
+  }, [mapReady, activeDest, filteredDestinations]);
+
+  // A new category filter frames its markers, smoothly.
+  const fittedCategoryRef = useRef<CategoryType | 'All'>('All');
+  useEffect(() => {
+    const L = leafletRef.current;
+    const map = mapInstanceRef.current;
+    if (!mapReady || !L || !map) return;
+    if (fittedCategoryRef.current === selectedCategory) return;
+    fittedCategoryRef.current = selectedCategory;
+
+    const points = filteredDestinations.map((d) => [d.latitude, d.longitude] as [number, number]);
+    if (points.length === 0) return;
+
+    const animate = !(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
+    if (points.length === 1) {
+      map.flyTo(points[0], FIT_MAX_ZOOM, { animate, duration: 0.8 });
+      return;
+    }
+    // Room for the Map Guide (top left), the Quick Jump bar (bottom) and the
+    // zoom buttons (bottom right).
+    const options = {
+      paddingTopLeft: [40, 80] as [number, number],
+      paddingBottomRight: [64, 90] as [number, number],
+      maxZoom: FIT_MAX_ZOOM
+    };
+    if (animate) map.flyToBounds(L.latLngBounds(points), { ...options, duration: 0.8 });
+    else map.fitBounds(L.latLngBounds(points), { ...options, animate: false });
+  }, [mapReady, selectedCategory, filteredDestinations]);
 
   // Center map on active destination if selection changes
   const handleDestinationClick = (dest: Destination) => {
@@ -243,14 +347,50 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
             <div ref={mapContainerRef} className="w-full h-full" />
 
             {/* Map Legend Overlay */}
-            <div className="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-md border border-[#D4C3B5]/40 text-xs hidden sm:flex items-center space-x-3">
-              <span className="font-semibold text-[#0F2E23] flex items-center gap-1">
-                <Compass className="w-3.5 h-3.5 text-[#1C4737]" /> Map Guide:
-              </span>
-              <span className="text-[#1A1A1A]/70">
-                Showing <strong className="text-[#0F2E23]">{filteredDestinations.length}</strong> location markers
-              </span>
+            <div className="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-md border border-[#D4C3B5]/40 text-xs hidden sm:block">
+              <div className="flex items-center space-x-3">
+                <span className="font-semibold text-[#0F2E23] flex items-center gap-1">
+                  <Compass className="w-3.5 h-3.5 text-[#1C4737]" /> Map Guide:
+                </span>
+                <span className="text-[#1A1A1A]/70">
+                  Showing <strong className="text-[#0F2E23]">{filteredDestinations.length}</strong> location markers
+                </span>
+              </div>
+              {/* Legend: a marker's colour and icon come from its first category. */}
+              <ul className="mt-2 pt-2 border-t border-[#D4C3B5]/40 grid grid-cols-2 gap-x-3 gap-y-1" aria-label="Map legend">
+                {MAP_CATEGORIES.map((cat) => {
+                  const Icon = LEGEND_ICONS[cat];
+                  const style = MAP_CATEGORY_STYLES[cat];
+                  return (
+                    <li key={cat} className="flex items-center gap-1.5 text-[11px] text-[#1A1A1A]/75" data-legend={cat}>
+                      <span
+                        className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: style.color }}
+                      >
+                        <Icon className="w-2.5 h-2.5" style={{ color: style.iconColor }} strokeWidth={2.6} aria-hidden="true" />
+                      </span>
+                      {cat}
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
+
+            {/* Touch screens: shown briefly when one finger swipes over the map. */}
+            <AnimatePresence>
+              {showTouchHint && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none"
+                >
+                  <span className="bg-[#0F2E23]/85 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-lg">
+                    Use two fingers to move the map
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Quick Location Pills */}
             <div className="absolute bottom-4 left-4 right-16 sm:right-auto z-20 bg-white/90 backdrop-blur-md p-2 rounded-2xl shadow-md border border-[#D4C3B5]/40 overflow-x-auto max-w-full flex items-center space-x-2 no-scrollbar">

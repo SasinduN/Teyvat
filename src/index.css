@@ -103,6 +103,81 @@
   animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
+/* Map markers (src/lib/mapMarkers.ts): a category-coloured disc with the
+   category's icon. The pulse ring shows for the active marker only. */
+.custom-leaflet-marker {
+  background: none;
+  border: none;
+}
+.map-marker {
+  position: relative;
+  width: 32px;
+  height: 32px;
+}
+.map-marker .custom-marker-pulse {
+  display: none;
+}
+.map-marker.is-active .custom-marker-pulse {
+  display: block;
+}
+.map-marker-disc {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(15, 46, 35, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease, box-shadow 0.2s ease;
+}
+.custom-leaflet-marker:hover .map-marker-disc {
+  transform: scale(1.1);
+}
+.map-marker.is-active .map-marker-disc {
+  transform: scale(1.25);
+}
+.custom-leaflet-marker:focus {
+  outline: none;
+}
+.custom-leaflet-marker:focus-visible .map-marker-disc {
+  box-shadow: 0 0 0 3px #d4af37, 0 4px 10px rgba(15, 46, 35, 0.25);
+}
+
+/* A marker's name: hidden until hovered or focused, for the active marker,
+   and for every marker from zoom 9 (`.map-labels-on`, set by the map). */
+.map-marker-label {
+  position: absolute;
+  top: 37px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: #0f2e23;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 6px rgba(15, 46, 35, 0.25);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+.custom-leaflet-marker:hover .map-marker-label,
+.custom-leaflet-marker:focus-visible .map-marker-label,
+.map-marker.is-active .map-marker-label,
+.map-labels-on .map-marker-label {
+  opacity: 1;
+}
+
+/* A warm tint on the map tiles only (not markers, not the credit), so they
+   sit with the sand and green palette. Kept subtle. */
+#explore-map .leaflet-tile-pane {
+  filter: sepia(0.14) saturate(0.88) brightness(1.01);
+}
+
 /* Hide horizontal scrollbars for clean galleries */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
