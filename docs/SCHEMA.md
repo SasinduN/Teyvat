@@ -83,6 +83,7 @@ and optional chaining. `npm run verify:roundtrip` asserts this.
 | `elevation` | `text` NULL | `elevation?` | free text, e.g. `"1,041 m"` |
 | `ideal_for` | `text[]` | `idealFor` | |
 | `featured` | `boolean` | `featured?` | `NOT NULL DEFAULT false`; `DestinationSpotlight` shows the first 6 featured rows by `sort_order` |
+| `travel_time_from_airport` | `text` NULL | `travelTimeFromAirport?` | since 0007; 1–30 chars, e.g. `"~4 h"`, shown as "~4 h from Colombo airport (CMB)" |
 
 ## `experience_categories` → `ExperienceCategory` (6 rows)
 
@@ -123,7 +124,7 @@ an inline literal in the original data file (now `scripts/fixtures/experiences.t
 | `title` | `text` | `title` | |
 | `subtitle` | `text` | `subtitle` | |
 | `days` | `integer` | `days` | `CHECK > 0` |
-| `route` | `text[]` | `route` | ordered; rendered as the route chips |
+| (from `tour_stops`) | | `stops`, `route` | see below; `route` is the stops' names, the route chips |
 | `short_desc` | `text` | `shortDesc` | |
 | `full_desc` | `text` | `fullDesc` | |
 | `image` | `text` | `image` | |
@@ -141,6 +142,37 @@ the Zod schema validates each entry and renumbers `day` to 1..n on save.
 ```jsonc
 [{ "day": 1, "title": "…", "description": "…", "location": "…" }]
 ```
+
+## `tour_stops` → `TourPackage.stops`
+
+A tour's route, one row per stop, in order (since 0007, which converted and
+dropped `tours.route`). Unlike the itinerary this is a child table: a stop can
+link a destination, and the database has to keep that link honest.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `bigint` identity PK | |
+| `tour_id` | `text` | FK `tours`, `ON DELETE CASCADE` |
+| `position` | `integer` | 0..n-1; `UNIQUE (tour_id, position)` |
+| `destination_id` | `text` NULL | FK `destinations`, `ON DELETE RESTRICT` |
+| `name` | `text` NULL | a linked stop's optional chip label (NULL: the destination's name); a custom stop's name |
+| `lat`, `lng` | `double precision` NULL | a custom stop's coordinates; `CHECK` lat 5.5–10, lng 79.3–82.1 |
+
+A `CHECK` allows exactly two shapes: a **linked** stop (`destination_id`, no
+coordinates; it takes the destination's, so moving a destination moves every
+route through it) or a **custom** stop (`name`, `lat`, `lng`, no
+destination). The bounds are a box around Sri Lanka, to catch swapped or
+mistyped coordinates.
+
+- **`GET /api/content`** resolves each stop on the server:
+  `stops: { position, name, lat, lng, destinationId }[]`, with
+  `destinationId` set only while that destination is published.
+- **Admin:** `GET /api/admin/content/tours/:id` adds `stops` in the form's
+  shape; `PUT`/`POST` take them and replace the tour's stops in the same
+  transaction. A destination a route uses can't be deleted: 409, naming the
+  tours.
+- **Tests:** `resetContent()` re-adds `tours.route`, replays 0002 and then
+  0007, so every reset runs the real conversion.
 
 ## `articles` → `Article` (6 rows)
 

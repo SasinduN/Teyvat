@@ -332,8 +332,9 @@ describe('no automatic deletion', () => {
     const cover = await uploaded(file(JPEG));
     const galleryImage = await uploaded(file(WEBP));
 
-    let ella = await getRow('destinations', 'ella');
-    let res = await saveRow('destinations', ella, {
+    // Jaffna: on no tour's route, so it can be deleted.
+    let jaffna = await getRow('destinations', 'jaffna');
+    let res = await saveRow('destinations', jaffna, {
       image: cover.url,
       gallery: [galleryImage.url, 'https://images.unsplash.com/photo-1.jpg']
     });
@@ -343,19 +344,19 @@ describe('no automatic deletion', () => {
     assert.deepEqual(
       lib.items.map((i) => [i.id, i.usedBy.map((u) => `${u.table}/${u.id}`)]).sort(),
       [
-        [cover.id, ['destinations/ella']],
-        [galleryImage.id, ['destinations/ella']]
+        [cover.id, ['destinations/jaffna']],
+        [galleryImage.id, ['destinations/jaffna']]
       ].sort()
     );
 
     // Replace the cover with an external URL: the upload stays, now unused.
-    ella = (await res.json()) as Row;
-    res = await saveRow('destinations', ella, { image: 'https://images.unsplash.com/photo-2.jpg' });
+    jaffna = (await res.json()) as Row;
+    res = await saveRow('destinations', jaffna, { image: 'https://images.unsplash.com/photo-2.jpg' });
     assert.equal(res.status, 200);
     assert.ok(store.objects.has(cover.key));
 
     // Delete the row: its gallery upload stays too.
-    assert.equal((await call('DELETE', '/admin/content/destinations/ella')).status, 204);
+    assert.equal((await call('DELETE', '/admin/content/destinations/jaffna')).status, 204);
     assert.ok(store.objects.has(galleryImage.key));
 
     lib = await library();

@@ -30,6 +30,8 @@ import { pool } from '../db';
 import { ApiError, asyncRoute, sendError } from '../http';
 import { allowedImageOrigins } from '../../../shared/image-hosts';
 import { fieldPathsFor, imageUrlsIn, isUnderBase, mediaOf } from '../media/media';
+import type { TourStopInput } from '../../../shared/tour-stops';
+import { adminStops, refuseIfOnARoute, replaceStops } from '../tour-stops';
 
 /* ---------------------------------------------------------------- helpers */
 
@@ -200,11 +202,11 @@ adminRouter.get(
   '/admin/content/:table/:id',
   asyncRoute(async (req, res) => {
     const table = tableOf(req);
-    const { rows } = await pool.query(`select * from public.${table} where id = $1`, [
-      param(req, 'id')
-    ]);
+    const id = param(req, 'id');
+    const { rows } = await pool.query(`select * from public.${table} where id = $1`, [id]);
     if (!rows[0]) throw new ApiError('not_found', 'That record no longer exists.');
-    res.json(rows[0]);
+    // A tour's route stops are a table of their own; the form edits them with the row.
+    res.json(table === 'tours' ? { ...rows[0], stops: await adminStops(pool, id) } : rows[0]);
   })
 );
 
@@ -276,6 +278,11 @@ adminRouter.post(
          returning *`,
         columns.map((c) => sqlValue(c, values[c]))
       );
+      if (table === 'tours') {
+        const stops = values.stops as TourStopInput[];
+        await replaceStops(client, rows[0].id, stops);
+        return { ...rows[0], stops };
+      }
       return rows[0];
     });
 
@@ -316,6 +323,12 @@ adminRouter.put(
           returning *`,
         [...params, id, body.expectedUpdatedAt]
       );
+      // Stops are replaced only once the version check has passed.
+      if (rows[0] && table === 'tours') {
+        const stops = values.stops as TourStopInput[];
+        await replaceStops(client, id, stops);
+        return { ...rows[0], stops };
+      }
       return rows[0];
     });
 
@@ -360,6 +373,7 @@ adminRouter.delete(
 
     const deleted = await withTransaction(async (client) => {
       if (table === 'hero_slides') await keepOneHeroSlide(client, id);
+      if (table === 'destinations') await refuseIfOnARoute(client, id);
       const { rowCount } = await client.query(`delete from public.${table} where id = $1`, [id]);
       return (rowCount ?? 0) > 0;
     });
@@ -418,6 +432,13 @@ export const adminDbErrors: ErrorRequestHandler = (error, _req, res, next) => {
   }
   if (code === '23514') {
     sendError(res, 'bad_request', 'The database rejected one of the values.');
+    return;
+  }
+  // A foreign key: in practice, a destination that a tour route started
+  // using while it was being deleted (`refuseIfOnARoute` names the tours in
+  // the usual case).
+  if (code === '23503') {
+    sendError(res, 'conflict', 'Another record still uses this one. Reload and try again.');
     return;
   }
   next(error);

@@ -1,7 +1,7 @@
 # Plan: tour routes on the map, and destination panel additions
 
-Status: APPROVED with the answers below (2026-10-01). **Blocked on the three
-custom-stop coordinates** (see "Matching the current stops").
+Status: APPROVED with the answers below (2026-10-01), and built. Where the
+build differs from this plan is listed at the end ("As built").
 
 Two features:
 
@@ -54,10 +54,14 @@ slug. **4 don't:**
 | Wild Sri Lanka Expedition | **Minneriya** | a national park with no destination | a custom stop at the park's main entrance |
 | Southern Coastal Escape | **Unawatuna** | a beach town with no destination | a custom stop |
 
-The owner confirms the custom-stop coordinates from Google Maps (main
-entrance for the parks), and the migration uses exactly those values.
-**Pending:** the coordinates have not been received yet (the answer arrived
-with `<lat>, <lng>` placeholders), so building waits for them.
+The owner confirmed the custom-stop coordinates on Google Maps, and the
+migration uses exactly these:
+
+| Stop | Latitude, longitude | Where |
+|---|---|---|
+| Wilpattu | 8.3063, 80.1484 | Hunuwilagama main entrance |
+| Minneriya | 8.0326, 80.8236 | national park ticket office |
+| Unawatuna | 6.0183, 80.2525 | |
 
 A related inconsistency, flagged and **not** fixed here: two tours' day-by-day
 itineraries visit places their route list doesn't mention.
@@ -231,3 +235,27 @@ tour card, the map in route mode, both panels and the modal.
 
 `typecheck`, `verify:roundtrip`, `npm test`, `build`; screenshots as in
 section 6. Then a branch off `main`, a PR, and stop when CI is green.
+
+## As built: differences from this plan
+
+- **Linked stops keep a chip label.** Several route names aren't their
+  destination's name ("Yala" is "Yala National Park", "Galle" is "Galle
+  Fort", "Dambulla" is "Dambulla Cave Temple"). So a linked stop may keep a
+  `name` as its chip label (NULL: the destination's name), and the chips stay
+  exactly as they were. The CHECK allows `name` on a linked stop, and the
+  admin row has an optional "Chip label".
+- **The route chip sits at the top right of the map**, not top centre. At
+  top centre it overlapped the Map Guide on tablets and the Key on phones.
+- **Mobile card:** the Google Maps link sits under the description, with the
+  travel time, not beside the category tags. The tags row already overflows
+  on phones.
+- **Framing clears the overlays.** Fit-to-filter and route framing measure the
+  overlays along the top of the map (Map Guide, Key, route chip) instead of a
+  fixed 80 px, so no marker or stop is framed underneath them.
+- **On large screens the map takes the row's height.** The taller side panel
+  (with the new link) left a white strip under a fixed 620 px map. The map
+  now stretches to match, and Leaflet resizes with it.
+- **Stops are focusable images** (`role="img"`, "Stop 2: Sigiriya"); clicking
+  one does nothing.
+- **Destination select:** a native `<select>` ("Name — Region"), which jumps
+  as you type, rather than a custom searchable one.

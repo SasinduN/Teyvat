@@ -27,9 +27,8 @@ import type {
   HiddenGemRow,
   PhotoStoryRow,
   PillarRow,
-  TourRow
 } from '@shared/database.types';
-import type { PublicSiteSettings } from '@shared/api';
+import type { PublicSiteSettings, PublicTourRow } from '@shared/api';
 
 /** The `EXPERIENCE_CATEGORIES` tiles have no interface in `src/types`. */
 export interface ExperienceCategory {
@@ -86,7 +85,8 @@ export const toDestination = (r: DestinationRow): Destination => ({
   rating: Number(r.rating),
   elevation: opt(r.elevation),
   idealFor: r.ideal_for,
-  featured: r.featured
+  featured: r.featured,
+  travelTimeFromAirport: opt(r.travel_time_from_airport)
 });
 
 export const toExperienceCategory = (r: ExperienceCategoryRow): ExperienceCategory => ({
@@ -112,12 +112,19 @@ export const toExperienceItem = (r: FeaturedExperienceRow): ExperienceItem => ({
   rating: Number(r.rating)
 });
 
-export const toTourPackage = (r: TourRow): TourPackage => ({
+export const toTourPackage = (r: PublicTourRow): TourPackage => ({
   id: r.id,
   title: r.title,
   subtitle: r.subtitle,
   days: r.days,
-  route: r.route,
+  // The chips read the stops' names, as `tours.route` did before 0007.
+  route: r.stops.map((s) => s.name),
+  stops: r.stops.map((s) => ({
+    name: s.name,
+    lat: s.lat,
+    lng: s.lng,
+    destinationId: opt(s.destinationId)
+  })),
   shortDesc: r.short_desc,
   fullDesc: r.full_desc,
   image: r.image,

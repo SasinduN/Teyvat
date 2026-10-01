@@ -1,6 +1,10 @@
 import { TourPackage } from '../../src/types';
 
-export const TOURS: TourPackage[] = [
+/**
+ * The approved tours, with their routes as the original place-name lists.
+ * `stops` came later (0007): `scripts/route-stops.ts` derives them.
+ */
+export const TOURS: Omit<TourPackage, 'stops'>[] = [
   {
     id: 'island-in-7-days',
     title: 'Island in 7 Days',

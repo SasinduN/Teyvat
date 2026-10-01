@@ -74,7 +74,7 @@ export const StringListField: React.FC<{
   );
 };
 
-const IconGhost: React.FC<{
+export const IconGhost: React.FC<{
   label: string;
   onClick: () => void;
   disabled?: boolean;

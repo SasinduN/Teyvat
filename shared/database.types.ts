@@ -66,6 +66,8 @@ export interface DestinationRow extends Timestamps, Orderable {
   elevation: string | null;
   ideal_for: string[];
   featured: boolean;
+  /** Since 0007. Short text such as "~4 h"; NULL when not set. */
+  travel_time_from_airport: string | null;
 }
 
 export interface ExperienceCategoryRow extends Timestamps, Orderable {
@@ -96,7 +98,6 @@ export interface TourRow extends Timestamps, Orderable {
   title: string;
   subtitle: string;
   days: number;
-  route: string[];
   short_desc: string;
   full_desc: string;
   image: string;
@@ -105,6 +106,23 @@ export interface TourRow extends Timestamps, Orderable {
   price_from: number;
   category: TourCategory;
   itinerary: ItineraryDayRow[];
+}
+
+/**
+ * One stop on a tour's route, in order (since 0007; it replaced
+ * `tours.route`). Either a linked destination, which takes its coordinates
+ * from the destination, or a custom place with its own. On a linked stop,
+ * `name` is an optional label for the route chip (NULL: the destination's
+ * name), so "Yala" can stay "Yala" rather than "Yala National Park".
+ */
+export interface TourStopRow {
+  id: number;
+  tour_id: string;
+  position: number;
+  destination_id: string | null;
+  name: string | null;
+  lat: number | null;
+  lng: number | null;
 }
 
 export interface ArticleRow extends Timestamps, Orderable {

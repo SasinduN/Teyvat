@@ -20,6 +20,7 @@ import type {
   SiteSettingsRow,
   TourRow
 } from './database.types';
+import type { TourStopInput, TourStopPayload } from './tour-stops';
 
 export const API_ROUTES = {
   health: '/api/health',
@@ -56,11 +57,20 @@ export const API_ROUTES = {
  * route handler is what guarantees both; nothing in the database does. See
  * the header of `db/migrations/0001_init.sql`.
  */
+/** A tour row with its route stops attached, in order. */
+export type PublicTourRow = TourRow & { stops: TourStopPayload[] };
+
+/**
+ * `GET /api/admin/content/tours/:id`: the row plus its stops in the form's
+ * shape. `PUT` and `POST` take `stops` in the same shape.
+ */
+export type AdminTourRow = TourRow & { stops: TourStopInput[] };
+
 export interface SiteContentPayload {
   destinations: DestinationRow[];
   experienceCategories: ExperienceCategoryRow[];
   featuredExperiences: FeaturedExperienceRow[];
-  tours: TourRow[];
+  tours: PublicTourRow[];
   articles: ArticleRow[];
   hiddenGems: HiddenGemRow[];
   photoStories: PhotoStoryRow[];

@@ -179,6 +179,19 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
       await page.evaluate<boolean>(`[...document.querySelectorAll('input[type=url]')].some((i) => i.value.startsWith('${BASE}'))`),
       'the R2 image is in the editor'
     );
+    // A tour's stops editor: the custom stops' small map previews load
+    // Leaflet and CARTO tiles inside the admin.
+    await visit(
+      '/admin/tours/wild-sri-lanka',
+      `[...document.querySelectorAll('[data-stop-row] img.leaflet-tile')].filter((t) => t.complete && t.naturalWidth > 0).length >= 2`
+    );
+    assert.equal(
+      await page.evaluate<number>(
+        `[...document.querySelectorAll('[data-stop-row] .leaflet-container')].filter((m) => m.getBoundingClientRect().height > 100).length`
+      ),
+      2,
+      'a full-height preview for each custom stop (Wilpattu, Minneriya)'
+    );
     await visit('/admin/media', `document.body.innerText.includes('Media library')`);
     await visit('/admin/inquiries', `document.body.innerText.includes('Traveller Enquiries')`);
     await visit('/admin/settings', `document.querySelector('form button[type=submit]')`);
