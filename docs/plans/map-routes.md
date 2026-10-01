@@ -1,18 +1,17 @@
 # Plan: tour routes on the map, and destination panel additions
 
-Status: DRAFT, waiting for approval. No code has been written.
+Status: APPROVED with the answers below (2026-10-01). **Blocked on the three
+custom-stop coordinates** (see "Matching the current stops").
 
 Two features:
 
 - **6. Tour routes on the map.**
 - **7. Destination panel additions.**
 
-**Depends on PR A** (the map improvements branch: lazy start, the marker
-module, fit-to-filter). Build this after it merges, on top of its map code.
+**Builds on PR A** (#4, merged: lazy start, the marker module,
+fit-to-filter).
 
-## Decisions in this plan
-
-These need a yes or no before any code is written:
+## Decisions
 
 1. **Stops get a table, not more columns.** A new table, `tour_stops`, holds
    one row per stop, in order. A stop is either:
@@ -25,42 +24,40 @@ These need a yes or no before any code is written:
    place-name list) is **replaced** by the stops. The mapper rebuilds the same
    `route: string[]` from them, so the route chips on the tour card don't
    change.
-2. **The four stops that don't match a destination need a decision from you**
-   (next section). I'll put no coordinates in a migration that a person
-   hasn't confirmed.
-3. **While a route is shown, the map shows only that route.**
+2. **The four stops that don't match a destination** are resolved in the next
+   section. No coordinates go in a migration unless a person has confirmed
+   them.
+3. **While a route is shown, the route leads.** *(Answered: fade, but keep
+   the filters.)*
    - The numbered stops, joined by a dashed line, framed to fit.
    - The destination markers fade to 35% opacity and stop responding to
      clicks, so the route reads clearly.
-   - The category filter bar is disabled, with a tooltip saying to close the
-     route first.
-   - Closing with **✕** brings everything back as it was.
+   - The category filter bar **stays enabled**. Choosing a filter exits route
+     mode and applies that filter (with the usual fit-to-filter).
+   - Closing with **✕** or Escape brings back the view and filter from before
+     the route.
 4. **"View route on map" sits beside the card's "Journey Route:" heading** as
-   a small text button with a map icon, not as a third button in the action
-   row, which already holds "View Full Journey" and "Inquire" and would crowd
-   on phones. The alternative is a third, secondary button in that row.
-5. **"Destination panel" means the map's side panel and its mobile card**
-   (both in `InteractiveMapSection.tsx`). The **destination modal**
-   (`DestinationModal.tsx`) isn't included. Say if you want the Google Maps
-   link and the travel time there too.
+   a small text button with a map icon. *(Answered: yes.)*
+5. **The Google Maps link and the airport time appear in three places:** the
+   map's side panel, its mobile card, and the **destination modal**
+   (`DestinationModal.tsx`). *(Answered: the modal too.)*
 
 ## Matching the current stops
 
 The 4 seeded tours have 17 route stops. 13 match a destination by name or
 slug. **4 don't:**
 
-| Tour | Stop | Why it doesn't match | Proposed |
+| Tour | Stop | Why it doesn't match | Decision |
 |---|---|---|---|
-| Island in 7 Days | **South Coast** | a region, not a place | Replace with two linked stops, **Mirissa** and **Galle**, which is where the tour's own itinerary goes on days 6–7. The chips would then read "…Yala → Mirissa → Galle". |
-| Wild Sri Lanka Expedition | **Wilpattu** | a national park with no destination | a custom stop; coordinates to be confirmed |
-| Wild Sri Lanka Expedition | **Minneriya** | a national park with no destination | a custom stop; coordinates to be confirmed |
-| Southern Coastal Escape | **Unawatuna** | a beach town with no destination | a custom stop; coordinates to be confirmed |
+| Island in 7 Days | **South Coast** | a region, not a place | **Accepted:** two linked stops, **Mirissa** and **Galle** (the tour's own days 6–7). The chips read "…Yala → Mirissa → Galle". |
+| Wild Sri Lanka Expedition | **Wilpattu** | a national park with no destination | a custom stop at the park's main entrance |
+| Wild Sri Lanka Expedition | **Minneriya** | a national park with no destination | a custom stop at the park's main entrance |
+| Southern Coastal Escape | **Unawatuna** | a beach town with no destination | a custom stop |
 
-Coordinates for the custom stops: I'd propose approximate values (from
-general knowledge, *not verified*): Wilpattu ≈ 8.43° N, 80.01° E;
-Minneriya ≈ 8.03° N, 80.85° E; Unawatuna ≈ 6.01° N, 80.25° E. These must be
-confirmed by someone who knows the places, for example by dropping a pin in
-Google Maps. The migration uses whatever you confirm.
+The owner confirms the custom-stop coordinates from Google Maps (main
+entrance for the parks), and the migration uses exactly those values.
+**Pending:** the coordinates have not been received yet (the answer arrived
+with `<lat>, <lng>` placeholders), so building waits for them.
 
 A related inconsistency, flagged and **not** fixed here: two tours' day-by-day
 itineraries visit places their route list doesn't mention.
@@ -158,8 +155,9 @@ Validation messages land on the row and field (`stops.2.lat`).
   - **The chip:** a **"Showing: <tour title> ✕"** chip, top centre of the
     map, in the Map Guide's style. ✕ (or Escape) clears the route and
     returns to the previous view and filter.
-  - **The rest of the map:** category markers faded and inactive, and the
-    filter bar disabled (decision 3).
+  - **The rest of the map:** category markers faded and inactive. The filter
+    bar stays live; choosing a filter clears the route and applies the filter
+    (decision 3).
 - **Before the map has loaded** (the lazy start from PR A), the route is
   remembered and drawn as soon as the map is ready.
 - **Keyboard:** the chip's ✕ is a button labelled "Clear route"; numbered
@@ -167,7 +165,8 @@ Validation messages land on the row and field (`stops.2.lat`).
 
 ## 5. Public: destination panel additions
 
-In the map's **desktop side panel** and its **mobile card**:
+In the map's **desktop side panel**, its **mobile card**, and the
+**destination modal**:
 
 - **"Open in Google Maps"**: a plain link,
   `https://www.google.com/maps/search/?api=1&query=<lat>,<lng>`, opening in a
@@ -175,11 +174,15 @@ In the map's **desktop side panel** and its **mobile card**:
   needs no CSP change, because it's a navigation, not a loaded resource.
   - Desktop: under the Best Time / Elevation box.
   - Mobile: beside the category tags.
+  - Modal: a new row directly under the Quick Fact grid (Best Visiting
+    Season / Elevation / Ideal Travel For), holding the link and, when set,
+    the travel time.
 - **Travel time:** a new optional admin field, `travel_time_from_airport`, on
   destinations. It's short text (1–30 chars, for example `~4 h`), shown as
   **"~4 h from Colombo airport (CMB)"** only when filled in.
   - Desktop: a line with a plane icon under the Google Maps link.
   - Mobile: under the description.
+  - Modal: in the new row above, beside the link.
   - Seeded empty: migration 0007 adds the column as nullable; the fixtures
     and `0002_seed.sql` don't change.
 
@@ -188,13 +191,14 @@ In the map's **desktop side panel** and its **mobile card**:
 | Where | Change |
 |---|---|
 | `ToursSection.tsx`, tour card | a "View route on map" text button on the "Journey Route:" line |
-| `InteractiveMapSection.tsx`, map | route mode: numbered stop markers, a dashed line, the "Showing: … ✕" chip, faded category markers, the filter bar disabled |
+| `InteractiveMapSection.tsx`, map | route mode: numbered stop markers, a dashed line, the "Showing: … ✕" chip, faded category markers (filters stay live) |
 | `InteractiveMapSection.tsx`, desktop panel | an "Open in Google Maps" link; the "~N h from Colombo airport (CMB)" line when set |
 | `InteractiveMapSection.tsx`, mobile card | the same two, positioned as in section 5 |
-| Tour card route chips | **only** for Island in 7 Days, if you accept the South Coast → Mirissa, Galle proposal |
+| `DestinationModal.tsx` | a new row under the Quick Fact grid: the link, and the travel time when set |
+| Tour card route chips | **only** Island in 7 Days: "South Coast" becomes "Mirissa → Galle" |
 
 The PR includes before and after screenshots, desktop and phone, for the
-tour card, the map in route mode, and both panels.
+tour card, the map in route mode, both panels and the modal.
 
 ## 7. Tests
 
@@ -215,12 +219,15 @@ tour card, the map in route mode, and both panels.
   - the stops fit in view;
   - the chip shows the tour, and ✕ and Escape restore the previous markers
     and filter;
+  - choosing a filter while a route shows clears the route and applies the
+    filter;
   - the route still draws if it was picked before the map had loaded;
-  - the Google Maps link carries the destination's coordinates;
+  - the Google Maps link carries the destination's coordinates, in the side
+    panel, the mobile card and the modal;
   - the travel-time line shows only when set;
   - the CSP test still reports zero violations.
 
 ## 8. Checks
 
 `typecheck`, `verify:roundtrip`, `npm test`, `build`; screenshots as in
-section 6; commit locally and ask before pushing.
+section 6. Then a branch off `main`, a PR, and stop when CI is green.
