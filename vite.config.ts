@@ -27,15 +27,9 @@ export default defineConfig({
       "@shared": path.resolve(__dirname, "shared"),
     },
   },
-  build: {
-    // Keep Leaflet out of the entry chunk so the first paint of the
-    // marketing site stays small.
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          leaflet: ["leaflet", "react-leaflet"],
-        },
-      },
-    },
-  },
+  // No manualChunks. Leaflet is loaded with a dynamic import() only when the
+  // map nears the viewport (InteractiveMapSection), so Rollup already gives it
+  // its own on-demand chunk. Forcing a named "leaflet" chunk made the entry
+  // import a shared CommonJS helper from it, which turned the whole chunk into
+  // a startup preload.
 });
