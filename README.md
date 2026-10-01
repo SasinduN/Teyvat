@@ -375,7 +375,7 @@ point-in-time recovery).
 
 Don't set `PORT`; Railway injects it.
 
-**CI:** `.github/workflows/ci.yml` runs on every push and pull request:
+**CI:** `.github/workflows/ci.yml` runs on every pull request and every push to `main`:
 
 1. typecheck;
 2. build;
