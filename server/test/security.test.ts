@@ -14,6 +14,7 @@ import { auditImages, rebaseMedia, storedImages } from '../src/media/maintenance
 import { memoryStore } from '../src/media/store';
 import { contentSecurityPolicy } from '../src/security-headers';
 import { allowedImageOrigins } from '../../shared/image-hosts';
+import { CARTO_ATTRIBUTION, cartoVoyagerUrl } from '../../shared/map-tiles';
 import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
 
@@ -85,7 +86,7 @@ describe('security headers', () => {
       'script-src': ["'self'"],
       'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
       'font-src': ["'self'", 'https://fonts.gstatic.com'],
-      'img-src': ["'self'", 'https://images.unsplash.com', BASE, 'https://*.basemaps.cartocdn.com'],
+      'img-src': ["'self'", 'https://images.unsplash.com', BASE, 'https://basemaps.cartocdn.com'],
       'connect-src': ["'self'"],
       'frame-ancestors': ["'none'"],
       'base-uri': ["'self'"],
@@ -97,7 +98,39 @@ describe('security headers', () => {
   test('without R2, the CSP has no bucket origin', () => {
     const csp = contentSecurityPolicy(null);
     assert.ok(!csp.includes('r2.dev'));
-    assert.match(csp, /img-src 'self' https:\/\/images\.unsplash\.com https:\/\/\*\.basemaps\.cartocdn\.com;/);
+    assert.match(csp, /img-src 'self' https:\/\/images\.unsplash\.com https:\/\/basemaps\.cartocdn\.com;/);
+  });
+});
+
+/* --------------------------------------------------------------- map tiles */
+
+describe('map tiles', () => {
+  test('keyed: the format CARTO gives, retina token kept, key encoded', () => {
+    assert.equal(
+      cartoVoyagerUrl('abc123'),
+      'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=abc123'
+    );
+    assert.equal(
+      cartoVoyagerUrl(' a+b/c '),
+      'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=a%2Bb%2Fc'
+    );
+  });
+
+  test('no key: the keyless URL, so the map still renders (watermarked)', () => {
+    for (const key of [undefined, null, '', '   ']) {
+      assert.equal(cartoVoyagerUrl(key), 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
+    }
+  });
+
+  test('the tile host is exactly the one the CSP allows', () => {
+    const tileOrigin = new URL(cartoVoyagerUrl('k').replace(/\{[a-z]\}/g, '0')).origin;
+    const imgSrc = contentSecurityPolicy(null).split('; ').find((d) => d.startsWith('img-src '));
+    assert.ok(imgSrc?.split(' ').includes(tileOrigin), `${tileOrigin} in ${imgSrc}`);
+  });
+
+  test('the credit names and links OpenStreetMap and CARTO', () => {
+    assert.match(CARTO_ATTRIBUTION, /© <a href="https:\/\/www\.openstreetmap\.org\/copyright"[^>]*>OpenStreetMap<\/a> contributors/);
+    assert.match(CARTO_ATTRIBUTION, /© <a href="https:\/\/carto\.com\/attributions"[^>]*>CARTO<\/a>/);
   });
 });
 

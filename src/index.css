@@ -61,6 +61,26 @@
   background: #ffffff;
 }
 
+/* Map credit (OpenStreetMap / CARTO): required, but kept small and quiet. It
+   shares the bottom-right corner with the zoom buttons, which Leaflet stacks
+   above it. */
+.leaflet-container .leaflet-control-attribution {
+  margin: 0 6px 6px 0;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  background: rgba(251, 249, 246, 0.75);
+  color: rgba(26, 26, 26, 0.55);
+  font-size: 9px;
+  line-height: 1.5;
+}
+.leaflet-container .leaflet-control-attribution a {
+  color: rgba(28, 71, 55, 0.8);
+  text-decoration: none;
+}
+.leaflet-container .leaflet-control-attribution a:hover {
+  text-decoration: underline;
+}
+
 /* Custom Pin Pulse Animation */
 @keyframes pulse-ring {
   0% {

@@ -13,8 +13,12 @@
 /** The seeded content's photos. */
 export const UNSPLASH_ORIGIN = 'https://images.unsplash.com';
 
-/** The map's tiles (CARTO Voyager, subdomains a–d). In the CSP only; not an image-field host. */
-export const MAP_TILES_SOURCE = 'https://*.basemaps.cartocdn.com';
+/**
+ * The map's tiles: exactly CARTO's bare host (no a–d subdomains since the
+ * move to keyed tiles; a `*.` wildcard would not match it). In the CSP only;
+ * not an image-field host.
+ */
+export { CARTO_TILES_ORIGIN as MAP_TILES_SOURCE } from './map-tiles';
 
 /** Origins an image field may point at: Unsplash, plus our R2 bucket when uploads are set up. */
 export function allowedImageOrigins(r2PublicBaseUrl: string | null): string[] {

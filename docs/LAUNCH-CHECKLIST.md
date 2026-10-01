@@ -101,11 +101,14 @@ off in a pull request, so the history shows when each was done.
       through the media library.
       **Blocks:** a brand that owns its look; not legally blocking. **Who:**
       Owner + content editor.
-- [ ] **15. Map tiles: a CARTO licence or API key.** CARTO's free basemaps
-      are for non-commercial use. A keyed tile URL changes
-      `InteractiveMapSection.tsx`, a frozen component (call it out when doing
-      it), and the CSP's tile host (`shared/image-hosts.ts`).
-      **Blocks:** commercial go-live. **Who:** Owner (account) + developer.
+- [ ] **15. Map tiles: CARTO key.** *(The keyed tile URL and the required
+      map credit are in: `VITE_CARTO_KEY`, set in Railway.)* Remaining:
+      - in the CARTO dashboard, **restrict the key to the site's domains and
+        add the real domain at launch**; it currently serves requests with
+        no referrer at all, so anyone could use it;
+      - confirm the CARTO plan covers commercial use.
+
+      **Blocks:** commercial go-live. **Who:** Owner (CARTO account).
 - [ ] **16. Image audit before each CSP change.** `npm run images:audit`
       against production must report nothing blocked. *(Last run, 1 October
       2026, before the phase 7 deploy: 70 images, all allowed.)*

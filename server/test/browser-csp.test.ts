@@ -111,7 +111,7 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     await pool.end();
   }, HOOK_TIMEOUT);
 
-  test('the public page: scrolled through every section, with the map tiles', async () => {
+  test('the public page: every section, and the map with keyed CARTO tiles and its credit', async () => {
     await visit('/', `document.querySelector('#explore-map')`);
 
     // Scroll the whole page so lazy images and the map's tiles load.
@@ -123,6 +123,37 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     await waitFor(`document.querySelector('.leaflet-tile')`, 'map tiles to be requested');
     await sleep(800);
     await collect('/ (scrolled)');
+
+    // The tiles: CARTO's exact host, keyed when the build had VITE_CARTO_KEY
+    // (local builds read it from .env; CI has none and gets the keyless
+    // fallback), and actually loaded. Keys are never printed.
+    await waitFor(
+      `[...document.querySelectorAll('img.leaflet-tile')].filter((t) => t.complete && t.naturalWidth > 0).length >= 4`,
+      'map tiles to load'
+    );
+    const tiles = await page.evaluate<Array<{ origin: string; path: string; keyed: boolean; loaded: boolean }>>(`
+      [...document.querySelectorAll('img.leaflet-tile')].map((t) => {
+        const u = new URL(t.src);
+        return { origin: u.origin, path: u.pathname, keyed: u.searchParams.has('key'), loaded: t.complete && t.naturalWidth > 0 };
+      })`);
+    const expectKey = Boolean(process.env.VITE_CARTO_KEY?.trim());
+    for (const t of tiles) {
+      assert.equal(t.origin, 'https://basemaps.cartocdn.com', t.path);
+      assert.match(t.path, /^\/rastertiles\/voyager\/\d+\/\d+\/\d+(@2x)?\.png$/);
+      assert.equal(t.keyed, expectKey, `${t.path}: key ${expectKey ? 'missing' : 'unexpected'}`);
+    }
+    assert.ok(tiles.filter((t) => t.loaded).length >= 4, `only ${tiles.filter((t) => t.loaded).length} tiles loaded`);
+
+    // The credit: visible, exactly the required text, both links.
+    const credit = await page.evaluate<{ text: string; links: string[]; visible: boolean }>(`(() => {
+      const el = document.querySelector('#explore-map .leaflet-control-attribution');
+      if (!el) return { text: '', links: [], visible: false };
+      const r = el.getBoundingClientRect();
+      return { text: el.textContent.trim(), links: [...el.querySelectorAll('a')].map((a) => a.href), visible: r.width > 0 && r.height > 0 };
+    })()`);
+    assert.equal(credit.text, '© OpenStreetMap contributors © CARTO');
+    assert.deepEqual(credit.links, ['https://www.openstreetmap.org/copyright', 'https://carto.com/attributions']);
+    assert.ok(credit.visible, 'the credit is visible');
 
     assert.ok(
       await page.evaluate<boolean>(`[...document.querySelectorAll('img')].some((i) => i.src.startsWith('https://images.unsplash.com'))`),
