@@ -80,7 +80,8 @@ export interface SiteContentPayload {
 }
 
 /**
- * The `site_settings` columns the public Footer renders, and nothing else.
+ * The `site_settings` columns the public site renders (the Footer and the
+ * WhatsApp button), and nothing else.
  *
  * An allow-list rather than the whole row: the route selects exactly these
  * columns by name, so a setting added later for admin use only cannot reach
@@ -96,7 +97,9 @@ export const PUBLIC_SITE_SETTINGS_COLUMNS = [
   'youtube_url',
   'privacy_url',
   'terms_url',
-  'sustainability_url'
+  'sustainability_url',
+  // Public by nature: it is in every WhatsApp link the button opens.
+  'whatsapp_number'
 ] as const satisfies readonly (keyof SiteSettingsRow)[];
 
 export type PublicSiteSettings = Pick<

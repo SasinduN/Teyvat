@@ -95,7 +95,10 @@ off in a pull request, so the history shows when each was done.
       **Blocks:** go-live, since the site collects personal data. **Who:**
       Owner (legal review advised) + content editor.
 - [ ] **13. Real contact details** in *Admin → Settings*: postal address,
-      phone, and contact email. The current values are the demo's.
+      phone, and contact email. The current values are the demo's. Also the
+      **WhatsApp number** (international format, e.g. `94771234567`): until
+      it is set, the site has no WhatsApp button. Check it with *Test in
+      WhatsApp* beside the field.
       **Blocks:** go-live. **Who:** Owner + content editor.
 - [ ] **14. Owned or licensed photos** to replace the Unsplash ones. Upload
       through the media library.

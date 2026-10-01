@@ -139,7 +139,8 @@ export interface Pillar {
 }
 
 /**
- * The contact details and links the Footer renders, from `site_settings`.
+ * The contact details and links the Footer renders, and the WhatsApp
+ * button's number, from `site_settings`.
  * A link that is not set is `undefined`, so the Footer's `<a>` renders with
  * no `href` at all.
  */
@@ -154,4 +155,6 @@ export interface SiteSettings {
   privacyUrl?: string;
   termsUrl?: string;
   sustainabilityUrl?: string;
+  /** Digits only, e.g. 94771234567. Unset: the WhatsApp button is hidden. */
+  whatsappNumber?: string;
 }

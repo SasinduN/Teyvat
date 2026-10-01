@@ -197,5 +197,6 @@ export const toSiteSettings = (r: PublicSiteSettings): SiteSettings => ({
   youtubeUrl: r.youtube_url ?? undefined,
   privacyUrl: r.privacy_url ?? undefined,
   termsUrl: r.terms_url ?? undefined,
-  sustainabilityUrl: r.sustainability_url ?? undefined
+  sustainabilityUrl: r.sustainability_url ?? undefined,
+  whatsappNumber: r.whatsapp_number ?? undefined
 });

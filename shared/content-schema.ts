@@ -19,6 +19,7 @@ import {
 } from './database.types';
 import { IMAGE_HOST_REFUSED, isAllowedImageUrl } from './image-hosts';
 import { MAX_TOUR_STOPS, STOP_NAME_MAX, TOUR_STOP_BOUNDS } from './tour-stops';
+import { normalizeWhatsAppNumber, whatsappNumberProblem } from './whatsapp';
 
 export const CATEGORY_OPTIONS = [
   'Beaches',
@@ -74,6 +75,11 @@ export type Field =
   | (FieldBase & { type: 'email' })
   /** An optional https:// link. Empty means "not set" and is stored as NULL. */
   | (FieldBase & { type: 'link' })
+  /**
+   * An optional WhatsApp number (`shared/whatsapp.ts`). Spaces, dashes and a
+   * leading + are stripped; digits only are stored; empty is NULL.
+   */
+  | (FieldBase & { type: 'whatsapp' })
   /**
    * A tour's route stops. Not a column: they live in `public.tour_stops`, and
    * the API writes them alongside the row (see `writableColumns`).
@@ -247,7 +253,14 @@ export const SITE_SETTINGS_FIELDS: Field[] = [
   { name: 'youtube_url', label: 'YouTube', type: 'link', span: 1 },
   { name: 'privacy_url', label: 'Privacy policy', type: 'link', span: 1 },
   { name: 'terms_url', label: 'Terms of service', type: 'link', span: 1 },
-  { name: 'sustainability_url', label: 'Sustainability pledge', type: 'link', span: 2 }
+  { name: 'sustainability_url', label: 'Sustainability pledge', type: 'link', span: 2 },
+  {
+    name: 'whatsapp_number',
+    label: 'WhatsApp number',
+    type: 'whatsapp',
+    span: 2,
+    help: 'International format, digits only, e.g. 94771234567. Leave empty to hide the WhatsApp button.'
+  }
 ];
 
 export type SiteSettingsValues = Omit<SiteSettingsRow, 'id' | 'created_at' | 'updated_at'>;
@@ -397,6 +410,17 @@ function schemaForField(field: Field, options: SchemaOptions = {}): z.ZodTypeAny
         .nullable()
         .transform((v) => (v ? v : null))
         .pipe(httpsUrl(`${field.label} must start with https://, or be left empty.`, 500).nullable());
+
+    case 'whatsapp':
+      return z
+        .string()
+        .nullable()
+        .transform((v) => (v ? normalizeWhatsAppNumber(v) : ''))
+        .superRefine((v, ctx) => {
+          const problem = v ? whatsappNumberProblem(v) : null;
+          if (problem) ctx.addIssue({ code: 'custom', message: problem });
+        })
+        .transform((v) => (v ? v : null));
 
     case 'tourStops':
       return tourStopsSchema;

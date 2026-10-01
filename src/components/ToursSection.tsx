@@ -8,11 +8,31 @@ interface ToursSectionProps {
   onOpenInquiry: (tourTitle: string) => void;
   /** Shows the tour's route on the map (and scrolls there). */
   onViewRoute?: (tour: TourPackage) => void;
+  /**
+   * The tour whose detail modal is open, when the parent owns it (the
+   * WhatsApp button's context, and `?tour=` links). Left out, the section
+   * keeps it to itself.
+   */
+  selectedTourId?: string | null;
+  onSelectedTourChange?: (tour: TourPackage | null) => void;
 }
 
-export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onViewRoute }) => {
+export const ToursSection: React.FC<ToursSectionProps> = ({
+  onOpenInquiry,
+  onViewRoute,
+  selectedTourId,
+  onSelectedTourChange
+}) => {
   const TOURS = useTours();
-  const [selectedTour, setSelectedTour] = useState<TourPackage | null>(null);
+  const [ownSelectedTour, setOwnSelectedTour] = useState<TourPackage | null>(null);
+  const selectedTour =
+    selectedTourId === undefined
+      ? ownSelectedTour
+      : TOURS.find((t) => t.id === selectedTourId) ?? null;
+  const setSelectedTour = (tour: TourPackage | null) => {
+    if (selectedTourId === undefined) setOwnSelectedTour(tour);
+    onSelectedTourChange?.(tour);
+  };
 
   return (
     <section id="tours" className="py-24 bg-[#FBF9F6] relative overflow-hidden">
@@ -244,6 +264,7 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
                       setSelectedTour(null);
                       onOpenInquiry(title);
                     }}
+                    data-keep-clear
                     className="w-full sm:w-auto px-8 py-3.5 bg-[#D4AF37] hover:bg-[#C5A059] text-[#0F2E23] font-bold rounded-2xl shadow-lg transition-all"
                   >
                     Book / Inquire This Tour

@@ -218,6 +218,8 @@ export interface SiteSettingsRow extends Timestamps {
   privacy_url: string | null;
   terms_url: string | null;
   sustainability_url: string | null;
+  /** Digits only, e.g. 94771234567 (0008). NULL: the WhatsApp button is hidden. */
+  whatsapp_number: string | null;
 }
 
 export interface InquiryRow extends Timestamps {

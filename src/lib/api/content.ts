@@ -72,6 +72,7 @@ export const EMPTY_CONTENT: SiteContent = {
     privacyUrl: '',
     termsUrl: '',
     sustainabilityUrl: ''
+    // No whatsappNumber: the button stays hidden until content has loaded.
   }
 };
 

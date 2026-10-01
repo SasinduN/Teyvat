@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { HeroSection } from '@/components/HeroSection';
 import { QuickSearch } from '@/components/QuickSearch';
@@ -19,9 +20,12 @@ import { Footer } from '@/components/Footer';
 import { DestinationModal } from '@/components/DestinationModal';
 import { InquiryModal } from '@/components/InquiryModal';
 import { SearchModal } from '@/components/SearchModal';
+import { WhatsAppButton } from '@/components/WhatsAppButton';
 
 import { Destination, CategoryType, ExperienceItem, TourPackage } from '@/types';
 import { ErrorBoundary } from '@/lib/ErrorBoundary';
+import { useDestinations, useSiteSettings, useTours } from '@/hooks/useSiteContent';
+import { whatsappMessage, whatsappUrl, type WhatsAppContext } from '@shared/whatsapp';
 
 /**
  * One section of the page. If it throws while rendering it shows nothing and
@@ -45,6 +49,44 @@ export function PublicSite() {
   const [selectedWhereForMap, setSelectedWhereForMap] = useState<string>('All');
   // The tour whose route the map is showing ("View route on map"), if any.
   const [routeTour, setRouteTour] = useState<TourPackage | null>(null);
+  // The tour whose "View Full Journey" modal is open, if any.
+  const [openTourId, setOpenTourId] = useState<string | null>(null);
+  const mapOnScreen = useMapOnScreen();
+
+  const { whatsappNumber } = useSiteSettings();
+  const destinations = useDestinations();
+  const tours = useTours();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // `?destination=<id>` and `?tour=<id>` (the links the WhatsApp messages
+  // carry) open that modal. The parameter is then dropped from the address,
+  // so closing the modal and reloading doesn't open it again. Unknown or
+  // unpublished ids are ignored.
+  useEffect(() => {
+    const destinationId = searchParams.get('destination');
+    const tourId = searchParams.get('tour');
+    if (destinationId === null && tourId === null) return;
+
+    const destination = destinations.find((d) => d.id === destinationId);
+    if (destination) setActiveModalDestination(destination);
+    else if (tours.some((t) => t.id === tourId)) setOpenTourId(tourId);
+
+    const next = new URLSearchParams(searchParams);
+    next.delete('destination');
+    next.delete('tour');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams, destinations, tours]);
+
+  // What the visitor is looking at: the modal on top first, then a tour
+  // route while the map is on screen.
+  const openTour = tours.find((t) => t.id === openTourId);
+  const whatsappContext: WhatsAppContext = activeModalDestination
+    ? { kind: 'destination', id: activeModalDestination.id, name: activeModalDestination.name }
+    : openTour
+      ? { kind: 'tour', id: openTour.id, title: openTour.title }
+      : routeTour && mapOnScreen
+        ? { kind: 'tour', id: routeTour.id, title: routeTour.title }
+        : { kind: 'general' };
 
   // Smooth Section Navigation
   const scrollToSection = (sectionId: string) => {
@@ -144,6 +186,8 @@ export function PublicSite() {
         {/* Multi-Day Tours Section */}
         <Section name="ToursSection">
           <ToursSection
+            selectedTourId={openTourId}
+            onSelectedTourChange={(tour) => setOpenTourId(tour?.id ?? null)}
             onOpenInquiry={handleOpenInquiry}
             onViewRoute={(tour) => {
               setRouteTour(tour);
@@ -215,7 +259,30 @@ export function PublicSite() {
           onSelectDestination={(dest) => setActiveModalDestination(dest)}
         />
       </Section>
+
+      {/* WhatsApp chat: only once a number is set in Admin → Settings. */}
+      {whatsappNumber && (
+        <Section name="WhatsAppButton">
+          <WhatsAppButton
+            href={whatsappUrl(whatsappNumber, whatsappMessage(whatsappContext, window.location.origin))}
+            hidden={inquiryModalOpen || searchModalOpen}
+          />
+        </Section>
+      )}
     </div>
   );
+}
+
+/** Whether any of the map section (`#explore-map`) is in the viewport. */
+function useMapOnScreen(): boolean {
+  const [onScreen, setOnScreen] = useState(false);
+  useEffect(() => {
+    const map = document.getElementById('explore-map');
+    if (!map) return;
+    const observer = new IntersectionObserver(([entry]) => setOnScreen(entry.isIntersecting));
+    observer.observe(map);
+    return () => observer.disconnect();
+  }, []);
+  return onScreen;
 }
 

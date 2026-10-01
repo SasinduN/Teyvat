@@ -3,9 +3,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { RotateCcw, Save } from 'lucide-react';
+import { ExternalLink, RotateCcw, Save } from 'lucide-react';
 
 import { SITE_SETTINGS_FIELDS, siteSettingsSchema, type SiteSettingsValues } from '@shared/content-schema';
+import { whatsappUrl } from '@shared/whatsapp';
 import { getSiteSettings, updateSiteSettings } from '@/lib/api/admin';
 import { ApiRequestError } from '@/lib/api/http';
 import { describeError } from '@/lib/errors';
@@ -18,6 +19,8 @@ import { Button, Card, ErrorNote, PageHeader, Spinner } from '@/admin/components
  *
  * Each link is optional. Left empty it is stored as NULL, and the Footer
  * renders that link with no destination. Anything else must be https://.
+ *
+ * The WhatsApp number is behind the public site's chat button; empty hides it.
  */
 export const SettingsPage: React.FC = () => {
   const qc = useQueryClient();
@@ -71,11 +74,14 @@ export const SettingsPage: React.FC = () => {
     }
   });
 
+  // The saved number, not what is being typed: it is what visitors reach.
+  const savedWhatsApp = current.data?.whatsapp_number;
+
   return (
     <div>
       <PageHeader
         title="Site settings"
-        description="The contact details and links in the public site's footer. Links are optional: leave one empty and the footer shows it without a destination."
+        description="The contact details and links in the public site's footer, and the number behind its WhatsApp button. Links are optional: leave one empty and the footer shows it without a destination."
       />
 
       {current.isError ? (
@@ -116,6 +122,20 @@ export const SettingsPage: React.FC = () => {
               control={control}
               errors={formState.errors}
               lockSlug={false}
+              labelExtras={{
+                whatsapp_number: savedWhatsApp ? (
+                  <a
+                    href={whatsappUrl(savedWhatsApp)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-whatsapp-test
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1C4737] underline-offset-2 hover:text-[#0F2E23] hover:underline"
+                  >
+                    Test in WhatsApp
+                    <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                  </a>
+                ) : null
+              }}
             />
           </Card>
 

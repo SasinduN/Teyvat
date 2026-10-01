@@ -641,7 +641,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
             </AnimatePresence>
 
             {/* Quick Location Pills */}
-            <div className="absolute bottom-4 left-4 right-16 sm:right-auto z-20 bg-white/90 backdrop-blur-md p-2 rounded-2xl shadow-md border border-[#D4C3B5]/40 overflow-x-auto max-w-full flex items-center space-x-2 no-scrollbar">
+            <div data-keep-clear className="absolute bottom-4 left-4 right-16 sm:right-auto z-20 bg-white/90 backdrop-blur-md p-2 rounded-2xl shadow-md border border-[#D4C3B5]/40 overflow-x-auto max-w-full flex items-center space-x-2 no-scrollbar">
               <span className="text-[11px] font-bold text-[#1C4737] uppercase tracking-wider px-2 shrink-0">
                 Quick Jump:
               </span>

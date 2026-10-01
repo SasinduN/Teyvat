@@ -17,6 +17,8 @@
 | `0004_site_settings_links.sql` | footer links are NULL or `https://…` |
 | `0005_media.sql` | the media library |
 | `0006_inquiries.sql` | enquiry statuses, `closed_at`, `spam`, `inquiry_attempts` |
+| `0007_tour_stops.sql` | `tour_stops` (replaces `tours.route`), `destinations.travel_time_from_airport` |
+| `0008_site_settings_whatsapp.sql` | `site_settings.whatsapp_number` (empty: the WhatsApp button is hidden) |
 
 **Where the rules live.** There is no row-level security: every connection is
 the API's single database role. Rules are enforced in two layers:
@@ -259,8 +261,8 @@ can't be empty.
 
 ## `site_settings` (exactly one row)
 
-The Footer's contact details and links. The CHECK on `id` (always `true`) is
-what makes it single.
+The Footer's contact details and links, and the WhatsApp button's number.
+The CHECK on `id` (always `true`) is what makes it single.
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -268,6 +270,7 @@ what makes it single.
 | `phone` | `text` | 1–40 chars |
 | `contact_email` | `text` | an email; shown publicly |
 | `instagram_url`, `facebook_url`, `tiktok_url`, `youtube_url`, `privacy_url`, `terms_url`, `sustainability_url` | `text` NULL | NULL (the Footer renders the link without an `href`) or `https://…`, ≤ 500 chars |
+| `whatsapp_number` | `text` NULL | since 0008. NULL (the WhatsApp button is hidden) or digits only, international format without `+`: 8–15 digits, not starting `0` or `940`, e.g. `94771234567`. The admin form strips spaces, dashes and a leading `+` (`shared/whatsapp.ts`) |
 
 `GET /api/content` exposes only the columns in `PUBLIC_SITE_SETTINGS_COLUMNS`
 (`shared/api.ts`), so a setting added later is private until someone adds it
