@@ -385,7 +385,9 @@ point-in-time recovery).
 | `NODE_ENV` | `production` |
 | `NPM_CONFIG_PRODUCTION` | `false` (otherwise `npm ci` skips the build tools) |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL` | image uploads: all five or none |
-| `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` (+ optional `NOTIFY_EMAIL_FROM`, `PUBLIC_SITE_URL`) | new-enquiry emails |
+| `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` (+ optional `NOTIFY_EMAIL_FROM`) | new-enquiry emails |
+| `PUBLIC_SITE_URL` | the public `https://` origin, for canonical links, share previews, the sitemap and the email's link (unset: each request's host) |
+| `SITE_INDEXABLE` | `true` opens the site to search engines; anything else keeps them out (launch checklist item 21) |
 | `VITE_CARTO_KEY` | the map's tile key. Read when the client is **built**, so a change needs a redeploy |
 
 Don't set `PORT`; Railway injects it.

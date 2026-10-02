@@ -6,7 +6,7 @@ import { WhyTravelEye } from '@/components/WhyTravelEye';
 import { InquiryForm } from '@/components/InquiryForm';
 import { usePageTitle, usePublicSite } from '@/context/PublicSiteContext';
 import { useHeroSlides, useSiteSettings } from '@/hooks/useSiteContent';
-import { PAGE_TITLES } from '@shared/page-meta';
+import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
@@ -31,7 +31,7 @@ export function AboutPage() {
         crumbs={[{ label: 'Home', to: paths.home }, { label: 'About' }]}
         eyebrow="Who We Are"
         title="About Us"
-        subtitle="Local travel designers who know the island's back roads, its seasons and its people."
+        subtitle={PAGE_DESCRIPTIONS.about}
       />
 
       <Section name="IntroSection">

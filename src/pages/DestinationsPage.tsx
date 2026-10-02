@@ -3,7 +3,7 @@ import { PageHero } from '@/components/PageHero';
 import { DestinationCard } from '@/components/PageCards';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useDestinations } from '@/hooks/useSiteContent';
-import { PAGE_TITLES } from '@shared/page-meta';
+import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import type { CategoryType } from '@/types';
 import { Section } from './Section';
@@ -43,7 +43,7 @@ export function DestinationsPage() {
         crumbs={[{ label: 'Home', to: paths.home }, { label: 'Destinations' }]}
         eyebrow="Places Worth Getting Lost In"
         title="Destinations"
-        subtitle="Misty peaks, ancient citadels, turquoise bays and northern kovils: every place we know and love."
+        subtitle={PAGE_DESCRIPTIONS.destinations}
       />
 
       <Section name="DestinationsList">

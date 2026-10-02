@@ -101,6 +101,51 @@ export function readR2Config(source: NodeJS.ProcessEnv): R2Config | null {
 
 export const r2Config = readR2Config(process.env);
 
+/* --------------------------------------------------------------- the site */
+
+export interface SiteConfig {
+  /**
+   * The public origin (`PUBLIC_SITE_URL`, e.g. `https://traveleye.lk`). Every
+   * absolute URL the server writes comes from it: canonical links, `og:url`,
+   * a relative `og:image`, the sitemap, the enquiry email's link. Null when
+   * unset (local runs): the request's own origin is used instead.
+   */
+  url: string | null;
+  /**
+   * `SITE_INDEXABLE=true` opens the site to search engines. Anything else
+   * (the default) keeps them out: robots.txt disallows everything, every page
+   * says noindex, and there is no sitemap. Set at launch.
+   */
+  indexable: boolean;
+}
+
+/** `PUBLIC_SITE_URL` as an https origin, or null (unset, or not one). */
+export function readSiteUrl(source: NodeJS.ProcessEnv): string | null {
+  const raw = source.PUBLIC_SITE_URL?.trim() ?? '';
+  if (!raw) return null;
+  let url: URL | null = null;
+  try {
+    url = new URL(raw);
+  } catch {
+    // Not a URL at all: refused below.
+  }
+  if (!url || url.protocol !== 'https:' || url.pathname !== '/' || url.search || url.hash) {
+    console.warn('[site] PUBLIC_SITE_URL is ignored: it must be an https:// origin with no path, e.g. https://example.com.');
+    return null;
+  }
+  return url.origin;
+}
+
+export function readSiteConfig(source: NodeJS.ProcessEnv): SiteConfig {
+  const url = readSiteUrl(source);
+  if (!url && source.NODE_ENV === 'production') {
+    console.warn("[site] PUBLIC_SITE_URL is not set: canonical links and share tags use each request's host.");
+  }
+  return { url, indexable: source.SITE_INDEXABLE?.trim().toLowerCase() === 'true' };
+}
+
+export const siteConfig = readSiteConfig(process.env);
+
 /* ------------------------------------------------------------ notifications */
 
 export interface NotifyConfig {
@@ -134,8 +179,7 @@ export function readNotifyConfig(source: NodeJS.ProcessEnv): NotifyConfig | null
     return null;
   }
 
-  const rawSite = source.PUBLIC_SITE_URL?.trim() ?? '';
-  const siteUrl = /^https:\/\/[^\s/]+/.test(rawSite) ? normaliseBaseUrl(rawSite) : null;
+  const siteUrl = readSiteUrl(source);
 
   return {
     resendApiKey,

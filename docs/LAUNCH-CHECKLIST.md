@@ -63,7 +63,9 @@ off in a pull request, so the history shows when each was done.
       placeholder.
       **Blocks:** 8, 9, 10, 11, 17. **Who:** Owner.
 - [ ] **8. Buy the domain.** Add it to the Railway API service as a custom
-      domain and create the DNS records Railway gives.
+      domain and create the DNS records Railway gives. Then set
+      `PUBLIC_SITE_URL` to `https://<domain>` on the API service: every
+      canonical link, share preview and sitemap entry is built from it.
       **Blocks:** 9, 10, 11, 17, and real visitors. **Who:** Owner + DNS admin.
 - [ ] **9. Move R2 to a custom domain** (e.g. `media.<domain>`). Today images
       are served from `r2.dev`, which Cloudflare rate-limits and describes as
@@ -134,6 +136,13 @@ off in a pull request, so the history shows when each was done.
 - [ ] **20. `req.ip` is the visitor, not the proxy.** Verify it once on the
       live domain, using the check in the README's Security section.
       **Blocks:** the per-IP rate limits working. **Who:** Developer.
+- [ ] **21. Open the site to search engines: set `SITE_INDEXABLE=true`** on
+      the API service, last, once the domain (8), `PUBLIC_SITE_URL` and the
+      real content (12–14) are in. Until then robots.txt disallows
+      everything, every page says `noindex`, and there is no sitemap. After
+      setting it, check `/robots.txt` names the sitemap and `/sitemap.xml`
+      lists the pages, then submit the sitemap in Google Search Console.
+      **Blocks:** search traffic. **Who:** Railway admin + owner.
 
 ## Always
 

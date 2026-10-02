@@ -26,8 +26,8 @@ this file or anywhere else in git.
 | 6 | Inquiries endpoints: public submit and admin inbox | done |
 | 7a | Clean-up: README/SCHEMA rewrite, CI, security headers, error boundaries, restore guide | done |
 | 7b | Launch decisions: `docs/LAUNCH-CHECKLIST.md` | owner's checklist |
-| 8a | Real pages and links: routes, layout, page types, code splitting (`docs/plans/phase-8-pages.md`) | in review |
-| 8b | Server side of phase 8: head tags, 404 status, 301s, sitemap, robots | planned |
+| 8a | Real pages and links: routes, layout, page types, code splitting (`docs/plans/phase-8-pages.md`) | done |
+| 8b | Server side of phase 8: head tags, 404 status, 301s, sitemap, robots | in review |
 
 Update the Status column when a phase lands.
 
@@ -94,6 +94,14 @@ Update the Status column when a phase lands.
     on it.
   - `server/test/browser-home-baseline.test.ts` compares the home page's
     changed sections against `bf94e25`, pixel for pixel.
+- **Head tags and statuses** (phase 8b, `server/src/pages/`):
+  - Every page is the `index.html` shell, but Express gives each its own
+    status (404 for unknown paths and unpublished slugs) and `<head>`
+    (title, description, canonical, Open Graph, Twitter), between the
+    `<!--page-meta-->` markers. A new page type needs its path added there.
+  - Every injected value goes through `escapeHtml` (`shared/html.ts`).
+  - Titles come from `shared/page-meta.ts`, and the brand from
+    `shared/brand.ts`, for the client too.
 
 ### Where things live
 
@@ -123,8 +131,14 @@ Update the Status column when a phase lands.
   - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`,
     `R2_PUBLIC_BASE_URL`: image uploads. All five or none; missing ones turn
     uploads off without stopping the site.
-  - `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` (and optionally `NOTIFY_EMAIL_FROM`,
-    `PUBLIC_SITE_URL`): new-enquiry emails. Off without the first two.
+  - `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` (and optionally `NOTIFY_EMAIL_FROM`):
+    new-enquiry emails. Off without the first two.
+  - `PUBLIC_SITE_URL`: the public `https://` origin. Every absolute URL the
+    server writes comes from it (canonical, `og:url`, share images, the
+    sitemap, the email's link). Unset: each request's own host.
+  - `SITE_INDEXABLE`: `true` opens the site to search engines. Unset or
+    anything else keeps them out (robots.txt `Disallow: /`, `noindex` on
+    every page, no sitemap). Launch checklist item 21.
 - **Never log request data.** `errorHandler` logs errors through
   `describeForLog` (no Postgres `detail`, no request bodies). Enquiry names,
   emails and messages must never reach the logs.
