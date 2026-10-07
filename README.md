@@ -43,6 +43,8 @@ cd Teyvat
 npm ci
 ```
 
+> For a clean local setup, make sure the checked-out repo sits at the project root itself. If the folder contains a nested `Teyvat-main` directory, move the files up one level before running the app or database scripts.
+
 ### 3. Environment
 
 ```bash
