@@ -22,7 +22,8 @@ export function focusPageHeading(): boolean {
 export function goToSection(id: string, behavior: ScrollBehavior = 'smooth'): boolean {
   const el = document.getElementById(id);
   if (!el) return false;
-  el.scrollIntoView({ behavior, block: 'start' });
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : behavior;
+  el.scrollIntoView({ behavior: motion, block: 'start' });
   focusTarget(el);
   return true;
 }

@@ -23,6 +23,7 @@ import { authRouter } from './routes/auth';
 import { contentRouter } from './routes/content';
 import { healthRouter } from './routes/health';
 import { inquiriesRouter } from './routes/inquiries';
+import { newsletterRouter } from './routes/newsletter';
 import { mediaRouter } from './routes/media';
 import { pagesRouter } from './pages/pages';
 import { securityHeaders } from './security-headers';
@@ -90,6 +91,7 @@ export function createApp(options: AppOptions = {}): Express {
 
   app.use('/api', healthRouter);
   app.use('/api', contentRouter);
+  app.use('/api', newsletterRouter);
   app.use('/api', authRouter);
   // Before the admin router, which would otherwise run requireAdmin a second
   // time for every /api/admin/media and /api/admin/inquiries request.
@@ -117,6 +119,16 @@ export function createApp(options: AppOptions = {}): Express {
      */
     app.use(
       '/assets',
+      (req, res, next) => {
+        res.vary('Accept-Encoding');
+        // Only Vite's flat JS/CSS files; never construct a path from arbitrary URLs.
+        if (!/^\/[\w.-]+\.(js|css)$/.test(req.path) || !req.acceptsEncodings('gzip')) return next();
+        const compressed = join(CLIENT_DIST, 'assets', `${req.path.slice(1)}.gz`);
+        if (!existsSync(compressed)) return next();
+        res.set('Content-Encoding', 'gzip').set('Cache-Control', 'public, max-age=31536000, immutable');
+        res.type(req.path.endsWith('.css') ? 'text/css' : 'text/javascript');
+        res.sendFile(compressed);
+      },
       express.static(join(CLIENT_DIST, 'assets'), {
         immutable: true,
         maxAge: '1y'

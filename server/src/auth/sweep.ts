@@ -22,6 +22,7 @@ export interface SweepResult {
   sessions: number;
   loginAttempts: number;
   inquiryAttempts: number;
+  newsletterAttempts: number;
   closedInquiries: number;
   spamInquiries: number;
 }
@@ -37,6 +38,9 @@ export async function runSweep(): Promise<SweepResult> {
     ),
     inquiryAttempts: await count(
       "delete from public.inquiry_attempts where attempted_at < now() - interval '24 hours'"
+    ),
+    newsletterAttempts: await count(
+      "delete from public.newsletter_attempts where window_started < now() - interval '24 hours'"
     ),
     closedInquiries: await count(
       `delete from public.inquiries

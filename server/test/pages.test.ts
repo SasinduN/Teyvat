@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 import { after, before, beforeEach, describe, test } from 'node:test';
 
 import { HOME_DESCRIPTION, HOME_TITLE, PAGE_DESCRIPTIONS, PAGE_TITLES } from '../../shared/page-meta';
+import { publicPhoto } from '../../shared/public-photos';
 import { createApp } from '../src/app';
 import type { SiteConfig } from '../src/env';
 import { pool } from '../src/db';
@@ -247,7 +248,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
       assert.equal(metaContent(h, 'og:url'), `${SITE}${path}`, path);
       assert.equal(metaContent(h, 'og:type'), table === 'articles' ? 'article' : 'website', path);
       assert.equal(metaContent(h, 'og:site_name'), 'Travel Eye', path);
-      assert.equal(metaContent(h, 'og:image'), shareImage(row.image, SITE)!.url, path);
+      assert.equal(metaContent(h, 'og:image'), shareImage(publicPhoto(table, id, row.image), SITE)!.url, path);
       assert.match(metaContent(h, 'og:image') ?? '', /^https:\/\//, path);
       assert.equal(metaContent(h, 'twitter:card'), 'summary_large_image', path);
       assert.equal(metaContent(h, 'twitter:image'), metaContent(h, 'og:image'), path);
@@ -256,6 +257,12 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
   });
 
   test('the fixed pages, a filtered list, the 404 and the admin', async () => {
+    for (const page of ['plan', 'journal'] as const) {
+      const result = await head(open, `/${page}`);
+      assert.equal(result.status, 200);
+      assert.equal(titleOf(result.head), PAGE_TITLES[page]);
+      assert.equal(canonicalOf(result.head), `${SITE}/${page}`);
+    }
     let { head: h } = await head(open, '/');
     assert.equal(titleOf(h), HOME_TITLE);
     assert.equal(metaContent(h, 'description'), HOME_DESCRIPTION);
@@ -352,14 +359,14 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
 
     const locs = [...xml.matchAll(/<loc>([^<]*)<\/loc>/g)].map((m) => m[1]);
     for (const loc of locs) assert.ok(loc.startsWith(`${SITE}/`), loc);
-    for (const path of ['/', '/destinations', '/experiences', '/tours', '/about']) {
+    for (const path of ['/', '/destinations', '/experiences', '/tours', '/about', '/photo-credits']) {
       assert.ok(locs.includes(`${SITE}${path}`), path);
     }
 
     const count = async (table: string) =>
       (await pool.query(`select count(*)::int as n from public.${table} where published`)).rows[0].n as number;
     const rows = (await count('destinations')) + (await count('featured_experiences')) + (await count('tours')) + (await count('articles'));
-    assert.equal(locs.length, 5 + rows, 'the fixed pages plus every published row');
+    assert.equal(locs.length, 8 + rows, 'the fixed pages plus every published row');
     assert.ok(!locs.includes(`${SITE}/destinations/galle`), 'not the unpublished one');
     assert.ok(!locs.some((l) => l.includes('?')), 'no filtered lists');
     assert.match(xml, new RegExp(`<url><loc>${SITE}/destinations/ella</loc><lastmod>\\d{4}-\\d{2}-\\d{2}</lastmod></url>`));

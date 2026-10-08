@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom';
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { PageHero } from '@/components/PageHero';
 import { DestinationCard } from '@/components/PageCards';
 import { usePageTitle } from '@/context/PublicSiteContext';
@@ -27,6 +27,7 @@ const CATEGORIES: Exclude<CategoryType, 'All'>[] = [
 export function DestinationsPage() {
   usePageTitle(PAGE_TITLES.destinations);
   const all = useDestinations();
+  const location = useLocation();
   const [params, setParams] = useSearchParams();
   const asked = params.get('category');
   const category = CATEGORIES.find((c) => c === asked) ?? 'All';
@@ -34,6 +35,11 @@ export function DestinationsPage() {
 
   const choose = (next: CategoryType) =>
     setParams(next === 'All' ? {} : { category: next }, { replace: true, preventScrollReset: true });
+
+  // Hash fragments never reach Express. Preserve saved discovery/tour map links.
+  if (['#explore-map', '#hidden-gems'].includes(location.hash) || params.has('mapTour')) {
+    return <Navigate to={`${paths.explore}${location.search}${location.hash}`} state={location.state} replace />;
+  }
 
   return (
     <>
@@ -48,8 +54,8 @@ export function DestinationsPage() {
 
       <Section name="DestinationsList">
         <section className="py-16 sm:py-20">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="no-scrollbar mb-8 flex items-center gap-2 overflow-x-auto pb-2" role="group" aria-label="Filter by category">
+          <div className="te-container">
+            <div className="mb-8 flex items-center gap-2 overflow-x-auto pb-2" role="group" aria-label="Filter by category">
               {(['All', ...CATEGORIES] as CategoryType[]).map((c) => {
                 const selected = c === category;
                 return (
@@ -58,15 +64,15 @@ export function DestinationsPage() {
                     type="button"
                     onClick={() => choose(c)}
                     aria-pressed={selected}
-                    className={`flex items-center space-x-1.5 whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition-all duration-300 sm:text-sm ${
+                    className={`flex shrink-0 items-center space-x-1.5 whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition-colors duration-200 sm:text-sm ${
                       selected
-                        ? 'scale-105 border border-[#368E6B] bg-[#0F2E23] text-[#D4AF37] shadow-md'
-                        : 'border border-[#D4C3B5]/50 bg-white text-[#1A1A1A]/80 hover:bg-[#1C4737] hover:text-white'
+                        ? 'border border-[var(--emerald-edge)] bg-[var(--inverse-surface)] text-[var(--accent-text)]'
+                        : 'border border-[var(--border-strong)]/50 bg-[var(--surface)] text-[var(--text-primary)]/80 hover:bg-[var(--background-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     <span>{c}</span>
                     {c !== 'All' && (
-                      <span className={`rounded-full px-1.5 font-sans text-[10px] ${selected ? 'bg-[#368E6B] text-white' : 'bg-[#F5EFEB] text-[#1A1A1A]'}`}>
+                      <span className={`rounded-full px-1.5 font-sans text-[10px] ${selected ? 'bg-[var(--emerald-edge)] text-[var(--on-secondary)]' : 'bg-[var(--background-secondary)] text-[var(--text-primary)]'}`}>
                         {all.filter((d) => d.category.includes(c)).length}
                       </span>
                     )}
@@ -75,10 +81,10 @@ export function DestinationsPage() {
               })}
             </div>
 
-            <p className="mb-6 text-sm text-[#1A1A1A]/60" role="status">
-              Showing <strong className="text-[#0F2E23]">{shown.length}</strong>{' '}
+            <p className="mb-6 text-sm text-[var(--text-primary)]/60" role="status">
+              Showing <strong className="text-[var(--brand-primary)]">{shown.length}</strong>{' '}
               {shown.length === 1 ? 'destination' : 'destinations'}
-              {category !== 'All' && <> for <strong className="text-[#0F2E23]">{category}</strong></>}
+              {category !== 'All' && <> for <strong className="text-[var(--brand-primary)]">{category}</strong></>}
             </p>
 
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
