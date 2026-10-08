@@ -62,7 +62,7 @@ describe('the map, in Chrome', { skip }, () => {
       mobile: Boolean(options.mobile)
     });
     if (options.mobile) await page.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
-    await page.send('Page.navigate', { url: `${app.baseUrl}/` });
+    await page.send('Page.navigate', { url: `${app.baseUrl}/explore` });
     await waitFor(page, `document.querySelector('#explore-map')`, 'the page');
     await page.evaluate(`document.querySelector('#explore-map').scrollIntoView({ block: 'start' }), true`);
     await waitFor(page, `document.querySelectorAll('#explore-map .leaflet-marker-icon').length > 0`, 'markers');
@@ -117,7 +117,7 @@ describe('the map, in Chrome', { skip }, () => {
   test('1. Leaflet and the tiles load only when the map nears the viewport; then all markers draw', async () => {
     const page = await chrome.newPage();
     await page.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
-    await page.send('Page.navigate', { url: `${app.baseUrl}/` });
+    await page.send('Page.navigate', { url: `${app.baseUrl}/explore` });
     await waitFor(page, `document.readyState === 'complete' && document.querySelector('#explore-map')`, 'the page');
     await sleep(2000);
 

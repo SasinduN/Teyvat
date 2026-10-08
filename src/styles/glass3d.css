@@ -1,0 +1,26 @@
+/* Depth/reflection extension. Diffusion belongs to the surface in glass.css. */
+.glass3d {
+  isolation: isolate;
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 1px 0 0 rgb(var(--pearl-channels) / .08),
+    inset 0 -1px 0 rgb(var(--photo-channels) / .18), 0 2px 5px rgb(var(--photo-channels) / .08), var(--glass-shadow);
+}
+.glass3d:not(.glass3d--navbar):not(.glass3d--floating) { position: relative; }
+.glass3d::before, .glass3d::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+.glass3d::before { z-index: -1; box-shadow: inset 0 1px 1px var(--glass-highlight), inset 0 -1px 2px rgb(var(--photo-channels) / .12); }
+.glass3d::after { z-index: 0; background-image: url('/images/glass-noise.svg'); background-size: 160px; opacity: var(--glass-noise-opacity); }
+.glass3d--card { --glass-blur: 8px; --glass-radius: 1rem; }
+.glass3d--floating { --glass-blur: 10px; --glass-radius: 50%; }
+.te-destination-caption { margin: .75rem; padding: 1.1rem; }
+.te-home-plan { background: linear-gradient(140deg, var(--background-secondary), var(--background)); }
+.te-home-plan-panel { display: flex; align-items: center; justify-content: space-between; gap: 2rem; padding: clamp(1.25rem, 3vw, 3rem); }
+.te-home-plan-panel .te-reading-column { max-width: 38rem; }
+.te-home-plan-panel .te-cta-group { flex-shrink: 0; max-width: 21rem; }
+.te-destination-explorer .te-search { margin-top: 0; margin-bottom: 0; }
+.te-home-discover .te-card { height: 24rem; }
+.te-nav nav { gap: clamp(.65rem, 1vw, 1.2rem); }
+.te-nav nav > * + * { margin-left: 0; }
+
+@media (max-width: 1023px) { .te-home-plan-panel { flex-direction: column; align-items: flex-start; } .te-home-plan-panel .te-cta-group { max-width: none; } }
+@media (max-width: 767px) { .te-home-discover .te-card { height: 23rem; } }
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) { .glass3d::before, .glass3d::after { display: none; } }
+@media (forced-colors: active) { .glass3d { box-shadow: none; } }

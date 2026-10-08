@@ -1,20 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { ChevronDown, Compass, MapPin } from 'lucide-react';
+import { TravelImage } from '@/components/TravelImage';
+import React, { useState, useEffect, useRef } from 'react';
+import { useReducedMotion } from 'framer-motion';
+import { Compass, MapPin, Pause, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useHeroSlides } from '@/hooks/useSiteContent';
+import { SiteLink } from './SiteLink';
+import { paths } from '@shared/site-paths';
 import { HeroSlide } from '../types';
 
-interface HeroSectionProps {
-  onExploreClick: () => void;
-  onPlanClick: () => void;
-}
-
-export const HeroSection: React.FC<HeroSectionProps> = ({
-  onExploreClick,
-  onPlanClick
-}) => {
+export const HeroSection: React.FC = () => {
   const HERO_IMAGES = useHeroSlides();
+  const slideSources = HERO_IMAGES.map(slide => slide.url).join('\n');
   const [currentBg, setCurrentBg] = useState(0);
+  const [seenSlides, setSeenSlides] = useState(() => new Set([0]));
+  const [readySlides, setReadySlides] = useState<Set<number>>(() => new Set());
+  const [requestedSlide, setRequestedSlide] = useState<number | null>(null);
+  const [paused, setPaused] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const heroRef = useRef<HTMLElement>(null);
+  const [visible, setVisible] = useState(true);
+  const [documentVisible, setDocumentVisible] = useState(true);
+  useEffect(() => {
+    const update = () => setDocumentVisible(!document.hidden);
+    update();
+    document.addEventListener('visibilitychange', update);
+    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting));
+    if (heroRef.current) observer.observe(heroRef.current);
+    return () => { observer.disconnect(); document.removeEventListener('visibilitychange', update); };
+  }, []);
   // Undefined only when no slide is published: the section then keeps its
   // background colour and copy, and drops the caption instead of crashing.
   const current: HeroSlide | undefined = HERO_IMAGES[currentBg];
@@ -22,129 +36,128 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   useEffect(() => {
     // The slide count comes from the database, so restart from the first
     // slide whenever it changes, and don't cycle through zero slides.
-    setCurrentBg(0);
-    if (HERO_IMAGES.length === 0) return;
+    if (HERO_IMAGES.length < 2 || paused || hovered || focused || reducedMotion || !visible || !documentVisible) return;
     const timer = setInterval(() => {
-      setCurrentBg((prev) => (prev + 1) % HERO_IMAGES.length);
+      setCurrentBg(prev => {
+        const next = (prev + 1) % HERO_IMAGES.length;
+        return readySlides.has(next) ? next : prev;
+      });
     }, 7000);
     return () => clearInterval(timer);
-  }, [HERO_IMAGES.length]);
+  }, [HERO_IMAGES.length, paused, hovered, focused, reducedMotion, visible, documentVisible, readySlides]);
+
+  useEffect(() => { setCurrentBg(0); setSeenSlides(new Set([0])); setReadySlides(new Set()); setRequestedSlide(null); }, [slideSources]);
+  useEffect(() => { setSeenSlides(previous => new Set([...previous, currentBg])); }, [currentBg]);
+  useEffect(() => {
+    if (HERO_IMAGES.length < 2 || !visible || !documentVisible || reducedMotion || paused || !readySlides.has(currentBg)) return;
+    // One slide ahead, only after the current photograph has finished loading.
+    const next = (currentBg + 1) % HERO_IMAGES.length;
+    setSeenSlides(previous => previous.has(next) ? previous : new Set([...previous, next]));
+  }, [HERO_IMAGES.length, currentBg, readySlides, visible, documentVisible, reducedMotion, paused]);
+
+  const showSlide = (index: number) => {
+    setSeenSlides(previous => new Set([...previous, index]));
+    if (readySlides.has(index)) { setCurrentBg(index); setRequestedSlide(null); }
+    else setRequestedSlide(index);
+  };
+  useEffect(() => {
+    if (requestedSlide !== null && readySlides.has(requestedSlide)) {
+      setCurrentBg(requestedSlide);
+      setRequestedSlide(null);
+    }
+  }, [requestedSlide, readySlides]);
 
   return (
-    <section id="hero" className="relative w-full h-screen min-h-[700px] flex items-center justify-center overflow-hidden bg-[#0F2E23]">
+    <section ref={heroRef} id="hero" aria-busy={requestedSlide !== null} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocusCapture={() => setFocused(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }} className="te-hero relative w-full flex items-center justify-center overflow-hidden bg-[var(--inverse-surface)]">
       {/* Background Image Carousel with Smooth Crossfade */}
       {HERO_IMAGES.map((bg, idx) => (
         <div
-          key={bg.url}
-          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-            idx === currentBg ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
-          } transform transition-transform duration-10000`}
+          key={bg.url} aria-hidden={idx !== currentBg} data-active={idx === currentBg}
+          className="te-hero-slide"
         >
-          <img
+          {seenSlides.has(idx) && <TravelImage sizes="100vw"
+            loading="eager"
+            fetchPriority={idx === 0 ? "high" : "low"}
+            decoding="async"
+            onLoad={() => setReadySlides(previous => previous.has(idx) ? previous : new Set([...previous, idx]))}
             src={bg.url}
             alt={bg.title}
             className="w-full h-full object-cover object-center"
-          />
+          />}
         </div>
       ))}
 
-      {/* Premium Multi-Layer Dark Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#0F2E23] via-[#0F2E23]/50 to-black/60" />
-      <div className="absolute inset-0 bg-radial-at-c from-transparent via-black/20 to-black/70" />
+      {/* Photo-preserving contrast overlay */}
+      <div className="te-hero-overlay absolute inset-0" />
+      
 
       {/* Hero Content */}
-      <div className="relative z-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white pt-16">
-        {/* Subtle Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-1.5 rounded-full mb-6 text-xs font-semibold uppercase tracking-widest text-[#D4AF37]"
-        >
-          <span className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse" />
-          <span>The Premium Sri Lanka Experience</span>
-        </motion.div>
-
-        {/* Main Title */}
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.4 }}
-          className="font-heading text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.1] mb-6 drop-shadow-md"
-        >
-          See Sri Lanka Through a <br className="hidden sm:inline" />
-          <span className="bg-gradient-to-r from-[#F5EFEB] via-[#D4AF37] to-[#EBDED5] bg-clip-text text-transparent italic font-serif">
-            Different Eye.
-          </span>
-        </motion.h1>
-
-        {/* Supporting Subtitle */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="text-lg sm:text-xl md:text-2xl text-white/90 max-w-3xl mx-auto font-light leading-relaxed mb-10 text-shadow"
-        >
-          Discover hidden places, timeless culture, wild adventures and unforgettable moments across the island.
-        </motion.p>
-
-        {/* Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
-        >
-          <button
-            onClick={onExploreClick}
-            className="w-full sm:w-auto px-8 py-4 bg-[#1C4737] hover:bg-[#0F2E23] text-white font-medium text-base rounded-full shadow-xl hover:shadow-2xl border border-[#368E6B]/50 transition-all duration-300 flex items-center justify-center space-x-3 group"
+      <div className="te-hero-content te-container relative z-20 text-white">
+        <div className="te-hero-copy">
+          {/* Subtle Badge */}
+          <div
+            className="te-hero-badge inline-flex items-center mb-6 text-xs font-semibold uppercase tracking-widest text-[var(--accent-text)]"
           >
-            <MapPin className="w-5 h-5 text-[#D4AF37] group-hover:scale-110 transition-transform" />
-            <span>Explore Sri Lanka</span>
-          </button>
+            <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
+            <span>The Premium Sri Lanka Experience</span>
+          </div>
 
-          <button
-            onClick={onPlanClick}
-            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-[#D4AF37] to-[#C5A059] hover:from-[#C5A059] hover:to-[#B89248] text-[#0F2E23] font-bold text-base rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center space-x-3 transform hover:-translate-y-0.5"
+          {/* Main Title */}
+          <h1
+            className="te-hero-title font-heading text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.1] mb-6 drop-shadow-md"
           >
-            <Compass className="w-5 h-5" />
-            <span>Plan Your Journey</span>
-          </button>
-        </motion.div>
+            See Sri Lanka Through a <br className="hidden sm:inline" />
+            <span className="te-hero-emphasis italic font-serif">
+              Different Eye.
+            </span>
+          </h1>
 
+          {/* Supporting Subtitle */}
+          <p
+            className="te-hero-subtitle text-lg sm:text-xl md:text-2xl text-white/90 font-light leading-relaxed mb-10 text-shadow"
+          >
+            Discover hidden places, timeless culture, wild adventures and unforgettable moments across the island.
+          </p>
+
+          {/* Action Buttons */}
+          <div
+            className="te-hero-actions te-cta-group flex flex-col sm:flex-row items-center gap-4"
+          >
+            <SiteLink to={paths.destinations}
+              className="te-button te-button--secondary te-button--lg w-full sm:w-auto group"
+            >
+              <MapPin className="w-5 h-5" />
+              <span>Explore Sri Lanka</span>
+            </SiteLink>
+
+            <SiteLink to={paths.plan}
+              className="te-button te-button--primary te-button--lg w-full sm:w-auto"
+            >
+              <Compass className="w-5 h-5" />
+              <span>Plan Your Journey</span>
+            </SiteLink>
+          </div>
+
+        </div>
         {/* Location Indicator Caption */}
         {current && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.2 }}
-            className="mt-12 hidden sm:flex items-center justify-center space-x-2 text-xs text-white/70"
+          <div
+            className="te-hero-caption mt-8 inline-flex items-center space-x-2 text-xs text-white/90"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
             <span>Currently featured: {current.title} ({current.caption})</span>
-          </motion.div>
+          </div>
         )}
       </div>
 
-      {/* Bottom Scroll Indicator */}
-      <motion.button
-        onClick={onExploreClick}
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{
-          duration: 1,
-          delay: 1.4,
-          repeat: Infinity,
-          repeatType: 'reverse'
-        }}
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 text-white/80 hover:text-white flex flex-col items-center gap-1 focus:outline-none cursor-pointer"
-        aria-label="Scroll to explore"
-      >
-        <span className="text-[10px] tracking-widest uppercase font-semibold text-[#D4AF37]">
-          Scroll to Discover
-        </span>
-        <ChevronDown className="w-6 h-6 text-[#D4AF37]" />
-      </motion.button>
+      {HERO_IMAGES.length > 1 && <div className="te-hero-controls" role="group" aria-label="Featured destinations">
+        <button className="te-button te-button--icon" type="button" aria-label="Previous featured destination" onClick={() => showSlide(((requestedSlide ?? currentBg) - 1 + HERO_IMAGES.length) % HERO_IMAGES.length)}><ChevronLeft size={18} aria-hidden="true" /></button>
+        <button className="te-button te-button--icon" type="button" onClick={() => setPaused(value => !value)} aria-label={paused ? "Resume slideshow" : "Pause slideshow"} aria-pressed={paused}>
+          {paused ? <Play size={16} aria-hidden="true" /> : <Pause size={16} aria-hidden="true" />}
+        </button>
+        <button className="te-button te-button--icon" type="button" aria-label="Next featured destination" onClick={() => showSlide(((requestedSlide ?? currentBg) + 1) % HERO_IMAGES.length)}><ChevronRight size={18} aria-hidden="true" /></button>
+      </div>}
+
     </section>
   );
 };

@@ -5,12 +5,11 @@ import { usePageTitle, usePublicSite } from '@/context/PublicSiteContext';
 import { useTours } from '@/hooks/useSiteContent';
 import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
-import type { HomeNavigationState } from './HomePage';
 import { Section } from './Section';
 
 /**
- * `/tours`: the home page's tour cards, as they are. "View route on map"
- * goes to the home page's map with that tour's route showing.
+ * `/tours`: the complete tour collection. "View route on map" opens the
+ * destinations explorer with a shareable tour query and the route showing.
  */
 export function ToursPage() {
   usePageTitle(PAGE_TITLES.tours);
@@ -31,7 +30,7 @@ export function ToursPage() {
         <ToursSection
           onOpenInquiry={openInquiry}
           onViewRoute={(tour) =>
-            navigate(paths.explore, { state: { routeTourId: tour.id } satisfies HomeNavigationState })
+            navigate(paths.tourOnMap(tour.id))
           }
         />
       </Section>

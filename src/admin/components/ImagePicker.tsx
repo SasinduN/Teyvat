@@ -35,7 +35,7 @@ export const ImagePreview: React.FC<{ url: string; className: string }> = ({ url
   return (
     <div
       className={cn(
-        'flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#D4C3B5]/70 bg-[#F5EFEB]',
+        'flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--border-strong)]/70 bg-[var(--background-secondary)]',
         className
       )}
     >
@@ -43,7 +43,7 @@ export const ImagePreview: React.FC<{ url: string; className: string }> = ({ url
         <img src={url} alt="" loading="lazy" className="h-full w-full object-cover" onError={() => setBroken(true)} />
       ) : (
         <ImageOff
-          className="h-5 w-5 text-[#1A1A1A]/25"
+          className="h-5 w-5 text-[var(--text-primary)]/25"
           aria-label={url ? 'This URL does not load as an image' : 'No image'}
         />
       )}
@@ -119,19 +119,19 @@ const UploadButton: React.FC<{
 
       {progress && (
         <div
-          className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-[#D4C3B5]/40"
+          className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-[var(--border-strong)]/40"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={Math.round(progress.fraction * 100)}
         >
           <div
-            className="h-full rounded-full bg-[#1C4737] transition-[width]"
+            className="h-full rounded-full bg-[var(--brand-secondary)] transition-[width]"
             style={{ width: `${Math.round(progress.fraction * 100)}%` }}
           />
         </div>
       )}
-      {!enabled && <p className="text-[11px] font-light text-[#1A1A1A]/50">{UPLOADS_OFF}</p>}
+      {!enabled && <p className="text-[11px] font-light text-[var(--text-primary)]/50">{UPLOADS_OFF}</p>}
       {error && <ErrorNote>{error}</ErrorNote>}
     </div>
   );
@@ -159,9 +159,9 @@ export const MediaPickerModal: React.FC<{
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Media library">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl bg-[#FBF9F6] shadow-2xl">
-        <div className="flex items-center justify-between gap-3 border-b border-[#D4C3B5]/50 p-4">
-          <h2 className="font-heading text-lg font-bold text-[#0F2E23]">Choose from the library</h2>
+      <div className="relative flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl bg-[var(--background)] shadow-2xl">
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--border-strong)]/50 p-4">
+          <h2 className="font-heading text-lg font-bold text-[var(--brand-primary)]">Choose from the library</h2>
           <div className="flex items-center gap-2">
             <Select value={folder} onChange={(e) => setFolder(e.target.value)} aria-label="Folder">
               <option value="">All folders</option>
@@ -179,9 +179,9 @@ export const MediaPickerModal: React.FC<{
           {library.isError ? (
             <ErrorNote>{describeError(library.error)}</ErrorNote>
           ) : library.isPending ? (
-            <p className="text-xs text-[#1A1A1A]/60">Loading the library…</p>
+            <p className="text-xs text-[var(--text-primary)]/60">Loading the library…</p>
           ) : shown.length === 0 ? (
-            <p className="text-xs text-[#1A1A1A]/60">Nothing uploaded yet.</p>
+            <p className="text-xs text-[var(--text-primary)]/60">Nothing uploaded yet.</p>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
               {shown.map((item) => (
@@ -192,10 +192,10 @@ export const MediaPickerModal: React.FC<{
                     onPick(item.url);
                     onClose();
                   }}
-                  className="group overflow-hidden rounded-xl border border-[#D4C3B5]/70 bg-white text-left transition-colors hover:border-[#1C4737]"
+                  className="group overflow-hidden rounded-xl border border-[var(--border-strong)]/70 bg-[var(--surface)] text-left transition-colors hover:border-[var(--inverse-raised)]"
                 >
                   <ImagePreview url={item.url} className="h-24 w-full rounded-none border-0" />
-                  <div className="truncate px-2 py-1.5 text-[10px] text-[#1A1A1A]/55">{item.folder}</div>
+                  <div className="truncate px-2 py-1.5 text-[10px] text-[var(--text-primary)]/55">{item.folder}</div>
                 </button>
               ))}
             </div>
@@ -249,7 +249,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
         </div>
 
         <div className="relative">
-          <Link2 className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-[#1C4737]/45" />
+          <Link2 className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-[var(--brand-primary)]/45" />
           <Input
             id={id}
             type="url"
@@ -257,7 +257,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
             spellCheck={false}
             placeholder="or paste https://…"
             value={value}
-            className={cn('pl-10', invalid && 'border-[#B3261E] focus:border-[#B3261E] focus:ring-[#B3261E]')}
+            className={cn('pl-10', invalid && 'border-[var(--danger)] focus:border-[var(--danger)] focus:ring-[var(--danger)]')}
             onBlur={onBlur}
             onChange={(e) => onChange(e.target.value)}
           />
@@ -353,7 +353,7 @@ const IconMini: React.FC<{
     title={label}
     onClick={onClick}
     disabled={disabled}
-    className="flex h-7 w-7 items-center justify-center rounded-md text-[#1C4737] transition-colors hover:bg-[#1C4737]/10 disabled:opacity-30"
+    className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--brand-primary)] transition-colors hover:bg-[var(--brand-secondary)]/10 disabled:opacity-30"
   >
     {children}
   </button>

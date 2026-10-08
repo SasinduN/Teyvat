@@ -17,7 +17,7 @@ export const RequireAdmin: React.FC<{ children: React.ReactNode }> = ({ children
 
   if (initializing) {
     return (
-      <div className="min-h-screen bg-[#FBF9F6]">
+      <div className="min-h-screen bg-[var(--background)]">
         <Spinner label="Checking your session" />
       </div>
     );

@@ -31,7 +31,7 @@ export const RouteMap: React.FC<{ stops: TourStop[] }> = ({ stops }) => {
       L.control.zoom({ position: 'bottomright' }).addTo(map);
 
       const points = stops.map((s) => [s.lat, s.lng] as [number, number]);
-      L.polyline(points, { color: '#1C4737', weight: 3, dashArray: '8 8', interactive: false, className: 'route-line' }).addTo(map);
+      L.polyline(points, { color: 'var(--inverse-raised)', weight: 3, dashArray: '8 8', interactive: false, className: 'route-line' }).addTo(map);
       stops.forEach((stop, i) => {
         const marker = L.marker([stop.lat, stop.lng], {
           icon: L.divIcon({
