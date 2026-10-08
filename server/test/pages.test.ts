@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 import { after, before, beforeEach, describe, test } from 'node:test';
 
 import { HOME_DESCRIPTION, HOME_TITLE, PAGE_DESCRIPTIONS, PAGE_TITLES } from '../../shared/page-meta';
+import { publicPhoto } from '../../shared/public-photos';
 import { createApp } from '../src/app';
 import type { SiteConfig } from '../src/env';
 import { pool } from '../src/db';
@@ -187,7 +188,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
       assert.equal(res.headers.get('cache-control'), 'no-cache', path);
     }
 
-    for (const path of ['/nope', '/destinations/nowhere', '/tours/Not-A-Slug!', '/journal/', '/experiences/a/b', '/index']) {
+    for (const path of ['/nope', '/destinations/nowhere', '/tours/Not-A-Slug!', '/journal/', '/experiences/a/b', '/index', '/explore', '/plan', '/photo-credits']) {
       const res = await get(closed, path);
       // `/journal/` is a trailing slash first: 301 to /journal, which is a 404.
       const final = res.status === 301 ? await get(closed, res.headers.get('location')!) : res;
@@ -247,7 +248,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
       assert.equal(metaContent(h, 'og:url'), `${SITE}${path}`, path);
       assert.equal(metaContent(h, 'og:type'), table === 'articles' ? 'article' : 'website', path);
       assert.equal(metaContent(h, 'og:site_name'), 'Travel Eye', path);
-      assert.equal(metaContent(h, 'og:image'), shareImage(row.image, SITE)!.url, path);
+      assert.equal(metaContent(h, 'og:image'), shareImage(publicPhoto(table, id, row.image), SITE)!.url, path);
       assert.match(metaContent(h, 'og:image') ?? '', /^https:\/\//, path);
       assert.equal(metaContent(h, 'twitter:card'), 'summary_large_image', path);
       assert.equal(metaContent(h, 'twitter:image'), metaContent(h, 'og:image'), path);

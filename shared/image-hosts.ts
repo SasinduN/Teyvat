@@ -12,6 +12,8 @@
 
 /** The seeded content's photos. */
 export const UNSPLASH_ORIGIN = 'https://images.unsplash.com';
+/** Curated, credited location photographs; no wildcard external hosts. */
+export const WIKIMEDIA_ORIGINS = ['https://upload.wikimedia.org', 'https://thumb.wikimedia.org'];
 
 /**
  * The map's tiles: exactly CARTO's bare host (no a–d subdomains since the
@@ -22,7 +24,7 @@ export { CARTO_TILES_ORIGIN as MAP_TILES_SOURCE } from './map-tiles';
 
 /** Origins an image field may point at: Unsplash, plus our R2 bucket when uploads are set up. */
 export function allowedImageOrigins(r2PublicBaseUrl: string | null): string[] {
-  const origins = [UNSPLASH_ORIGIN];
+  const origins = [UNSPLASH_ORIGIN, ...WIKIMEDIA_ORIGINS];
   if (r2PublicBaseUrl) origins.push(new URL(r2PublicBaseUrl).origin);
   return origins;
 }
@@ -36,4 +38,4 @@ export function isAllowedImageUrl(url: string, origins: readonly string[]): bool
   }
 }
 
-export const IMAGE_HOST_REFUSED = 'Images must come from the media library or Unsplash.';
+export const IMAGE_HOST_REFUSED = 'Images must come from the media library, Unsplash or Wikimedia Commons.';

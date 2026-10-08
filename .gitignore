@@ -29,3 +29,15 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+
+# Local audit artifacts
+.audit-baseline/
+.chrome-audit*/
+.component-inventory.txt
+.baseline-dom*.html
+
+# Local archives and generated audit artifacts
+backups/
+__pycache__/
+*.pyc
+docs/qa-results/

@@ -25,6 +25,7 @@ import type { TourStopInput, TourStopPayload } from './tour-stops';
 export const API_ROUTES = {
   health: '/api/health',
   content: '/api/content',
+  newsletter: '/api/newsletter',
   /** `POST`: the public enquiry form. */
   inquiries: '/api/inquiries',
   auth: {

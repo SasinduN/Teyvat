@@ -8,34 +8,14 @@ export interface ConnectionTarget {
   ssl: false | { rejectUnauthorized: boolean };
 }
 
-/**
- * Decides TLS here rather than letting the connection string do it.
- *
- * `sslmode` in the URL is interpreted by pg-connection-string, and in pg 8.x
- * `require` is treated as `verify-full` — full certificate verification — while
- * pg 9 will switch it to libpq semantics (encrypt, do not verify). Those are
- * opposite behaviours from the same URL, and whichever one you rely on breaks
- * on upgrade. Worse, the parsed value wins over the `ssl` option passed
- * alongside it, so a relaxed setting there is silently ignored.
- *
- * So: read `sslmode` only as a yes/no signal for "use TLS", strip it, and state
- * the verification policy explicitly.
- *
- * `rejectUnauthorized: false` is deliberate and is a real trade-off. Railway's
- * TCP proxy presents a self-signed certificate that chains to nothing in the
- * default CA store, so verification cannot succeed without pinning their CA.
- * The connection is still encrypted, which defeats passive eavesdropping on the
- * public internet, but it does not authenticate the server — an active
- * machine-in-the-middle would not be detected.
- *
- * That is acceptable for applying migrations from a laptop, and it is why the
- * deployed service should use the internal `*.railway.internal` URL with no
- * `sslmode` at all: traffic never leaves Railway's private network, so there is
- * nothing to encrypt against and nothing to verify.
- */
+/** TLS verifies certificates by default. For private local development only,
+ * sslmode=no-verify may explicitly opt out. Remote self-signed deployments
+ * must configure a trusted CA (for example NODE_EXTRA_CA_CERTS). */
 export function connectionTargetFor(url: string): ConnectionTarget {
   const parsed = new URL(url);
   const mode = parsed.searchParams.get('sslmode');
+  if (mode !== null && !['disable', 'allow', 'prefer', 'require', 'verify-ca', 'verify-full', 'no-verify'].includes(mode)) throw new Error('Unsupported database sslmode.');
+  if (mode === 'no-verify' && !['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname)) throw new Error('Unverified TLS is only permitted for an explicitly configured local database.');
 
   // Remove anything that would re-engage pg's own SSL handling.
   parsed.searchParams.delete('sslmode');
@@ -43,7 +23,7 @@ export function connectionTargetFor(url: string): ConnectionTarget {
 
   return {
     connectionString: parsed.toString(),
-    ssl: mode !== null && mode !== 'disable' ? { rejectUnauthorized: false } : false
+    ssl: mode !== null && mode !== 'disable' ? { rejectUnauthorized: mode !== 'no-verify' } : false
   };
 }
 
