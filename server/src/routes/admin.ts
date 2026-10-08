@@ -1,3 +1,4 @@
+import { REVISION_COLUMN } from '../revision';
 /**
  * `/api/admin/*` — the admin panel's reads and writes.
  *
@@ -75,18 +76,8 @@ function sqlValue(column: string, value: unknown): unknown {
   return JSONB_COLUMNS.has(column) ? JSON.stringify(value) : value;
 }
 
-/**
- * The optimistic-concurrency check, as SQL. `updated_at` is stored to the
- * microsecond, but node-postgres hands it to the client as a JS Date
- * (milliseconds, truncated through floating point), so an exact comparison
- * would never match. Within a millisecond either way is the same save.
- */
-function versionMatches(param: number): string {
-  return (
-    `updated_at between $${param}::timestamptz - interval '1 millisecond' ` +
-    `and $${param}::timestamptz + interval '1 millisecond'`
-  );
-}
+/** Compare the lossless revision sent by content/settings reads. */
+function versionMatches(param: number): string { return `updated_at = $${param}::timestamptz`; }
 
 async function withTransaction<T>(work: (client: PoolClient) => Promise<T>): Promise<T> {
   const client = await pool.connect();
@@ -180,7 +171,7 @@ adminRouter.get(
   asyncRoute(async (req, res) => {
     const table = tableOf(req);
     const { rows } = await pool.query(
-      `select * from public.${table} order by sort_order asc, id asc`
+      `select *, ${REVISION_COLUMN} from public.${table} order by sort_order asc, id asc`
     );
     res.json(rows);
   })
@@ -203,7 +194,7 @@ adminRouter.get(
   asyncRoute(async (req, res) => {
     const table = tableOf(req);
     const id = param(req, 'id');
-    const { rows } = await pool.query(`select * from public.${table} where id = $1`, [id]);
+    const { rows } = await pool.query(`select *, ${REVISION_COLUMN} from public.${table} where id = $1`, [id]);
     if (!rows[0]) throw new ApiError('not_found', 'That record no longer exists.');
     // A tour's route stops are a table of their own; the form edits them with the row.
     res.json(table === 'tours' ? { ...rows[0], stops: await adminStops(pool, id) } : rows[0]);
@@ -275,7 +266,7 @@ adminRouter.post(
         `insert into public.${table} (${columns.map((c) => `"${c}"`).join(', ')}, sort_order)
          values (${columns.map((c, i) => placeholder(c, i + 1)).join(', ')},
                  (select coalesce(max(sort_order) + 1, 0) from public.${table}))
-         returning *`,
+         returning *, ${REVISION_COLUMN}`,
         columns.map((c) => sqlValue(c, values[c]))
       );
       if (table === 'tours') {
@@ -320,7 +311,7 @@ adminRouter.put(
         `update public.${table}
             set ${columns.map((c, i) => `"${c}" = ${placeholder(c, i + 1)}`).join(', ')}
           where id = $${columns.length + 1} and ${versionMatches(columns.length + 2)}
-          returning *`,
+          returning *, ${REVISION_COLUMN}`,
         [...params, id, body.expectedUpdatedAt]
       );
       // Stops are replaced only once the version check has passed.
@@ -354,7 +345,7 @@ adminRouter.patch(
         await keepOneHeroSlide(client, id);
       }
       const { rows } = await client.query(
-        `update public.${table} set published = $1 where id = $2 returning *`,
+        `update public.${table} set published = $1 where id = $2 returning *, ${REVISION_COLUMN}`,
         [published, id]
       );
       return rows[0];
@@ -388,7 +379,7 @@ adminRouter.delete(
 adminRouter.get(
   '/admin/site-settings',
   asyncRoute(async (_req, res) => {
-    const { rows } = await pool.query('select * from public.site_settings where id');
+    const { rows } = await pool.query(`select *, ${REVISION_COLUMN} from public.site_settings where id`);
     if (!rows[0]) throw new Error('public.site_settings has no row; run `npm run migrate`.');
     res.json(rows[0]);
   })
@@ -405,7 +396,7 @@ adminRouter.put(
       `update public.site_settings
           set ${columns.map((c, i) => `"${c}" = $${i + 1}`).join(', ')}
         where id and ${versionMatches(columns.length + 1)}
-        returning *`,
+        returning *, ${REVISION_COLUMN}`,
       [...columns.map((c) => values[c]), body.expectedUpdatedAt]
     );
 

@@ -1,3 +1,4 @@
+import { REVISION_COLUMN } from '../revision';
 /**
  * Enquiries: the public form's `POST /api/inquiries`, and the admin inbox
  * under `/api/admin/inquiries`.
@@ -117,7 +118,7 @@ function likePattern(term: string): string {
 
 async function listInquiries(filters: ListFilters, limit: number): Promise<InquiryRow[]> {
   const { rows } = await pool.query<InquiryRow>(
-    `select * from public.inquiries
+    `select *, ${REVISION_COLUMN} from public.inquiries
       where spam = $1
         and ($2 = '' or status = $2)
         and ($3 = '' or name ilike $4 escape '\\' or email ilike $4 escape '\\' or subject ilike $4 escape '\\')
@@ -167,7 +168,7 @@ function idOf(req: Request): string {
 inquiriesRouter.get(
   '/admin/inquiries/:id',
   asyncRoute(async (req, res) => {
-    const { rows } = await pool.query<InquiryRow>('select * from public.inquiries where id::text = $1', [
+    const { rows } = await pool.query<InquiryRow>(`select *, ${REVISION_COLUMN} from public.inquiries where id::text = $1`, [
       idOf(req)
     ]);
     if (!rows[0]) throw new ApiError('not_found', 'That enquiry no longer exists.');
@@ -199,9 +200,8 @@ inquiriesRouter.patch(
               closed_at   = case when coalesce($2, status) = 'closed'
                                  then coalesce(closed_at, now()) else null end
         where id::text = $1
-          and updated_at between $6::timestamptz - interval '1 millisecond'
-                             and $6::timestamptz + interval '1 millisecond'
-        returning *`,
+          and updated_at = $6::timestamptz
+        returning *, ${REVISION_COLUMN}`,
       [
         id,
         patch.status ?? null,

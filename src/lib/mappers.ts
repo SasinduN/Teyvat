@@ -2,8 +2,8 @@
  * Database row  <->  front-end domain type.
  *
  * The public components were written against the shapes in `src/types/index.ts`
- * and must keep rendering byte-for-byte the same output, so every mapper here
- * reproduces the original values exactly — including `undefined` (rather than
+ * retain their domain shapes. Named, user-authorized photo/geography corrections
+ * are guarded separately; other values preserve conventions including `undefined` (rather than
  * `null`) for the optional fields, since components test them with plain
  * truthiness and optional chaining.
  */
@@ -29,6 +29,8 @@ import type {
   PillarRow,
 } from '@shared/database.types';
 import type { PublicSiteSettings, PublicTourRow } from '@shared/api';
+import { destinationPhoto } from './destination-photo';
+import { publicPhoto, publicGallery, photoStoryLocation } from '@shared/public-photos';
 
 /** The `EXPERIENCE_CATEGORIES` tiles have no interface in `src/types`. */
 export interface ExperienceCategory {
@@ -74,11 +76,11 @@ export const toDestination = (r: DestinationRow): Destination => ({
   category: r.category,
   shortDescription: r.short_description,
   longDescription: r.long_description,
-  image: r.image,
+  image: destinationPhoto(r.id, r.image),
   // The original data omitted `gallery` entirely when there were no images;
   // an empty array would make `gallery?.length` falsy the same way, but
   // `undefined` keeps the shape identical to the approved demo.
-  gallery: r.gallery.length > 0 ? r.gallery : undefined,
+  gallery: r.gallery.length > 0 ? publicGallery(r.id, r.gallery) : undefined,
   bestTime: r.best_time,
   experiences: r.experiences,
   highlights: r.highlights,
@@ -94,7 +96,7 @@ export const toExperienceCategory = (r: ExperienceCategoryRow): ExperienceCatego
   title: r.title,
   category: r.category,
   subtitle: r.subtitle,
-  image: r.image,
+  image: publicPhoto('experience_categories', r.id, r.image),
   description: r.description
 });
 
@@ -105,7 +107,7 @@ export const toExperienceItem = (r: FeaturedExperienceRow): ExperienceItem => ({
   location: r.location,
   duration: r.duration,
   category: r.category,
-  image: r.image,
+  image: publicPhoto('featured_experiences', r.id, r.image),
   description: r.description,
   highlights: r.highlights,
   recommendedTime: opt(r.recommended_time),
@@ -127,7 +129,7 @@ export const toTourPackage = (r: PublicTourRow): TourPackage => ({
   })),
   shortDesc: r.short_desc,
   fullDesc: r.full_desc,
-  image: r.image,
+  image: publicPhoto('tours', r.id, r.image),
   highlights: r.highlights,
   includedPlaces: r.included_places,
   priceFrom: Number(r.price_from),
@@ -141,7 +143,7 @@ export const toArticle = (r: ArticleRow): Article => ({
   category: r.category,
   date: formatArticleDate(r.published_at),
   readTime: r.read_time,
-  image: r.image,
+  image: publicPhoto('articles', r.id, r.image),
   snippet: r.snippet,
   author: {
     name: r.author_name,
@@ -155,7 +157,7 @@ export const toHiddenGem = (r: HiddenGemRow): HiddenGem => ({
   id: r.id,
   name: r.name,
   region: r.region,
-  image: r.image,
+  image: publicPhoto('hidden_gems', r.id, r.image),
   description: r.description,
   whyVisit: r.why_visit,
   tag: r.tag
@@ -164,9 +166,9 @@ export const toHiddenGem = (r: HiddenGemRow): HiddenGem => ({
 export const toPhotoStory = (r: PhotoStoryRow): PhotoStory => ({
   id: r.id,
   title: r.title,
-  location: r.location,
+  location: photoStoryLocation(r.id, r.image, r.location),
   category: r.category,
-  image: r.image,
+  image: publicPhoto('photo_stories', r.id, r.image),
   caption: r.caption,
   aspect: opt(r.aspect)
 });
@@ -174,7 +176,7 @@ export const toPhotoStory = (r: PhotoStoryRow): PhotoStory => ({
 /** The column is `image` like every other table; the carousel's prop is `url`. */
 export const toHeroSlide = (r: HeroSlideRow): HeroSlide => ({
   id: r.id,
-  url: r.image,
+  url: publicPhoto('hero_slides', r.id, r.image),
   title: r.title,
   caption: r.caption
 });
