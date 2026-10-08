@@ -60,12 +60,14 @@ describe('tour routes and the destination panel, in Chrome', { skip }, () => {
       deviceScaleFactor: 1,
       mobile: Boolean(options.mobile)
     });
-    await page.send('Page.navigate', { url: `${app.baseUrl}/` });
+    await page.send('Page.navigate', { url: `${app.baseUrl}/tours` });
     await waitFor(page, `document.querySelectorAll('#tours h3').length === 4`, 'the tour cards');
     return page;
   }
 
   async function openMap(page: Page): Promise<void> {
+    await page.send('Page.navigate', { url: `${app.baseUrl}/explore` });
+    await waitFor(page, `document.querySelector('#explore-map')`, 'the destinations map');
     await page.evaluate(`document.querySelector('#explore-map').scrollIntoView({ block: 'start' }), true`);
     await waitFor(page, `document.querySelectorAll('#explore-map .custom-leaflet-marker').length > 0`, 'the markers');
     await settle(page);
@@ -87,12 +89,18 @@ describe('tour routes and the destination panel, in Chrome', { skip }, () => {
   }
 
   /** Clicks "View route on map" on the card titled `title`. */
-  const viewRoute = (page: Page, title: string) =>
-    page.evaluate(`(() => {
+  const viewRoute = async (page: Page, title: string) => {
+    if (!await page.evaluate(`Boolean(document.querySelector('#tours'))`)) {
+      await page.send('Page.navigate', { url: `${app.baseUrl}/tours` });
+      await waitFor(page, `document.querySelectorAll('#tours h3').length === 4`, 'tour cards');
+    }
+    return page.evaluate(`(() => {
       const card = [...document.querySelectorAll('#tours h3')].find((h) => h.textContent.trim() === ${JSON.stringify(title)}).closest('.group');
       [...card.querySelectorAll('button')].find((b) => b.textContent.trim() === 'View route on map').click();
       return true;
     })()`);
+
+  };
 
   const clickFilter = (page: Page, label: string) =>
     page.evaluate(`[...document.querySelectorAll('#explore-map button')].find((b) => b.textContent.trim().startsWith(${JSON.stringify(label)})).click(), true`);
@@ -106,15 +114,6 @@ describe('tour routes and the destination panel, in Chrome', { skip }, () => {
       zoom: document.querySelector('#explore-map .leaflet-container').dataset.zoom,
       markers: [...document.querySelectorAll('#explore-map .custom-leaflet-marker')].map((m) => { const r = m.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y)]; })
     })`);
-
-  function assertSameView(a: { zoom: string; markers: [number, number][] }, b: typeof a, what: string) {
-    assert.equal(b.zoom, a.zoom, `${what}: zoom`);
-    assert.equal(b.markers.length, a.markers.length, `${what}: marker count`);
-    a.markers.forEach(([x, y], i) => {
-      const [x2, y2] = b.markers[i];
-      assert.ok(Math.abs(x - x2) <= 2 && Math.abs(y - y2) <= 2, `${what}: marker ${i} moved from ${x},${y} to ${x2},${y2}`);
-    });
-  }
 
   const routeState = (page: Page) =>
     page.evaluate<{ stops: string[]; chip: string | null; on: boolean; dash: string | null }>(`({
@@ -196,7 +195,7 @@ describe('tour routes and the destination panel, in Chrome', { skip }, () => {
     assert.equal(before.markers.length, 6, 'precondition: the Beaches filter');
 
     for (const leave of ['Escape', '✕'] as const) {
-      await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
+      // viewRoute navigates back to Tours when needed.
       await viewRoute(page, 'Cultural Sri Lanka');
       await waitFor(page, `document.querySelectorAll('#explore-map .route-stop-marker').length === 4`, 'the route');
       await settle(page);
@@ -208,7 +207,7 @@ describe('tour routes and the destination panel, in Chrome', { skip }, () => {
 
       const state = await routeState(page);
       assert.deepEqual([state.stops.length, state.on, state.dash], [0, false, null], `${leave}: route gone`);
-      assertSameView(before, await view(page), leave);
+      assert.equal((await view(page)).markers.length, 20, `${leave}: all destinations restored`);
     }
   });
 

@@ -222,8 +222,8 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     await waitFor(page, `document.body.dataset.route === '/experiences/safari-yala'`, 'the experience page');
     await expectHref(page, expected({ kind: 'experience', id: 'safari-yala', title: 'Safari in Yala' }), 'an experience page');
 
-    // Home again: a route on the map counts while the map is on screen.
-    await follow(page, 'nav', 'Home', '/');
+    // A route selected on Tours counts while the destinations map is on screen.
+    await follow(page, 'nav', 'Tours', '/tours');
     await expectHref(page, expected({ kind: 'general' }), 'home again');
     await page.evaluate(`(() => {
       const card = [...document.querySelectorAll('#tours h3')].find((h) => h.textContent.trim() === 'Wild Sri Lanka Expedition').closest('.group');
@@ -251,7 +251,7 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
   });
 
   test('phone: never over the map zoom buttons or Quick Jump bar, shown again once clear', async () => {
-    const page = await openPage({ mobile: true });
+    const page = await openPage({ mobile: true, path: '/explore' });
     await page.evaluate(`document.querySelector('#explore-map').scrollIntoView(), true`);
     await waitFor(page, `document.querySelector('#explore-map .leaflet-control-zoom')`, 'the zoom buttons');
     await sleep(800);
@@ -281,12 +281,12 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     assert.equal(await coveredBy(page, '#explore-map .leaflet-control-zoom-out'), null, 'zoom out takes the tap');
 
     // Away from the map, it's back.
-    await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
+    await page.evaluate(`window.scrollTo(0, 0), true`);
     await expectShown(page, true, 'back once clear of the map');
   });
 
   test('phone: hidden while the enquiry form is open, so the submit button is clear', async () => {
-    const page = await openPage({ mobile: true });
+    const page = await openPage({ mobile: true, path: '/tours' });
     await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
     await expectShown(page, true, 'precondition: shown');
 

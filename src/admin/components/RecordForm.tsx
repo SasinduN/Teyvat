@@ -87,7 +87,7 @@ export const RecordForm: React.FC<RecordFormProps> = ({
           />
 
           {message && (
-            <p className="flex items-start gap-1.5 text-[11px] font-medium text-[#B3261E]">
+            <p className="flex items-start gap-1.5 text-[11px] font-medium text-[var(--danger)]">
               <CircleAlert className="mt-px h-3.5 w-3.5 shrink-0" />
               {message}
             </p>
@@ -143,7 +143,7 @@ function renderControl(
   error: unknown
 ): React.ReactElement {
   const id = `field-${field.name}`;
-  const errorRing = invalid ? 'border-[#B3261E] focus:border-[#B3261E] focus:ring-[#B3261E]' : '';
+  const errorRing = invalid ? 'border-[var(--danger)] focus:border-[var(--danger)] focus:ring-[var(--danger)]' : '';
 
   switch (field.type) {
     case 'slug':

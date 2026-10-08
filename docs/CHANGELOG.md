@@ -1,3 +1,7 @@
+## 2026-10-08 — GitHub upload, step 2 of 2
+
+Completes the sequential upload with the existing React public/admin UI, assets, routes, styles, frontend tests, audit tools and documentation. Step 1 build/typecheck, synthetic non-photo round-trip and two connection-policy tests PASS locally. The complete source build passed before the split. Original GitHub CI browser failures remain unresolved; neither workflow checks nor test database guards were disabled. Live database records, credentials and local backups are excluded. Merge step 1 before step 2.
+
 ## 2026-10-08 — GitHub upload, step 1 of 2
 
 Split the existing complete-site upload into sequential pull requests at the user's request. Step 1 contains the Express backend, PostgreSQL migrations, shared data/photo/route contracts, required content/planner helpers, server checks and build configuration. Step 2 supplies the public/admin frontend, assets, remaining tests/tooling and documentation. Existing changelog history is preserved. No database writes or new public UI edits were performed for this split. The original upload CI failed browser design-baseline and map/CSP checks; splitting alone does not resolve those failures.

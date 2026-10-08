@@ -24,13 +24,13 @@ import { SettingsPage } from '@/admin/pages/SettingsPage';
  */
 /** Last resort if something outside a page (the layout, sign-in) throws. */
 const AdminCrash = (
-  <div className="flex min-h-screen items-center justify-center bg-[#FBF9F6] px-6 text-center">
+  <div className="flex min-h-screen items-center justify-center bg-[var(--background)] px-6 text-center">
     <div>
-      <h1 className="font-heading text-xl font-bold text-[#0F2E23]">The admin panel hit an error</h1>
+      <h1 className="font-heading text-xl font-bold text-[var(--brand-primary)]">The admin panel hit an error</h1>
       <button
         type="button"
         onClick={() => window.location.reload()}
-        className="mt-4 rounded-xl bg-[#0F2E23] px-4 py-2.5 text-xs font-bold text-white"
+        className="mt-4 rounded-xl bg-[var(--inverse-surface)] px-4 py-2.5 text-xs font-bold text-white"
       >
         Reload
       </button>

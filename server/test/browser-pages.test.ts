@@ -8,7 +8,7 @@ import './test-db';
  *   - the Navbar (desktop and the mobile menu) and the Footer are real links;
  *     cards, search results and journal cards land on their pages;
  *   - a new page opens at the top, and Back returns to the scroll position;
- *   - "Explore" from another page lands on the home map, "Contact" on the
+ *   - "Explore" from another page lands on the destinations map, "Contact" on the
  *     About page's form;
  *   - focus moves to the new page's <h1> (or the section a hash names), and
  *     document.title follows;
@@ -158,7 +158,7 @@ describe('pages and links, in Chrome', { skip }, () => {
   });
 
   test('cards, journal cards and search results land on their pages', async () => {
-    const page = await openPage('/');
+    const page = await openPage('/journal');
     await page.evaluate(`document.querySelector('#journal a[href="/journal/ultimate-ella-guide"]').click(), true`);
     await at(page, '/journal/ultimate-ella-guide');
 
@@ -175,11 +175,11 @@ describe('pages and links, in Chrome', { skip }, () => {
   });
 
   test('a new page opens at the top, and Back returns to where you were', async () => {
-    const page = await openPage('/');
-    await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
+    const page = await openPage('/tours');
+    await page.evaluate(`window.scrollTo(0, document.body.scrollHeight - innerHeight), true`);
     await sleep(300);
     const before = await scrollY(page);
-    assert.ok(before > 1000, 'precondition: well down the page');
+    assert.ok(before > 400, 'precondition: well down the page');
 
     await clickLink(page, '#tours', 'View Full Journey');
     await at(page, '/tours/island-in-7-days');
@@ -187,16 +187,15 @@ describe('pages and links, in Chrome', { skip }, () => {
     assert.equal(await scrollY(page), 0, 'the tour page opens at the top');
 
     await page.evaluate('history.back(), true');
-    await at(page, '/');
+    await at(page, '/tours');
     await waitFor(page, `Math.abs(scrollY - ${before}) <= 2`, `the home page back at ${before}`, 5_000);
   });
 
-  test('"Explore" lands on the home map, "Contact" on the About form, focused', async () => {
+  test('"Explore" lands on its own page, "Contact" on the About form, focused', async () => {
     const page = await openPage('/tours');
     await clickLink(page, 'header nav', 'Explore');
-    await at(page, '/#explore-map');
-    await waitFor(page, `Math.abs(document.querySelector('#explore-map').getBoundingClientRect().top) < 2`, 'the map at the top', 5_000);
-    assert.equal(await page.evaluate<string>('document.activeElement.id'), 'explore-map', 'focus on the map section');
+    await at(page, '/explore');
+    await waitFor(page, `document.activeElement === document.querySelector('main h1')`, 'focus on the Explore heading', 5_000);
 
     await clickLink(page, 'header nav', 'Contact');
     await at(page, '/about#contact');
@@ -254,11 +253,11 @@ describe('pages and links, in Chrome', { skip }, () => {
     assert.equal(await message(page), 'I would like to inquire about: Island in 7 Days');
     await closeModal(page);
 
-    // The Navbar's "Plan Your Trip" uses the page's subject too.
+    // The Navbar's planning link opens the dedicated planning route.
     page = await openPage('/destinations/ella');
-    await page.evaluate(`[...document.querySelectorAll('header button')].find((b) => b.textContent.trim() === 'Plan Your Trip').click(), true`);
-    await waitFor(page, `document.querySelector('.fixed.inset-0 textarea')`, 'the enquiry form');
-    assert.equal(await message(page), 'I would like to inquire about: Ella');
+    await page.evaluate(`document.querySelector('header a[href="/plan"]').click(), true`);
+    await at(page, '/plan');
+    await waitFor(page, `document.querySelector('#planner')`, 'the journey builder');
 
     page = await openPage('/experiences/safari-yala');
     await page.evaluate(`[...document.querySelectorAll('main button')].find((b) => b.textContent.trim() === 'Enquire About This Experience').click(), true`);
@@ -267,9 +266,8 @@ describe('pages and links, in Chrome', { skip }, () => {
 
     // Elsewhere, as before.
     page = await openPage('/tours');
-    await page.evaluate(`[...document.querySelectorAll('header button')].find((b) => b.textContent.trim() === 'Plan Your Trip').click(), true`);
-    await waitFor(page, `document.querySelector('.fixed.inset-0 textarea')`, 'the enquiry form');
-    assert.equal(await message(page), 'I would like to inquire about: Custom Travel Journey Request');
+    await page.evaluate(`document.querySelector('header a[href="/plan"]').click(), true`);
+    await at(page, '/plan');
 
     // The About page's form is inline.
     page = await openPage('/about');
@@ -306,7 +304,7 @@ describe('pages and links, in Chrome', { skip }, () => {
         `performance.getEntriesByType('resource').some((r) => /leaflet/.test(r.name)) || Boolean(document.querySelector('link[data-leaflet]'))`
       );
 
-    for (const path of ['/destinations', '/destinations/ella', '/experiences', '/about', '/journal/ultimate-ella-guide']) {
+    for (const path of ['/', '/plan', '/journal', '/destinations/ella', '/experiences', '/about', '/journal/ultimate-ella-guide']) {
       const page = await openPage(path);
       await page.evaluate('window.scrollTo(0, document.body.scrollHeight), true');
       await sleep(600);
@@ -317,10 +315,10 @@ describe('pages and links, in Chrome', { skip }, () => {
     await waitFor(tour, `document.querySelectorAll('[data-route-map] .route-stop-marker').length === 6`, 'the route map');
     assert.equal(await leaflet(tour), true, 'the tour page');
 
-    const home = await openPage('/');
+    const home = await openPage('/destinations');
     await home.evaluate(`document.querySelector('#explore-map').scrollIntoView(), true`);
-    await waitFor(home, `document.querySelector('#explore-map .leaflet-container')`, 'the home map');
-    assert.equal(await leaflet(home), true, 'the home page');
+    await waitFor(home, `document.querySelector('#explore-map .leaflet-container')`, 'the destinations map');
+    assert.equal(await leaflet(home), true, 'the destinations page');
   });
 
   test('an admin edit shows on the next page without a reload', async () => {

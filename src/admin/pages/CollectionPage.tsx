@@ -181,7 +181,7 @@ export const CollectionPage: React.FC = () => {
       />
 
       {collection.table === 'destinations' && (
-        <p className="-mt-2 mb-4 text-[11px] font-medium text-[#1C4737]">
+        <p className="-mt-2 mb-4 text-[11px] font-medium text-[var(--brand-primary)]">
           Spotlight: {SPOTLIGHT_NOTICE}
         </p>
       )}
@@ -203,7 +203,7 @@ export const CollectionPage: React.FC = () => {
       ) : (
         <>
           <div className="relative mb-4 max-w-sm">
-            <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-[#1C4737]/45" />
+            <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-[var(--brand-primary)]/45" />
             <Input
               className="pl-10"
               placeholder={`Search ${collection.label.toLowerCase()}…`}
@@ -212,7 +212,7 @@ export const CollectionPage: React.FC = () => {
             />
           </div>
 
-          <Card className="divide-y divide-[#D4C3B5]/45 overflow-hidden">
+          <Card className="divide-y divide-[var(--border-strong)]/45 overflow-hidden">
             {filtered?.length === 0 ? (
               <EmptyState icon={Search} title="Nothing matches that search" />
             ) : (
@@ -256,18 +256,18 @@ export const CollectionPage: React.FC = () => {
                     </div>
 
                     {/* Thumb */}
-                    <div className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#F5EFEB]">
+                    <div className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[var(--background-secondary)]">
                       {typeof image === 'string' && image ? (
                         <img src={image} alt="" className="h-full w-full object-cover" />
                       ) : (
-                        <ImageOff className="h-4 w-4 text-[#1A1A1A]/25" />
+                        <ImageOff className="h-4 w-4 text-[var(--text-primary)]/25" />
                       )}
                     </div>
 
                     {/* Text */}
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="truncate font-heading text-sm font-bold text-[#0F2E23]">
+                        <span className="truncate font-heading text-sm font-bold text-[var(--brand-primary)]">
                           {title}
                         </span>
                         {!row.published && <Badge tone="muted">Draft</Badge>}
@@ -279,11 +279,11 @@ export const CollectionPage: React.FC = () => {
                           ))}
                       </div>
                       {subtitle && (
-                        <p className="mt-0.5 truncate text-[11px] font-light text-[#1A1A1A]/55">
+                        <p className="mt-0.5 truncate text-[11px] font-light text-[var(--text-primary)]/55">
                           {subtitle}
                         </p>
                       )}
-                      <p className="mt-0.5 truncate font-mono text-[10px] text-[#1A1A1A]/35">
+                      <p className="mt-0.5 truncate font-mono text-[10px] text-[var(--text-primary)]/35">
                         {row.id}
                         {meta && ` · ${meta}`}
                       </p>
@@ -333,7 +333,7 @@ export const CollectionPage: React.FC = () => {
                             to={`/admin/${collection.slug}/${encodeURIComponent(row.id)}`}
                             aria-label={`Edit ${title}`}
                             title="Edit"
-                            className="flex h-9 w-9 items-center justify-center rounded-lg text-[#1C4737] transition-colors hover:bg-[#1C4737]/10"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--brand-primary)] transition-colors hover:bg-[var(--brand-secondary)]/10"
                           >
                             <Pencil className="h-4 w-4" />
                           </Link>
@@ -358,7 +358,7 @@ export const CollectionPage: React.FC = () => {
           </Card>
 
           {searching && (
-            <p className="mt-3 text-[11px] font-light text-[#1A1A1A]/50">
+            <p className="mt-3 text-[11px] font-light text-[var(--text-primary)]/50">
               Clear the search to reorder records.
             </p>
           )}
@@ -380,7 +380,7 @@ const MoveButton: React.FC<{
     title={label}
     disabled={disabled}
     onClick={onClick}
-    className="flex h-6 w-6 items-center justify-center rounded text-[#1C4737] transition-colors hover:bg-[#1C4737]/10 disabled:opacity-20"
+    className="flex h-6 w-6 items-center justify-center rounded text-[var(--brand-primary)] transition-colors hover:bg-[var(--brand-secondary)]/10 disabled:opacity-20"
   >
     {children}
   </button>
@@ -402,8 +402,8 @@ const IconAction: React.FC<{
     className={cn(
       'flex h-9 w-9 items-center justify-center rounded-lg transition-colors disabled:opacity-30',
       tone === 'danger'
-        ? 'text-[#B3261E] hover:bg-[#B3261E]/10'
-        : 'text-[#1C4737] hover:bg-[#1C4737]/10'
+        ? 'text-[var(--danger)] hover:bg-[var(--danger)]/10'
+        : 'text-[var(--brand-primary)] hover:bg-[var(--brand-secondary)]/10'
     )}
   >
     {children}

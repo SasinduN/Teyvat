@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script type="module" src="/src/theme-init.ts"></script>
     <!-- Express replaces everything between these markers with each page's own
          title, description, canonical URL and share tags (server/src/pages).
          The defaults come from shared/page-meta.ts, filled in by Vite. -->
@@ -14,7 +15,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link id="travel-eye-fonts" media="print" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <!-- Leaflet's stylesheet is loaded by src/lib/leaflet.ts, only on pages with a map. -->
   </head>
   <body class="bg-[#FBF9F6] text-[#1A1A1A] font-sans antialiased selection:bg-[#1C4737] selection:text-[#F5EFEB]">
