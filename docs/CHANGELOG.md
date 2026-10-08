@@ -1,3 +1,7 @@
+## 2026-10-08 — PR #11 route-split CI repair (BUG-054)
+
+The backend-only upload prematurely changed frontend navigation and advertised four missing React index pages, failing one Navbar visual baseline, Explore navigation, route status and sitemap tests. Keep the original five-page/home-map route contracts in step 1 and defer new routes to the frontend PR. Preserve backend/photo/header improvements and unchanged visual snapshots/CI. Add missing-page 404 regression cases. Local build/typecheck and synthetic round-trip PASS; local browser/database tests BLOCKED by test DB authentication. GitHub acceptance pending. Exact job/tests/evidence: docs/CI_PR11.md (../CI_PR11.md from codex).
+
 ## 2026-10-08 — GitHub upload, step 1 of 2
 
 Split the existing complete-site upload into sequential pull requests at the user's request. Step 1 contains the Express backend, PostgreSQL migrations, shared data/photo/route contracts, required content/planner helpers, server checks and build configuration. Step 2 supplies the public/admin frontend, assets, remaining tests/tooling and documentation. Existing changelog history is preserved. No database writes or new public UI edits were performed for this split. The original upload CI failed browser design-baseline and map/CSP checks; splitting alone does not resolve those failures.
