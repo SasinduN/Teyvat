@@ -1,6 +1,12 @@
-## 2026-10-08 — GitHub upload, step 2 of 2
+# PR #11 merged after green CI — 2026-10-08
 
-Completes the sequential upload with the existing React public/admin UI, assets, routes, styles, frontend tests, audit tools and documentation. Step 1 build/typecheck, synthetic non-photo round-trip and two connection-policy tests PASS locally. The complete source build passed before the split. Original GitHub CI browser failures remain unresolved; neither workflow checks nor test database guards were disabled. Live database records, credentials and local backups are excluded. Merge step 1 before step 2.
+BUG-054: RESOLVED for the backend-only first step. GitHub Actions run 37799229541 on exact head 96c6be815d0bd4b8826b09e48036d7cf35033d8c passed install, typecheck, production build, synthetic round-trip and all 21/21 test files. The unchanged desktop Navbar visual comparison, Explore navigation, page statuses and sitemap checks now pass; map/CSP/header tests also pass. PR #11 was merged at 2026-10-08 15:24:49 UTC as 12c972a58f51c152776ad61df0f89a96d3ec3391, without admin/check bypass. Local DB/browser validation remains blocked by test DB authentication. Earlier pending entries below are historical and superseded by this executed GitHub evidence.
+
+The deferred route definitions/Express index routes are preserved with their frontend pages in PR #12, which remains a separate unmerged change. No visual snapshots or CI settings were changed for PR #11. Full failure/fix details: docs/CI_PR11.md (../CI_PR11.md from codex). CI: https://github.com/SasinduN/Teyvat/actions/runs/37799229541
+
+## 2026-10-08 — PR #11 route-split CI repair (BUG-054)
+
+The backend-only upload prematurely changed frontend navigation and advertised four missing React index pages, failing one Navbar visual baseline, Explore navigation, route status and sitemap tests. Keep the original five-page/home-map route contracts in step 1 and defer new routes to the frontend PR. Preserve backend/photo/header improvements and unchanged visual snapshots/CI. Add missing-page 404 regression cases. Local build/typecheck and synthetic round-trip PASS; local browser/database tests BLOCKED by test DB authentication. GitHub acceptance pending. Exact job/tests/evidence: docs/CI_PR11.md (../CI_PR11.md from codex).
 
 ## 2026-10-08 — GitHub upload, step 1 of 2
 
@@ -361,3 +367,7 @@ Correct only Jaffna's exact legacy seed URL to the existing credited Nallur orig
 2026-10-08 BUG-031 validation: final full build/typecheck and four regression tests PASS. Live API-to-mapper check produces the corrected Jaffna URL and Vite serves the correction. Nonfatal Zod annotation warnings remain; rendered visual confirmation is blocked.
 
 Liquid Glass final validation (2026-10-08): final client/server production build and TypeScript checks PASS, with nonfatal Zod annotation warnings. All 16 focused tests PASS; 10 local HTTP delivery checks PASS. Full-suite and browser limitations remain as recorded above.
+
+## 2026-10-08 — GitHub upload, step 2 of 2
+
+Completes the sequential upload with the existing React public/admin UI, assets, routes, styles, frontend tests, audit tools and documentation. Step 1 build/typecheck, synthetic non-photo round-trip and two connection-policy tests PASS locally. The complete source build passed before the split. Original GitHub CI browser failures remain unresolved; neither workflow checks nor test database guards were disabled. Live database records, credentials and local backups are excluded. Merge step 1 before step 2.
