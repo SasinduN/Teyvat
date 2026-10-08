@@ -116,7 +116,7 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
   }, HOOK_TIMEOUT);
 
   test('the public page: every section, and the map with keyed CARTO tiles and its credit', async () => {
-    await visit('/explore', `document.querySelector('#explore-map')`);
+    await visit('/', `document.querySelector('#explore-map')`);
 
     // Scroll the whole page so lazy images and the map's tiles load.
     const height = await page.evaluate<number>('document.body.scrollHeight');
@@ -160,16 +160,13 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     assert.ok(credit.visible, 'the credit is visible');
 
     assert.ok(
-      await page.evaluate<boolean>(`[...document.querySelectorAll('img')].some((i) => i.src.startsWith('https://upload.wikimedia.org'))`),
-      'Credited Wikimedia images are on the page'
+      await page.evaluate<boolean>(`[...document.querySelectorAll('img')].some((i) => i.src.startsWith('https://images.unsplash.com'))`),
+      'Unsplash images are on the page'
     );
   });
 
   test('every page type (phase 8): lists, details, About, the 404', async () => {
     const pages: [string, string][] = [
-      ['/', `document.querySelector('main h1')`],
-      ['/plan', `document.querySelector('#planner')`],
-      ['/journal', `document.querySelector('#journal')`],
       ['/destinations', `document.querySelector('main a[href^="/destinations/"]')`],
       ['/destinations/ella', `document.querySelector('main [data-google-maps]')`],
       ['/experiences', `document.querySelector('main a[href^="/experiences/"]')`],

@@ -156,7 +156,7 @@ export const InquiriesPage: React.FC = () => {
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-[var(--brand-primary)]/45" />
+          <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-[#1C4737]/45" />
           <Input
             className="pl-10"
             placeholder="Search by name, email or subject…"
@@ -208,11 +208,11 @@ export const InquiriesPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setOpenId(open ? null : row.id)}
-                  className="flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-[var(--background-secondary)]/50"
+                  className="flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-[#F5EFEB]/50"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-heading text-sm font-bold text-[var(--brand-primary)]">
+                      <span className="font-heading text-sm font-bold text-[#0F2E23]">
                         {row.name}
                       </span>
                       {row.spam ? (
@@ -221,30 +221,30 @@ export const InquiriesPage: React.FC = () => {
                         <Badge tone={STATUS_TONE[row.status]}>{STATUS_LABEL[row.status]}</Badge>
                       )}
                     </div>
-                    <p className="mt-0.5 truncate text-[11px] font-light text-[var(--text-primary)]/60">
+                    <p className="mt-0.5 truncate text-[11px] font-light text-[#1A1A1A]/60">
                       {row.subject || 'General enquiry'}
                     </p>
                   </div>
 
-                  <span className="hidden shrink-0 text-[11px] font-light text-[var(--text-primary)]/45 sm:block">
+                  <span className="hidden shrink-0 text-[11px] font-light text-[#1A1A1A]/45 sm:block">
                     {formatWhen(row.created_at)}
                   </span>
 
                   <ChevronDown
                     className={cn(
-                      'h-4 w-4 shrink-0 text-[var(--brand-primary)] transition-transform',
+                      'h-4 w-4 shrink-0 text-[#1C4737] transition-transform',
                       open && 'rotate-180'
                     )}
                   />
                 </button>
 
                 {open && (
-                  <div className="border-t border-[var(--border-strong)]/45 p-4 sm:p-5">
+                  <div className="border-t border-[#D4C3B5]/45 p-4 sm:p-5">
                     <div className="grid gap-3 sm:grid-cols-2">
                       <Detail icon={Mail} label="Email">
                         <a
                           href={mailtoHref(row.email)}
-                          className="text-[var(--brand-primary)] underline decoration-[var(--inverse-raised)]/30 underline-offset-2"
+                          className="text-[#1C4737] underline decoration-[#1C4737]/30 underline-offset-2"
                         >
                           {row.email}
                         </a>
@@ -253,12 +253,12 @@ export const InquiriesPage: React.FC = () => {
                         {row.phone ? (
                           <a
                             href={telHref(row.phone)}
-                            className="text-[var(--brand-primary)] underline decoration-[var(--inverse-raised)]/30 underline-offset-2"
+                            className="text-[#1C4737] underline decoration-[#1C4737]/30 underline-offset-2"
                           >
                             {row.phone}
                           </a>
                         ) : (
-                          <span className="text-[var(--text-primary)]/40">Not provided</span>
+                          <span className="text-[#1A1A1A]/40">Not provided</span>
                         )}
                       </Detail>
                       <Detail icon={Users} label="Travellers">
@@ -271,10 +271,10 @@ export const InquiriesPage: React.FC = () => {
 
                     {row.message && (
                       <div className="mt-4">
-                        <div className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]">
+                        <div className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#1C4737]">
                           Message
                         </div>
-                        <p className="whitespace-pre-wrap rounded-xl bg-[var(--background)] p-3.5 text-xs font-light leading-relaxed text-[var(--text-primary)]/80">
+                        <p className="whitespace-pre-wrap rounded-xl bg-[#FBF9F6] p-3.5 text-xs font-light leading-relaxed text-[#1A1A1A]/80">
                           {row.message}
                         </p>
                       </div>
@@ -282,7 +282,7 @@ export const InquiriesPage: React.FC = () => {
 
                     <div className="mt-5 grid gap-4 sm:grid-cols-[12rem_1fr]">
                       <div className="space-y-2">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#1C4737]">
                           Status
                         </div>
                         <Select
@@ -304,7 +304,7 @@ export const InquiriesPage: React.FC = () => {
                       </div>
 
                       <div className="space-y-2">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#1C4737]">
                           Internal notes
                         </div>
                         <Textarea
@@ -325,9 +325,9 @@ export const InquiriesPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="mt-5 flex items-center justify-between border-t border-[var(--border-strong)]/45 pt-4">
+                    <div className="mt-5 flex items-center justify-between border-t border-[#D4C3B5]/45 pt-4">
                       <div className="flex items-center gap-3">
-                        <span className="text-[11px] font-light text-[var(--text-primary)]/45">
+                        <span className="text-[11px] font-light text-[#1A1A1A]/45">
                           Received {formatWhen(row.created_at)}
                         </span>
                         {row.spam && (
@@ -382,12 +382,12 @@ const Detail: React.FC<{
   children: React.ReactNode;
 }> = ({ icon: Icon, label, children }) => (
   <div className="flex items-start gap-2.5">
-    <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--brand-primary)]/55" />
+    <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#1C4737]/55" />
     <div className="min-w-0">
-      <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]">
+      <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#1C4737]">
         {label}
       </div>
-      <div className="mt-0.5 break-words text-xs font-medium text-[var(--text-primary)]">{children}</div>
+      <div className="mt-0.5 break-words text-xs font-medium text-[#1A1A1A]">{children}</div>
     </div>
   </div>
 );

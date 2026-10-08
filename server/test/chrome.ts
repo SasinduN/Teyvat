@@ -25,13 +25,6 @@ const CANDIDATES = [
   '/usr/bin/chromium-browser'
 ];
 
-function cleanProfile(profile: string) {
-  // Crashpad can briefly retain handles after Chrome exits on Windows.
-  // Cleanup must not replace the original browser failure in the report.
-  try { rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }); }
-  catch (error) { console.warn('[chrome] Temporary profile cleanup failed:', error instanceof Error ? error.message : error); }
-}
-
 export function findChrome(): string | null {
   for (const path of CANDIDATES) if (path && existsSync(path)) return path;
   return null;
@@ -82,7 +75,6 @@ async function launchOnce(executable: string): Promise<Chrome> {
     executable,
     [
       '--headless=new',
-      ...(process.env.CHROME_DISABLE_GPU === '1' ? ['--disable-gpu'] : []),
       '--no-first-run',
       '--no-default-browser-check',
       '--disable-extensions',
@@ -110,7 +102,7 @@ async function launchOnce(executable: string): Promise<Chrome> {
   }
   if (!endpoint) {
     child.kill();
-    cleanProfile(profile);
+    rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
     throw new ChromeStartupError(
       `Chrome did not start its DevTools endpoint within ${STARTUP_TIMEOUT_MS / 1000} s.`
     );
@@ -120,38 +112,22 @@ async function launchOnce(executable: string): Promise<Chrome> {
   await new Promise<void>((resolve, reject) => {
     socket.addEventListener('open', () => resolve(), { once: true });
     socket.addEventListener('error', () => reject(new Error('Could not connect to Chrome.')), { once: true });
-    socket.addEventListener('close', () => reject(new Error('Chrome closed before connecting.')), { once: true });
   });
 
   let nextId = 1;
-  const pending = new Map<number, { settle: (message: CdpMessage) => void; reject: (error: Error) => void }>();
+  const pending = new Map<number, (message: CdpMessage) => void>();
   socket.addEventListener('message', (event) => {
     const message = JSON.parse(String(event.data)) as CdpMessage;
-    if (message.id !== undefined) pending.get(message.id)?.settle(message);
+    if (message.id !== undefined) pending.get(message.id)?.(message);
   });
-  const disconnect = () => {
-    for (const command of pending.values()) command.reject(new Error('Chrome disconnected during a DevTools command.'));
-    pending.clear();
-  };
-  socket.addEventListener('close', disconnect);
-  socket.addEventListener('error', disconnect);
 
   function send(method: string, params: object = {}, sessionId?: string): Promise<Record<string, unknown>> {
     const id = nextId++;
     return new Promise((resolve, reject) => {
-      if (socket.readyState !== WebSocket.OPEN) { reject(new Error(`Chrome is disconnected (${method}).`)); return; }
-      const timer = setTimeout(() => {
+      pending.set(id, (message) => {
         pending.delete(id);
-        reject(new Error(`Chrome did not answer ${method} within 15 seconds.`));
-      }, 15_000);
-      pending.set(id, {
-        reject: (error) => { clearTimeout(timer); reject(error); },
-        settle: (message) => {
-          clearTimeout(timer);
-          pending.delete(id);
-          if (message.error) reject(new Error(`${method}: ${message.error.message}`));
-          else resolve(message.result ?? {});
-        }
+        if (message.error) reject(new Error(`${method}: ${message.error.message}`));
+        else resolve(message.result ?? {});
       });
       socket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }));
     });
@@ -195,7 +171,7 @@ async function launchOnce(executable: string): Promise<Chrome> {
           resolve();
         }, 5000).unref();
       });
-      cleanProfile(profile);
+      rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
     }
   };
 }

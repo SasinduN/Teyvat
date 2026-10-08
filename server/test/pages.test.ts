@@ -188,7 +188,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
       assert.equal(res.headers.get('cache-control'), 'no-cache', path);
     }
 
-    for (const path of ['/nope', '/destinations/nowhere', '/tours/Not-A-Slug!', '/journal/', '/experiences/a/b', '/index']) {
+    for (const path of ['/nope', '/destinations/nowhere', '/tours/Not-A-Slug!', '/journal/', '/experiences/a/b', '/index', '/explore', '/plan', '/photo-credits']) {
       const res = await get(closed, path);
       // `/journal/` is a trailing slash first: 301 to /journal, which is a 404.
       const final = res.status === 301 ? await get(closed, res.headers.get('location')!) : res;
@@ -257,12 +257,6 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
   });
 
   test('the fixed pages, a filtered list, the 404 and the admin', async () => {
-    for (const page of ['plan', 'journal'] as const) {
-      const result = await head(open, `/${page}`);
-      assert.equal(result.status, 200);
-      assert.equal(titleOf(result.head), PAGE_TITLES[page]);
-      assert.equal(canonicalOf(result.head), `${SITE}/${page}`);
-    }
     let { head: h } = await head(open, '/');
     assert.equal(titleOf(h), HOME_TITLE);
     assert.equal(metaContent(h, 'description'), HOME_DESCRIPTION);
@@ -359,14 +353,14 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
 
     const locs = [...xml.matchAll(/<loc>([^<]*)<\/loc>/g)].map((m) => m[1]);
     for (const loc of locs) assert.ok(loc.startsWith(`${SITE}/`), loc);
-    for (const path of ['/', '/destinations', '/experiences', '/tours', '/about', '/photo-credits']) {
+    for (const path of ['/', '/destinations', '/experiences', '/tours', '/about']) {
       assert.ok(locs.includes(`${SITE}${path}`), path);
     }
 
     const count = async (table: string) =>
       (await pool.query(`select count(*)::int as n from public.${table} where published`)).rows[0].n as number;
     const rows = (await count('destinations')) + (await count('featured_experiences')) + (await count('tours')) + (await count('articles'));
-    assert.equal(locs.length, 8 + rows, 'the fixed pages plus every published row');
+    assert.equal(locs.length, 5 + rows, 'the fixed pages plus every published row');
     assert.ok(!locs.includes(`${SITE}/destinations/galle`), 'not the unpublished one');
     assert.ok(!locs.some((l) => l.includes('?')), 'no filtered lists');
     assert.match(xml, new RegExp(`<url><loc>${SITE}/destinations/ella</loc><lastmod>\\d{4}-\\d{2}-\\d{2}</lastmod></url>`));

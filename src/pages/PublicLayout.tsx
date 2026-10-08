@@ -1,11 +1,11 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigationType } from 'react-router-dom';
 
-import { MotionConfig } from 'framer-motion';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { InquiryModal } from '@/components/InquiryModal';
+import { SearchModal } from '@/components/SearchModal';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
-import { ScrollToTop } from '@/components/ScrollToTop';
 import { SiteError, SiteLoading } from '@/components/SiteStatus';
 import { PublicSiteContext, type PageSubject, type PublicSiteApi } from '@/context/PublicSiteContext';
 import { useSiteContent } from '@/hooks/useSiteContent';
@@ -14,9 +14,6 @@ import { queryClient, queryKeys } from '@/lib/queryClient';
 import { focusPageHeading, goToSection } from '@/lib/routeFocus';
 import { whatsappMessage, whatsappUrl } from '@shared/whatsapp';
 import { Section } from './Section';
-
-const InquiryModal = lazy(() => import('@/components/InquiryModal').then(m => ({ default: m.InquiryModal })));
-const SearchModal = lazy(() => import('@/components/SearchModal').then(m => ({ default: m.SearchModal })));
 
 /**
  * Every public page: the Navbar, the page, the Footer, and what floats over
@@ -38,7 +35,6 @@ export function PublicLayout() {
 
   const openInquiry = useCallback(
     (subject?: string) => {
-      setSearchOpen(false);
       setInquirySubject(subject ?? pageSubject?.inquiry ?? 'General Sri Lanka Trip Inquiry');
       setInquiryOpen(true);
     },
@@ -53,7 +49,7 @@ export function PublicLayout() {
   const api = useMemo<PublicSiteApi>(
     () => ({
       openInquiry,
-      openSearch: () => { setInquiryOpen(false); setSearchOpen(true); },
+      openSearch: () => setSearchOpen(true),
       whatsappHref,
       pageSubject,
       setPageSubject
@@ -66,16 +62,15 @@ export function PublicLayout() {
 
   return (
     <PublicSiteContext.Provider value={api}>
-      <MotionConfig reducedMotion="user">
-      <div className="travel-eye min-h-screen bg-[var(--background)] text-[var(--text-primary)] font-sans selection:bg-[var(--brand-secondary)] selection:text-[var(--sand)]">
-        <a className="skip-link" href="#main-content">Skip to content</a>
+      <div className="min-h-screen bg-[#FBF9F6] text-[#1A1A1A] font-sans selection:bg-[#1C4737] selection:text-[#F5EFEB]">
         <Section name="Navbar">
           <Navbar
-            onOpenSearch={() => { setInquiryOpen(false); setSearchOpen(true); }}
+            onOpenSearch={() => setSearchOpen(true)}
+            onOpenPlanner={() => openInquiry(pageSubject?.inquiry ?? 'Custom Travel Journey Request')}
           />
         </Section>
 
-        <main id="main-content" tabIndex={-1}>
+        <main>
           {/* A page that fails shows the error screen in its place; the next page tries again. */}
           <ErrorBoundary
             name="page"
@@ -88,7 +83,7 @@ export function PublicLayout() {
             }
           >
             {/* Only while a page's code first loads; later navigations keep the current page up instead. */}
-            <Suspense fallback={<div className="min-h-screen bg-[var(--background)]" />}>
+            <Suspense fallback={<div className="min-h-screen bg-[#FBF9F6]" />}>
               <Outlet />
               {/* Inside the boundary: its effects run once the page itself has rendered. */}
               <RouteEffects />
@@ -101,21 +96,15 @@ export function PublicLayout() {
         </Section>
 
         <Section name="InquiryModal">
-          {inquiryOpen && <Suspense fallback={<div role="status" className="fixed inset-0 z-[100] bg-[var(--inverse-deep)] text-white grid place-items-center">Loading enquiry form…</div>}>
           <InquiryModal
             isOpen={inquiryOpen}
             onClose={() => setInquiryOpen(false)}
             prefilledSubject={inquirySubject}
           />
-          </Suspense>}
         </Section>
 
         <Section name="SearchModal">
-          {searchOpen && <Suspense fallback={<div role="status" className="fixed inset-0 z-[100] bg-[var(--inverse-deep)] text-white grid place-items-center">Loading search…</div>}><SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} /></Suspense>}
-        </Section>
-
-        <Section name="ScrollToTop">
-          <ScrollToTop hidden={inquiryOpen || searchOpen} />
+          <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
         </Section>
 
         {/* WhatsApp chat: only once a number is set in Admin → Settings. */}
@@ -125,7 +114,6 @@ export function PublicLayout() {
           </Section>
         )}
       </div>
-      </MotionConfig>
     </PublicSiteContext.Provider>
   );
 }

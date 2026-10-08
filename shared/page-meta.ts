@@ -16,13 +16,10 @@ export const pageTitle = (name: string): string => `${name} | ${BRAND_NAME}`;
 
 /** The fixed titles of the pages that aren't a content row. */
 export const PAGE_TITLES = {
-  explore: pageTitle('Explore Sri Lanka'),
   destinations: pageTitle('Destinations'),
   experiences: pageTitle('Experiences'),
   tours: pageTitle('Tours'),
   about: pageTitle('About Us'),
-  plan: pageTitle('Plan Your Trip'),
-  journal: pageTitle('Travel Eye Journal'),
   notFound: pageTitle('Page not found')
 } as const;
 
@@ -31,12 +28,9 @@ export const PAGE_TITLES = {
  * their `<meta name="description">` and share text.
  */
 export const PAGE_DESCRIPTIONS = {
-  explore: 'Explore Sri Lanka on the map, discover hidden places and find a route around the island.',
   destinations: 'Misty peaks, ancient citadels, turquoise bays and northern kovils: every place we know and love.',
   experiences: "Safaris, sunrise hikes, surf breaks and slow afternoons in old forts: what to do once you're here.",
   tours: 'Multi-day journeys planned by local experts, each one a starting point we tailor to you.',
   about: "Local travel designers who know the island's back roads, its seasons and its people.",
-  plan: 'Shape a sample Sri Lankan journey around your interests, time and preferred regions, then plan the details with a local travel designer.',
-  journal: 'Local travel stories, practical guides and photographic moments from across Sri Lanka.',
   notFound: 'The page may have moved, or the link may be mistyped.'
 } as const;

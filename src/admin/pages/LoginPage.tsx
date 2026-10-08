@@ -46,18 +46,18 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--inverse-surface)] px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-[#0F2E23] px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <div className="font-heading text-3xl font-bold text-white">Travel Eye</div>
-          <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--accent-text)]">
+          <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.25em] text-[#D4AF37]">
             Content Admin
           </div>
         </div>
 
         <Card className="p-6 sm:p-8">
-          <h1 className="font-heading text-xl font-bold text-[var(--brand-primary)]">Sign in</h1>
-          <p className="mt-1 text-xs font-light text-[var(--text-primary)]/60">
+          <h1 className="font-heading text-xl font-bold text-[#0F2E23]">Sign in</h1>
+          <p className="mt-1 text-xs font-light text-[#1A1A1A]/60">
             Use the email and password for your Travel Eye admin account.
           </p>
 
@@ -67,7 +67,7 @@ export const LoginPage: React.FC = () => {
                 Email
               </FieldLabel>
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-[var(--brand-primary)]/45" />
+                <Mail className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-[#1C4737]/45" />
                 <Input
                   id="admin-email"
                   type="email"
@@ -86,7 +86,7 @@ export const LoginPage: React.FC = () => {
                 Password
               </FieldLabel>
               <div className="relative">
-                <Lock className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-[var(--brand-primary)]/45" />
+                <Lock className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-[#1C4737]/45" />
                 <Input
                   id="admin-password"
                   type="password"
@@ -116,7 +116,7 @@ export const LoginPage: React.FC = () => {
         <div className="mt-6 text-center">
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[var(--sand)]/60 transition-colors hover:text-white"
+            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#F5EFEB]/60 transition-colors hover:text-white"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to the site

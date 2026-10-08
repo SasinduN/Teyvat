@@ -1,9 +1,3 @@
-# PR #11 merged after green CI — 2026-10-08
-
-BUG-054: RESOLVED for the backend-only first step. GitHub Actions run 37799229541 on exact head 96c6be815d0bd4b8826b09e48036d7cf35033d8c passed install, typecheck, production build, synthetic round-trip and all 21/21 test files. The unchanged desktop Navbar visual comparison, Explore navigation, page statuses and sitemap checks now pass; map/CSP/header tests also pass. PR #11 was merged at 2026-10-08 15:24:49 UTC as 12c972a58f51c152776ad61df0f89a96d3ec3391, without admin/check bypass. Local DB/browser validation remains blocked by test DB authentication. Earlier pending entries below are historical and superseded by this executed GitHub evidence.
-
-The deferred route definitions/Express index routes are preserved with their frontend pages in PR #12, which remains a separate unmerged change. No visual snapshots or CI settings were changed for PR #11. Full failure/fix details: docs/CI_PR11.md (../CI_PR11.md from codex). CI: https://github.com/SasinduN/Teyvat/actions/runs/37799229541
-
 # PR #11 CI repair — 2026-10-08
 
 BUG-054 route-split repair implemented; CI acceptance pending, not merge-ready. Local build/typecheck and synthetic round-trip PASS. Local database/browser tests BLOCKED by test DB password authentication. Original PR #11 GitHub evidence: 18/21 files passed; four failures in Navbar baseline/navigation/page status/sitemap. Map and CSP checks passed. Workflow/tests/snapshots unchanged; no DB guard bypass or public markup edits. See ../CI_PR11.md. Historical entries retained below.
