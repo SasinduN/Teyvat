@@ -126,7 +126,7 @@ npm run build && npm start     # everything on http://localhost:8081
 | `npm test` | All tests (API, database, and headless Chrome), with time limits |
 | `npm run verify:roundtrip` | Proves the database round-trip renders the approved content unchanged |
 | `npm run bundle:report` | After a build: the gzipped JS and CSS each page type loads |
-| `npm run screenshots` | Before/after screenshots of a design change at 1280 px and 375 px (`-- --base origin/main`, `--pages /,/about`, `--dark`), into `docs/screenshots/<branch>/`. In Git Bash, prefix it with `MSYS_NO_PATHCONV=1` when passing `--pages` |
+| `npm run screenshots` | Before/after screenshots of a design change at 1280 px and 375 px (`-- --base origin/main`, `--pages /,/about`, `--dark`), into `docs/screenshots/<branch>/` (git-ignored), with a `summary.md` of which pairs differ. In Git Bash, prefix it with `MSYS_NO_PATHCONV=1` when passing `--pages` |
 | `npm run migrate` | Apply pending migrations (`-- --dry-run` to list them) |
 | `npm run seed:generate` | Regenerate `0002_seed.sql` from `scripts/fixtures/*.ts` |
 | `npm run admin:create` | Create an admin, or `--reset-password` for an existing one |
@@ -157,7 +157,8 @@ import).
 
 A design change is called out in its plan, comes with before/after
 screenshots at 1280 px and 375 px (`npm run screenshots -- --base
-origin/main`), and is approved by the other teammate before it merges.
+origin/main`; not committed, attached to the PR on GitHub), and is approved
+by the other teammate before it merges.
 The pixel tests (`browser-home-baseline`, `browser-inquiry`) move their
 baselines only for the sections a PR changes on purpose. See CLAUDE.md and
 `docs/plans/redesign-redo.md`.

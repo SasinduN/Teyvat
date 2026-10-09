@@ -8,7 +8,16 @@
  * serves each from its own scratch database on the local test server, and
  * captures every page at 1280 px and 375 px (full page) plus a few named
  * states (the phone menu, the enquiry form), into
- * `docs/screenshots/<branch>/<page>-<desktop|phone>[-dark]-<before|after>.jpg`.
+ * `docs/screenshots/<branch>/<page>-<desktop|phone>[-dark]-<before|after>.jpg`
+ * (git-ignored: never committed). It then compares each pair and writes
+ * `summary.md` there: identical, or how much differs and where. A PR lists
+ * the pages that changed; the author drags those pairs into it on GitHub.
+ *
+ * Animations would make two identical builds differ, so each page is shot
+ * with `prefers-reduced-motion: reduce` emulated (the map honours it), after
+ * the fonts and every image have loaded, and once the page has stopped
+ * changing: no DOM mutation for 1.2 s (the scroll-in animations and the
+ * count-ups don't check reduced motion, but they do finish).
  *
  * The scratch databases are created on TEST_DATABASE_URL's server (the same
  * guards as the tests: localhost, an explicit port), named
@@ -19,7 +28,7 @@
 import '../shared/load-env';
 
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -134,7 +143,12 @@ async function waitFor(page: Page, expression: string, ms = 15_000): Promise<boo
 async function open(chrome: Chrome, url: string, viewport: (typeof VIEWPORTS)[keyof typeof VIEWPORTS], dark: boolean): Promise<Page> {
   const page = await chrome.newPage();
   await page.send('Emulation.setDeviceMetricsOverride', { ...viewport, deviceScaleFactor: 1 });
-  await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: dark ? 'dark' : 'light' }] });
+  await page.send('Emulation.setEmulatedMedia', {
+    features: [
+      { name: 'prefers-color-scheme', value: dark ? 'dark' : 'light' },
+      { name: 'prefers-reduced-motion', value: 'reduce' }
+    ]
+  });
   if (viewport.mobile) await page.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
   await page.send('Page.navigate', { url });
   await waitFor(page, `document.readyState === 'complete' && document.body.dataset.route`);
@@ -142,7 +156,30 @@ async function open(chrome: Chrome, url: string, viewport: (typeof VIEWPORTS)[ke
   return page;
 }
 
-/** Scrolls through so lazy images and sections load, then back to the top. */
+/** Resolves once the fonts and every `<img>` have loaded (or failed), at most 15 s. */
+const LOADED = `Promise.race([
+  new Promise((r) => setTimeout(r, 15000)),
+  Promise.all([
+    document.fonts.ready,
+    ...[...document.images].filter((i) => !i.complete).map((i) => new Promise((r) => { i.addEventListener('load', r, { once: true }); i.addEventListener('error', r, { once: true }); }))
+  ])
+]).then(() => true)`;
+
+/** Resolves once nothing in the page has changed for 1.2 s, at most 12 s. */
+const QUIET = `new Promise((resolve) => {
+  let timer;
+  const done = () => { observer.disconnect(); resolve(true); };
+  const observer = new MutationObserver(() => { clearTimeout(timer); timer = setTimeout(done, 1200); });
+  observer.observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
+  timer = setTimeout(done, 1200);
+  setTimeout(done, 12000);
+})`;
+
+/**
+ * Scrolls through so lazy images and sections load and their scroll-in
+ * animations run, back to the top, then waits for fonts, images and a
+ * still page.
+ */
 async function settle(page: Page): Promise<void> {
   const height = await page.evaluate<number>('document.documentElement.scrollHeight');
   for (let y = 0; y < height; y += 500) {
@@ -150,7 +187,8 @@ async function settle(page: Page): Promise<void> {
     await sleep(120);
   }
   await page.evaluate('window.scrollTo(0, 0), true');
-  await sleep(800);
+  await page.evaluate(LOADED);
+  await page.evaluate(QUIET);
 }
 
 async function shoot(page: Page, file: string, fullPage: boolean): Promise<void> {
@@ -164,6 +202,63 @@ async function shoot(page: Page, file: string, fullPage: boolean): Promise<void>
   writeFileSync(file, Buffer.from(data, 'base64'));
 }
 
+/**
+ * Each before/after pair: identical (the same bytes: the same pixels encode
+ * the same), or the share of pixels differing by more than 25 levels in any
+ * channel and the box around them, worked out in Chrome on a canvas.
+ */
+async function compare(chrome: Chrome, out: string): Promise<string> {
+  const pairs = readdirSync(out).filter((f) => f.endsWith('-before.jpg')).sort();
+  const page = await chrome.newPage();
+  const rows: string[] = [];
+  let identical = 0;
+  for (const before of pairs) {
+    const after = before.replace(/-before\.jpg$/, '-after.jpg');
+    const name = before.replace(/-before\.jpg$/, '');
+    const a = readFileSync(join(out, before));
+    if (!existsSync(join(out, after))) {
+      rows.push(`| ${name} | no "after" shot | |`);
+      continue;
+    }
+    const b = readFileSync(join(out, after));
+    if (a.equals(b)) {
+      identical += 1;
+      rows.push(`| ${name} | identical | |`);
+      continue;
+    }
+    const diff = await page.evaluate<{ sameSize: boolean; share: number; box: number[] | null }>(`(async () => {
+      const load = (src) => new Promise((r) => { const i = new Image(); i.onload = () => r(i); i.src = src; });
+      const [x, y] = await Promise.all([load('data:image/jpeg;base64,${a.toString('base64')}'), load('data:image/jpeg;base64,${b.toString('base64')}')]);
+      if (x.width !== y.width || x.height !== y.height) return { sameSize: false, share: 1, box: null };
+      const pixels = (img) => { const c = new OffscreenCanvas(img.width, img.height); const g = c.getContext('2d'); g.drawImage(img, 0, 0); return g.getImageData(0, 0, img.width, img.height).data; };
+      const p = pixels(x), q = pixels(y);
+      let n = 0, minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
+      for (let i = 0; i < p.length; i += 4) {
+        if (Math.abs(p[i] - q[i]) > 25 || Math.abs(p[i + 1] - q[i + 1]) > 25 || Math.abs(p[i + 2] - q[i + 2]) > 25) {
+          n += 1;
+          const px = (i / 4) % x.width, py = Math.floor(i / 4 / x.width);
+          minX = Math.min(minX, px); minY = Math.min(minY, py); maxX = Math.max(maxX, px); maxY = Math.max(maxY, py);
+        }
+      }
+      return { sameSize: true, share: n / (p.length / 4), box: n ? [minX, minY, maxX, maxY] : null };
+    })()`);
+    if (diff.sameSize && diff.box === null) {
+      identical += 1;
+      rows.push(`| ${name} | identical (within 25 levels) | |`);
+    } else {
+      rows.push(`| ${name} | **differs**: ${diff.sameSize ? `${(diff.share * 100).toFixed(2)}% of pixels` : 'different page height'} | ${diff.box ? diff.box.join(', ') : ''} |`);
+    }
+  }
+  return [
+    `**${identical}/${pairs.length} identical.**`,
+    '',
+    '| Shot | Before vs after | Box (x1, y1, x2, y2) |',
+    '|---|---|---|',
+    ...rows,
+    ''
+  ].join('\n');
+}
+
 const slug = (path: string) => (path === '/' ? 'home' : path.slice(1).replace(/[^a-z0-9]+/gi, '-'));
 
 async function main(): Promise<void> {
@@ -172,6 +267,8 @@ async function main(): Promise<void> {
   const branch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim();
   const out = resolve(ROOT, values.out ?? join('docs', 'screenshots', branch.replace(/[^\w.-]+/g, '-')));
   mkdirSync(out, { recursive: true });
+  // Old shots would mix into the comparison.
+  for (const file of readdirSync(out)) if (/\.jpg$|^summary\.md$/.test(file)) rmSync(join(out, file));
   const pages = values.pages ? values.pages.split(',') : PAGES;
   for (const page of pages) {
     if (!/^\/[^:\\]*$/.test(page)) {
@@ -209,18 +306,21 @@ async function main(): Promise<void> {
           if (viewport.mobile) {
             const menu = await open(chrome, site.url + '/', viewport, dark);
             await menu.evaluate(`document.querySelector('header button[aria-label*="menu" i]')?.click(), true`);
-            await sleep(800);
+            await menu.evaluate(QUIET);
             await shoot(menu, join(out, `state-menu-${suffix}`), false);
           }
           const tour = await open(chrome, `${site.url}/tours/island-in-7-days`, viewport, dark);
           await tour.evaluate(`[...document.querySelectorAll('main button')].find((b) => /enquire|inquire/i.test(b.textContent))?.click(), true`);
           await waitFor(tour, `document.querySelector('[role=dialog] form, .fixed.inset-0 form')`, 5_000);
-          await sleep(600);
+          await tour.evaluate(LOADED);
+          await tour.evaluate(QUIET);
           await shoot(tour, join(out, `state-enquiry-${suffix}`), false);
         }
       }
     }
-    console.log(`\nSaved in ${out}`);
+    const summary = await compare(chrome, out);
+    writeFileSync(join(out, 'summary.md'), summary);
+    console.log(`\n${summary}\nSaved in ${out}`);
   } finally {
     await chrome?.close().catch(() => undefined);
     for (const site of sites) site.server?.kill();

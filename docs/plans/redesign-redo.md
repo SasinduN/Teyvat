@@ -58,9 +58,13 @@ re-run. PR 0 fixes the flake.
    `responsive-image`) aren't brought back.
 3. **Evidence in every PR:**
    - before/after screenshots, desktop (1280 px) and phone (375 px), of
-     every page the PR touches, made with `npm run screenshots` (PR 0) and
-     committed under `docs/screenshots/<branch>/`. Once PR 7 has merged,
-     in light **and** dark;
+     every page the PR touches, made with `npm run screenshots` (PR 0) into
+     `docs/screenshots/<branch>/`, which is git-ignored. Screenshots are
+     never committed: the PR description lists the pages that changed (the
+     script's `summary.md`) and the author drags those pairs into the PR on
+     GitHub. A PR with no visual change says "no visual change: X/N
+     identical, the rest were animation timing", with no images. Once PR 7
+     has merged, in light **and** dark;
    - green CI on the last commit;
    - the PR description lists every re-baselined pixel test and why.
 4. **One PR open at a time.** Each is merged before the next starts, so
@@ -149,6 +153,7 @@ rough.
     apply);
   - captures each page (desktop full page, phone full page, plus named
     states: open menu, map, enquiry form) into `docs/screenshots/<branch>/`
+    (git-ignored)
     as JPEG, about 150 KB each.
 
   It's based on the script used for the review.
@@ -316,8 +321,9 @@ with:
 >
 > - is called out in its plan first;
 > - includes before/after screenshots of every page it touches, at 1280 px
->   and 375 px (`npm run screenshots -- --base origin/main`, committed under
->   `docs/screenshots/<branch>/`);
+>   and 375 px (`npm run screenshots -- --base origin/main`, saved in the
+>   git-ignored `docs/screenshots/<branch>/` and attached to the PR on
+>   GitHub, never committed);
 > - is approved by the other teammate (never the author) before merging.
 >
 > A pixel test (`browser-home-baseline`, `browser-inquiry`) is re-baselined
