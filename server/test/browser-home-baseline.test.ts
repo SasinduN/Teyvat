@@ -73,7 +73,8 @@ const SECTIONS: { name: string; baseline: string; props: string; height?: number
   { name: 'FeaturedExperiences', baseline: PHASE_8_BASELINE, props: '{ onSelectExperience() {} }' },
   { name: 'ToursSection', baseline: PHASE_8_BASELINE, props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
   { name: 'ExperiencesSection', baseline: PHASE_8_BASELINE, props: '{ onSelectCategory() {} }' },
-  { name: 'JournalSection', baseline: PHASE_8_BASELINE, props: '{}' },
+  // Redesign PR 3 (ce487de): the journal cards' approved new design.
+  { name: 'JournalSection', baseline: 'ce487de', props: '{}' },
   { name: 'SearchModal', baseline: PHASE_8_BASELINE, props: '{ isOpen: true, onClose() {}, onSelectDestination() {} }', height: 900 }
 ];
 
