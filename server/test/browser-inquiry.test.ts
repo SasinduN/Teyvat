@@ -28,8 +28,11 @@ import { HOOK_TIMEOUT } from './timeouts';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-/** The last commit before phase 6 touched InquiryModal. */
-const BASELINE_COMMIT = 'faed6bc';
+/**
+ * The approved InquiryModal: redesign PR 4's (4e9942d). Until then it was
+ * faed6bc, the last commit before phase 6 touched it.
+ */
+const BASELINE_COMMIT = '4e9942d';
 
 const executable = findChrome();
 const cssDir = join(REPO_ROOT, 'dist', 'assets');

@@ -62,7 +62,7 @@ Update the Status column when a phase lands.
   - The honeypot in `InquiryModal` must stay its form's first child (Tailwind
     v4's `space-y-*` puts a margin on every child but the last).
   - `server/test/browser-inquiry.test.ts` compares its render against
-    `faed6bc`.
+    `4e9942d` (redesign PR 4).
 - **Newsletter** (`server/src/routes/newsletter.ts`): the Footer form stores
   addresses; nothing sends them yet. Unsubscribing is a POST from the
   `/unsubscribe?token=` page (never a GET) and deletes the row. Its honeypot
@@ -94,6 +94,8 @@ Update the Status column when a phase lands.
 - **Old links:** `/?tour=<id>` and `/?destination=<id>` must keep reaching
   the pages; they are in WhatsApp chats. `HomeRoute` (`src/App.tsx`)
   redirects them in the browser; phase 8b adds the server's 301. Keep both.
+  It also sends the home page's old sections (`/#planner`, `/#journal`…)
+  to their pages (`LEGACY_HOME_SECTIONS`, `shared/site-paths.ts`).
 - **Pages and links** (phase 8):
   - Routes are in `src/App.tsx`; every public URL is built with `paths`
     (`shared/site-paths.ts`), and every link is a real `<a href>` (`Link`,
@@ -102,15 +104,16 @@ Update the Status column when a phase lands.
   - `BrowserRouter`, not the data router: that one adds about 20 KB
     (gzipped) to every page, for scroll restoration we do in
     `src/lib/ScrollRestorer.tsx`.
-  - Each page is a lazy chunk. Map code is only in the home and tour pages'
-    chunks, and Leaflet (JS and its unpkg stylesheet) loads through
+  - Each page is a lazy chunk. Map code is only in the Explore and tour
+    pages' chunks, and Leaflet (JS and its unpkg stylesheet) loads through
     `loadLeaflet()` (`src/lib/leaflet.ts`) when a map is about to render.
     `npm run bundle:report` prints what each page type loads.
   - Navigations run in a transition: the URL changes a moment before the
     page. `<body data-route>` names the page actually on screen; tests wait
     on it.
   - `server/test/browser-home-baseline.test.ts` compares the home page's
-    changed sections against `bf94e25`, pixel for pixel.
+    changed sections against each one's baseline commit (`SECTIONS`),
+    pixel for pixel.
 - **Head tags and statuses** (phase 8b, `server/src/pages/`):
   - Every page is the `index.html` shell, but Express gives each its own
     status (404 for unknown paths and unpublished slugs) and `<head>`

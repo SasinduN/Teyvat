@@ -69,13 +69,14 @@ const skip = !executable
 const SECTIONS: { name: string; baseline: string; props: string; height?: number }[] = [
   // Redesign PR 2 (0d95f86): the Navbar's approved new design.
   { name: 'Navbar', baseline: '0d95f86', props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
-  { name: 'DestinationSpotlight', baseline: PHASE_8_BASELINE, props: '{ onSelectDestination() {} }' },
-  { name: 'FeaturedExperiences', baseline: PHASE_8_BASELINE, props: '{ onSelectExperience() {} }' },
-  { name: 'ToursSection', baseline: PHASE_8_BASELINE, props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
-  { name: 'ExperiencesSection', baseline: PHASE_8_BASELINE, props: '{ onSelectCategory() {} }' },
+  // Redesign PR 4 (4e9942d): the approved new designs of these five.
+  { name: 'DestinationSpotlight', baseline: '4e9942d', props: '{ onSelectDestination() {} }' },
+  { name: 'FeaturedExperiences', baseline: '4e9942d', props: '{ onSelectExperience() {} }' },
+  { name: 'ToursSection', baseline: '4e9942d', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
+  { name: 'ExperiencesSection', baseline: '4e9942d', props: '{ onSelectCategory() {} }' },
   // Redesign PR 3 (ce487de): the journal cards' approved new design.
   { name: 'JournalSection', baseline: 'ce487de', props: '{}' },
-  { name: 'SearchModal', baseline: PHASE_8_BASELINE, props: '{ isOpen: true, onClose() {}, onSelectDestination() {} }', height: 900 }
+  { name: 'SearchModal', baseline: '4e9942d', props: '{ isOpen: true, onClose() {}, onSelectDestination() {} }', height: 900 }
 ];
 
 const baselineOf = (name: string): string => SECTIONS.find((s) => s.name === name)!.baseline;
