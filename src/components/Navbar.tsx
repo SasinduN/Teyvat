@@ -17,8 +17,8 @@ interface NavbarProps {
  * The header: dark glass once the page has scrolled, over a dark gradient on
  * the page's photo before that (index.css, `.te-nav`). The current page's
  * link is marked (`aria-current`, a gold underline). On phones the links
- * open in a full-screen menu that holds focus until it closes (Escape, the
- * close button, or a link). No animation library: CSS transitions only.
+ * open in a solid full-screen menu that holds focus until it closes (Escape,
+ * the close button, or a link). No animation library: CSS transitions only.
  */
 export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch, onOpenPlanner }) => {
   const location = useLocation();
@@ -136,8 +136,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch, onOpenPlanner }) =
           aria-modal="true"
           aria-label="Site navigation"
           tabIndex={-1}
-          className="glass glass--inverse glass--strong fixed inset-0 z-[60] rounded-none border-0 pt-24 px-6 pb-8 flex flex-col justify-between overflow-y-auto lg:hidden"
+          className="fixed inset-0 z-[60] bg-[var(--inverse-deep)] text-[var(--on-inverse)] pt-24 px-6 pb-8 flex flex-col justify-between overflow-y-auto lg:hidden"
         >
+          {/* Solid, not glass: a full-screen menu over moving page content must stay readable. */}
+          <SiteLink to="/" onClick={handleLinkClick} className="absolute top-5 left-5 rounded-lg p-1" aria-label={`${BRAND_NAME} Homepage`}>
+            <Logo variant="light" size="md" />
+          </SiteLink>
           <button
             type="button"
             aria-label="Close menu"
