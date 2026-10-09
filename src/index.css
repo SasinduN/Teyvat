@@ -47,15 +47,17 @@
 /*
  * Keyboard focus, everywhere on the public site (`.site`, PublicLayout): a
  * 3 px gold outline with a dark ring, so it shows on light, dark and photo
- * backgrounds alike. Mouse clicks don't show it (`:focus-visible`).
+ * backgrounds alike. Mouse clicks don't show it (`:focus-visible`). A
+ * heading focused after navigation (`data-route-focus`) isn't a control and
+ * keeps no ring.
  */
-.site :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+.site :where(a, button, input, select, textarea, summary, [tabindex]):not([data-route-focus]):focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
   box-shadow: 0 0 0 6px var(--inverse-deep);
 }
 @media (forced-colors: active) {
-  .site :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline-color: Highlight; box-shadow: none; }
+  .site :where(a, button, input, select, textarea, summary, [tabindex]):not([data-route-focus]):focus-visible { outline-color: Highlight; box-shadow: none; }
 }
 
 @layer components {
