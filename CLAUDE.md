@@ -134,10 +134,14 @@ Update the Status column when a phase lands.
   to markup, `className`, styles or layout of the public site (or the
   admin):
   - is called out in its plan first;
-  - includes before/after screenshots of every page it touches, at 1280 px
-    and 375 px, in light and dark once the dark theme exists
-    (`npm run screenshots -- --base origin/main`, committed under
-    `docs/screenshots/<branch>/`);
+  - comes with before/after screenshots of every page it touches, at
+    1280 px and 375 px, in light and dark once the dark theme exists
+    (`npm run screenshots -- --base origin/main`, saved in
+    `docs/screenshots/<branch>/`, which is git-ignored: screenshots are
+    never committed). The PR description lists the pages that changed
+    (from `summary.md`) and the author drags those before/after pairs into
+    the PR on GitHub. A PR with no visual change says so, with the count of
+    identical pairs, and no images;
   - is approved by the other teammate (never the author) before merging.
 
   A pixel test (`browser-home-baseline`, `browser-inquiry`) is re-baselined

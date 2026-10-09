@@ -44,3 +44,6 @@ docs/qa-results/
 
 # Review screenshots stay local (docs/reviews/<name>/); only the .md is committed.
 docs/reviews/*/
+
+# Design screenshots (npm run screenshots): attached to PRs on GitHub, never committed.
+docs/screenshots/
