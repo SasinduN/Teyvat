@@ -4,16 +4,48 @@ Status: APPROVED (2026-10-09), with these decisions:
 
 1. **Order:** the new pages first (`/explore`, `/plan`, `/journal`), then
    trim the home page. The order below stands.
-2. **Dark theme: in, as PR 7** (requirements under PR 7). PR 2 defines
-   every colour as a theme token, so PR 7 only adds the dark values.
+2. **Dark theme: in, as PR 7** (now PR 5; requirements under PR 5). PR 2
+   defines every colour as a theme token, so PR 5 only adds the dark values.
 3. **The three extras are in:**
    - the scroll-to-top button, in PR 2;
-   - `llms.txt`, as PR 6b;
-   - the admin restyle, as PR 8, last.
+   - `llms.txt`, as PR 6b (now its own small PR, any time);
+   - the admin restyle, as PR 8 (now PR 6), last.
 
 The PRs are built by the owner's Claude Code, re-applying the teammate's
 #12 design with the corrections below. The teammate reviews and approves
 every PR.
+
+## Regrouped (9 October 2026, from PR 2 on)
+
+PRs 0 and 1 are merged (#17, #19). From PR 2, fewer and larger PRs:
+
+| PR | Scope | Was |
+|---|---|---|
+| 2 | Global styles, colour tokens (#12's palette), the shared glass style, Navbar, Footer, scroll-to-top | PR 2 |
+| 3 | `/explore`, `/plan`, `/journal` | PRs 3 and 4 |
+| 4 | Home and all the other pages, cards and modals | PRs 5 and 6 |
+| 5 | Dark theme | PR 7 |
+| 6 | Admin restyle | PR 8 |
+| any time | `llms.txt`, its own small PR | PR 6b |
+
+The sections below use the new numbers.
+
+**Pace:** a redesign PR is pushed and opened as soon as typecheck, tests
+and build pass locally. Its description lists the pages that changed and the
+screenshot files to attach. The work only stops if something fails or would
+go against this plan.
+
+**The glass style (PR 2):**
+- one shared set of classes (`src/styles/glass.css`): translucent
+  background, `backdrop-filter` blur, border;
+- a lighter blur on phones;
+- a solid fallback where `backdrop-filter` isn't supported or reduced
+  transparency is on;
+- text on glass meets WCAG AA.
+
+**Still true:** CI green; the teammate approves and nobody merges their own
+PR; "Create a merge commit"; no `'unsafe-inline'` in the CSP; one redesign
+PR open at a time; the WhatsApp button stays untouched in PR 2.
 
 #12 (the "glass" redesign, dark theme, and the `/explore`, `/plan` and
 `/journal` pages) was reverted by #13, and
@@ -63,7 +95,7 @@ re-run. PR 0 fixes the flake.
      never committed: the PR description lists the pages that changed (the
      script's `summary.md`) and the author drags those pairs into the PR on
      GitHub. A PR with no visual change says "no visual change: X/N
-     identical, the rest were animation timing", with no images. Once PR 7
+     identical, the rest were animation timing", with no images. Once PR 5
      has merged, in light **and** dark;
    - green CI on the last commit;
    - the PR description lists every re-baselined pixel test and why.
@@ -82,17 +114,20 @@ re-run. PR 0 fixes the flake.
 
 ## Every problem from the review, and its fix
 
+The PR numbers in this table and the next are the original ones: 3–4 are
+now PR 3, 5–6 are now PR 4, 7 is now PR 5 (see **Regrouped**).
+
 | # | Problem (review) | Cause | Fix | PR |
 |---|---|---|---|---|
 | 1 | CARTO key ignored; tiles from OSM | `import.meta.env?.VITE_CARTO_KEY` in #12's `mapTiles.ts` probably stopped Vite inlining it, plus the OSM fallback | Not re-applied: `main`'s `mapTiles.ts` stays. `browser-csp`'s keyed-CARTO assertion guards it. | 3 |
 | 2 | Images blocked on `/explore` (`img-src` `data:`) | Leaflet 1.9.4 sets a removed or aborted tile's `src` to a `data:` GIF (`emptyImageUrl` in `_removeTile` / `_abortLoading`) to cancel its request. `/explore` pans and zooms more, so it shows. **Probably already happens on `main` when anyone pans**; no test pans with the CSP recorder on. | A small `TileLayer` subclass in `src/lib/leaflet.ts` overriding those two methods to blank tiles with `src=""` (no request, no CSP check). Leaflet's own `_tileReady` guard is unaffected. `browser-csp` gains a pan and two zooms while recording. | 0 |
 | 3 | Map filter chips squashed at 375 px | #12's `.te-container :where(.grid, .flex) > * { min-width: 0; }` let the chip buttons shrink below their text | That rule only on `.grid` children (where it was meant for long text), plus `shrink-0` on the chips. New test: at 375 px, no chip's label overflows (`scrollWidth <= clientWidth`) and chips don't overlap. | 2 and 3 |
 | 4 | WhatsApp button covers the slideshow's Next button | The new hero controls aren't marked `data-keep-clear` | Mark the controls group `data-keep-clear`, so the button fades over them as it does over the map. New `browser-whatsapp` case: on the phone home page, the Next, Previous and Pause buttons each take the tap. | 5 |
-| 5 | New "Travel Eye" strings | Hardcoded in titles, headings, `llms.txt`, labels, ids and storage keys | Visible text goes through `shared/brand.ts`: `/journal` is `pageTitle('Journal')` with an `<h1>` of "Journal" (no brand twice). Internal identifiers become brand-neutral (`.site` root class, `site:theme` storage key, `site-fonts` link id). `llms.txt` comes back built from `shared/brand.ts` (PR 6b). New test (`brand-strings.test.ts`): the 27 lines in `src/` that say "Travel Eye" on `main` today are an explicit allow-list (`shared/brand.ts` is the source), so any new one fails. | 2 onward (the test in 0) |
+| 5 | New "Travel Eye" strings | Hardcoded in titles, headings, `llms.txt`, labels, ids and storage keys | Visible text goes through `shared/brand.ts`: `/journal` is `pageTitle('Journal')` with an `<h1>` of "Journal" (no brand twice). Internal identifiers become brand-neutral (`.site` root class, `site:theme` storage key, `site-fonts` link id). `llms.txt` comes back built from `shared/brand.ts` (its own PR). New test (`brand-strings.test.ts`): the 27 lines in `src/` that say "Travel Eye" on `main` today are an explicit allow-list (`shared/brand.ts` is the source), so any new one fails. | 2 onward (the test in 0) |
 | 6 | Scroll-to-top button stacks with WhatsApp over card buttons | Two floating controls, only one with keep-clear rules | Rebuilt in PR 2 on the same `data-keep-clear` rules as WhatsApp, with tests (see PR 2). | 2 |
 | 7 | WhatsApp over the `/plan` panel corner | The panel isn't keep-clear | The planner's option grid gets `data-keep-clear`, with a test like 4. | 4 |
 | 8 | Low contrast: hero controls, `/plan` hero subtitle, footer "Coming soon" links at 60 % | Thin white outlines and light text on photos | Measured, not eyeballed: a test computes WCAG contrast for those elements (against the darkest overlay pixel of the photo zone) and needs 4.5:1 for text and 3:1 for controls. Fixed with the existing overlay tokens. | 2, 4, 5 |
-| 9 | Dark theme only spot-checked | | PR 7: the contrast test over every page type in both themes, plus screenshots of each. | 7 |
+| 9 | Dark theme only spot-checked | | PR 5: the contrast test over every page type in both themes, plus screenshots of each. | 5 |
 
 ## The 22 tests #12 failed, one by one
 
@@ -186,7 +221,7 @@ rough.
   - a test fails on a hex colour in `src/components/` or `src/pages/`
     outside an allow-list that shrinks with each PR and is empty by PR 6.
 
-  PR 7 then only adds dark values.
+  PR 5 then only adds dark values.
 - **The scroll-to-top button:**
   - hidden until the visitor has scrolled down (more than one screen);
   - never overlaps the WhatsApp button, the map's zoom buttons and Quick
@@ -205,7 +240,7 @@ rough.
 - Screenshots: every page, since this changes the header and footer
   everywhere.
 
-### PR 3: `/explore`: the map and hidden gems
+### PR 3 (part 1): `/explore`, the map and hidden gems
 - `ExplorePage`, `paths.explore = '/explore'`, its head tags and sitemap
   entry, and the `/destinations?mapTour=` → `/explore` 301.
   `paths.tourOnMap` too.
@@ -217,14 +252,14 @@ rough.
   the Navbar's "Explore" moves to `/explore` here.
 - Bundle report: an Explore row.
 
-### PR 4: `/plan` and `/journal`
+### PR 3 (part 2): `/plan` and `/journal`
 - `PlanPage` (the planner, using `main`'s `src/lib/planner.ts` and
   `travelTiming.ts` from #11) and `JournalPage` (articles and photo
   stories). Head tags, sitemap, and "Journal" in `NAV_LINKS`.
 - Titles from `pageTitle()` (problem 5). Planner keep-clear (problem 7).
 - Bundle report: Plan and Journal rows.
 
-### PR 5: the home page
+### PR 4 (part 1): the home page
 - The new hero, with slide controls marked `data-keep-clear` and their
   contrast fixed (problems 4 and 8).
 - The four destination cards and the "Plan Your Journey" call to action.
@@ -235,7 +270,7 @@ rough.
   `?destination=` 301s are untouched.
 - Re-baselined: DestinationSpotlight.
 
-### PR 6: the other pages, cards and modals
+### PR 4 (part 2): the other pages, cards and modals
 - `PageHero`, the cards, list and detail pages, About, the 404, the enquiry
   form and modal, the search modal.
 - Re-baselined: FeaturedExperiences, ToursSection, ExperiencesSection,
@@ -244,7 +279,7 @@ rough.
 - May split in two (pages; modals and forms) if the screenshots get too
   many to review.
 
-### PR 6b: `llms.txt`
+### `llms.txt` (its own small PR, any time)
 - `GET /llms.txt`, served by Express like `sitemap.xml`, and only when
   `SITE_INDEXABLE=true` (otherwise a 404, as the sitemap is).
 - Generated per request from **published** rows only: destinations,
@@ -258,7 +293,7 @@ rough.
   unpublished one is absent); absolute URLs from `PUBLIC_SITE_URL`; the
   brand from `brand.ts`; no `/admin` or `/api`.
 
-### PR 7: dark theme
+### PR 5: dark theme
 - **Tokens:** PR 2 made every colour a variable. This PR adds the dark
   values under `:root[data-theme="dark"]`, and the light values stay the
   defaults.
@@ -288,7 +323,7 @@ rough.
   Switching theme swaps the tile layer without reloading the map.
 - **Screenshots:** every page type, light and dark, at 1280 px and 375 px.
 
-### PR 8: admin restyle (last)
+### PR 6: admin restyle (last)
 - #12's 14 `src/admin/` files, on top of `main`'s admin, which now includes
   the Photo credits page.
 - **Visual only:** no change to routes, requests, validation, permissions
@@ -301,7 +336,7 @@ rough.
 - the ~30 audit Markdown files (about 9,000 lines);
 - the Python audit scripts;
 - `scripts/verify-live-content.ts`;
-- #12's static `public/llms.txt`, replaced by PR 6b's generated one.
+- #12's static `public/llms.txt`, replaced by the generated one (its own PR).
 
 ---
 
@@ -340,5 +375,6 @@ request review (1 approval)* and *Require status checks: `checks`* for
 ## Decisions (9 October 2026)
 
 1. Order: the new pages first, then the home page trim.
-2. Dark theme: in, as PR 7, with the requirements above.
-3. Scroll-to-top in PR 2; `llms.txt` as PR 6b; admin restyle as PR 8.
+2. Dark theme: in, as PR 7 (now PR 5), with the requirements above.
+3. Scroll-to-top in PR 2; `llms.txt` as PR 6b (now its own PR); admin
+   restyle as PR 8 (now PR 6).

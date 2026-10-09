@@ -1,0 +1,74 @@
+/*
+ * The glass style: one shared set of classes for translucent surfaces (the
+ * header, the mobile menu, floating controls; more as later PRs restyle the
+ * pages).
+ *
+ *   .glass            light glass on the page (dark text)
+ *   .glass--inverse   dark glass over photos or dark sections (light text)
+ *   .glass--strong    less see-through, for text-heavy panels
+ *   .glass--round     a circular floating control
+ *
+ * Every surface starts solid (`--glass-solid`) and only becomes translucent,
+ * with a backdrop blur, where the browser supports `backdrop-filter`. It
+ * stays solid when the visitor asks for reduced transparency, and uses the
+ * system colours in forced-colours mode. The blur is lighter on phones.
+ *
+ * Contrast: text on glass is checked against the glass composited over both
+ * a white and a black backdrop, the extremes a photo can put behind it
+ * (server/test/browser-glass.test.ts): 4.5:1 or more.
+ */
+:root {
+  --glass-blur: 14px;
+  --glass-radius: 1.5rem;
+}
+@media (max-width: 767px) {
+  :root { --glass-blur: 8px; }
+}
+
+.glass {
+  --glass-current: var(--glass-bg);
+  background: var(--glass-solid);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
+}
+.glass--strong { --glass-current: var(--glass-strong-bg); }
+.glass--inverse {
+  --glass-solid: var(--inverse-deep);
+  --glass-bg: var(--glass-inverse-bg);
+  --glass-strong-bg: var(--glass-inverse-strong);
+  --glass-current: var(--glass-inverse-bg);
+  --glass-border: rgb(var(--pearl-channels) / .2);
+  --glass-highlight: rgb(var(--pearl-channels) / .18);
+  color: var(--on-inverse);
+}
+.glass--inverse.glass--strong { --glass-current: var(--glass-inverse-strong); }
+.glass--round { border-radius: 999px; }
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: var(--glass-current);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--glass-solid);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .glass {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
