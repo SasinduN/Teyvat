@@ -21,10 +21,16 @@ import { TEST_DATABASE_NAME, TEST_DATABASE_URL } from './test-db';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 /**
- * Applies every migration with the real runner, so the tests see the schema a
- * deploy would. Its DATABASE_URL is the test URL, passed explicitly.
+ * A brand-new schema, then every migration with the real runner, so the tests
+ * see the schema a deploy would, on tables nothing has altered before (see
+ * `reset-schema.ts`). Its DATABASE_URL is the test URL, passed explicitly.
  */
 export function migrateTestDatabase(): void {
+  execFileSync(
+    process.execPath,
+    [resolve(REPO_ROOT, 'node_modules/tsx/dist/cli.mjs'), resolve(REPO_ROOT, 'server/test/reset-schema.ts')],
+    { cwd: REPO_ROOT, env: { ...process.env, DATABASE_URL: TEST_DATABASE_URL }, stdio: 'pipe' }
+  );
   execFileSync(
     process.execPath,
     [resolve(REPO_ROOT, 'node_modules/tsx/dist/cli.mjs'), resolve(REPO_ROOT, 'scripts/migrate.ts')],
@@ -67,15 +73,24 @@ const CONTENT_TABLES = [
 
 const migration = (name: string) => readFileSync(resolve(REPO_ROOT, 'db/migrations', name), 'utf8');
 
+/** The seeded content, copied once per test process (see `resetContent`). */
+const SEED_SCHEMA = 'test_seed';
+let seedSnapshot = false;
+
 /**
  * Puts the content back to the approved baseline: empties the nine content
- * tables (and the tour stops), re-runs the 0002 seed, and resets
- * `site_settings` to its 0001 values as 0004 left them (links NULL), with no
- * WhatsApp number (0008).
+ * tables (and the tour stops), restores the 0002 seed with 0007's route
+ * stops, and resets `site_settings` to its 0001 values as 0004 left them
+ * (links NULL), with no WhatsApp number (0008).
  *
  * 0002 writes `tours.route`, which 0007 turned into `tour_stops` and dropped.
- * So the column comes back for the replay, and 0007 runs again to convert it
- * exactly as it did on deploy.
+ * So the first reset in a process brings the column back, replays 0002 and
+ * then 0007 (converting the routes exactly as on deploy, and proving 0007
+ * still re-runs), and copies the result into the `test_seed` schema. Every
+ * later reset copies it back from there, without altering any table: each
+ * add-and-drop of `tours.route` used up one of the table's 1,600 column
+ * slots for good, and a long-used test database ran out. The schema itself is
+ * new for every test file (`migrateTestDatabase`).
  *
  * 0002 is an upsert that must never be run by hand against production. Here
  * it only ever reaches the database `test-db.ts` has already proven is the
@@ -83,12 +98,21 @@ const migration = (name: string) => readFileSync(resolve(REPO_ROOT, 'db/migratio
  */
 export async function resetContent(): Promise<void> {
   await assertConnectedToTestDatabase();
-  await pool.query(
-    `truncate public.tour_stops, ${CONTENT_TABLES.map((t) => `public.${t}`).join(', ')}`
-  );
-  await pool.query(`alter table public.tours add column route text[] not null default '{}'`);
-  await pool.query(migration('0002_seed.sql'));
-  await pool.query(migration('0007_tour_stops.sql'));
+  const tables = [...CONTENT_TABLES, 'tour_stops'];
+  await pool.query(`truncate ${tables.map((t) => `public.${t}`).join(', ')}`);
+  if (seedSnapshot) {
+    // Parents first: tour_stops references tours and destinations.
+    for (const t of tables) {
+      await pool.query(`insert into public.${t} overriding system value select * from ${SEED_SCHEMA}.${t}`);
+    }
+  } else {
+    await pool.query(`alter table public.tours add column route text[] not null default '{}'`);
+    await pool.query(migration('0002_seed.sql'));
+    await pool.query(migration('0007_tour_stops.sql'));
+    await pool.query(`drop schema if exists ${SEED_SCHEMA} cascade; create schema ${SEED_SCHEMA}`);
+    for (const t of tables) await pool.query(`create table ${SEED_SCHEMA}.${t} as table public.${t}`);
+    seedSnapshot = true;
+  }
   await pool.query(
     `update public.site_settings
         set postal_address = 'Level 12, Galle Face Terrace, Colombo 03, Sri Lanka',
