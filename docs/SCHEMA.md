@@ -23,6 +23,7 @@
 | `0010_location_photography.sql` | content rows still on their seed photo point at credited Wikimedia photos instead (from #11; data only) |
 | `0011_image_credits.sql` | `image_credits`, seeded with 0010's 32 credits; two photo-story captions matched to 0010's photos |
 | `0012_newsletter_unsubscribe.sql` | `newsletter_subscribers.unsubscribe_token` and `consented_at` |
+| `0013_wikimedia_fallback.sql` | any row still on a 0010 Wikimedia photo goes back to its seed photo (the CSP no longer allows Wikimedia; data only) |
 
 **Where the rules live.** There is no row-level security: every connection is
 the API's single database role. Rules are enforced in two layers:
@@ -80,7 +81,7 @@ and optional chaining. `npm run verify:roundtrip` asserts this.
 | `category` | `text[]` | `category` | every element validated by `is_category_array()` |
 | `short_description` | `text` | `shortDescription` | |
 | `long_description` | `text` | `longDescription` | |
-| `image` | `text` | `image` | an image URL: Unsplash or our R2 bucket (for now also Wikimedia; `shared/image-hosts.ts`) |
+| `image` | `text` | `image` | an image URL: Unsplash or our R2 bucket (`shared/image-hosts.ts`) |
 | `gallery` | `text[]` | `gallery?` | empty array → `undefined` |
 | `best_time` | `text` | `bestTime` | |
 | `experiences` | `text[]` | `experiences` | |

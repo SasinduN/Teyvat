@@ -39,10 +39,9 @@ Update the Status column when a phase lands.
   - Nothing is deleted from R2 automatically; only a library delete removes
     an object.
   - Image URLs must be on the allow-list in `shared/image-hosts.ts` (Unsplash
-    + the R2 origin, and for now `upload.wikimedia.org`). The same list
-    builds the CSP's `img-src`. Wikimedia goes once `npm run images:import`
-    has run on production (launch checklist item 23, PR B in
-    `docs/plans/fix-pr11.md`).
+    + the R2 origin). The same list builds the CSP's `img-src`. The
+    Wikimedia photos from 0010 were copied into R2 (`npm run
+    images:import`); 0013 puts any leftover back on its seed photo.
   - Photos come from the rows, never from code: no per-row overrides in
     `src/lib/mappers.ts` or the head tags. Credits are `image_credits`
     (keyed by URL), shown on `/photo-credits`, edited in *Admin → Photo
