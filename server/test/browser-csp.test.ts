@@ -159,6 +159,20 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     assert.deepEqual(credit.links, ['https://www.openstreetmap.org/copyright', 'https://carto.com/attributions']);
     assert.ok(credit.visible, 'the credit is visible');
 
+    // Zooming removes tiles, and a quick second zoom aborts half-loaded ones.
+    // Leaflet blanks both by pointing them at a data: GIF, which img-src
+    // refuses; src/lib/leaflet.ts blanks them without one. Recorded below
+    // ("nothing was blocked").
+    const zoom = (direction: 'in' | 'out') =>
+      page.evaluate(`document.querySelector('#explore-map .leaflet-control-zoom-${direction}').click(), true`);
+    await zoom('in');
+    await sleep(60);
+    await zoom('in');
+    await sleep(1500);
+    await zoom('out');
+    await sleep(1500);
+    await collect('/ (map zoomed in and out)');
+
     assert.ok(
       await page.evaluate<boolean>(`[...document.querySelectorAll('img')].some((i) => i.src.startsWith('https://images.unsplash.com'))`),
       'Unsplash images are on the page'

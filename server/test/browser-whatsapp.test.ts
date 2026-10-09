@@ -100,9 +100,12 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
   /**
    * Waits up to `ms` for the button to settle into `want`. It decides in an
    * animation frame and React commits after, so on a busy machine a fixed
-   * two frames can sample it mid-update.
+   * two frames can sample it mid-update. Three seconds, not one: a CI run of
+   * `main` (37899931982) once took longer than a second after a scroll to
+   * step aside, and the same tree passed on its pull request. The state
+   * asserted is unchanged; only the time allowed to reach it.
    */
-  async function expectShown(page: Page, want: boolean, what: string, ms = 1_000): Promise<void> {
+  async function expectShown(page: Page, want: boolean, what: string, ms = 3_000): Promise<void> {
     const until = Date.now() + ms;
     while (Date.now() < until) {
       if ((await shown(page)) === want) return;

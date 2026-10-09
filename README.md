@@ -126,6 +126,7 @@ npm run build && npm start     # everything on http://localhost:8081
 | `npm test` | All tests (API, database, and headless Chrome), with time limits |
 | `npm run verify:roundtrip` | Proves the database round-trip renders the approved content unchanged |
 | `npm run bundle:report` | After a build: the gzipped JS and CSS each page type loads |
+| `npm run screenshots` | Before/after screenshots of a design change at 1280 px and 375 px (`-- --base origin/main`, `--pages /,/about`, `--dark`), into `docs/screenshots/<branch>/`. In Git Bash, prefix it with `MSYS_NO_PATHCONV=1` when passing `--pages` |
 | `npm run migrate` | Apply pending migrations (`-- --dry-run` to list them) |
 | `npm run seed:generate` | Regenerate `0002_seed.sql` from `scripts/fixtures/*.ts` |
 | `npm run admin:create` | Create an admin, or `--reset-password` for an existing one |
@@ -137,10 +138,9 @@ npm run build && npm start     # everything on http://localhost:8081
 
 ## How it works
 
-### The public site and the approved design
+### The public site and its design
 
-The public components in `src/components/` are the **approved, frozen design**.
-They read their content through hooks under the names they used for their old
+The public components are in `src/components/`. They read their content through hooks under the names they used for their old
 hard-coded constants, so their markup never changed:
 
 ```ts
@@ -155,8 +155,12 @@ into the exact shapes the components expect.
 original content in `scripts/fixtures/` (which nothing under `src/` may
 import).
 
-Any change in `src/components/` must be called out before it's made. Review
-with `git diff demo-baseline -- src/components/`.
+A design change is called out in its plan, comes with before/after
+screenshots at 1280 px and 375 px (`npm run screenshots -- --base
+origin/main`), and is approved by the other teammate before it merges.
+The pixel tests (`browser-home-baseline`, `browser-inquiry`) move their
+baselines only for the sections a PR changes on purpose. See CLAUDE.md and
+`docs/plans/redesign-redo.md`.
 
 Each section of a page has its own error boundary (`src/pages/Section.tsx`).
 A section that throws disappears and the rest of the page stays; only if the
