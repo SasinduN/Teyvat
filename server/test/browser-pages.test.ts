@@ -309,7 +309,7 @@ describe('pages and links, in Chrome', { skip }, () => {
     assert.equal(await page.evaluate<number>(cards), beaches);
 
     // Picking a category keeps the page where it is.
-    await page.evaluate(`document.documentElement.style.scrollBehavior = 'auto', document.querySelector('main [role=group]').scrollIntoView({ block: 'center' }), true`);
+    await page.evaluate(`document.documentElement.style.scrollBehavior = 'auto', window.scrollTo(0, 300), true`);
     await sleep(300);
     const scrolled = await scrollY(page);
     assert.ok(scrolled > 100, `precondition: scrolled to the filters (${scrolled})`);

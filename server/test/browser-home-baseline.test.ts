@@ -48,9 +48,6 @@ import { HOOK_TIMEOUT } from './timeouts';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-/** The last commit before phase 8: the home page as approved then. */
-const PHASE_8_BASELINE = 'bf94e25';
-
 const executable = findChrome();
 const cssDir = join(REPO_ROOT, 'dist', 'assets');
 const cssFile = existsSync(cssDir) ? readdirSync(cssDir).find((f) => /^index-.*\.css$/.test(f)) : undefined;
