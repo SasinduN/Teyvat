@@ -62,16 +62,21 @@ export function ExplorePage() {
       />
 
       <Section name="QuickSearch">
-        <QuickSearch
-          onSearchSubmit={(nextWhere, nextFilter, nextTiming) => {
-            clearRoute();
-            setWhere(nextWhere);
-            setFilter(nextFilter);
-            setTiming(nextTiming);
-            setRequestId((n) => n + 1);
-            goToSection('explore-map');
-          }}
-        />
+        {/* QuickSearch overlaps the hero above it by 64–80px, which suits the
+            home hero; this one keeps less room under its subtitle, so the
+            spacer lets the bar overlap only the hero's bottom padding. */}
+        <div className="pt-10">
+          <QuickSearch
+            onSearchSubmit={(nextWhere, nextFilter, nextTiming) => {
+              clearRoute();
+              setWhere(nextWhere);
+              setFilter(nextFilter);
+              setTiming(nextTiming);
+              setRequestId((n) => n + 1);
+              goToSection('explore-map');
+            }}
+          />
+        </div>
       </Section>
 
       <Section name="InteractiveMapSection">
