@@ -155,6 +155,80 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
   }
 
 
+  /**
+   * Records, inside the page, what a zoom-button failure needs to explain
+   * itself: the last scroll, the last overlap check the button ran (its
+   * `data-checked-at`), and every layout shift (something moving without a
+   * scroll). Positions are in page coordinates, so a scroll alone doesn't
+   * count as moving. Install once the button and the map are on the page.
+   */
+  const RECORD = `(() => {
+    const button = document.querySelector('${BUTTON}');
+    const zoom = () => {
+      const r = document.querySelector('#explore-map .leaflet-control-zoom')?.getBoundingClientRect();
+      return r ? { x: Math.round(r.left + scrollX), y: Math.round(r.top + scrollY), w: Math.round(r.width), h: Math.round(r.height) } : null;
+    };
+    const rec = (window.__waRecord = { zoom, lastScroll: null, lastCheck: null, shifts: [] });
+    addEventListener('scroll', () => { rec.lastScroll = { t: performance.now(), scrollY: Math.round(scrollY), zoom: zoom() }; }, { passive: true });
+    new MutationObserver(() => { rec.lastCheck = { t: Number(button.dataset.checkedAt), scrollY: Math.round(scrollY), zoom: zoom() }; })
+      .observe(button, { attributes: true, attributeFilter: ['data-checked-at'] });
+    new PerformanceObserver((list) => { for (const e of list.getEntries()) rec.shifts.push({ t: e.startTime, value: e.value }); })
+      .observe({ type: 'layout-shift', buffered: true });
+    return true;
+  })()`;
+
+  /**
+   * Runs a zoom-button check; if it fails, prints a few lines saying where
+   * the button and the zoom buttons were (now, at the last scroll, at the
+   * last overlap check), whether anything moved since that check, and a
+   * verdict on the hypothesis: the button only re-checks on scroll, so a
+   * layout shift without a scroll leaves it over the zoom buttons. Prints
+   * nothing when the check passes.
+   */
+  async function explainOnFailure(page: Page, check: () => Promise<void>): Promise<void> {
+    try {
+      await check();
+    } catch (error) {
+      const d = await page.evaluate<Record<string, string>>(`(() => {
+        const rec = window.__waRecord;
+        const now = performance.now();
+        const box = (r) => r ? '[' + r.x + ',' + r.y + ' ' + r.w + 'x' + r.h + ']' : '(none)';
+        const b = document.querySelector('${BUTTON}').getBoundingClientRect();
+        const button = { x: Math.round(b.left + scrollX), y: Math.round(b.top + scrollY), w: Math.round(b.width), h: Math.round(b.height) };
+        const z = rec.zoom();
+        const overlap = z && z.x < button.x + button.w + 8 && z.x + z.w > button.x - 8 && z.y < button.y + button.h + 8 && z.y + z.h > button.y - 8;
+        const last = rec.lastCheck, scroll = rec.lastScroll;
+        const moved = last && last.zoom && z ? { dx: z.x - last.zoom.x, dy: z.y - last.zoom.y } : null;
+        const shifts = last ? rec.shifts.filter((s) => s.t > last.t) : rec.shifts;
+        const checkedSinceScroll = last && scroll ? last.t >= scroll.t : null;
+        let verdict;
+        if (!last) verdict = 'the button never ran an overlap check';
+        else if (checkedSinceScroll === false) verdict = 'no check since the last scroll: the scroll did not trigger one (not the hypothesis)';
+        else if (moved && (Math.abs(moved.dx) > 1 || Math.abs(moved.dy) > 1)) verdict = 'CONFIRMS the hypothesis: the zoom buttons moved after the last check, with no scroll since';
+        else if (shifts.length) verdict = 'layout shifted after the last check, but the zoom buttons did not move: rules the hypothesis out for them';
+        else verdict = 'nothing moved after the last check: rules the hypothesis out';
+        return {
+          now: 'scrollY=' + Math.round(scrollY) + ' window=' + innerWidth + 'x' + innerHeight + ' state=' + document.querySelector('${BUTTON}').dataset.state + ' button=' + box(button) + ' zoom=' + box(z) + ' overlap=' + Boolean(overlap),
+          scroll: scroll ? Math.round(now - scroll.t) + ' ms ago, scrollY=' + scroll.scrollY + ' zoom=' + box(scroll.zoom) : 'none recorded',
+          check: last ? Math.round(now - last.t) + ' ms ago, scrollY=' + last.scrollY + ' zoom=' + box(last.zoom) : 'none recorded',
+          since: 'zoom moved ' + (moved ? 'dx=' + moved.dx + ' dy=' + moved.dy : '(unknown)') + '; layout shifts ' + shifts.length + ' (total ' + shifts.reduce((n, s) => n + s.value, 0).toFixed(3) + ')',
+          verdict
+        };
+      })()`);
+      console.log(
+        [
+          'WhatsApp zoom-button check failed (page coordinates, [x,y wxh]):',
+          `  now:          ${d.now}`,
+          `  last scroll:  ${d.scroll}`,
+          `  last check:   ${d.check}`,
+          `  since check:  ${d.since}`,
+          `  verdict:      ${d.verdict}`
+        ].join('\n')
+      );
+      throw error;
+    }
+  }
+
   const setNumber = (value: string | null) =>
     pool.query('update public.site_settings set whatsapp_number = $1 where id', [value]);
 
@@ -257,6 +331,7 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     const page = await openPage({ mobile: true });
     await page.evaluate(`document.querySelector('#explore-map').scrollIntoView(), true`);
     await waitFor(page, `document.querySelector('#explore-map .leaflet-control-zoom')`, 'the zoom buttons');
+    await page.evaluate(RECORD);
     await sleep(800);
 
     // Sweep the map's bottom edge up through the button's corner.
@@ -267,7 +342,7 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     for (let offset = -100; offset <= 900; offset += 20) {
       await page.evaluate(`window.scrollTo(0, ${zoomTop - 844 + offset}), true`);
       await frames(page);
-      await expectClearOf(page, '#explore-map .leaflet-control-zoom', `zoom buttons covered at ${offset}`);
+      await explainOnFailure(page, () => expectClearOf(page, '#explore-map .leaflet-control-zoom', `zoom buttons covered at ${offset}`));
       await expectClearOf(page, '#explore-map [data-keep-clear]', `Quick Jump covered at ${offset}`);
       if (!(await shown(page))) hiddenAtLeastOnce = true;
     }
@@ -279,7 +354,7 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
       window.scrollBy(0, r.bottom - (innerHeight - 30));
       return true;
     })()`);
-    await expectShown(page, false, 'steps aside from the zoom buttons');
+    await explainOnFailure(page, () => expectShown(page, false, 'steps aside from the zoom buttons'));
     assert.equal(await coveredBy(page, '#explore-map .leaflet-control-zoom-in'), null, 'zoom in takes the tap');
     assert.equal(await coveredBy(page, '#explore-map .leaflet-control-zoom-out'), null, 'zoom out takes the tap');
 

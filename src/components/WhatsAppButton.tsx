@@ -63,7 +63,11 @@ export const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({ href, hidden = f
       if (frame) return;
       frame = requestAnimationFrame(() => {
         frame = 0;
-        if (ref.current) setBlocked(overlapsKeepClear(ref.current));
+        if (!ref.current) return;
+        // When the last overlap check ran, for browser-whatsapp.test.ts to
+        // explain a failure. A plain attribute: no state, no re-render.
+        ref.current.dataset.checkedAt = String(Math.round(performance.now()));
+        setBlocked(overlapsKeepClear(ref.current));
       });
     };
     // Modals and the map scale or fly into place: look again once they've settled.
