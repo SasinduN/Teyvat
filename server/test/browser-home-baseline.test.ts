@@ -67,7 +67,8 @@ const skip = !executable
  * ones; the rest are measured.
  */
 const SECTIONS: { name: string; baseline: string; props: string; height?: number }[] = [
-  { name: 'Navbar', baseline: PHASE_8_BASELINE, props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
+  // Redesign PR 2 (0d95f86): the Navbar's approved new design.
+  { name: 'Navbar', baseline: '0d95f86', props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
   { name: 'DestinationSpotlight', baseline: PHASE_8_BASELINE, props: '{ onSelectDestination() {} }' },
   { name: 'FeaturedExperiences', baseline: PHASE_8_BASELINE, props: '{ onSelectExperience() {} }' },
   { name: 'ToursSection', baseline: PHASE_8_BASELINE, props: '{ onOpenInquiry() {}, onViewRoute() {} }' },

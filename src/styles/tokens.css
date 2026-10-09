@@ -1,0 +1,135 @@
+/*
+ * Colour tokens: every colour the redesigned site uses, from #12's palette
+ * (docs/plans/redesign-redo.md, PR 2). Components use these through
+ * `var(--…)`, never a hex value, so the dark theme (PR 5) only has to give
+ * them other values under `:root[data-theme="dark"]`.
+ *
+ * Semantic names first (`--background`, `--brand-primary`, `--on-inverse`…);
+ * the `--palette-*` swatches are what they point at.
+ */
+:root {
+  --palette-deep-emerald: #103D38;
+  --palette-tropical-teal: #187A70;
+  --palette-champagne-gold: #D6B46E;
+  --palette-frosted-pearl: #F5F7F3;
+  --palette-mist-green: #DDEAE5;
+  --palette-charcoal-ink: #1D2927;
+  --palette-forest-night: #0B1918;
+  --palette-glass-surface: #17332F;
+  --palette-lagoon-glow: #3AB5A3;
+  --palette-soft-gold: #E2BF79;
+  --palette-ivory-text: #F0F5EF;
+  --palette-muted-text: #AEC2BA;
+  --palette-secondary-text: #526B64;
+  --palette-lagoon-soft: #63C9B8;
+  --brand-channels: 16 61 56;
+  --teal-channels: 24 122 112;
+  --gold-channels: 214 180 110;
+  --surface-channels: 245 247 243;
+  --inverse-channels: 11 25 24;
+  --photo-channels: 24 30 32;
+  --home-hero-overlay: linear-gradient(90deg, rgb(var(--photo-channels) / .62), rgb(var(--photo-channels) / .32) 42%, transparent 82%);
+  --pearl-channels: 255 255 255;
+  color-scheme: light;
+  --background: var(--palette-frosted-pearl);
+  --background-secondary: var(--palette-mist-green);
+  --surface: var(--palette-frosted-pearl);
+  --surface-glass: rgb(var(--surface-channels) / .88);
+  --brand-primary: var(--palette-deep-emerald);
+  --brand-secondary: var(--palette-tropical-teal);
+  --accent: var(--palette-champagne-gold);
+  --accent-hover: var(--palette-soft-gold);
+  --accent-text: color-mix(in srgb, var(--palette-champagne-gold) 45%, var(--palette-charcoal-ink));
+  --text-primary: var(--palette-charcoal-ink);
+  --text-secondary: var(--palette-secondary-text);
+  --text-muted: color-mix(in srgb, var(--palette-charcoal-ink) 65%, var(--palette-frosted-pearl));
+  --inverse-surface: var(--palette-deep-emerald);
+  --inverse-deep: var(--palette-forest-night);
+  --inverse-raised: var(--palette-glass-surface);
+  --inverse-accent: var(--palette-champagne-gold);
+  --on-inverse: var(--palette-ivory-text);
+  --on-accent: var(--palette-charcoal-ink);
+  --on-secondary: var(--white);
+  --border: var(--palette-mist-green);
+  --border-strong: color-mix(in srgb, var(--palette-deep-emerald) 30%, var(--palette-mist-green));
+  --emerald-edge: var(--palette-tropical-teal);
+  --sand: var(--palette-frosted-pearl);
+  --sand-highlight: var(--palette-soft-gold);
+  --gold-deep: var(--palette-champagne-gold);
+  --color-forest-950: var(--palette-forest-night);
+  --color-forest-900: var(--palette-deep-emerald);
+  --color-forest-800: var(--palette-deep-emerald);
+  --color-emerald-700: var(--palette-tropical-teal);
+  --color-emerald-600: var(--palette-lagoon-glow);
+  --color-gold-500: var(--palette-champagne-gold);
+  --color-gold-400: var(--palette-soft-gold);
+  --color-gold-muted: var(--palette-champagne-gold);
+  --color-ivory-50: var(--palette-frosted-pearl);
+  --color-sand-100: var(--palette-frosted-pearl);
+  --color-sand-300: var(--palette-mist-green);
+  --color-charcoal-900: var(--palette-charcoal-ink);
+  --color-charcoal-700: var(--text-secondary);
+
+  --white: #ffffff;
+  --danger: #b3261e;
+  --danger-hover: #8c1d18;
+  /* An error message on a dark surface (the footer's newsletter form). */
+  --danger-on-inverse: #F2B8B5;
+  --success: #146844;
+  --warning: #7a6214;
+  --on-feedback: #ffffff;
+  --shadow: 0 12px 40px rgb(var(--inverse-channels) / .08);
+  --glow: rgb(var(--gold-channels) / .2);
+  --glass-tint: rgb(var(--pearl-channels) / .18);
+  --glass-bg: rgb(var(--pearl-channels) / .58);
+  --glass-subtle-bg: var(--glass-tint);
+  --glass-strong-bg: rgb(var(--pearl-channels) / .82);
+  --glass-solid: var(--surface);
+  --glass-border: rgb(var(--brand-channels) / .18);
+  --glass-highlight: rgb(var(--pearl-channels) / .65);
+  --glass-reflection: linear-gradient(135deg, rgb(var(--pearl-channels) / .12), transparent 42%, rgb(var(--pearl-channels) / .025));
+  --glass-shadow: 0 12px 32px rgb(var(--photo-channels) / .1);
+  --glass-gold-glow: rgb(var(--gold-channels) / .16);
+  --glass-emerald-glow: rgb(var(--teal-channels) / .18);
+  --glass-inverse-bg: rgb(var(--photo-channels) / .58);
+  --glass-inverse-strong: rgb(var(--photo-channels) / .9);
+  --glass-photo-reflection: linear-gradient(135deg, rgb(var(--pearl-channels) / .07), transparent 48%, rgb(var(--pearl-channels) / .02));
+  --glass-nav-bg: rgb(var(--photo-channels) / .76);
+  --glass-nav-scrolled: rgb(var(--photo-channels) / .93);
+  --glass-scroll-thumb: rgb(var(--teal-channels) / .62);
+  --glass-scroll-edge: rgb(var(--pearl-channels) / .38);
+  --glass-scroll-hover: var(--brand-secondary);
+  --page-hero-overlay: linear-gradient(90deg, rgb(var(--photo-channels) / .60), rgb(var(--photo-channels) / .22) 52%, transparent 85%);
+  --button-primary-bg: var(--brand-primary);
+  --button-primary-hover: var(--palette-tropical-teal);
+  --button-primary-text: var(--white);
+  --button-primary-border: rgb(var(--pearl-channels) / .24);
+  --button-primary-reflection: linear-gradient(135deg, rgb(var(--pearl-channels) / .025), transparent 60%);
+  --button-primary-sheen: rgb(var(--pearl-channels) / .025);
+  --button-sheen: rgb(var(--pearl-channels) / .16);
+  --button-secondary-bg: var(--glass-subtle-bg);
+  --button-secondary-hover: var(--glass-strong-bg);
+  --button-secondary-text: var(--text-primary);
+  --button-secondary-solid: var(--surface);
+  --button-outline-text: var(--text-primary);
+  --button-edge: var(--border-strong);
+  --button-hover-edge: var(--brand-secondary);
+  --button-hover-glow: var(--glass-emerald-glow);
+  --photo-button-bg: rgb(240 245 239 / .96);
+  --photo-button-hover: var(--palette-frosted-pearl);
+  --photo-button-text: var(--palette-deep-emerald);
+  --glass-saturation: 118%;
+  --glass-brightness: 1;
+  --glass-noise-opacity: .02;
+}
+
+/* Layout tokens shared by the header, footer and floating controls. */
+:root {
+  --container-max: 80rem;
+  --page-gutter: clamp(1rem, 3vw, 2.5rem);
+  --header-height: 5.5rem;
+  --ease-premium: cubic-bezier(.22, 1, .36, 1);
+}
+@media (max-width: 639px) {
+  :root { --header-height: 5rem; }
+}

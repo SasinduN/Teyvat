@@ -39,7 +39,7 @@ const ALLOWED: Record<string, number> = {
   'src/components/InquiryForm.tsx': 2,
   'src/components/IntroSection.tsx': 2,
   'src/components/JournalSection.tsx': 1,
-  'src/components/Navbar.tsx': 2,
+  'src/components/Navbar.tsx': 1,
   'src/components/PhotoStorySection.tsx': 1,
   'src/components/WhyTravelEye.tsx': 1,
   'src/lib/planner.ts': 1,

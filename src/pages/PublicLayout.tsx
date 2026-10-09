@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigationType } from 'react-router-dom';
 
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { ScrollToTop } from '@/components/ScrollToTop';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { SiteError, SiteLoading } from '@/components/SiteStatus';
 import { PublicSiteContext, type PageSubject, type PublicSiteApi } from '@/context/PublicSiteContext';
@@ -96,7 +97,7 @@ export function PublicLayout() {
 
   return (
     <PublicSiteContext.Provider value={api}>
-      <div className="min-h-screen bg-[#FBF9F6] text-[#1A1A1A] font-sans selection:bg-[#1C4737] selection:text-[#F5EFEB]">
+      <div className="site min-h-screen bg-[var(--background)] text-[var(--text-primary)] font-sans selection:bg-[var(--brand-secondary)] selection:text-[var(--on-inverse)]">
         <Section name="Navbar">
           <Navbar
             onOpenSearch={openSearch}
@@ -117,7 +118,7 @@ export function PublicLayout() {
             }
           >
             {/* Only while a page's code first loads; later navigations keep the current page up instead. */}
-            <Suspense fallback={<div className="min-h-screen bg-[#FBF9F6]" />}>
+            <Suspense fallback={<div className="min-h-screen bg-[var(--background)]" />}>
               <Outlet />
               {/* Inside the boundary: its effects run once the page itself has rendered. */}
               <RouteEffects />
@@ -148,6 +149,10 @@ export function PublicLayout() {
             </Suspense>
           </Section>
         )}
+
+        <Section name="ScrollToTop">
+          <ScrollToTop hidden={inquiryOpen || searchOpen} />
+        </Section>
 
         {/* WhatsApp chat: only once a number is set in Admin → Settings. */}
         {whatsappHref && (
