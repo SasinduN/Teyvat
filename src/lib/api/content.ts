@@ -13,6 +13,7 @@ import {
   toExperienceItem,
   toHeroSlide,
   toHiddenGem,
+  toImageCredit,
   toPhotoStory,
   toPillar,
   toSiteSettings,
@@ -26,6 +27,7 @@ import type {
   ExperienceItem,
   HeroSlide,
   HiddenGem,
+  ImageCredit,
   PhotoStory,
   Pillar,
   SiteSettings,
@@ -44,6 +46,7 @@ export interface SiteContent {
   heroSlides: HeroSlide[];
   pillars: Pillar[];
   siteSettings: SiteSettings;
+  imageCredits: ImageCredit[];
 }
 
 /**
@@ -73,7 +76,8 @@ export const EMPTY_CONTENT: SiteContent = {
     termsUrl: '',
     sustainabilityUrl: ''
     // No whatsappNumber: the button stays hidden until content has loaded.
-  }
+  },
+  imageCredits: []
 };
 
 export async function fetchSiteContent(): Promise<SiteContent> {
@@ -89,6 +93,7 @@ export async function fetchSiteContent(): Promise<SiteContent> {
     photoStories: payload.photoStories.map(toPhotoStory),
     heroSlides: payload.heroSlides.map(toHeroSlide),
     pillars: payload.pillars.map(toPillar),
-    siteSettings: toSiteSettings(payload.siteSettings)
+    siteSettings: toSiteSettings(payload.siteSettings),
+    imageCredits: payload.imageCredits.map(toImageCredit)
   };
 }

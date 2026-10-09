@@ -4,7 +4,14 @@
  * These do not check permissions themselves: the API does, with
  * `requireAdmin` on every route, so bypassing the UI grants nothing.
  */
-import { API_ROUTES, type CountPayload, type ReorderRequest, type VersionedUpdate } from '@shared/api';
+import {
+  API_ROUTES,
+  type CountPayload,
+  type ImageCreditItem,
+  type ReorderRequest,
+  type VersionedUpdate
+} from '@shared/api';
+import type { ImageCreditCreate, ImageCreditRow, ImageCreditValues } from '@shared/image-credits';
 import type { SiteSettingsValues } from '@shared/content-schema';
 import type {
   ContentTableName,
@@ -118,3 +125,19 @@ export function slugify(input: string): string {
     .replace(/^-+|-+$/g, '')
     .slice(0, 60);
 }
+
+/* ----------------------------------------------------------- photo credits */
+
+const creditPath = (url: string) => `${API_ROUTES.admin.imageCredits}?url=${encodeURIComponent(url)}`;
+
+/** Every credit, with the rows using its photo. */
+export const listImageCredits = () => getJson<ImageCreditItem[]>(API_ROUTES.admin.imageCredits);
+
+export const createImageCredit = (values: ImageCreditCreate) =>
+  postJson<ImageCreditRow>(API_ROUTES.admin.imageCredits, values);
+
+/** Refused with 409 if someone has saved this credit since `expectedUpdatedAt`. */
+export const updateImageCredit = (url: string, values: ImageCreditValues, expectedUpdatedAt: string) =>
+  putJson<ImageCreditRow>(creditPath(url), { values, expectedUpdatedAt } satisfies VersionedUpdate<ImageCreditValues>);
+
+export const deleteImageCredit = (url: string) => deleteJson<void>(creditPath(url));

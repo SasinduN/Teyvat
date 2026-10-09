@@ -15,6 +15,7 @@ import { requireAdmin, sessionOf } from '../auth/middleware';
 import { pool } from '../db';
 import { ApiError, asyncRoute } from '../http';
 import {
+  MAX_UPLOAD_BYTES,
   MEDIA_FOLDERS,
   mediaOf,
   newObjectKey,
@@ -23,8 +24,7 @@ import {
   type MediaConfig
 } from '../media/media';
 
-/** 10 MB: the most one upload may be, after the browser has resized it. */
-export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+export { MAX_UPLOAD_BYTES };
 
 const NOT_CONFIGURED = 'Image uploads aren’t configured on this server.';
 

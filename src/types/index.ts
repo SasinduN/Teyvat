@@ -144,6 +144,16 @@ export interface Pillar {
  * A link that is not set is `undefined`, so the Footer's `<a>` renders with
  * no `href` at all.
  */
+/** A photo's credit, for /photo-credits (`public.image_credits`). */
+export interface ImageCredit {
+  /** The photo, exactly as the content rows store it. */
+  url: string;
+  author: string;
+  license: string;
+  licenseUrl?: string;
+  sourceUrl?: string;
+}
+
 export interface SiteSettings {
   postalAddress: string;
   phone: string;

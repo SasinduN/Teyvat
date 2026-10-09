@@ -29,7 +29,6 @@ import type { RequestHandler } from 'express';
 
 import { allowedImageOrigins, MAP_TILES_SOURCE } from '../../shared/image-hosts';
 import type { MediaConfig } from './media/media';
-import { OSM_TILES_ORIGIN } from '../../shared/map-tiles';
 
 /** One day to start. Raised to a year at launch (docs/LAUNCH-CHECKLIST.md). */
 export const HSTS_MAX_AGE = 86_400;
@@ -40,7 +39,7 @@ export function contentSecurityPolicy(media: MediaConfig | null): string {
     'script-src': ["'self'"],
     'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
     'font-src': ["'self'", 'https://fonts.gstatic.com'],
-    'img-src': ["'self'", ...allowedImageOrigins(media?.publicBaseUrl ?? null), MAP_TILES_SOURCE, OSM_TILES_ORIGIN],
+    'img-src': ["'self'", ...allowedImageOrigins(media?.publicBaseUrl ?? null), MAP_TILES_SOURCE],
     'connect-src': ["'self'"],
     'frame-ancestors': ["'none'"],
     'base-uri': ["'self'"],

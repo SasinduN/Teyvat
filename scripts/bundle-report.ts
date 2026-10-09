@@ -25,8 +25,7 @@ const DIST = join(ROOT, 'dist');
 const manifest = JSON.parse(readFileSync(join(DIST, '.vite', 'manifest.json'), 'utf8')) as Record<string, Chunk>;
 
 const PAGES: [string, string, boolean][] = [
-  ['Home', 'src/pages/HomePage.tsx', false],
-  ['Explore', 'src/pages/ExplorePage.tsx', true],
+  ['Home', 'src/pages/HomePage.tsx', true],
   ['Destinations list', 'src/pages/DestinationsPage.tsx', false],
   ['Destination', 'src/pages/DestinationPage.tsx', false],
   ['Experiences list', 'src/pages/ExperiencesPage.tsx', false],
@@ -35,6 +34,8 @@ const PAGES: [string, string, boolean][] = [
   ['Tour', 'src/pages/TourPage.tsx', true],
   ['Article', 'src/pages/ArticlePage.tsx', false],
   ['About', 'src/pages/AboutPage.tsx', false],
+  ['Photo credits', 'src/pages/PhotoCreditsPage.tsx', false],
+  ['Unsubscribe', 'src/pages/UnsubscribePage.tsx', false],
   ['404', 'src/pages/NotFoundPage.tsx', false],
   ['Admin', 'src/admin/AdminApp.tsx', false]
 ];

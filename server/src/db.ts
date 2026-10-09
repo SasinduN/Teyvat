@@ -10,10 +10,22 @@ import '../../shared/pg-types';
 
 import pg from 'pg';
 
-import { connectionTargetFor } from '../../shared/pg-connection';
-import { env } from './env';
+import { connectionTargetFor, isRailwayInternal } from '../../shared/pg-connection';
+import { env, isProduction } from './env';
 
 const target = connectionTargetFor(env.DATABASE_URL);
+
+/**
+ * The deployed service should reach Postgres over Railway's private network
+ * (`${{Postgres.DATABASE_URL}}`), where no TLS is needed. Anything else, such
+ * as the public proxy URL pasted in by mistake, means traffic crossing the
+ * internet with an unverified certificate (`shared/pg-connection.ts`). Warn
+ * rather than refuse: a variable mistake shouldn't take the site down. The
+ * URL itself is never logged.
+ */
+if (isProduction && !isRailwayInternal(env.DATABASE_URL)) {
+  console.warn("[db] DATABASE_URL is not Railway's internal URL; the service should use ${{Postgres.DATABASE_URL}}.");
+}
 
 export const pool = new pg.Pool({
   connectionString: target.connectionString,

@@ -25,6 +25,7 @@ import type {
   TourRow
 } from '../../../shared/database.types';
 import { pool } from '../db';
+import { publicImageCredits } from '../media/credits';
 import { asyncRoute } from '../http';
 import { publicStopsByTour } from '../tour-stops';
 
@@ -101,7 +102,8 @@ contentRouter.get(
       heroSlides,
       pillars,
       siteSettings,
-      stopsByTour
+      stopsByTour,
+      imageCredits
     ] = await Promise.all([
       selectPublished<DestinationRow>('destinations'),
       selectPublished<ExperienceCategoryRow>('experience_categories'),
@@ -113,7 +115,8 @@ contentRouter.get(
       selectPublished<HeroSlideRow>('hero_slides'),
       selectPublished<PillarRow>('pillars'),
       selectSiteSettings(),
-      publicStopsByTour(pool)
+      publicStopsByTour(pool),
+      publicImageCredits(pool)
     ]);
 
     const payload: SiteContentPayload = {
@@ -127,7 +130,8 @@ contentRouter.get(
       photoStories,
       heroSlides,
       pillars,
-      siteSettings
+      siteSettings,
+      imageCredits
     };
 
     // An admin save must show on the next page load. `no-cache` lets the

@@ -131,6 +131,7 @@ npm run build && npm start     # everything on http://localhost:8081
 | `npm run admin:create` | Create an admin, or `--reset-password` for an existing one |
 | `npm run images:audit` | Read-only: stored image URLs the CSP would block |
 | `npm run media:rebase` | Move stored image URLs to a new R2 base (`--from`, `--to`, `--dry-run`) |
+| `npm run images:import` | Copy the Wikimedia photos the content uses into R2 and repoint rows and credits (`--dry-run`) |
 
 ---
 
@@ -213,7 +214,9 @@ keeps working.
 
 Every image field offers three ways in: **upload**, pick from the **library**,
 or paste a **URL**. A pasted URL must be from Unsplash or our R2 bucket (see
-the CSP below).
+the CSP below). For now Wikimedia Commons (`upload.wikimedia.org`) is allowed
+too, for the photos migration 0010 placed, until `npm run images:import` has
+copied them into R2.
 
 - **Before upload, in the browser:**
   - rotated by its EXIF orientation;
@@ -234,6 +237,30 @@ the CSP below).
   lists the rows using it and asks again.
 - **Without R2 configured** the site runs, uploads say "not configured", and
   the library and URLs keep working.
+- **Photo credits** (`public.image_credits`, *Admin → Photo credits*): the
+  photographer and licence of a photo, keyed by its URL. `/photo-credits`,
+  linked from the Footer, lists the credits of every photo a published row
+  uses. CC BY-SA photos (the Wikimedia ones) must have one.
+- **`npm run images:import`** copies each Wikimedia photo in use into R2 (as
+  a library upload), then rewrites every image field still holding that URL,
+  and moves its credit, in one transaction per photo. Downloads go one at a
+  time, two seconds apart, with a User-Agent naming the project, and honour
+  `Retry-After`. Run `-- --dry-run` first; it's safe to re-run.
+
+### Newsletter
+
+- **Sign-up:** the Footer's form posts to `POST /api/newsletter`, with a
+  honeypot and a limit of 10 requests per 15 minutes per IP. The answer is the
+  same for a new address, a repeat and a bot, so it can't be used to test who
+  is subscribed. A consent line under the button links to the privacy policy.
+- **Unsubscribe:** every subscriber has a random `unsubscribe_token`.
+  `newsletterUnsubscribeUrl(origin, token)` (`shared/site-paths.ts`) builds
+  the link every newsletter email must carry. It opens `/unsubscribe`, whose
+  button posts `POST /api/newsletter/unsubscribe` and **deletes** the address.
+  The page itself changes nothing, so a mail scanner following the link
+  can't unsubscribe anyone.
+- **Nothing sends newsletters yet.** Addresses are only stored (launch
+  checklist).
 
 ### Enquiries
 
@@ -322,6 +349,7 @@ sends. They don't apply under `npm run dev`, where Vite serves the page.
 | `font-src` | `'self' https://fonts.gstatic.com` | the font files |
 | `img-src` | `'self' https://images.unsplash.com` | the seeded photos |
 | | the `R2_PUBLIC_BASE_URL` origin | uploads; read at boot, so a new domain needs no code change |
+| | `https://upload.wikimedia.org` | temporary: credited photos from migration 0010, until `images:import` moves them to R2 |
 | | `https://basemaps.cartocdn.com` | the map tiles (exactly that host; a `*.` wildcard wouldn't match it) |
 | `connect-src` | `'self'` | the browser only calls our own `/api` |
 | `frame-ancestors` | `'none'` | nobody may frame the site |
@@ -355,6 +383,23 @@ in [`docs/SCHEMA.md`](docs/SCHEMA.md).
 
 **Backups and restore:** see [`docs/RESTORE.md`](docs/RESTORE.md) (Railway
 point-in-time recovery).
+
+**TLS** (`shared/pg-connection.ts`) follows libpq's `sslmode` meanings:
+
+| `sslmode` | TLS | Verifies the certificate |
+| --- | --- | --- |
+| none, `disable` | no | |
+| `allow`, `prefer`, `require` | yes | no |
+| `verify-ca`, `verify-full` | yes | yes |
+| `no-verify` | yes | no |
+
+- The deployed service uses the internal `${{Postgres.DATABASE_URL}}`, with
+  no `sslmode`: its traffic never leaves Railway's private network. It logs a
+  warning at start-up if given anything else.
+- Scripts run from a laptop against production (`migrate`, `admin:create`,
+  `images:audit`, `images:import`, `media:rebase`) use the Postgres service's
+  `DATABASE_PUBLIC_URL` with `?sslmode=require`. That is encrypted but not
+  authenticated, because Railway's proxy certificate is self-signed.
 
 ---
 

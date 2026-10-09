@@ -22,6 +22,7 @@ import { adminRouter } from './routes/admin';
 import { authRouter } from './routes/auth';
 import { contentRouter } from './routes/content';
 import { healthRouter } from './routes/health';
+import { imageCreditsRouter } from './routes/image-credits';
 import { inquiriesRouter } from './routes/inquiries';
 import { newsletterRouter } from './routes/newsletter';
 import { mediaRouter } from './routes/media';
@@ -97,6 +98,7 @@ export function createApp(options: AppOptions = {}): Express {
   // time for every /api/admin/media and /api/admin/inquiries request.
   app.use('/api', inquiriesRouter);
   app.use('/api', mediaRouter);
+  app.use('/api', imageCreditsRouter);
   app.use('/api', adminRouter);
 
   /**

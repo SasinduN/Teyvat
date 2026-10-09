@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   ExternalLink,
+  Camera,
   Images,
   Inbox,
   LayoutDashboard,
@@ -113,6 +114,7 @@ export const AdminLayout: React.FC = () => {
           Site
         </div>
         <NavItem to="/admin/media" icon={Images} label="Media library" onNavigate={closeMobile} />
+        <NavItem to="/admin/credits" icon={Camera} label="Photo credits" onNavigate={closeMobile} />
         <NavItem to="/admin/settings" icon={Settings} label="Settings" onNavigate={closeMobile} />
       </nav>
 

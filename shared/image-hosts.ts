@@ -12,8 +12,13 @@
 
 /** The seeded content's photos. */
 export const UNSPLASH_ORIGIN = 'https://images.unsplash.com';
-/** Curated, credited location photographs; no wildcard external hosts. */
-export const WIKIMEDIA_ORIGINS = ['https://upload.wikimedia.org', 'https://thumb.wikimedia.org'];
+/**
+ * Temporary: the credited Wikimedia Commons photos migration 0010 put in the
+ * content tables. `npm run images:import` copies them into R2; once
+ * production's rows no longer use this host, a follow-up PR removes it
+ * (docs/plans/fix-pr11.md, PR B).
+ */
+export const WIKIMEDIA_ORIGIN = 'https://upload.wikimedia.org';
 
 /**
  * The map's tiles: exactly CARTO's bare host (no a–d subdomains since the
@@ -22,9 +27,9 @@ export const WIKIMEDIA_ORIGINS = ['https://upload.wikimedia.org', 'https://thumb
  */
 export { CARTO_TILES_ORIGIN as MAP_TILES_SOURCE } from './map-tiles';
 
-/** Origins an image field may point at: Unsplash, plus our R2 bucket when uploads are set up. */
+/** Origins an image field may point at: Unsplash, Wikimedia (for now), plus our R2 bucket when uploads are set up. */
 export function allowedImageOrigins(r2PublicBaseUrl: string | null): string[] {
-  const origins = [UNSPLASH_ORIGIN, ...WIKIMEDIA_ORIGINS];
+  const origins = [UNSPLASH_ORIGIN, WIKIMEDIA_ORIGIN];
   if (r2PublicBaseUrl) origins.push(new URL(r2PublicBaseUrl).origin);
   return origins;
 }

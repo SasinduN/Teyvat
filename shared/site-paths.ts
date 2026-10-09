@@ -16,8 +16,27 @@ export const paths = {
   tour: (id: string) => `/tours/${encodeURIComponent(id)}`,
   article: (id: string) => `/journal/${encodeURIComponent(id)}`,
   about: '/about',
-  contact: '/about#contact'
+  contact: '/about#contact',
+  /** Who took the photos, and their licences (linked from the Footer). */
+  photoCredits: '/photo-credits',
+  /** Not linked from the site: only from newsletter emails (`newsletterUnsubscribeUrl`). */
+  unsubscribe: '/unsubscribe'
 } as const;
+
+/**
+ * An unsubscribe token: the subscriber's random UUID (migration 0012). Here,
+ * not beside the Zod schema, so the public page can check a link without
+ * loading Zod.
+ */
+export const UNSUBSCRIBE_TOKEN_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * The link every newsletter email must carry (and its `List-Unsubscribe`
+ * header). `origin` is PUBLIC_SITE_URL; the token is the subscriber's
+ * `unsubscribe_token`.
+ */
+export const newsletterUnsubscribeUrl = (origin: string, token: string): string =>
+  `${origin}${paths.unsubscribe}?token=${encodeURIComponent(token)}`;
 
 /** The site's navigation, in order: the Navbar (desktop and mobile) and the Footer. */
 export const NAV_LINKS: ReadonlyArray<{ label: string; to: string }> = [

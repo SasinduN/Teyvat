@@ -92,8 +92,11 @@ off in a pull request, so the history shows when each was done.
 - [ ] **12. Privacy policy, terms, and sustainability pages.** The privacy
       policy must state what the enquiry form keeps and for how long; the
       README's "Privacy" section has the facts (closed enquiries 12 months,
-      spam 30 days). Publish all three and set their URLs in *Admin →
-      Settings*.
+      spam 30 days). **It must also cover the newsletter:** the address
+      and when it was given are kept until the subscriber unsubscribes
+      (which deletes it), and its rate limit keeps IP addresses for 24 hours
+      (README, "Newsletter"). The Footer's consent line links to it. Publish all three
+      and set their URLs in *Admin → Settings*.
       **Blocks:** go-live, since the site collects personal data. **Who:**
       Owner (legal review advised) + content editor.
 - [ ] **13. Real contact details** in *Admin → Settings*: postal address,
@@ -121,6 +124,25 @@ off in a pull request, so the history shows when each was done.
 - [ ] **17. Rename "Travel Eye"** to the chosen brand in the code, page
       titles, emails and the admin.
       **Blocks:** go-live under the real brand. **Who:** Developer, after 7.
+
+- [ ] **22. Newsletter: send it, or hide the form.** Nothing sends
+      newsletters: the Footer's form only stores addresses. Either set up
+      sending (every email carries `newsletterUnsubscribeUrl(origin, token)`
+      and a `List-Unsubscribe` header) or hide the form until then. Addresses
+      collected before migration 0012 were given without the consent line;
+      email them nothing until they confirm, or delete them.
+      **Blocks:** go-live with the form visible. **Who:** Owner, then
+      Developer.
+- [ ] **23. Copy the Wikimedia photos into R2, then drop the host from the
+      CSP.** Once the fix-forward PR for #11 is deployed, run
+      `npm run images:import -- --dry-run` and then `npm run images:import`
+      against production (needs `DATABASE_URL` through the public proxy and
+      the five `R2_*` values in `.env`). Then `npm run images:audit` on the
+      branch that removes `upload.wikimedia.org` (item 16) must report
+      nothing blocked before that branch is merged. Until then the CSP still
+      allows Wikimedia (docs/plans/fix-pr11.md).
+      **Blocks:** the CSP's last third-party image host going. **Who:**
+      Developer, with the Railway and Cloudflare values.
 
 ## Accounts and clean-up
 

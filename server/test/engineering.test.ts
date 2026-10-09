@@ -50,6 +50,44 @@ describe('newsletter persistence and protection', () => {
   });
 });
 
+const unsubscribe = (body: unknown, origin?: string) => fetch(`${app.baseUrl}/api/newsletter/unsubscribe`, {
+  method: 'POST', headers: { ...browserHeaders(app, '203.0.113.81'), ...(origin ? { Origin: origin } : {}) }, body: JSON.stringify(body)
+});
+
+describe('newsletter unsubscribe', () => {
+  test('a subscriber gets a token and a consent time; the token deletes the row', async () => {
+    assert.equal((await subscribe({ email: 'leaving@example.test' })).status, 201);
+    const { rows } = await pool.query<{ unsubscribe_token: string; consented_at: Date }>(
+      `select unsubscribe_token, consented_at from public.newsletter_subscribers where email = 'leaving@example.test'`
+    );
+    assert.match(rows[0].unsubscribe_token, /^[0-9a-f-]{36}$/);
+    assert.ok(rows[0].consented_at instanceof Date);
+
+    const res = await unsubscribe({ token: rows[0].unsubscribe_token });
+    assert.equal(res.status, 200);
+    assert.deepEqual(await res.json(), { ok: true });
+    assert.equal((await pool.query('select * from public.newsletter_subscribers')).rowCount, 0, 'deleted, not flagged');
+  });
+  test('an unknown token answers the same and deletes nothing', async () => {
+    await subscribe({ email: 'staying@example.test' });
+    const res = await unsubscribe({ token: '00000000-0000-4000-8000-000000000000' });
+    assert.equal(res.status, 200);
+    assert.deepEqual(await res.json(), { ok: true });
+    assert.equal((await pool.query('select * from public.newsletter_subscribers')).rowCount, 1);
+  });
+  test('a malformed token is a 400, and a foreign origin a 403', async () => {
+    assert.equal((await unsubscribe({ token: 'not-a-token' })).status, 400);
+    assert.equal((await unsubscribe({})).status, 400);
+    assert.equal((await unsubscribe({ token: '00000000-0000-4000-8000-000000000000' }, 'https://foreign.example')).status, 403);
+  });
+  test('a repeat sign-up keeps the original token', async () => {
+    await subscribe({ email: 'twice@example.test' });
+    const first = (await pool.query(`select unsubscribe_token from public.newsletter_subscribers`)).rows[0].unsubscribe_token;
+    await subscribe({ email: 'twice@example.test' });
+    assert.equal((await pool.query(`select unsubscribe_token from public.newsletter_subscribers`)).rows[0].unsubscribe_token, first);
+  });
+});
+
 describe('planner and seasonal discovery', () => {
   test('region and style change actual destination choices', () => {
     const south = buildSampleJourney(DESTINATIONS, { style: 'Relax', duration: '6–8 days', region: 'South Coast' });

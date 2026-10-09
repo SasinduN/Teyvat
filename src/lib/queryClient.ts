@@ -46,6 +46,7 @@ export const queryKeys = {
     counts: ['admin', 'counts'] as const,
     siteSettings: ['admin', 'site-settings'] as const,
     media: ['admin', 'media'] as const,
+    imageCredits: ['admin', 'image-credits'] as const,
     inquiries: (filters: InquiryFilters) => ['admin', 'inquiries', filters] as const,
     inquiryCounts: ['admin', 'inquiry-counts'] as const
   }

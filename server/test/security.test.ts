@@ -86,7 +86,7 @@ describe('security headers', () => {
       'script-src': ["'self'"],
       'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
       'font-src': ["'self'", 'https://fonts.gstatic.com'],
-      'img-src': ["'self'", 'https://images.unsplash.com', 'https://upload.wikimedia.org', 'https://thumb.wikimedia.org', BASE, 'https://basemaps.cartocdn.com', 'https://tile.openstreetmap.org'],
+      'img-src': ["'self'", 'https://images.unsplash.com', 'https://upload.wikimedia.org', BASE, 'https://basemaps.cartocdn.com'],
       'connect-src': ["'self'"],
       'frame-ancestors': ["'none'"],
       'base-uri': ["'self'"],
@@ -98,7 +98,7 @@ describe('security headers', () => {
   test('without R2, the CSP has no bucket origin', () => {
     const csp = contentSecurityPolicy(null);
     assert.ok(!csp.includes('r2.dev'));
-    assert.ok(csp.includes("https://upload.wikimedia.org") && csp.includes("https://tile.openstreetmap.org"));
+    assert.match(csp, /img-src 'self' https:\/\/images\.unsplash\.com https:\/\/upload\.wikimedia\.org https:\/\/basemaps\.cartocdn\.com;/);
   });
 });
 
