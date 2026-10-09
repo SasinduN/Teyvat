@@ -22,7 +22,8 @@
     "test": "node scripts/run-tests.mjs",
     "seed:generate": "tsx scripts/generate-seed.ts",
     "verify:roundtrip": "tsx scripts/verify-roundtrip.ts",
-    "bundle:report": "tsx scripts/bundle-report.ts"
+    "bundle:report": "tsx scripts/bundle-report.ts",
+    "screenshots": "tsx scripts/screenshots.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

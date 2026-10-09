@@ -130,10 +130,23 @@ Update the Status column when a phase lands.
 
 - **Plan first, then stop.** Write the plan and wait for approval before
   writing any code.
-- **The public design is approved and frozen.** Any change to markup,
-  `className` or layout in `src/components/` must be called out in the plan
-  before it is written. Review with:
-  `git diff demo-baseline -- src/components/`
+- **Public design changes need evidence and a second approval.** Any change
+  to markup, `className`, styles or layout of the public site (or the
+  admin):
+  - is called out in its plan first;
+  - includes before/after screenshots of every page it touches, at 1280 px
+    and 375 px, in light and dark once the dark theme exists
+    (`npm run screenshots -- --base origin/main`, committed under
+    `docs/screenshots/<branch>/`);
+  - is approved by the other teammate (never the author) before merging.
+
+  A pixel test (`browser-home-baseline`, `browser-inquiry`) is re-baselined
+  only for sections the PR changes on purpose, in that PR, and listed in
+  its description. Tests are never deleted or weakened to get a change
+  through. Merge with a merge commit, not a squash: the baselines are
+  commits. The redesign's order and rules: `docs/plans/redesign-redo.md`.
+- **One PR open at a time.** Merge it before starting the next. Nobody
+  merges their own PR, and nobody merges on red CI.
 - **Never run the Railway CLI.** It is linked at the home directory to a
   different project (`alluring-warmth`), not Teyvat.
 - **`main` takes changes through pull requests.** Push a branch, open a PR,
@@ -177,4 +190,6 @@ CI runs all of these on every pull request and every push to `main`.
 - `npm test` (the browser tests need the build first)
 - `npm run verify:roundtrip` must pass. It proves the rows the database stores
   map back to exactly the values the approved components render.
-- The public page must look identical to `demo-baseline`.
+- The pixel tests (`browser-home-baseline`, `browser-inquiry`) pass against
+  their baseline commits; a PR that changes a section's design moves that
+  section's baseline, with screenshots and the other teammate's approval.

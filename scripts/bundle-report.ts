@@ -40,6 +40,15 @@ const PAGES: [string, string, boolean][] = [
   ['Admin', 'src/admin/AdminApp.tsx', false]
 ];
 
+// Every page App.tsx loads lazily must have a row, so a new page can't be
+// left out of the report (docs/plans/redesign-redo.md).
+const lazyPages = [...readFileSync(join(ROOT, 'src/App.tsx'), 'utf8').matchAll(/import\('@\/((?:pages|admin)\/[\w/]+)'\)/g)]
+  .map((m) => `src/${m[1]}.tsx`);
+const unlisted = lazyPages.filter((page) => !PAGES.some(([, key]) => key === page));
+if (unlisted.length > 0) {
+  throw new Error(`Add a row to PAGES in scripts/bundle-report.ts for: ${unlisted.join(', ')}`);
+}
+
 const gz = (file: string) => gzipSync(readFileSync(join(DIST, file))).length;
 const kb = (bytes: number) => `${(bytes / 1024).toFixed(1)} KB`;
 

@@ -6,8 +6,14 @@ import './test-db';
  * Phase 8 turns the home page's cards and navigation into links and retires
  * three modals, inside frozen components. The page must look exactly as it
  * did, so each changed section is rendered twice in headless Chrome with the
- * built stylesheet: once as it was at `bf94e25` (the last commit before phase
- * 8, read with `git show`) and once as it is now. No pixel may differ by more
+ * built stylesheet: once as it was at its baseline commit (read with
+ * `git show`) and once as it is now.
+ *
+ * Each section has its own baseline commit (`SECTIONS[].baseline`). They all
+ * start at `bf94e25`, the last commit before phase 8. A PR that redesigns a
+ * section on purpose moves only that section's baseline, to the commit with
+ * the approved design, with screenshots and the other teammate's approval
+ * (CLAUDE.md; docs/plans/redesign-redo.md). No pixel may differ by more
  * than 2 colour levels; a control renders the baseline twice, so the method
  * proves itself first. The same approach as `browser-inquiry.test.ts`.
  *
@@ -42,8 +48,8 @@ import { HOOK_TIMEOUT } from './timeouts';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-/** The last commit before phase 8: the home page as approved. */
-const BASELINE_COMMIT = 'bf94e25';
+/** The last commit before phase 8: the home page as approved then. */
+const PHASE_8_BASELINE = 'bf94e25';
 
 const executable = findChrome();
 const cssDir = join(REPO_ROOT, 'dist', 'assets');
@@ -56,18 +62,21 @@ const skip = !executable
 
 /**
  * The sections, with props both versions accept (each ignores the ones it
- * doesn't know). `height` is the viewport for fixed-position ones; the rest
- * are measured.
+ * doesn't know). `baseline` is the commit whose version of the component
+ * the section must still match. `height` is the viewport for fixed-position
+ * ones; the rest are measured.
  */
-const SECTIONS: { name: string; props: string; height?: number }[] = [
-  { name: 'Navbar', props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
-  { name: 'DestinationSpotlight', props: '{ onSelectDestination() {} }' },
-  { name: 'FeaturedExperiences', props: '{ onSelectExperience() {} }' },
-  { name: 'ToursSection', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
-  { name: 'ExperiencesSection', props: '{ onSelectCategory() {} }' },
-  { name: 'JournalSection', props: '{}' },
-  { name: 'SearchModal', props: '{ isOpen: true, onClose() {}, onSelectDestination() {} }', height: 900 }
+const SECTIONS: { name: string; baseline: string; props: string; height?: number }[] = [
+  { name: 'Navbar', baseline: PHASE_8_BASELINE, props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
+  { name: 'DestinationSpotlight', baseline: PHASE_8_BASELINE, props: '{ onSelectDestination() {} }' },
+  { name: 'FeaturedExperiences', baseline: PHASE_8_BASELINE, props: '{ onSelectExperience() {} }' },
+  { name: 'ToursSection', baseline: PHASE_8_BASELINE, props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
+  { name: 'ExperiencesSection', baseline: PHASE_8_BASELINE, props: '{ onSelectCategory() {} }' },
+  { name: 'JournalSection', baseline: PHASE_8_BASELINE, props: '{}' },
+  { name: 'SearchModal', baseline: PHASE_8_BASELINE, props: '{ isOpen: true, onClose() {}, onSelectDestination() {} }', height: 900 }
 ];
+
+const baselineOf = (name: string): string => SECTIONS.find((s) => s.name === name)!.baseline;
 
 const WIDTHS = [1280, 390];
 
@@ -77,7 +86,7 @@ const baselinePlugin: Plugin = {
   setup(b) {
     b.onResolve({ filter: /^baseline:/ }, (args) => ({ path: args.path.slice('baseline:'.length), namespace: 'baseline' }));
     b.onLoad({ filter: /.*/, namespace: 'baseline' }, (args) => ({
-      contents: execFileSync('git', ['show', `${BASELINE_COMMIT}:src/components/${args.path}.tsx`], {
+      contents: execFileSync('git', ['show', `${baselineOf(args.path)}:src/components/${args.path}.tsx`], {
         cwd: REPO_ROOT,
         encoding: 'utf8'
       }),
@@ -211,7 +220,7 @@ async function differingPixels(page: Page, a: string, b: string): Promise<number
 
 // `--test-timeout` (60 s) applies to a suite as a whole too, and these 14
 // comparisons take about 9 s each; each test still has its own 60 s.
-describe(`the home page's changed sections look as they did at ${BASELINE_COMMIT}, in Chrome`, { skip, timeout: 5 * 60_000 }, () => {
+describe(`the home page's changed sections look as they did at their baseline commits, in Chrome`, { skip, timeout: 5 * 60_000 }, () => {
   let app: RunningApp;
   let chrome: Chrome;
   let css: string;
@@ -238,7 +247,7 @@ describe(`the home page's changed sections look as they did at ${BASELINE_COMMIT
 
   for (const section of SECTIONS) {
     for (const width of WIDTHS) {
-      test(`${section.name} at ${width}px: no pixel differs by more than ${TOLERANCE} levels`, async () => {
+      test(`${section.name} at ${width}px: no pixel differs from ${section.baseline} by more than ${TOLERANCE} levels`, async () => {
         const before = await screenshot(chrome, baselineScript, css, payload, section, width);
         const control = await screenshot(chrome, baselineScript, css, payload, section, width);
         const now = await screenshot(chrome, currentScript, css, payload, section, width);
