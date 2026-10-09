@@ -4,13 +4,12 @@ import { Search, Menu, X, Compass, ArrowRight } from 'lucide-react';
 import { useModalFocus } from '@/hooks/useModalFocus';
 import { activeNavigationTarget } from '@/lib/activeNavigation';
 import { BRAND_NAME } from '@shared/brand';
-import { NAV_LINKS } from '@shared/site-paths';
+import { NAV_LINKS, paths } from '@shared/site-paths';
 import { Logo } from './Logo';
 import { SiteLink } from './SiteLink';
 
 interface NavbarProps {
   onOpenSearch: () => void;
-  onOpenPlanner: () => void;
 }
 
 /**
@@ -20,7 +19,7 @@ interface NavbarProps {
  * open in a solid full-screen menu that holds focus until it closes (Escape,
  * the close button, or a link). No animation library: CSS transitions only.
  */
-export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch, onOpenPlanner }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -96,10 +95,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch, onOpenPlanner }) =
                 <Search className="w-5 h-5" aria-hidden="true" />
               </button>
 
-              <button type="button" onClick={onOpenPlanner} className="te-button te-button--primary">
+              <SiteLink to={paths.plan} onClick={handleLinkClick} className="te-button te-button--primary">
                 <Compass className="w-4 h-4" aria-hidden="true" />
                 <span>Plan Your Trip</span>
-              </button>
+              </SiteLink>
             </div>
 
             {/* Mobile: search and the menu */}
@@ -169,17 +168,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch, onOpenPlanner }) =
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenPlanner();
-              }}
-              className="te-button te-button--primary w-full py-3.5"
-            >
+            <SiteLink to={paths.plan} onClick={handleLinkClick} className="te-button te-button--primary w-full py-3.5">
               <Compass className="w-5 h-5" aria-hidden="true" />
               <span>Plan Your Journey</span>
-            </button>
+            </SiteLink>
           </nav>
 
           <div className="pt-8 border-t border-[rgb(var(--pearl-channels)/.12)] text-center text-xs text-[var(--palette-muted-text)] space-y-1">

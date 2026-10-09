@@ -29,7 +29,7 @@ function ArticleView({ a }: { a: Article }) {
     <>
       <PageHero
         image={a.image}
-        crumbs={[{ label: 'Home', to: paths.home }, { label: 'Journal', to: paths.journalSection }, { label: a.title }]}
+        crumbs={[{ label: 'Home', to: paths.home }, { label: 'Journal', to: paths.journal }, { label: a.title }]}
         chips={<HeroChip gold>{a.category}</HeroChip>}
         title={a.title}
       />

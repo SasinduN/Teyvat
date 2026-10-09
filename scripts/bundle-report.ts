@@ -26,6 +26,9 @@ const manifest = JSON.parse(readFileSync(join(DIST, '.vite', 'manifest.json'), '
 
 const PAGES: [string, string, boolean][] = [
   ['Home', 'src/pages/HomePage.tsx', true],
+  ['Explore', 'src/pages/ExplorePage.tsx', true],
+  ['Plan', 'src/pages/PlanPage.tsx', false],
+  ['Journal', 'src/pages/JournalPage.tsx', false],
   ['Destinations list', 'src/pages/DestinationsPage.tsx', false],
   ['Destination', 'src/pages/DestinationPage.tsx', false],
   ['Experiences list', 'src/pages/ExperiencesPage.tsx', false],

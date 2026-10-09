@@ -33,13 +33,13 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
 
   return (
     <div className="relative z-30 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 sm:-mt-20">
-      <div className="bg-[#1C4737] text-white p-4 sm:p-6 md:p-8 rounded-3xl shadow-2xl border border-[#368E6B]/30 backdrop-blur-xl">
+      <div className="bg-[var(--brand-secondary)] text-white p-4 sm:p-6 md:p-8 rounded-3xl shadow-2xl border border-[var(--emerald-edge)]/30 backdrop-blur-xl">
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
           
           {/* Where field */}
-          <div className="md:col-span-4 bg-[#0F2E23]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[#D4AF37]/50 transition-colors">
-            <label className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[#D4AF37] font-bold mb-1">
-              <MapPin className="w-3.5 h-3.5 text-[#D4AF37]" />
+          <div className="md:col-span-4 bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
+            <label className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[var(--accent)] font-bold mb-1">
+              <MapPin className="w-3.5 h-3.5 text-[var(--accent)]" />
               <span>Where to go?</span>
             </label>
             <select
@@ -47,11 +47,11 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
               onChange={(e) => setSelectedWhere(e.target.value)}
               className="w-full bg-transparent text-white font-medium text-sm focus:outline-none cursor-pointer"
             >
-              <option value="All" className="bg-[#0F2E23] text-white">
+              <option value="All" className="bg-[var(--inverse-surface)] text-white">
                 All Sri Lanka Regions
               </option>
               {DESTINATIONS.map((dest) => (
-                <option key={dest.id} value={dest.name} className="bg-[#0F2E23] text-white">
+                <option key={dest.id} value={dest.name} className="bg-[var(--inverse-surface)] text-white">
                   {dest.name} ({dest.region})
                 </option>
               ))}
@@ -59,9 +59,9 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
           </div>
 
           {/* What experience field */}
-          <div className="md:col-span-4 bg-[#0F2E23]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[#D4AF37]/50 transition-colors">
-            <label className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[#D4AF37] font-bold mb-1">
-              <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+          <div className="md:col-span-4 bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
+            <label className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[var(--accent)] font-bold mb-1">
+              <Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" />
               <span>What Experience?</span>
             </label>
             <select
@@ -70,7 +70,7 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
               className="w-full bg-transparent text-white font-medium text-sm focus:outline-none cursor-pointer"
             >
               {categories.map((cat) => (
-                <option key={cat} value={cat} className="bg-[#0F2E23] text-white">
+                <option key={cat} value={cat} className="bg-[var(--inverse-surface)] text-white">
                   {cat === 'All' ? 'All Experiences' : cat}
                 </option>
               ))}
@@ -78,9 +78,9 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
           </div>
 
           {/* When traveling field */}
-          <div className="md:col-span-3 bg-[#0F2E23]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[#D4AF37]/50 transition-colors">
-            <label className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[#D4AF37] font-bold mb-1">
-              <Calendar className="w-3.5 h-3.5 text-[#D4AF37]" />
+          <div className="md:col-span-3 bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
+            <label className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[var(--accent)] font-bold mb-1">
+              <Calendar className="w-3.5 h-3.5 text-[var(--accent)]" />
               <span>When Travelling?</span>
             </label>
             <select
@@ -89,7 +89,7 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
               className="w-full bg-transparent text-white font-medium text-sm focus:outline-none cursor-pointer"
             >
               {timings.map((t) => (
-                <option key={t} value={t} className="bg-[#0F2E23] text-white">
+                <option key={t} value={t} className="bg-[var(--inverse-surface)] text-white">
                   {t}
                 </option>
               ))}
@@ -100,7 +100,7 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
           <div className="md:col-span-1">
             <button
               type="submit"
-              className="w-full h-full min-h-[52px] bg-[#D4AF37] hover:bg-[#C5A059] text-[#0F2E23] font-bold rounded-2xl flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transition-all duration-300 transform active:scale-95"
+              className="w-full h-full min-h-[52px] bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--brand-primary)] font-bold rounded-2xl flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transition-all duration-300 transform active:scale-95"
               title="Search Destinations"
             >
               <Search className="w-5 h-5 hidden md:block" />

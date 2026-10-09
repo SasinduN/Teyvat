@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 import { HeroSection } from '@/components/HeroSection';
 import { QuickSearch } from '@/components/QuickSearch';
 import { IntroSection } from '@/components/IntroSection';
@@ -15,35 +14,21 @@ import { PhotoStorySection } from '@/components/PhotoStorySection';
 import { JournalSection } from '@/components/JournalSection';
 import { CTASection } from '@/components/CTASection';
 import { usePageSubject, usePageTitle, usePublicSite } from '@/context/PublicSiteContext';
-import { useTours } from '@/hooks/useSiteContent';
 import { goToSection } from '@/lib/routeFocus';
 import { HOME_TITLE } from '@shared/page-meta';
 import { CategoryType, TourPackage } from '@/types';
 import { Section } from './Section';
 
-/** What `/tours` hands the home page with "View route on map". */
-export interface HomeNavigationState {
-  routeTourId?: string;
-}
-
 /** The home page: the approved one-page design, section by section. */
 export function HomePage() {
   usePageTitle(HOME_TITLE);
   const { openInquiry } = usePublicSite();
-  const tours = useTours();
-  const location = useLocation();
 
   const [activeFilterForMap, setActiveFilterForMap] = useState<CategoryType | 'All'>('All');
   const [selectedWhereForMap, setSelectedWhereForMap] = useState<string>('All');
   // The tour whose route the map is showing ("View route on map"), if any.
   const [routeTour, setRouteTour] = useState<TourPackage | null>(null);
   const mapOnScreen = useMapOnScreen();
-
-  // "View route on map" on /tours comes here with the tour in the navigation state.
-  useEffect(() => {
-    const id = (location.state as HomeNavigationState | null)?.routeTourId;
-    if (id) setRouteTour(tours.find((t) => t.id === id) ?? null);
-  }, [location.key]);
 
   // While a route is on the map in view, the WhatsApp message names that tour.
   usePageSubject(

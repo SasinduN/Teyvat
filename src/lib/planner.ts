@@ -36,7 +36,7 @@ export function buildSampleJourney(destinations: Destination[], preferences: Pla
   });
 }
 
-export const SAVED_PLAN_KEY = 'travel-eye:journey:v1';
+export const SAVED_PLAN_KEY = 'site:journey:v1';
 export function readSavedJourney(): PlannerPreferences | null {
   try {
     const value: unknown = JSON.parse(localStorage.getItem(SAVED_PLAN_KEY) ?? 'null');

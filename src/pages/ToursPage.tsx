@@ -5,7 +5,6 @@ import { usePageTitle, usePublicSite } from '@/context/PublicSiteContext';
 import { useTours } from '@/hooks/useSiteContent';
 import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
-import type { HomeNavigationState } from './HomePage';
 import { Section } from './Section';
 
 /**
@@ -30,9 +29,7 @@ export function ToursPage() {
       <Section name="ToursSection">
         <ToursSection
           onOpenInquiry={openInquiry}
-          onViewRoute={(tour) =>
-            navigate(paths.explore, { state: { routeTourId: tour.id } satisfies HomeNavigationState })
-          }
+          onViewRoute={(tour) => navigate(paths.tourOnMap(tour.id))}
         />
       </Section>
     </>
