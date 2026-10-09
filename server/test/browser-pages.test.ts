@@ -220,6 +220,26 @@ describe('pages and links, in Chrome', { skip }, () => {
     await waitFor(fresh, `Math.abs(document.querySelector('#contact').getBoundingClientRect().top) < 2`, 'a fresh #contact', 5_000);
   });
 
+  test('every page has one <h1>, and no other heading repeats it', async () => {
+    const problems: string[] = [];
+    for (const path of [
+      '/', '/explore', '/plan', '/journal', '/destinations', '/destinations/ella', '/experiences',
+      '/experiences/safari-yala', '/tours', '/tours/island-in-7-days', '/journal/ultimate-ella-guide',
+      '/about', '/photo-credits', '/unsubscribe', '/nope'
+    ]) {
+      const page = await openPage(path);
+      const { h1s, repeats } = await page.evaluate<{ h1s: string[]; repeats: string[] }>(`(() => {
+        const text = (el) => el.textContent.replace(/\s+/g, ' ').trim().toLowerCase();
+        const h1s = [...document.querySelectorAll('h1')].map(text);
+        const repeats = [...document.querySelectorAll('h2, h3, h4')].map(text).filter((t) => h1s.includes(t));
+        return { h1s, repeats };
+      })()`);
+      if (h1s.length !== 1) problems.push(`${path}: ${h1s.length} <h1> (${h1s.join(' | ')})`);
+      for (const r of repeats) problems.push(`${path}: a heading repeats the <h1> "${r}"`);
+    }
+    assert.deepEqual(problems, []);
+  });
+
   test('focus moves to the new page’s <h1>, and the title follows', async () => {
     const page = await openPage('/');
     assert.equal(await page.evaluate<string>('document.title'), 'Travel Eye | See Sri Lanka Through a Different Eye');
