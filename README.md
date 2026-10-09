@@ -214,9 +214,7 @@ keeps working.
 
 Every image field offers three ways in: **upload**, pick from the **library**,
 or paste a **URL**. A pasted URL must be from Unsplash or our R2 bucket (see
-the CSP below). For now Wikimedia Commons (`upload.wikimedia.org`) is allowed
-too, for the photos migration 0010 placed, until `npm run images:import` has
-copied them into R2.
+the CSP below).
 
 - **Before upload, in the browser:**
   - rotated by its EXIF orientation;
@@ -245,7 +243,9 @@ copied them into R2.
   a library upload), then rewrites every image field still holding that URL,
   and moves its credit, in one transaction per photo. Downloads go one at a
   time, two seconds apart, with a User-Agent naming the project, and honour
-  `Retry-After`. Run `-- --dry-run` first; it's safe to re-run.
+  `Retry-After`. Run `-- --dry-run` first; it's safe to re-run. Since
+  migration 0013 the CSP no longer allows Wikimedia, and any row still on a
+  0010 Wikimedia photo is back on its seed photo.
 
 ### Newsletter
 
@@ -349,7 +349,6 @@ sends. They don't apply under `npm run dev`, where Vite serves the page.
 | `font-src` | `'self' https://fonts.gstatic.com` | the font files |
 | `img-src` | `'self' https://images.unsplash.com` | the seeded photos |
 | | the `R2_PUBLIC_BASE_URL` origin | uploads; read at boot, so a new domain needs no code change |
-| | `https://upload.wikimedia.org` | temporary: credited photos from migration 0010, until `images:import` moves them to R2 |
 | | `https://basemaps.cartocdn.com` | the map tiles (exactly that host; a `*.` wildcard wouldn't match it) |
 | `connect-src` | `'self'` | the browser only calls our own `/api` |
 | `frame-ancestors` | `'none'` | nobody may frame the site |

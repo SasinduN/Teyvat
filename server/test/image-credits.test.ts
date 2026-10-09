@@ -199,3 +199,29 @@ describe('migration 0011', () => {
     assert.equal(await location(), 'Nuwara Eliya');
   });
 });
+
+describe('migration 0013', () => {
+  test('rows still on a 0010 Wikimedia photo go back to their seed photo; admin choices stay', async () => {
+    const seed = (await pool.query<{ image: string }>(`select image from public.destinations where id = 'ella'`)).rows[0].image;
+    await pool.query(migration('0010_location_photography.sql'));
+    await pool.query(migration('0011_image_credits.sql'));
+    await pool.query(`update public.destinations set image = 'https://images.unsplash.com/owner-choice.jpg' where id = 'galle'`);
+    assert.match((await pool.query(`select image from public.destinations where id = 'ella'`)).rows[0].image, /^https:\/\/upload\.wikimedia\.org\//);
+    assert.equal((await pool.query(`select location from public.photo_stories where id = 'p6'`)).rows[0].location, 'Nuwara Eliya');
+
+    await pool.query(migration('0013_wikimedia_fallback.sql'));
+    await pool.query(migration('0013_wikimedia_fallback.sql'));
+
+    assert.equal((await pool.query(`select image from public.destinations where id = 'ella'`)).rows[0].image, seed);
+    assert.equal((await pool.query(`select image from public.destinations where id = 'galle'`)).rows[0].image, 'https://images.unsplash.com/owner-choice.jpg');
+    assert.equal((await pool.query(`select location from public.photo_stories where id = 'p6'`)).rows[0].location, 'Hatton Tea Valleys');
+    const left = await pool.query(
+      `select 1 from public.destinations where image like 'https://upload.wikimedia.org/%' or array_to_string(gallery, ' ') like '%upload.wikimedia.org%'
+       union all select 1 from public.photo_stories where image like 'https://upload.wikimedia.org/%'
+       union all select 1 from public.hero_slides where image like 'https://upload.wikimedia.org/%'`
+    );
+    assert.equal(left.rowCount, 0, 'no Wikimedia photo left in use');
+    const credits = await pool.query(`select 1 from public.image_credits where url like 'https://upload.wikimedia.org/%'`);
+    assert.equal(credits.rowCount, 0, 'nor a credit the admin page would fail to preview');
+  });
+});
