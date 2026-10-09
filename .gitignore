@@ -41,3 +41,6 @@ backups/
 __pycache__/
 *.pyc
 docs/qa-results/
+
+# Review screenshots stay local (docs/reviews/<name>/); only the .md is committed.
+docs/reviews/*/
