@@ -127,6 +127,15 @@ describe('login', () => {
     assert.deepEqual(await unknown.json(), await wrong.json());
   });
 
+  /**
+   * Backs up the test above (exactly one argon2 verify on each path), which
+   * is the real guarantee. Timing on a shared CI machine is noisy, so: a few
+   * untimed calls on each path first, then 30 timed calls per path in
+   * strict alternation (wrong, unknown, wrong, unknown, …) so a slow patch
+   * of the machine lands on both alike, and medians, which ignore the odd
+   * outlier. The 25% limit is unchanged. Each call uses its own IP, and the
+   * known email's 33 failures stay under the per-email lockout (50).
+   */
   test('unknown email: median time within 25% of a wrong password', async (t) => {
     await createUser();
     const time = async (email: string, ip: string) => {
@@ -136,20 +145,23 @@ describe('login', () => {
       return performance.now() - started;
     };
 
-    // Warm-up, so neither side pays for first-use costs the other skips.
-    await time(EMAIL, '192.0.2.200');
-    await time('warmup@example.test', '192.0.2.201');
+    // Untimed warm-up, alternating, so neither side pays first-use costs the other skips.
+    for (let i = 0; i < 3; i += 1) {
+      await time(EMAIL, `192.0.2.${200 + i}`);
+      await time(`warmup${i}@example.test`, `192.0.2.${210 + i}`);
+    }
 
+    const SAMPLES = 30;
     const wrong: number[] = [];
     const unknown: number[] = [];
-    for (let i = 0; i < 10; i += 1) {
+    for (let i = 0; i < SAMPLES; i += 1) {
       wrong.push(await time(EMAIL, `192.0.2.${i}`));
       unknown.push(await time(`nobody${i}@example.test`, `192.0.2.${100 + i}`));
     }
 
     const [a, b] = [median(wrong), median(unknown)];
     const ratio = Math.max(a, b) / Math.min(a, b);
-    t.diagnostic(`median: wrong password ${a.toFixed(1)}ms, unknown email ${b.toFixed(1)}ms`);
+    t.diagnostic(`median: wrong password ${a.toFixed(1)}ms, unknown email ${b.toFixed(1)}ms, ratio ${ratio.toFixed(3)}`);
     assert.ok(
       ratio <= 1.25,
       `medians differ by ${((ratio - 1) * 100).toFixed(0)}%: ` +
