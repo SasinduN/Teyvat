@@ -302,7 +302,7 @@ describe('base URL and ownership', () => {
     res = await saveRow('destinations', ella, { image: `${BASE}.evil.com/destinations/1-00.png` });
     assert.equal(res.status, 400);
     body = (await res.json()) as { error: { fields: Record<string, string> } };
-    assert.equal(body.error.fields.image, 'Images must come from the media library, Unsplash or Wikimedia Commons.');
+    assert.equal(body.error.fields.image, 'Images must come from the media library or Unsplash.');
   });
 });
 
@@ -323,7 +323,7 @@ describe('image allow-list', () => {
     });
     assert.equal(res.status, 400);
     const body = (await res.json()) as { error: { fields: Record<string, string> } };
-    assert.deepEqual(body.error.fields, { 'gallery.1': 'Images must come from the media library, Unsplash or Wikimedia Commons.' });
+    assert.deepEqual(body.error.fields, { 'gallery.1': 'Images must come from the media library or Unsplash.' });
   });
 });
 

@@ -139,8 +139,10 @@ off in a pull request, so the history shows when each was done.
       against production (needs `DATABASE_URL` through the public proxy and
       the five `R2_*` values in `.env`). Then `npm run images:audit` on the
       branch that removes `upload.wikimedia.org` (item 16) must report
-      nothing blocked before that branch is merged. Until then the CSP still
-      allows Wikimedia (docs/plans/fix-pr11.md).
+      nothing blocked before that branch is merged. If it's merged first,
+      migration 0013 puts the rows still on Wikimedia back on their seed
+      photos: nothing is blocked, but those rows lose the new photos.
+      (docs/plans/fix-pr11.md, PR B.)
       **Blocks:** the CSP's last third-party image host going. **Who:**
       Developer, with the Railway and Cloudflare values.
 
