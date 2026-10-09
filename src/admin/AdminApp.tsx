@@ -12,6 +12,7 @@ import { InquiriesPage } from '@/admin/pages/InquiriesPage';
 import { CollectionPage } from '@/admin/pages/CollectionPage';
 import { RecordEditorPage } from '@/admin/pages/RecordEditorPage';
 import { MediaPage } from '@/admin/pages/MediaPage';
+import { ImageCreditsPage } from '@/admin/pages/ImageCreditsPage';
 import { SettingsPage } from '@/admin/pages/SettingsPage';
 
 /**
@@ -68,6 +69,7 @@ const AdminApp: React.FC = () => (
           <Route path="inquiries" element={<InquiriesPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="media" element={<MediaPage />} />
+          <Route path="credits" element={<ImageCreditsPage />} />
           {/* Static `inquiries`, `settings` and `media` above outrank this dynamic segment. */}
           <Route path=":collection" element={<CollectionPage />} />
           <Route path=":collection/new" element={<RecordEditorPage />} />

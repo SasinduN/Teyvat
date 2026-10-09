@@ -20,12 +20,15 @@ import type {
   SiteSettingsRow,
   TourRow
 } from './database.types';
+import type { ImageCreditRow, PublicImageCredit } from './image-credits';
 import type { TourStopInput, TourStopPayload } from './tour-stops';
 
 export const API_ROUTES = {
   health: '/api/health',
   content: '/api/content',
   newsletter: '/api/newsletter',
+  /** `POST {token}`: deletes that subscriber. Always 200, so it can't be used to test addresses. */
+  newsletterUnsubscribe: '/api/newsletter/unsubscribe',
   /** `POST`: the public enquiry form. */
   inquiries: '/api/inquiries',
   auth: {
@@ -40,6 +43,8 @@ export const API_ROUTES = {
     siteSettings: '/api/admin/site-settings',
     /** `POST ?folder=`, `GET`, `GET /usage?url=`, `DELETE /:id[?force=true]`. */
     media: '/api/admin/media',
+    /** One credit is addressed as `?url=<image URL>`. */
+    imageCredits: '/api/admin/image-credits',
     /** `GET ?status=&search=&spam=`, `GET /counts`, `GET /export.csv`, `GET|PATCH|DELETE /:id`. */
     inquiries: '/api/admin/inquiries'
   }
@@ -78,6 +83,8 @@ export interface SiteContentPayload {
   heroSlides: HeroSlideRow[];
   pillars: PillarRow[];
   siteSettings: PublicSiteSettings;
+  /** Credits for the photos the published rows above use (`/photo-credits`). */
+  imageCredits: PublicImageCredit[];
 }
 
 /**
@@ -199,6 +206,11 @@ export interface MediaItem {
 }
 
 /** `GET /api/admin/media`. `uploadsEnabled` is false when R2 isn't configured. */
+/** An admin's view of a credit: the row, and the rows (drafts included) using its photo. */
+export interface ImageCreditItem extends ImageCreditRow {
+  usedBy: MediaUsage[];
+}
+
 export interface MediaLibraryPayload {
   uploadsEnabled: boolean;
   items: MediaItem[];

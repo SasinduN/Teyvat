@@ -8,14 +8,49 @@ export interface ConnectionTarget {
   ssl: false | { rejectUnauthorized: boolean };
 }
 
-/** TLS verifies certificates by default. For private local development only,
- * sslmode=no-verify may explicitly opt out. Remote self-signed deployments
- * must configure a trusted CA (for example NODE_EXTRA_CA_CERTS). */
+/** The `sslmode` values libpq defines, plus pg's `no-verify`. */
+const SSL_MODES = ['disable', 'allow', 'prefer', 'require', 'verify-ca', 'verify-full', 'no-verify'] as const;
+
+/**
+ * Decides TLS here rather than letting the connection string do it.
+ *
+ * `sslmode` in the URL is interpreted by pg-connection-string, and in pg 8.x
+ * `require` is treated as `verify-full` — full certificate verification — while
+ * pg 9 will switch it to libpq semantics (encrypt, do not verify). Those are
+ * opposite behaviours from the same URL, and whichever one you rely on breaks
+ * on upgrade. Worse, the parsed value wins over the `ssl` option passed
+ * alongside it, so a relaxed setting there is silently ignored.
+ *
+ * So: strip `sslmode` and state the policy explicitly, with libpq's meanings.
+ *
+ * | sslmode                      | TLS | verifies the certificate |
+ * |------------------------------|-----|--------------------------|
+ * | absent, `disable`            | no  | —                        |
+ * | `allow`, `prefer`, `require` | yes | no                       |
+ * | `verify-ca`, `verify-full`   | yes | yes                      |
+ * | `no-verify`                  | yes | no                       |
+ * | anything else                | throws, so a typo can't silently mean "no TLS" |
+ *
+ * `require` not verifying is deliberate and is a real trade-off. Railway's
+ * TCP proxy presents a self-signed certificate that chains to nothing in the
+ * default CA store, so verification cannot succeed without pinning their CA.
+ * The connection is still encrypted, which defeats passive eavesdropping on the
+ * public internet, but it does not authenticate the server — an active
+ * machine-in-the-middle would not be detected.
+ *
+ * That is acceptable for the owner's scripts run from a laptop (`migrate`,
+ * `admin:create`, `images:audit`, `images:import`, `media:rebase`), and it is
+ * why the deployed service uses the internal `*.railway.internal` URL with no
+ * `sslmode` at all: traffic never leaves Railway's private network, so there is
+ * nothing to encrypt against and nothing to verify. `server/src/db.ts` warns
+ * if production is ever given any other URL.
+ */
 export function connectionTargetFor(url: string): ConnectionTarget {
   const parsed = new URL(url);
   const mode = parsed.searchParams.get('sslmode');
-  if (mode !== null && !['disable', 'allow', 'prefer', 'require', 'verify-ca', 'verify-full', 'no-verify'].includes(mode)) throw new Error('Unsupported database sslmode.');
-  if (mode === 'no-verify' && !['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname)) throw new Error('Unverified TLS is only permitted for an explicitly configured local database.');
+  if (mode !== null && !(SSL_MODES as readonly string[]).includes(mode)) {
+    throw new Error(`Unsupported sslmode in the database URL. Use one of: ${SSL_MODES.join(', ')}.`);
+  }
 
   // Remove anything that would re-engage pg's own SSL handling.
   parsed.searchParams.delete('sslmode');
@@ -23,8 +58,16 @@ export function connectionTargetFor(url: string): ConnectionTarget {
 
   return {
     connectionString: parsed.toString(),
-    ssl: mode !== null && mode !== 'disable' ? { rejectUnauthorized: mode !== 'no-verify' } : false
+    ssl:
+      mode === null || mode === 'disable'
+        ? false
+        : { rejectUnauthorized: mode === 'verify-ca' || mode === 'verify-full' }
   };
+}
+
+/** Whether a database URL is Railway's private-network one. */
+export function isRailwayInternal(url: string): boolean {
+  return new URL(url).hostname.endsWith('.railway.internal');
 }
 
 /**

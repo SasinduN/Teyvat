@@ -45,3 +45,4 @@ export const usePhotoStories = () => useSiteContent().content.photoStories;
 export const useHeroSlides = () => useSiteContent().content.heroSlides;
 export const usePillars = () => useSiteContent().content.pillars;
 export const useSiteSettings = () => useSiteContent().content.siteSettings;
+export const useImageCredits = () => useSiteContent().content.imageCredits;

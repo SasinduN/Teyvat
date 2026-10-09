@@ -20,6 +20,8 @@ export const PAGE_TITLES = {
   experiences: pageTitle('Experiences'),
   tours: pageTitle('Tours'),
   about: pageTitle('About Us'),
+  photoCredits: pageTitle('Photo Credits'),
+  unsubscribe: pageTitle('Unsubscribe'),
   notFound: pageTitle('Page not found')
 } as const;
 
@@ -32,5 +34,7 @@ export const PAGE_DESCRIPTIONS = {
   experiences: "Safaris, sunrise hikes, surf breaks and slow afternoons in old forts: what to do once you're here.",
   tours: 'Multi-day journeys planned by local experts, each one a starting point we tailor to you.',
   about: "Local travel designers who know the island's back roads, its seasons and its people.",
+  photoCredits: 'The photographers behind the pictures on this site, and the licences their work is shared under.',
+  unsubscribe: 'Stop receiving our newsletter.',
   notFound: 'The page may have moved, or the link may be mistyped.'
 } as const;

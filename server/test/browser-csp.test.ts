@@ -176,6 +176,8 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
       ['/tours/island-in-7-days', `document.querySelectorAll('[data-route-map] img.leaflet-tile').length > 0`],
       ['/journal/ultimate-ella-guide', `document.querySelector('main article')`],
       ['/about', `document.querySelector('[data-inline-inquiry] form')`],
+      ['/photo-credits', `document.querySelector('[data-photo-credits]')`],
+      ['/unsubscribe?token=00000000-0000-4000-8000-000000000000', `document.querySelector('[data-unsubscribe] button')`],
       ['/no-such-page', `document.querySelector('[data-not-found]')`]
     ];
     for (const [path, ready] of pages) {
@@ -221,6 +223,7 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
       'a full-height preview for each custom stop (Wilpattu, Minneriya)'
     );
     await visit('/admin/media', `document.body.innerText.includes('Media library')`);
+    await visit('/admin/credits', `document.body.innerText.includes('Photo credits')`);
     await visit('/admin/inquiries', `document.body.innerText.includes('Traveller Enquiries')`);
     await visit('/admin/settings', `document.querySelector('form button[type=submit]')`);
 

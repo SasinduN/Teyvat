@@ -13,7 +13,6 @@
 
 /** The one host tiles come from, for the CSP (`shared/image-hosts.ts`). */
 export const CARTO_TILES_ORIGIN = 'https://basemaps.cartocdn.com';
-export const OSM_TILES_ORIGIN = 'https://tile.openstreetmap.org';
 
 const VOYAGER_PATH = '/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
@@ -25,14 +24,6 @@ const VOYAGER_PATH = '/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 export function cartoVoyagerUrl(key: string | undefined | null): string {
   const trimmed = key?.trim();
   return `${CARTO_TILES_ORIGIN}${VOYAGER_PATH}${trimmed ? `?key=${encodeURIComponent(trimmed)}` : ''}`;
-}
-
-/** Human-viewed, browser-cached map tiles when a CARTO key is not configured. */
-export function publicBasemap(key: string | undefined | null): { url: string; attribution: string } {
-  return key?.trim() ? { url: cartoVoyagerUrl(key), attribution: CARTO_ATTRIBUTION } : {
-    url: `${OSM_TILES_ORIGIN}/{z}/{x}/{y}.png`,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
-  };
 }
 
 /**

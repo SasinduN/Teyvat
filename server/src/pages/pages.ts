@@ -16,10 +16,8 @@ import { Router, type Request, type Response } from 'express';
 
 import { HOME_DESCRIPTION, HOME_TITLE, PAGE_DESCRIPTIONS, PAGE_TITLES, pageTitle } from '../../../shared/page-meta';
 import { paths } from '../../../shared/site-paths';
-import { publicPhoto } from '../../../shared/public-photos';
 import { SLUG_PATTERN } from '../../../shared/content-schema';
 import { escapeHtml } from '../../../shared/html';
-import { responsiveImage } from '../../../shared/responsive-image';
 import type { SiteConfig } from '../env';
 import { pool } from '../db';
 import { describeForLog } from '../http';
@@ -31,28 +29,24 @@ type Resolved = { redirect: string } | { status: 200 | 404; meta: PageMeta; noin
 const ROW_PAGES = [
   {
     prefix: '/destinations/',
-    table: 'destinations',
     sql: 'select name as title, short_description as description, image from public.destinations where id = $1 and published',
     path: paths.destination,
     type: 'website'
   },
   {
     prefix: '/experiences/',
-    table: 'featured_experiences',
     sql: 'select title, description, image from public.featured_experiences where id = $1 and published',
     path: paths.experience,
     type: 'website'
   },
   {
     prefix: '/tours/',
-    table: 'tours',
     sql: 'select title, short_desc as description, image from public.tours where id = $1 and published',
     path: paths.tour,
     type: 'website'
   },
   {
     prefix: '/journal/',
-    table: 'articles',
     sql: 'select title, snippet as description, image from public.articles where id = $1 and published',
     path: paths.article,
     type: 'article'
@@ -61,10 +55,10 @@ const ROW_PAGES = [
 
 /** The first published row's image in a table, for a fixed page's share image. */
 async function firstImage(table: 'hero_slides' | 'destinations' | 'featured_experiences' | 'tours', where = 'published'): Promise<string | null> {
-  const { rows } = await pool.query<{ id: string; image: string }>(
-    `select id, image from public.${table} where ${where} order by sort_order asc, id asc limit 1`
+  const { rows } = await pool.query<{ image: string }>(
+    `select image from public.${table} where ${where} order by sort_order asc, id asc limit 1`
   );
-  return rows[0] ? publicPhoto(table, rows[0].id, rows[0].image) : null;
+  return rows[0]?.image ?? null;
 }
 
 const notFound = (): Resolved => ({
@@ -89,7 +83,8 @@ const FIXED_PAGES: Record<string, () => Promise<[string, string, string | null]>
   ],
   [paths.experiences]: async () => [PAGE_TITLES.experiences, PAGE_DESCRIPTIONS.experiences, await firstImage('featured_experiences')],
   [paths.tours]: async () => [PAGE_TITLES.tours, PAGE_DESCRIPTIONS.tours, await firstImage('tours')],
-  [paths.about]: async () => [PAGE_TITLES.about, PAGE_DESCRIPTIONS.about, await firstImage('hero_slides')]
+  [paths.about]: async () => [PAGE_TITLES.about, PAGE_DESCRIPTIONS.about, await firstImage('hero_slides')],
+  [paths.photoCredits]: async () => [PAGE_TITLES.photoCredits, PAGE_DESCRIPTIONS.photoCredits, await firstImage('hero_slides')]
 };
 
 /** What a path is: a page (with its status and tags), or a redirect. */
@@ -122,10 +117,19 @@ export async function resolvePage(path: string, query: URLSearchParams): Promise
         title: pageTitle(row.title),
         description: row.description,
         path: page.path(slug),
-        image: publicPhoto(page.table, slug, row.image),
+        image: row.image,
         imageAlt: row.title,
         type: page.type
       }
+    };
+  }
+
+  // Reached only from newsletter emails: a page, but never indexed or in the sitemap.
+  if (path === paths.unsubscribe) {
+    return {
+      status: 200,
+      noindexHeader: true,
+      meta: { title: PAGE_TITLES.unsubscribe, description: PAGE_DESCRIPTIONS.unsubscribe, path: null, image: null, type: 'website', noindex: true }
     };
   }
 
@@ -256,13 +260,11 @@ export function pagesRouter(options: { template: string; site: SiteConfig }): Ro
       return;
     }
     if (resolved.noindexHeader) res.set('X-Robots-Tag', 'noindex');
-    // The initial photograph previously waited for JS + content API + page chunk.
-    // Use the same candidates as TravelImage to avoid requesting two variants.
+    // The hero's first photo otherwise waits for the JS, the content API and
+    // the page chunk. Same URL the hero requests (no srcset), so it is fetched once.
     let head = renderHead(resolved.meta, { origin, indexable: site.indexable });
     if (path === paths.home && resolved.status === 200 && resolved.meta.image) {
-      const image = resolved.meta.image;
-      const candidates = responsiveImage(image);
-      head += `\n<link rel="preload" as="image" href="${escapeHtml(image)}"${candidates ? ` imagesrcset="${escapeHtml(candidates)}" imagesizes="100vw"` : ''} fetchpriority="high">`;
+      head += `\n<link rel="preload" as="image" href="${escapeHtml(resolved.meta.image)}" fetchpriority="high">`;
     }
     res
       .status(resolved.status)

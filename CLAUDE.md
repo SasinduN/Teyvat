@@ -27,7 +27,7 @@ this file or anywhere else in git.
 | 7a | Clean-up: README/SCHEMA rewrite, CI, security headers, error boundaries, restore guide | done |
 | 7b | Launch decisions: `docs/LAUNCH-CHECKLIST.md` | owner's checklist |
 | 8a | Real pages and links: routes, layout, page types, code splitting (`docs/plans/phase-8-pages.md`) | done |
-| 8b | Server side of phase 8: head tags, 404 status, 301s, sitemap, robots | in review |
+| 8b | Server side of phase 8: head tags, 404 status, 301s, sitemap, robots | done (#8) |
 
 Update the Status column when a phase lands.
 
@@ -39,7 +39,14 @@ Update the Status column when a phase lands.
   - Nothing is deleted from R2 automatically; only a library delete removes
     an object.
   - Image URLs must be on the allow-list in `shared/image-hosts.ts` (Unsplash
-    + the R2 origin). The same list builds the CSP's `img-src`.
+    + the R2 origin, and for now `upload.wikimedia.org`). The same list
+    builds the CSP's `img-src`. Wikimedia goes once `npm run images:import`
+    has run on production (launch checklist item 23, PR B in
+    `docs/plans/fix-pr11.md`).
+  - Photos come from the rows, never from code: no per-row overrides in
+    `src/lib/mappers.ts` or the head tags. Credits are `image_credits`
+    (keyed by URL), shown on `/photo-credits`, edited in *Admin → Photo
+    credits*.
 - **CSP** (`server/src/security-headers.ts`):
   - `script-src 'self'`: no inline scripts, no `eval`.
   - Anything the admin loads imports Zod from `shared/zod.ts` (jitless);
@@ -57,13 +64,24 @@ Update the Status column when a phase lands.
     v4's `space-y-*` puts a margin on every child but the last).
   - `server/test/browser-inquiry.test.ts` compares its render against
     `faed6bc`.
+- **Newsletter** (`server/src/routes/newsletter.ts`): the Footer form stores
+  addresses; nothing sends them yet. Unsubscribing is a POST from the
+  `/unsubscribe?token=` page (never a GET) and deletes the row. Its honeypot
+  must stay the form's first child, as in `InquiryModal`.
+- **Database TLS** (`shared/pg-connection.ts`): libpq's `sslmode` meanings.
+  `require` encrypts without verifying, for Railway's public proxy; the
+  deployed app uses the internal URL with no `sslmode`.
 - **Site settings links** are NULL or `https://…` (migration 0004). An unset
-  link renders without an `href`; `Footer.tsx` is unchanged.
+  link renders without an `href`. `Footer.tsx` changed only for the Photo
+  Credits link and the newsletter form (the #11 fix-forward).
 - **Tests:** `npm test` runs `scripts/run-tests.mjs`: each file in its own
   process, 60 s per test, and every hook passes `HOOK_TIMEOUT`.
 - **Tour routes** live in `tour_stops` (0007 replaced `tours.route`). A
   destination on a route can't be deleted (409). `resetContent()` re-adds
-  `tours.route` and replays 0002 then 0007; keep 0007 re-runnable.
+  `tours.route` and replays 0002 then 0007; keep 0007 re-runnable. Each
+  reset adds and drops a column, and dropped columns count towards
+  Postgres's 1600-column limit, so a long-used local test database
+  eventually fails with "tables can have at most 1600 columns": recreate it.
   `scripts/route-stops.ts` mirrors its conversion for `verify:roundtrip`.
 
 - **WhatsApp button** (`src/components/WhatsAppButton.tsx`,

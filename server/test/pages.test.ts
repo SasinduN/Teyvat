@@ -22,7 +22,6 @@ import { fileURLToPath } from 'node:url';
 import { after, before, beforeEach, describe, test } from 'node:test';
 
 import { HOME_DESCRIPTION, HOME_TITLE, PAGE_DESCRIPTIONS, PAGE_TITLES } from '../../shared/page-meta';
-import { publicPhoto } from '../../shared/public-photos';
 import { createApp } from '../src/app';
 import type { SiteConfig } from '../src/env';
 import { pool } from '../src/db';
@@ -180,7 +179,8 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
   test('pages are 200; unknown paths, bad, unknown and unpublished slugs are 404', async () => {
     for (const path of [
       '/', '/destinations', '/destinations?category=Beaches', '/destinations/ella', '/experiences',
-      '/experiences/safari-yala', '/tours', '/tours/island-in-7-days', '/journal/ultimate-ella-guide', '/about'
+      '/experiences/safari-yala', '/tours', '/tours/island-in-7-days', '/journal/ultimate-ella-guide', '/about',
+      '/photo-credits', '/unsubscribe', '/unsubscribe?token=00000000-0000-4000-8000-000000000000'
     ]) {
       const res = await get(closed, path);
       assert.equal(res.status, 200, path);
@@ -188,7 +188,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
       assert.equal(res.headers.get('cache-control'), 'no-cache', path);
     }
 
-    for (const path of ['/nope', '/destinations/nowhere', '/tours/Not-A-Slug!', '/journal/', '/experiences/a/b', '/index', '/explore', '/plan', '/photo-credits']) {
+    for (const path of ['/nope', '/destinations/nowhere', '/tours/Not-A-Slug!', '/journal/', '/experiences/a/b', '/index', '/explore', '/plan']) {
       const res = await get(closed, path);
       // `/journal/` is a trailing slash first: 301 to /journal, which is a 404.
       const final = res.status === 301 ? await get(closed, res.headers.get('location')!) : res;
@@ -248,7 +248,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
       assert.equal(metaContent(h, 'og:url'), `${SITE}${path}`, path);
       assert.equal(metaContent(h, 'og:type'), table === 'articles' ? 'article' : 'website', path);
       assert.equal(metaContent(h, 'og:site_name'), 'Travel Eye', path);
-      assert.equal(metaContent(h, 'og:image'), shareImage(publicPhoto(table, id, row.image), SITE)!.url, path);
+      assert.equal(metaContent(h, 'og:image'), shareImage(row.image, SITE)!.url, path);
       assert.match(metaContent(h, 'og:image') ?? '', /^https:\/\//, path);
       assert.equal(metaContent(h, 'twitter:card'), 'summary_large_image', path);
       assert.equal(metaContent(h, 'twitter:image'), metaContent(h, 'og:image'), path);
@@ -278,6 +278,19 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     assert.equal(metaContent(h, 'robots'), 'noindex');
     assert.equal(canonicalOf(h), null);
     assert.equal(metaContent(h, 'og:url'), null);
+
+    ({ head: h } = await head(open, '/photo-credits'));
+    assert.equal(titleOf(h), PAGE_TITLES.photoCredits);
+    assert.equal(metaContent(h, 'description'), PAGE_DESCRIPTIONS.photoCredits);
+    assert.equal(canonicalOf(h), `${SITE}/photo-credits`);
+
+    // Reached only from newsletter emails: never indexed, whatever SITE_INDEXABLE says.
+    const unsubscribe = await head(open, '/unsubscribe?token=00000000-0000-4000-8000-000000000000');
+    assert.equal(unsubscribe.status, 200);
+    assert.equal(titleOf(unsubscribe.head), PAGE_TITLES.unsubscribe);
+    assert.equal(metaContent(unsubscribe.head, 'robots'), 'noindex');
+    assert.equal(unsubscribe.res.headers.get('x-robots-tag'), 'noindex');
+    assert.equal(canonicalOf(unsubscribe.head), null);
 
     const admin = await head(open, '/admin/login');
     assert.equal(admin.status, 200);
@@ -353,14 +366,15 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
 
     const locs = [...xml.matchAll(/<loc>([^<]*)<\/loc>/g)].map((m) => m[1]);
     for (const loc of locs) assert.ok(loc.startsWith(`${SITE}/`), loc);
-    for (const path of ['/', '/destinations', '/experiences', '/tours', '/about']) {
+    for (const path of ['/', '/destinations', '/experiences', '/tours', '/about', '/photo-credits']) {
       assert.ok(locs.includes(`${SITE}${path}`), path);
     }
+    assert.ok(!locs.some((l) => l.includes('/unsubscribe')), 'never the unsubscribe page');
 
     const count = async (table: string) =>
       (await pool.query(`select count(*)::int as n from public.${table} where published`)).rows[0].n as number;
     const rows = (await count('destinations')) + (await count('featured_experiences')) + (await count('tours')) + (await count('articles'));
-    assert.equal(locs.length, 5 + rows, 'the fixed pages plus every published row');
+    assert.equal(locs.length, 6 + rows, 'the fixed pages plus every published row');
     assert.ok(!locs.includes(`${SITE}/destinations/galle`), 'not the unpublished one');
     assert.ok(!locs.some((l) => l.includes('?')), 'no filtered lists');
     assert.match(xml, new RegExp(`<url><loc>${SITE}/destinations/ella</loc><lastmod>\\d{4}-\\d{2}-\\d{2}</lastmod></url>`));

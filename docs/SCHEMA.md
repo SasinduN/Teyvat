@@ -19,6 +19,10 @@
 | `0006_inquiries.sql` | enquiry statuses, `closed_at`, `spam`, `inquiry_attempts` |
 | `0007_tour_stops.sql` | `tour_stops` (replaces `tours.route`), `destinations.travel_time_from_airport` |
 | `0008_site_settings_whatsapp.sql` | `site_settings.whatsapp_number` (empty: the WhatsApp button is hidden) |
+| `0009_newsletter.sql` | `newsletter_subscribers`, `newsletter_attempts` (from #11) |
+| `0010_location_photography.sql` | content rows still on their seed photo point at credited Wikimedia photos instead (from #11; data only) |
+| `0011_image_credits.sql` | `image_credits`, seeded with 0010's 32 credits; two photo-story captions matched to 0010's photos |
+| `0012_newsletter_unsubscribe.sql` | `newsletter_subscribers.unsubscribe_token` and `consented_at` |
 
 **Where the rules live.** There is no row-level security: every connection is
 the API's single database role. Rules are enforced in two layers:
@@ -76,7 +80,7 @@ and optional chaining. `npm run verify:roundtrip` asserts this.
 | `category` | `text[]` | `category` | every element validated by `is_category_array()` |
 | `short_description` | `text` | `shortDescription` | |
 | `long_description` | `text` | `longDescription` | |
-| `image` | `text` | `image` | an image URL: Unsplash or our R2 bucket (`shared/image-hosts.ts`) |
+| `image` | `text` | `image` | an image URL: Unsplash or our R2 bucket (for now also Wikimedia; `shared/image-hosts.ts`) |
 | `gallery` | `text[]` | `gallery?` | empty array → `undefined` |
 | `best_time` | `text` | `bestTime` | |
 | `experiences` | `text[]` | `experiences` | |
@@ -359,6 +363,37 @@ One row per image uploaded to R2 (`POST /api/admin/media`). A URL under
 Nothing is deleted automatically. A content save that uses one of our URLs
 takes a share lock on its row, and a library delete takes an update lock, so
 an image can't be deleted at the moment a save starts using it.
+
+## `image_credits`
+
+A photo's credit, keyed by the image URL the content rows store (one photo can
+be on several rows). `GET /api/content` publishes the credits of photos a
+published row uses, for `/photo-credits`; *Admin → Photo credits* edits them.
+`npm run images:import` moves a credit to the R2 URL with its photo.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `url` | `text` PK | `https://…`, at most 2000 characters |
+| `author` | `text` | 1–200 characters |
+| `license` | `text` | 1–100 characters, e.g. `CC BY-SA 4.0` |
+| `license_url` | `text` NULL | `https://…` |
+| `source_url` | `text` NULL | `https://…`: where the photo came from (its Commons page) |
+| `created_at` / `updated_at` | `timestamptz` | `updated_at` by trigger; admin saves carry it (409 on a stale one) |
+
+## `newsletter_subscribers`, `newsletter_attempts`
+
+The Footer's sign-up. Nothing sends newsletters yet.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `email` | `text` PK | lower-case, at most 254 characters |
+| `created_at` | `timestamptz` | |
+| `unsubscribe_token` | `uuid` unique | random; the `/unsubscribe?token=` link deletes the row |
+| `consented_at` | `timestamptz` | when the address was given; rows from before 0012 have 0012's time |
+
+`newsletter_attempts` (`ip`, `window_started`, `attempts`) is the rate limit
+for signing up and unsubscribing: 10 per IP per 15 minutes. The sweep deletes
+windows older than 24 hours.
 
 ## `schema_migrations`
 

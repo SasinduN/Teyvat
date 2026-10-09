@@ -47,6 +47,9 @@ export const MEDIA_FOLDERS: ReadonlySet<string> = new Set([
     .flatMap((f) => (f.type === 'image' || f.type === 'imageList' ? [f.folder] : []))
 ]);
 
+/** 10 MB: the most one upload may be, after the browser has resized it. Also `images:import`'s limit. */
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
 export function newObjectKey(folder: string, type: StoredImageType): string {
   return `${folder}/${Date.now()}-${randomBytes(8).toString('hex')}.${EXTENSION_BY_TYPE[type]}`;
 }

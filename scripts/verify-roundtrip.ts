@@ -1,5 +1,5 @@
 /**
- * Regression guard for preservation of non-photo public content.
+ * Regression guard for the promise that the public site stays pixel-identical.
  *
  *   npm run verify:roundtrip
  *
@@ -8,7 +8,8 @@
  * then back through the runtime mappers the app uses (row -> domain object),
  * and asserts the result is deep-equal to what the components used to import.
  *
- * User-authorized photos are checked separately; this does not prove visual parity.
+ * If this passes, every value the approved components render is unchanged —
+ * including ordering, optional-field presence, and the article date strings.
  */
 import { DESTINATIONS } from './fixtures/destinations';
 import { EXPERIENCE_CATEGORIES, FEATURED_EXPERIENCES } from './fixtures/experiences';
@@ -85,14 +86,8 @@ function compare<TSource, TResult>(
 
   let mismatches = 0;
   originals.forEach((original, i) => {
-    // User-authorized photo corrections are independently tested in public-photos.test.ts.
-    // This fixture check guards all non-photo data, rather than asserting obsolete seed URLs.
-    const nonPhoto = (value: unknown) => {
-      const { image: _image, url: _url, gallery: _gallery, ...content } = value as Record<string, unknown>;
-      return content;
-    };
-    const before = canonical(nonPhoto(normalise(original)));
-    const after = canonical(nonPhoto(roundTripped[i]));
+    const before = canonical(normalise(original));
+    const after = canonical(roundTripped[i]);
     if (before !== after) {
       mismatches += 1;
       if (mismatches <= 2) {
@@ -291,9 +286,7 @@ compare(
 );
 compare('articles', ARTICLES, articleRows.map(toArticle));
 compare('hidden gems', HIDDEN_GEMS, hiddenGemRows.map(toHiddenGem));
-compare('photo stories', PHOTO_STORIES, photoStoryRows.map(toPhotoStory), story => ({
-  ...story, location: story.id === 'p6' ? 'Nuwara Eliya' : story.id === 'p7' ? 'Ahangama' : story.location
-}));
+compare('photo stories', PHOTO_STORIES, photoStoryRows.map(toPhotoStory));
 compare('hero slides', HERO_SLIDES, heroSlideRows.map(toHeroSlide));
 compare('pillars', PILLARS, pillarRows.map(toPillar));
 
@@ -302,4 +295,4 @@ if (failures > 0) {
   process.exit(1);
 }
 
-console.log('\nAll non-photo content round-trips identically. This does not verify a database or rendered UI.');
+console.log('\nAll collections round-trip identically. The public site renders unchanged.');

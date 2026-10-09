@@ -1,20 +1,37 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Logo } from './Logo';
 import { useSiteSettings } from '@/hooks/useSiteContent';
 import { MapPin, Phone, Mail, CheckCircle2, ArrowRight } from 'lucide-react';
-import { NAV_LINKS } from '@shared/site-paths';
+import { API_ROUTES } from '@shared/api';
+import { NAV_LINKS, paths } from '@shared/site-paths';
+import { postJson } from '@/lib/api/http';
+import { describeError } from '@/lib/errors';
 import { SiteLink } from './SiteLink';
 
 export const Footer: React.FC = () => {
   const settings = useSiteSettings();
   const [email, setEmail] = useState('');
+  /** The spam trap: a person never sees it, so it stays empty. */
+  const [website, setWebsite] = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [subscribed, setSubscribed] = useState(false);
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  /** Stores the address (`POST /api/newsletter`); nothing sends newsletters yet. */
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
+    if (!email || sending) return;
+    setSending(true);
+    setError(null);
+    try {
+      await postJson(API_ROUTES.newsletter, { email, website });
       setSubscribed(true);
       setEmail('');
+    } catch (err) {
+      setError(describeError(err));
+    } finally {
+      setSending(false);
     }
   };
 
@@ -109,9 +126,17 @@ export const Footer: React.FC = () => {
               </div>
             ) : (
               <form onSubmit={handleSubscribe} className="space-y-2">
+                {/* Spam trap: off-screen, hidden from screen readers and the Tab key. Must stay the first child. */}
+                <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', top: 'auto', width: 1, height: 1, overflow: 'hidden' }}>
+                  <label>
+                    Leave this field empty
+                    <input type="text" name="leave_blank_hp" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                  </label>
+                </div>
                 <input
                   type="email"
                   required
+                  aria-label="Email address"
                   placeholder="Enter your email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -119,11 +144,25 @@ export const Footer: React.FC = () => {
                 />
                 <button
                   type="submit"
-                  className="w-full py-3 bg-[#D4AF37] hover:bg-[#C5A059] text-[#0F2E23] font-bold text-xs rounded-2xl shadow-md transition-all flex items-center justify-center space-x-1"
+                  disabled={sending}
+                  className="w-full py-3 bg-[#D4AF37] hover:bg-[#C5A059] text-[#0F2E23] font-bold text-xs rounded-2xl shadow-md transition-all flex items-center justify-center space-x-1 disabled:opacity-60"
                 >
-                  <span>Subscribe</span>
+                  <span>{sending ? 'Subscribing…' : 'Subscribe'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
+                {error && (
+                  <p role="alert" className="text-[11px] text-[#F2B8B5]">
+                    {error}
+                  </p>
+                )}
+                <p className="text-[11px] leading-relaxed text-white/55" data-newsletter-consent>
+                  By subscribing you agree to receive occasional emails from us. You can unsubscribe at any time
+                  from the link in every email. See our{' '}
+                  <a href={settings.privacyUrl} className="underline underline-offset-2 hover:text-white">
+                    Privacy Policy
+                  </a>
+                  .
+                </p>
               </form>
             )}
           </div>
@@ -133,7 +172,8 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-white/50 space-y-2 sm:space-y-0">
           <p>© 2026 Travel Eye Sri Lanka. All rights reserved.</p>
-          <div className="flex space-x-6">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+            <Link to={paths.photoCredits} className="hover:text-white transition-colors">Photo Credits</Link>
             <a href={settings.privacyUrl} className="hover:text-white transition-colors">Privacy Policy</a>
             <a href={settings.termsUrl} className="hover:text-white transition-colors">Terms of Service</a>
             <a href={settings.sustainabilityUrl} className="hover:text-white transition-colors">Sustainability Pledge</a>

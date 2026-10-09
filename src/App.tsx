@@ -30,6 +30,8 @@ const ToursPage = lazy(() => import('@/pages/ToursPage').then((m) => ({ default:
 const TourPage = lazy(() => import('@/pages/TourPage').then((m) => ({ default: m.TourPage })));
 const ArticlePage = lazy(() => import('@/pages/ArticlePage').then((m) => ({ default: m.ArticlePage })));
 const AboutPage = lazy(() => import('@/pages/AboutPage').then((m) => ({ default: m.AboutPage })));
+const PhotoCreditsPage = lazy(() => import('@/pages/PhotoCreditsPage').then((m) => ({ default: m.PhotoCreditsPage })));
+const UnsubscribePage = lazy(() => import('@/pages/UnsubscribePage').then((m) => ({ default: m.UnsubscribePage })));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
 /**
@@ -74,6 +76,8 @@ export function App() {
             <Route path="tours/:slug" element={<TourPage />} />
             <Route path="journal/:slug" element={<ArticlePage />} />
             <Route path="about" element={<AboutPage />} />
+            <Route path="photo-credits" element={<PhotoCreditsPage />} />
+            <Route path="unsubscribe" element={<UnsubscribePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
