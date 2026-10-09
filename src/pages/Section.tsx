@@ -8,7 +8,7 @@ import { ErrorBoundary } from '@/lib/ErrorBoundary';
  * markup of its own.
  */
 export const Section: React.FC<{ name: string; children: React.ReactNode }> = ({ name, children }) => (
-  <ErrorBoundary name={name} fallback={(retry) => <section className="te-container py-12" role="alert"><p>This part of Travel Eye could not load.</p><button type="button" className="te-button te-button--outline mt-4" onClick={retry}>Try again</button></section>}>
+  <ErrorBoundary name={name} fallback={null}>
     {children}
   </ErrorBoundary>
 );

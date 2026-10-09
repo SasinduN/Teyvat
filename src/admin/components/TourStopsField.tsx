@@ -89,15 +89,15 @@ export const TourStopsField: React.FC<{
         return (
           <div
             key={i}
-            className="rounded-xl border border-[var(--border-strong)]/70 bg-[var(--background)] p-4"
+            className="rounded-xl border border-[#D4C3B5]/70 bg-[#FBF9F6] p-4"
             data-stop-row={i}
           >
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--brand-secondary)] text-[11px] font-bold text-white">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1C4737] text-[11px] font-bold text-white">
                   {i + 1}
                 </span>
-                <div className="flex rounded-lg border border-[var(--border-strong)] bg-[var(--surface)] p-0.5" role="group" aria-label={`Stop ${i + 1} type`}>
+                <div className="flex rounded-lg border border-[#D4C3B5] bg-white p-0.5" role="group" aria-label={`Stop ${i + 1} type`}>
                   {(['destination', 'custom'] as const).map((kind) => (
                     <button
                       key={kind}
@@ -106,7 +106,7 @@ export const TourStopsField: React.FC<{
                       onClick={() => switchKind(i, kind)}
                       className={cn(
                         'rounded-md px-2.5 py-1 text-[11px] font-bold transition-colors',
-                        stop.kind === kind ? 'bg-[var(--brand-secondary)] text-white' : 'text-[var(--text-primary)]/60 hover:text-[var(--brand-primary)]'
+                        stop.kind === kind ? 'bg-[#1C4737] text-white' : 'text-[#1A1A1A]/60 hover:text-[#1C4737]'
                       )}
                     >
                       {kind === 'destination' ? 'Destination' : 'Custom place'}
@@ -193,7 +193,7 @@ export const TourStopsField: React.FC<{
                 {showPreview ? (
                   <StopPreview lat={lat} lng={lng} />
                 ) : (
-                  <p className="text-[11px] text-[var(--text-primary)]/50">
+                  <p className="text-[11px] text-[#1A1A1A]/50">
                     A map preview appears once both coordinates are inside Sri Lanka.
                   </p>
                 )}
@@ -222,10 +222,10 @@ const Labelled: React.FC<{ label: string; error: string | null; children: React.
   children
 }) => (
   <div className="space-y-1">
-    <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--text-primary)]/50">{label}</span>
+    <span className="block text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A]/50">{label}</span>
     {children}
     {error && (
-      <p className="flex items-start gap-1.5 text-[11px] font-medium text-[var(--danger)]">
+      <p className="flex items-start gap-1.5 text-[11px] font-medium text-[#B3261E]">
         <CircleAlert className="mt-px h-3.5 w-3.5 shrink-0" />
         {error}
       </p>
@@ -264,9 +264,9 @@ const StopPreview: React.FC<{ lat: number; lng: number }> = ({ lat, lng }) => {
       L.tileLayer(mapTiles.url, { maxZoom: 19, attribution: mapTiles.attribution }).addTo(map);
       pinRef.current = L.circleMarker(at, {
         radius: 7,
-        color: 'var(--white)',
+        color: '#ffffff',
         weight: 2,
-        fillColor: 'var(--inverse-raised)',
+        fillColor: '#1C4737',
         fillOpacity: 1
       }).addTo(map);
       mapRef.current = map;
@@ -290,7 +290,7 @@ const StopPreview: React.FC<{ lat: number; lng: number }> = ({ lat, lng }) => {
     <div
       role="img"
       aria-label={`Map preview: ${lat}, ${lng}`}
-      className="h-40 w-full overflow-hidden rounded-lg border border-[var(--border-strong)]/70"
+      className="h-40 w-full overflow-hidden rounded-lg border border-[#D4C3B5]/70"
     >
       <div ref={containerRef} className="h-full w-full" />
     </div>

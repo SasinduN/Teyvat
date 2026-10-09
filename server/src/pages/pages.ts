@@ -81,11 +81,6 @@ const notFound = (): Resolved => ({
 
 /** The fixed pages: [title, description, share image]. */
 const FIXED_PAGES: Record<string, () => Promise<[string, string, string | null]>> = {
-  [paths.explore]: async () => [PAGE_TITLES.explore, PAGE_DESCRIPTIONS.explore,
-    (await firstImage('destinations', 'published and featured')) ?? (await firstImage('destinations'))],
-  [paths.photoCredits]: async () => ['Photography credits | Travel Eye', 'Sources and licenses for Travel Eye photography.', null],
-  [paths.plan]: async () => [PAGE_TITLES.plan, PAGE_DESCRIPTIONS.plan, await firstImage('hero_slides')],
-  [paths.journal]: async () => [PAGE_TITLES.journal, PAGE_DESCRIPTIONS.journal, await firstImage('hero_slides')],
   [paths.home]: async () => [HOME_TITLE, HOME_DESCRIPTION, await firstImage('hero_slides')],
   [paths.destinations]: async () => [
     PAGE_TITLES.destinations,
@@ -99,9 +94,6 @@ const FIXED_PAGES: Record<string, () => Promise<[string, string, string | null]>
 
 /** What a path is: a page (with its status and tags), or a redirect. */
 export async function resolvePage(path: string, query: URLSearchParams): Promise<Resolved> {
-  if (path === paths.destinations && query.has('mapTour')) {
-    return { redirect: `${paths.explore}?${query.toString()}#explore-map` };
-  }
   // Old links, already in WhatsApp chats: /?tour=<id> and /?destination=<id>.
   if (path === paths.home) {
     const tour = query.get('tour');

@@ -2,101 +2,20 @@
 
 @layer base {
   :root {
-    --radius-card: 1.5rem;
-    --shadow-card: 0 8px 30px rgb(var(--inverse-channels) / .08);
-    --shadow-card-hover: 0 18px 44px rgb(var(--inverse-channels) / .14);
-    --ease-premium: cubic-bezier(.22, 1, .36, 1);
     --font-serif: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
     --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   body {
     font-family: var(--font-sans);
-    background-color: var(--background);
-    color: var(--text-primary);
-    overflow-wrap: break-word;
+    background-color: #FBF9F6;
+    color: #1A1A1A;
+    overflow-x: hidden;
   }
-
-  button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: pointer; }
 
   h1, h2, h3, h4, .font-heading {
     font-family: var(--font-serif);
   }
-}
-
-/* Shared Travel Eye details: the existing palette and editorial identity. */
-.travel-eye { isolation: isolate; }
-.travel-eye main { min-width: 0; }
-.travel-eye main > section { scroll-margin-top: calc(var(--header-height) + 1rem); }
-.travel-eye main > section.py-24 { padding-block: var(--space-section); }
-.travel-eye h1, .travel-eye h2 { text-wrap: balance; }
-.travel-eye p { text-wrap: pretty; }
-.travel-eye :where(a, button, input, select, textarea, [tabindex]):focus-visible,
-.te-admin :where(a, button, input, select, textarea, [tabindex]):focus-visible,
-.te-site-status button:focus-visible {
-  outline: 3px solid var(--color-gold-500);
-  outline-offset: 4px;
-  box-shadow: 0 0 0 5px var(--color-forest-900);
-}
-.travel-eye :where(input, select, textarea) { min-width: 0; }
-.travel-eye :where(button, a) { -webkit-tap-highlight-color: rgb(var(--gold-channels) / .2); }
-.travel-eye button { min-height: 44px; }
-.skip-link { position: fixed; top: 1rem; left: 1rem; z-index: 110; transform: translateY(-180%); background: var(--color-ivory-50); color: var(--color-forest-900); padding: .8rem 1.2rem; border-radius: .8rem; font-weight: 700; }
-.skip-link:focus { transform: translateY(0); }
-/* Utilities can control visibility and sizing without fighting button geometry. */
-@layer components {
-.te-button {
-  position: relative;
-  display: inline-flex; align-items: center; justify-content: center; gap: .6rem;
-  min-height: 48px; padding: .8rem 1.5rem; border: 1px solid transparent; border-radius: 999px;
-  font-family: var(--font-sans); font-weight: 650; font-size: .875rem; line-height: 1.4; max-width: 100%; white-space: normal; text-align: center;
-  cursor: pointer;
-}
-
-.te-button--icon { width: 44px; min-height: 44px; padding: .65rem; }
-
-.te-button--sm { min-height: 44px; padding: .6rem 1.2rem; font-size: .8rem; }
-.te-button--lg { min-height: 56px; padding: 1rem 2rem; font-size: 1rem; }
-
-}
-
-.te-card { box-shadow: var(--shadow-card); transition: transform 250ms var(--ease-premium), box-shadow 250ms ease; }
-.te-card:focus-within { box-shadow: var(--shadow-card-hover); }
-.te-card img { transition: transform 600ms var(--ease-premium); }
-
-.te-hero-controls { position: absolute; bottom: 2rem; right: max(1rem, calc((100vw - 80rem)/2)); z-index: 25; display: flex; gap: .5rem; }
-
-.te-hero-caption { display: inline-flex; border-radius: 999px; padding: .6rem 1rem; }
-
-
-.te-modal-panel { max-height: calc(100dvh - 2rem); overflow-y: auto; overscroll-behavior: contain; }
-.te-tour-badges { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; position: absolute; top: 1rem; left: 1rem; right: 1rem; }
-.te-tour-badges > div { position: static; }
-@media (pointer: fine) and (hover: hover) {
-
-  .te-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-card-hover); }
-  .te-card:hover img { transform: scale(1.035); }
-
-}
-@media (max-width: 639px) {
-
-  .te-hero-controls { bottom: 1.25rem; }
-  .te-hero-caption { font-size: .65rem; margin-top: 1.5rem; }
-  .travel-eye :where(input, select, textarea) { font-size: 16px; }
-  .travel-eye footer .flex.space-x-6 { flex-wrap: wrap; justify-content: center; gap: 1rem; }
-  .travel-eye footer .flex.space-x-6 > * { margin-left: 0; }
-  .travel-eye footer a[href^="mailto:"] { overflow-wrap: anywhere; }
-  .travel-eye .te-route-heading { flex-wrap: wrap; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .travel-eye *, .travel-eye *::before, .travel-eye *::after { animation: none !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
-  .travel-eye [data-reveal] { opacity: 1 !important; transform: none !important; }
-  .te-site-status *, .te-admin * { animation: none !important; transition-duration: .01ms !important; }
-}
-@media (forced-colors: active) { .te-button { border: 1px solid ButtonText; } }
-.te-photo-card:focus-visible .te-photo-caption, .te-photo-card:focus-visible .te-photo-overlay { opacity: 1; transform: none; }
-@media (hover: none) {
-  .te-photo-card .te-photo-caption, .te-photo-card .te-photo-overlay { opacity: 1; transform: none; }
 }
 
 /*
@@ -107,11 +26,27 @@
   outline: none;
 }
 
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F5EFEB;
+}
+::-webkit-scrollbar-thumb {
+  background: #1C4737;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #0F2E23;
+}
+
 /* Leaflet Map Customizations */
 .leaflet-container {
   width: 100%;
   height: 100%;
-  background-color: var(--background-secondary) !important;
+  background-color: #e5ece9 !important;
   font-family: var(--font-sans);
   z-index: 10;
 }
@@ -121,8 +56,8 @@
   border-radius: 1rem;
   overflow: hidden;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgb(var(--gold-channels) / .3);
-  background: var(--white);
+  border: 1px solid rgba(212, 195, 181, 0.3);
+  background: #ffffff;
 }
 
 .leaflet-popup-content {
@@ -131,7 +66,7 @@
 }
 
 .leaflet-popup-tip {
-  background: var(--white);
+  background: #ffffff;
 }
 
 /* Map credit (OpenStreetMap / CARTO): required, but kept small and quiet. It
@@ -141,13 +76,13 @@
   margin: 0 6px 6px 0;
   padding: 1px 6px;
   border-radius: 9999px;
-  background: rgb(var(--surface-channels) / .85);
-  color: var(--text-secondary);
+  background: rgba(251, 249, 246, 0.75);
+  color: rgba(26, 26, 26, 0.55);
   font-size: 9px;
   line-height: 1.5;
 }
 .leaflet-container .leaflet-control-attribution a {
-  color: var(--brand-primary);
+  color: rgba(28, 71, 55, 0.8);
   text-decoration: none;
 }
 .leaflet-container .leaflet-control-attribution a:hover {
@@ -198,8 +133,8 @@
   width: 32px;
   height: 32px;
   border-radius: 9999px;
-  border: 2px solid var(--white);
-  box-shadow: 0 4px 10px rgb(var(--inverse-channels) / .25);
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(15, 46, 35, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -215,7 +150,7 @@
   outline: none;
 }
 .custom-leaflet-marker:focus-visible .map-marker-disc {
-  box-shadow: 0 0 0 3px var(--accent), 0 4px 10px rgb(var(--inverse-channels) / .25);
+  box-shadow: 0 0 0 3px #d4af37, 0 4px 10px rgba(15, 46, 35, 0.25);
 }
 
 /* A marker's name: hidden until hovered or focused, for the active marker,
@@ -226,14 +161,14 @@
   left: 50%;
   transform: translateX(-50%);
   white-space: nowrap;
-  background: var(--inverse-deep);
-  color: var(--white);
+  background: #0f2e23;
+  color: #ffffff;
   font-size: 10px;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 9999px;
-  border: 1px solid rgb(var(--pearl-channels) / .2);
-  box-shadow: 0 2px 6px rgb(var(--inverse-channels) / .25);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 6px rgba(15, 46, 35, 0.25);
   opacity: 0;
   transition: opacity 0.2s ease;
   pointer-events: none;
@@ -265,10 +200,10 @@
   width: 28px;
   height: 28px;
   border-radius: 9999px;
-  background: var(--surface);
-  color: var(--inverse-deep);
-  border: 2px solid var(--white);
-  box-shadow: 0 0 0 2px var(--inverse-surface), 0 4px 10px rgb(var(--inverse-channels) / .3);
+  background: #fbf9f6;
+  color: #0f2e23;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 2px #1c4737, 0 4px 10px rgba(15, 46, 35, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -280,7 +215,7 @@
   outline: none;
 }
 .route-stop-marker:focus-visible .route-stop-disc {
-  box-shadow: 0 0 0 2px var(--inverse-surface), 0 0 0 5px var(--accent);
+  box-shadow: 0 0 0 2px #1c4737, 0 0 0 5px #d4af37;
 }
 .map-marker-label.route-stop-label {
   top: 33px;
@@ -293,88 +228,11 @@
   filter: sepia(0.14) saturate(0.88) brightness(1.01);
 }
 
-
-/* Supporting layout and accessible feedback. */
-
-
-.te-nav > .te-container > div { gap: clamp(.25rem, 1vw, 1rem); }
-.te-search { margin-top: -3rem; margin-bottom: 1rem; position: relative; z-index: 30; }
-.te-hero-caption { max-width: min(100%, 45rem); white-space: normal; }
-
-.te-card { box-shadow: var(--shadow); }
-.te-image-failed { object-fit: contain !important; padding: 12%; background: var(--background-secondary); }
-.travel-eye section h2 { font-size: clamp(1.9rem, 3.6vw, 3.1rem); line-height: 1.16; }
-.travel-eye main > section:not(.te-hero):not(.te-page-hero), .travel-eye main > article { padding-block: var(--section-space); }
-:root[data-theme="dark"] .travel-eye :where(.text-black, .text-gray-900, .text-gray-800) { color: var(--text-primary); }
-:root[data-theme="dark"] .travel-eye :where(.bg-gray-50, .bg-gray-100) { background: var(--background-secondary); }
-:root[data-theme="dark"] .leaflet-popup-content-wrapper { background: var(--surface); color: var(--text-primary); }
-:root[data-theme="dark"] .leaflet-popup-tip { background: var(--surface); }
-.travel-eye :where(input, select, textarea) { color-scheme: inherit; }
-.travel-eye .bg-white\/90 { background: var(--surface-glass); }
-.travel-eye .bg-white\/95 { background: var(--surface-glass); }
-@media (max-width: 639px) {
-
-  .te-hero-actions { align-items: stretch; }
-  .te-hero-caption { padding: .6rem .8rem; font-size: .65rem; }
-
-  .te-search { margin-top: -2.5rem; }
+/* Hide horizontal scrollbars for clean galleries */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-
-.travel-eye [class*="bg-[var(--accent)]"] { color: var(--on-accent); }
-
-@media (max-width: 639px) {
-  .te-nav a[aria-label="Travel Eye Homepage"] { padding: 0; }
-  .te-nav .te-logo { gap: .4rem; }
-  .te-nav .te-logo svg { width: 24px; height: 24px; }
-  .te-nav .te-logo > div:last-child > div:first-child { font-size: 1rem; }
-  .te-hero-caption { max-width: calc(100% - 3rem); }
-}
-
-/* One structural system; theme selectors never change geometry. */
-:root { --container-max: 80rem; --page-gutter: clamp(1rem, 3vw, 2.5rem); --gutter: var(--page-gutter); --section-space: clamp(3.5rem, 7vw, 6rem); --space-section: var(--section-space); --header-height: 5.5rem; --hero-content-max: 55rem; --content-reading-width: 46rem; --heading-space: clamp(2rem, 4vw, 3rem); --grid-gap: clamp(1.25rem, 2.5vw, 2rem); }
-.te-container { width: min(calc(100% - 2 * var(--page-gutter)), var(--container-max)); margin-inline: auto; min-width: 0; }
-.te-container :where(.grid, .flex) > * { min-width: 0; }
-.te-reading-column { max-width: var(--content-reading-width); min-width: 0; }
-.te-nav { height: var(--header-height); padding-block: 0; display: flex; align-items: center; border-bottom-width: 1px; border-bottom-style: solid; }
-.te-hero { min-height: 100vh; min-height: 100dvh; isolation: isolate; height: auto; display: flex; align-items: center; padding-block: calc(var(--header-height) + 2.5rem) 8rem; }
-.te-hero-content { padding-top: 0; text-align: left; }
-.te-hero-title { max-width: var(--hero-content-max); font-size: clamp(2.65rem, 6.4vw, 5.8rem); line-height: 1.08; letter-spacing: -.035em; }
-.te-hero-subtitle { margin-inline: 0; max-width: 36rem; font-size: clamp(1rem, 1.7vw, 1.3rem); }
-.te-page-hero { isolation: isolate; height: auto; min-height: clamp(26rem, 56svh, 36rem); display: flex; align-items: flex-end; padding-block: calc(var(--header-height) + var(--heading-space)) var(--heading-space); }
-.te-page-hero--compact { min-height: clamp(22rem, 44svh, 28rem); }
-.te-page-hero-content { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
-.te-page-title { max-width: var(--hero-content-max); font-size: clamp(2.25rem, 4.5vw, 4.25rem); line-height: 1.12; overflow-wrap: break-word; }
-.te-page-hero-copy { width: 100%; max-width: var(--content-reading-width); min-width: 0; }
-.te-page-description { max-width: 36rem; }
-
-.te-section-header { display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: var(--heading-space); text-align: left; }
-.te-section-header--stack { display: block; max-width: var(--content-reading-width); }
-.te-section-header--stack p { margin-inline: 0; }
-.te-cta-group { align-items: stretch; justify-content: flex-start; gap: 1rem; flex-wrap: wrap; }
-.te-cta-group > :where(a, button) { min-height: 3.25rem; display: inline-flex; align-items: center; justify-content: center; }
-.te-container > .grid { gap: var(--grid-gap); }
-@media (min-width: 768px) { .te-section-header:not(.te-section-header--stack) { flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 2rem; } }
-@media (max-width: 639px) { :root { --header-height: 5rem; } .te-hero { min-height: 100vh; min-height: 100dvh; } .te-hero-title { font-size: clamp(2.5rem, 10vw, 3.7rem); } .te-cta-group > :where(a, button) { width: 100%; } }
-
-.te-admin-toolbar { padding-inline: var(--page-gutter); }
-
-/* Place names wrap at word boundaries; metadata must not compress them. */
-.te-place-name { overflow-wrap: normal; word-break: normal; hyphens: none; white-space: normal; min-width: 0; max-width: 100%; }
-.te-spotlight-name { font-size: clamp(1.5rem, 2.2vw, 1.875rem); line-height: 1.2; }
-
-/* Content may exceed a short viewport; the photograph covers the whole section. */
-@media (max-height: 700px) {
-  .te-hero { padding-block: calc(var(--header-height) + 1.5rem) 6rem; }
-  .te-hero-title { font-size: clamp(2.25rem, 5vw, 4rem); margin-bottom: 1rem; }
-  .te-hero-badge { margin-bottom: 1rem; }
-  .te-hero-copy .te-hero-subtitle { margin-bottom: 1.25rem; }
-}
-
-@media (max-width: 639px) {
-  .te-nav-plan { width: 44px; height: 44px; padding: .65rem; flex: none; }
-  .te-nav-plan span { display: none; }
-}
-@media (max-width: 374px) {
-  .te-nav .te-logo > div:first-child { display: none; }
-  .te-nav > .te-container > div { gap: .25rem; }
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

@@ -43,6 +43,8 @@ cd Teyvat
 npm ci
 ```
 
+> For a clean local setup, make sure the checked-out repo sits at the project root itself. If the folder contains a nested `Teyvat-main` directory, move the files up one level before running the app or database scripts.
+
 ### 3. Environment
 
 ```bash
@@ -402,22 +404,3 @@ Don't set `PORT`; Railway injects it.
 
 `main` takes changes through pull requests, which must pass CI, and Railway's
 *Wait for CI* holds each deploy until it has passed.
-
-## 2026-10-06 engineering refinement
-
-The existing-site refinement was explicitly authorized by the owner. Useful public content, routes and tour prices/durations are preserved. The later full quality pass replaces geographically mismatched photographic sources; exact decisions are recorded in IMAGE_AUDIT.md. Changes to presentation and interaction are documented in [CHANGELOG](docs/CHANGELOG.md) and [DESIGN_SYSTEM](docs/DESIGN_SYSTEM.md).
-
-- Standard dev and build scripts use Vite's runner config loader. Server bundling uses the already-installed Vite/Rollup SSR pipeline; the application still renders in the browser.
-- The additive 0009 migration stores Travel Eye Dispatch signup requests. POST /api/newsletter validates and persists them with same-origin checks and atomic throttling. Campaign delivery and unsubscribe operations are not automated by this change.
-- Planner preferences are saved locally on the visitor's device. Generated journeys are samples from published destination facts, with specialist confirmation of availability/transfers.
-- Run node --import tsx scripts/audit-site.ts after starting the built server for route/image/viewport evidence in docs/qa-results. Its nonzero result means a failed or unverified browser check; HTTP checks do not establish visual correctness.
-- Run node --import tsx scripts/verify-live-content.ts for a read-only fixture comparison against the local API. Unlike verify:roundtrip, this does fetch live database content. Legitimate CMS edits will be reported as differences, never overwritten.
-- Read [FINAL_QA](docs/FINAL_QA.md) for current verification and browser restrictions.
-
-## Full website quality pass
-
-- Light/dark mode follows system preference until manually selected; the header toggle remembers the choice locally.
-- Apply npm run migrate for guarded named-photo corrections (0010); owner-edited URLs are not replaced. Photography credits are available at /photo-credits. Belilena still needs a verified photograph; see the image audit.
-- When VITE_CARTO_KEY is absent, the map uses attributed OpenStreetMap tiles for normal interactive browsing. Follow the [OSM tile policy](https://operations.osmfoundation.org/policies/tiles/); no offline/bulk tile downloading.
-- PostgreSQL TLS require/verify modes validate certificates. Configure a trusted CA for remote self-signed deployments; the explicit no-verify option is restricted to localhost development.
-- Final QA distinguishes tested code/API behavior from unverified browser layouts, image requests, motion and theme interactions. No lint script exists in this project.

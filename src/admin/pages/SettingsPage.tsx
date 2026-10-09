@@ -129,7 +129,7 @@ export const SettingsPage: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     data-whatsapp-test
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--brand-primary)] underline-offset-2 hover:text-[var(--brand-primary)] hover:underline"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1C4737] underline-offset-2 hover:text-[#0F2E23] hover:underline"
                   >
                     Test in WhatsApp
                     <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -139,7 +139,7 @@ export const SettingsPage: React.FC = () => {
             />
           </Card>
 
-          <div className="sticky bottom-0 mt-4 flex items-center justify-end gap-2 rounded-2xl border border-[var(--border-strong)]/50 bg-[var(--background)]/95 p-3 backdrop-blur">
+          <div className="sticky bottom-0 mt-4 flex items-center justify-end gap-2 rounded-2xl border border-[#D4C3B5]/50 bg-[#FBF9F6]/95 p-3 backdrop-blur">
             <Button type="submit" icon={Save} loading={save.isPending}>
               Save settings
             </Button>

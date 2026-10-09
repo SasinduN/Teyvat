@@ -380,22 +380,3 @@ hand; deleting a row makes the runner apply that file again.
    `npm run verify:roundtrip`.
 5. `npm test` applies every migration to the test database, so a broken one
    fails there first.
-
-## Newsletter signup requests (0009_newsletter.sql)
-
-### newsletter_subscribers
-
-| Column | Type | Purpose |
-|---|---|---|
-| email | text, primary key | Normalized unique subscriber address (private, never included in public content) |
-| created_at | timestamptz | Signup timestamp |
-
-### newsletter_attempts
-
-| Column | Type | Purpose |
-|---|---|---|
-| ip | inet, primary key | Atomic per-IP rate limit |
-| window_started | timestamptz | Start of the current 15-minute window |
-| attempts | integer | Count within that window |
-
-Attempts are removed after 24 hours by the existing hourly sweep. Subscriber requests are stored without sending campaigns. Duplicates and honeypot requests receive the same public response.

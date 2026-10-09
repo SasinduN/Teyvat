@@ -1,4 +1,3 @@
-import { AuthorAvatar } from '@/components/AuthorAvatar';
 import { useParams } from 'react-router-dom';
 import { HeroChip, PageHero } from '@/components/PageHero';
 import { ArticleCard, SectionHead } from '@/components/PageCards';
@@ -36,33 +35,32 @@ function ArticleView({ a }: { a: Article }) {
       />
 
       <article className="py-14 sm:py-20">
-        <div className="te-container"><div className="te-reading-column">
-          <div className="mb-10 flex flex-wrap gap-4 items-center justify-between border-b border-[var(--border-strong)]/40 pb-6 text-xs text-[var(--text-primary)]/60">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+          <div className="mb-10 flex items-center justify-between border-b border-[#D4C3B5]/40 pb-6 text-xs text-[#1A1A1A]/60">
             <div className="flex items-center space-x-3">
-              <AuthorAvatar large name={a.author.name} />
+              <img src={a.author.avatar} alt="" className="h-11 w-11 rounded-full object-cover" />
               <div>
-                <span className="block text-sm font-bold text-[var(--brand-primary)]">{a.author.name}</span>
+                <span className="block text-sm font-bold text-[#0F2E23]">{a.author.name}</span>
                 <span>{a.author.role}</span>
               </div>
             </div>
             <div className="text-right">
               <span className="block">{a.date}</span>
-              <span className="font-semibold text-[var(--brand-primary)]">{a.readTime}</span>
+              <span className="font-semibold text-[#1C4737]">{a.readTime}</span>
             </div>
           </div>
 
-          <div className="space-y-6 text-base font-light leading-relaxed text-[var(--text-primary)]/85 sm:text-lg">
-            <p className="font-heading text-xl font-medium italic text-[var(--brand-primary)] sm:text-2xl">“{a.snippet}”</p>
+          <div className="space-y-6 text-base font-light leading-relaxed text-[#1A1A1A]/85 sm:text-lg">
+            <p className="font-heading text-xl font-medium italic text-[#0F2E23] sm:text-2xl">“{a.snippet}”</p>
             {a.content?.map((paragraph, i) => <p key={i}>{paragraph}</p>)}
           </div>
-        </div>
         </div>
       </article>
 
       {all.length > 1 && (
         <Section name="MoreArticles">
-          <section className="bg-[var(--background-secondary)] py-16 sm:py-20">
-            <div className="te-container">
+          <section className="bg-[#F5EFEB] py-16 sm:py-20">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <SectionHead eyebrow="Stories & Insights" title="More From the Journal" />
               <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                 {all
