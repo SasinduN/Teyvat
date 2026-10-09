@@ -1,256 +1,247 @@
 # Plan: fix forward from PR #11
 
-Status: DRAFT, waiting for approval. Nothing is built until it's approved.
+Status: APPROVED (2026-10-09), with these answers:
 
-Background:
+- **Attribution:** option B. A `/photo-credits` page, linked from the footer.
+- **The Wikimedia photos move into R2 as part of this work.**
+  - Each image migration 0010 placed is copied into R2, respecting
+    Wikimedia's rate limits, with a descriptive User-Agent.
+  - Rows are rewritten to the R2 URL only where they still hold the
+    Wikimedia URL, and the credits move with them.
+  - Then `upload.wikimedia.org` leaves the CSP. If that's too big for one
+    PR, it goes in a second PR straight after.
+- **Newsletter (from #11):**
+  - a consent line on the form;
+  - a working unsubscribe link and token;
+  - a privacy-policy item on the launch checklist;
+  - and an answer: does anything send newsletters? If not, say so, and
+    propose whether to hide the form.
+- **`docs/reviews/`:** commit the review `.md`, and git-ignore the
+  screenshots.
 
-- `docs/reviews/ui-review-2026-10-09.md` covers what #11 changed.
-- This plan assumes #13, the revert of #12, has merged. The branch starts on
-  top of it, so `main` matches `12c972a` (#11's merge).
+Not answered, so these follow the draft's recommendations:
 
-## Goals
+- the p6/p7 caption fixes go into migration 0011;
+- a production `DATABASE_URL` that isn't Railway's internal one only logs a
+  warning.
 
-1. **Local scripts reach production again.** `migrate`, `admin:create`,
-   `images:audit` and `media:rebase` connect through Railway's public proxy
-   (`*.proxy.rlwy.net`, `?sslmode=require`). The deployed app keeps using the
-   internal `*.railway.internal` URL.
-2. **The two weakened checks are restored.**
-   - `verify:roundtrip` compares photos again.
-   - The CSP test asserts the exact `img-src` list.
-3. **The CSP and image allow-list only name hosts something uses.**
-4. **Photos come from the database.** Photo URLs and their credits come
-   from the database and the admin, not from JSON files and overrides in
-   code.
+Background: `docs/reviews/ui-review-2026-10-09.md`. #13 (the revert of #12)
+is merged, so `main` matches #11's merge, `12c972a`.
 
-Out of scope, but on the review's list: the newsletter's privacy notice and
-unsubscribe, and `.env.example`'s port 5432. Those can be separate PRs.
+## Two PRs, because of ordering
+
+The Wikimedia host can only leave the CSP once production's rows point at
+R2. The copy needs:
+
+- production's R2 credentials;
+- production's database;
+- outbound requests to Wikimedia.
+
+Neither CI nor I (I don't connect to production) can do that, so the owner
+runs it as a script, between the two PRs.
+
+| | PR A (this one) | You, between them | PR B (straight after) |
+|---|---|---|---|
+| What | Everything below, including the `images:import` script. The CSP still allows `upload.wikimedia.org`. | `npm run images:import -- --dry-run`, then `npm run images:import`, from `main` once PR A is deployed. Then `npm run images:audit` with PR B's branch. | Removes `upload.wikimedia.org` from `img-src` and the allow-list. The strict CSP test becomes exactly Unsplash, R2 and CARTO. |
+| Safe to merge | Any time. Nothing visible changes except the footer additions and the new pages. | Re-runnable. Every image is its own transaction. | **Only once the audit shows nothing blocked** (launch checklist item 16). |
+
+Merging B early is still safe. Its migration (0013) puts any row still on a
+0010 Wikimedia URL back on its seed photo, so nothing becomes a CSP-blocked
+image. The cost is losing the new photos on those rows. On a database where
+the import ran, 0013 finds nothing to do. On a fresh local database (0002,
+then 0010, then 0013) the rows end up on the seed photos, matching the
+fixtures.
 
 ---
 
-## 1. Database connections (`shared/pg-connection.ts`)
+## PR A
 
-**What #11 broke.** Before #11, any `sslmode` except `disable` meant
-"encrypt, don't verify". #11 turned `require`, `prefer` and `allow` into
-"encrypt and verify". It also only allows `no-verify` for localhost.
+### 1. Database connections (`shared/pg-connection.ts`)
 
-That breaks Railway's TCP proxy, which presents a certificate that chains to
-no public CA. Every script run against `DATABASE_PUBLIC_URL?sslmode=require`
-now fails with a certificate error. That is the exact setup
-`privateHostHint()` tells people to use. #11 also deleted the comment that
-explained this trade-off.
+Follow libpq's meanings, so the URL says what it does:
 
-**Change:** follow libpq's own meanings, so the URL says what it does.
-
-| `sslmode` | TLS | Verify certificate | Notes |
-|---|---|---|---|
-| absent / `disable` | no | n/a | The deployed app's internal URL. Traffic stays on Railway's private network. |
-| `allow`, `prefer`, `require` | yes | **no** | Restores pre-#11 behaviour. Railway's proxy works. |
-| `verify-ca`, `verify-full` | yes | yes | For a host with a trusted certificate, or with `NODE_EXTRA_CA_CERTS`. |
-| `no-verify` | yes | no | Kept as an alias, **any host**. The localhost-only limit goes. |
-| anything else | error | | Keeps #11's useful part: a typo fails loudly instead of silently going without TLS. |
-
-- Restore the comment block from `8d13a1a`, which explains the trade-off
-  (encrypted but not authenticated). Point it at this table.
-- **The deployed app is unchanged.** `DATABASE_URL = ${{Postgres.DATABASE_URL}}`
-  is the internal URL, with no `sslmode`, so `ssl: false`.
-- Add one guard in `server/src/db.ts`. When `NODE_ENV=production` and the
-  host doesn't end in `.railway.internal`, log a single warning at start-up:
-  `DATABASE_URL is not Railway's internal URL`. It names neither the host nor
-  the URL. This catches someone pasting the public URL into the service. It
-  doesn't refuse to start, because a refusal would take the site down over a
-  variable.
-- `server/test/connection-policy.test.ts` is rewritten to the table:
-  - each mode maps to the right `ssl` value;
-  - `sslmode` and `uselibpqcompat` are stripped;
-  - an invalid mode throws;
-  - `no-verify` works for a remote host.
-- **Manual check before merging.** You run `npm run migrate -- --dry-run`
-  against the public proxy. It prints the ledger and changes nothing. I
-  won't connect to production myself.
-
-## 2. Restore the two checks
-
-- **`scripts/verify-roundtrip.ts`** goes back to its `8d13a1a` version:
-  - no `nonPhoto()` stripping;
-  - no p6/p7 location override;
-  - the original header and success message.
-
-  It passes once the mappers stop rewriting photos (step 4). It compares
-  fixtures → seed rows → mappers, so it never sees 0010's database updates.
-- **`server/test/security.test.ts`** goes back to exact assertions. Both
-  tests (with and without R2) assert the whole `img-src` list, with one
-  exact regex, as before #11. The list is whatever step 3 decides.
-- `server/test/pages.test.ts`: the `og:image` assertion goes back to
-  `shareImage(row.image, SITE)`, with no `publicPhoto()`.
-
-## 3. CSP and image allow-list
-
-What each host #11 added is needed for, once #12 is reverted:
-
-| Host | Used by | Decision |
+| `sslmode` | TLS | Verify certificate |
 |---|---|---|
-| `tile.openstreetmap.org` | Nothing. `publicBasemap()`'s OSM fallback is only called by #12's `mapTiles.ts`, which the revert removed. The client uses CARTO (`cartoVoyagerUrl`). | **Remove**, with `OSM_TILES_ORIGIN` and `publicBasemap()`. OSM's tile policy also discourages production use. |
-| `thumb.wikimedia.org` | Nothing. No URL in code, migrations or seed uses it. | **Remove.** |
-| `upload.wikimedia.org` | **Database rows.** Migration 0010 points up to 60 image fields at it (8 tables, plus 2 galleries) on any database it ran on, including production if it ran there. | **Keep for now**, in both `img-src` and the admin allow-list. Without it, every one of those photos is blocked. Remove it in step 5, once the photos are in R2. |
+| absent / `disable` | no | n/a. The deployed app's internal URL. |
+| `allow`, `prefer`, `require` | yes | **no** (as before #11). Railway's public proxy works again. |
+| `verify-ca`, `verify-full` | yes | yes |
+| `no-verify` | yes | no, for any host |
+| anything else | error | |
 
-`IMAGE_HOST_REFUSED` keeps naming Wikimedia while the host is allowed.
+- The comment explaining the trade-off comes back.
+- `server/src/db.ts` logs one warning when `NODE_ENV=production` and the
+  host isn't `*.railway.internal`. It names neither the host nor the URL.
+- `connection-policy.test.ts` is rewritten to cover the table.
 
-## 4. Photos and credits come from the database
+### 2. Restore the two checks
 
-**Remove the code overrides:**
+- `scripts/verify-roundtrip.ts` goes back to its `8d13a1a` version.
+- `security.test.ts` asserts the whole `img-src` list exactly, with and
+  without R2.
+- `pages.test.ts` uses the row's `image` again.
 
-- `src/lib/mappers.ts` goes back to `8d13a1a`. Every `image`, `gallery`,
-  `url` and photo-story `location` is the row's value.
-- `server/src/pages/pages.ts`: `firstImage()` and the row pages use the row's
-  `image`.
-- Delete these files:
+### 3. CSP and image allow-list
+
+| Host | Used by | In PR A |
+|---|---|---|
+| `tile.openstreetmap.org` | Nothing since the revert. The client uses CARTO. | Removed, with `OSM_TILES_ORIGIN` and `publicBasemap()`. |
+| `thumb.wikimedia.org` | Nothing. | Removed. |
+| `upload.wikimedia.org` | Database rows written by 0010. | **Kept** until PR B. |
+
+### 4. Photos and credits come from the database
+
+- **Removed:**
   - `shared/public-photos.ts`
   - `shared/photo-corrections.ts`
   - `shared/legacy-photo-references.json`
-  - `src/lib/destination-photo.ts`
-  - `shared/optimized-photos.json` (empty `{}`)
-- `shared/travel-photos.json` is deleted **after** its credits are copied
-  into migration 0011 (below).
-- `shared/responsive-image.ts` keeps the home page's hero preload (#11's
-  speed-up). It now builds `srcset` from the URL pattern alone
-  (Unsplash `w=`, Wikimedia `/1280px-`), with no JSON lookup.
-
-**What the overrides were covering for.** Removing them changes what a
-database shows only where 0010 didn't apply:
-
-- **A database where 0010 ran** (any fresh database; production if it ran):
-  no visible change. The rows already hold the Wikimedia URLs.
-- **A row an admin had edited before 0010**: no change. It keeps the
-  admin's photo, as it does today.
-- **Photo-story locations.** The code renamed p6 "Hatton Tea Valleys" to
-  "Nuwara Eliya" and p7 "Koggala & Weligama" to "Ahangama", so the captions
-  match the new photos. 0010 never did that in the database.
-- **Jaffna.** The code served the full-size original instead of 0010's
-  1280px thumbnail. The reason isn't recorded. I'll check whether the
-  thumbnail loads; if it doesn't, 0011 switches that one row to the
-  original.
-
-**New migration `0011_image_credits.sql`**, written to be re-runnable
-(`if not exists`, `on conflict`), unlike 0009:
-
-```sql
-create table if not exists public.image_credits (
-  url          text primary key check (url like 'https://%'),
-  author       text not null check (length(author) between 1 and 200),
-  license      text not null check (length(license) between 1 and 100),
-  license_url  text check (license_url like 'https://%'),
-  source_url   text check (source_url like 'https://%'),
-  updated_at   timestamptz not null default now()
-);
--- 32 rows copied from shared/travel-photos.json (url = its "image" value).
-insert into public.image_credits (...) values (...) on conflict (url) do nothing;
-
--- The two caption fixes, guarded like 0010: only rows still on the seed
--- text *and* on 0010's photo.
-update public.photo_stories set location = 'Nuwara Eliya', updated_at = now()
- where id = 'p6' and location = 'Hatton Tea Valleys' and image = '<0010 URL>';
-update public.photo_stories set location = 'Ahangama', updated_at = now()
- where id = 'p7' and location = 'Koggala & Weligama' and image = '<0010 URL>';
-```
-
-- **Why credits are keyed by image URL:** the same photo is used in several
-  tables (the Yala leopard is on 6 rows), and a URL stays valid whether the
-  photo is on Wikimedia or later in R2. `public.media` can't hold them,
-  because it only accepts R2 keys.
-- **API:**
-  - `GET /api/content` gains `imageCredits`: only the credits whose URL is
-    used by a published row.
-  - Admin `GET/PUT/DELETE /api/admin/image-credits/:url`, with the same
-    session, origin and `expectedUpdatedAt` rules as the other admin
-    endpoints.
-  - `docs/SCHEMA.md` gets the new table.
-- **Admin:** `ImagePicker` shows a credit section under the chosen image
-  (author, licence, licence link, source link), edited in place. This
-  changes admin UI only, not the frozen public design.
-- **Seed and fixtures:** `scripts/fixtures` and 0002 stay on Unsplash, so
-  `verify:roundtrip` and the browser baselines compare against the approved
-  demo as before.
-- **Tests:**
-  - migration 0011 runs twice without error;
-  - credits round-trip through the admin endpoint (409 on a stale
-    revision);
-  - `/api/content` only lists credits for published rows;
-  - a rewritten mapper test proves a row's photo is passed through
-    unchanged.
-
-**Showing the credits to visitors is a public-design change, so I need a
-decision from you.** It's also a licence requirement: the Wikimedia photos
-are CC BY-SA 4.0, which requires attribution. If 0010 ran on production,
-production is showing them **with no credit at all** right now, because #12's
-`/photo-credits` page is gone with the revert. The options are under
-Questions.
-
-## 5. Afterwards (separate, owner-run)
-
-Copy the Wikimedia photos into R2 and drop `upload.wikimedia.org` from the
-CSP. While checking 0010's URLs, Wikimedia answered **HTTP 429 (rate
-limited)** to a burst of 32 HEAD requests. Hotlinking ties the site's
-photos to someone else's rate limits.
-
-The steps:
-
-1. A one-off script, `images:import`, modelled on `media:rebase`. It needs
-   R2 configured in production.
-2. Download each `upload.wikimedia.org` image a row uses, upload it to R2
-   as a `media` row, and rewrite every content row and every
-   `image_credits.url` that pointed at it.
-3. Then remove `upload.wikimedia.org` from `img-src` and the allow-list.
-   The strict CSP test goes back to exactly Unsplash, R2 and CARTO.
-
-This is a separate plan, written when this one lands.
-
-## Files touched (expected)
-
-- **Changed:**
-  - `shared/pg-connection.ts`
-  - `server/src/db.ts`
-  - `shared/map-tiles.ts`
-  - `shared/image-hosts.ts`
-  - `server/src/security-headers.ts`
-  - `src/lib/mappers.ts`
-  - `server/src/pages/pages.ts`
+  - `shared/travel-photos.json` (its credits move into 0011)
+  - `shared/optimized-photos.json`
   - `shared/responsive-image.ts`
-  - `scripts/verify-roundtrip.ts`
-  - `server/src/routes/content.ts`
-  - `server/src/routes/admin.ts`
-  - `shared/api.ts`
-  - `src/admin/components/ImagePicker.tsx`
-  - `docs/SCHEMA.md`
-  - `README.md` (TLS section)
-  - tests under `server/test/`
-- **Added:** `db/migrations/0011_image_credits.sql`
-- **Deleted:** the five files listed in step 4, then
-  `shared/travel-photos.json`.
-- **Nothing in `src/components/`** unless you choose credits option A or B
-  below; I'll call that out in the PR.
+  - `src/lib/destination-photo.ts`
+- `src/lib/mappers.ts` goes back to `8d13a1a`.
+- `server/src/pages/pages.ts` uses each row's own `image`. The home page
+  keeps #11's hero preload, but as a plain `href`. The `imagesrcset`
+  variants were for #12's `TravelImage`, which is gone; the hero requests
+  the plain URL, so the variants would have downloaded a second copy.
+- **Migration `0011_image_credits.sql`** (re-runnable):
+  - Adds a table:
+    `image_credits (url pk, author, license, license_url, source_url, updated_at)`.
+  - Adds 32 rows from `travel-photos.json`, keyed by the URL that 0010
+    stored.
+  - Applies the guarded p6/p7 caption fixes: only where the location is
+    still the seed text and the photo is still 0010's.
+- **API:**
+  - `GET /api/content` gains `imageCredits`: only the credits whose URL a
+    published row uses.
+  - New admin endpoints: `GET /api/admin/image-credits` (each credit with
+    the rows using its URL), plus `POST`, `PUT /:url` (with
+    `expectedUpdatedAt`) and `DELETE /:url`.
+- **Admin:** a "Photo credits" page beside the media library. It lists every
+  credit with its thumbnail and where it's used, and lets you add, edit and
+  delete.
+- **Public `/photo-credits`**, one new page type:
+  - The route is lazy, like every other page.
+  - Head tags: `PAGE_TITLES.photoCredits` / `PAGE_DESCRIPTIONS.photoCredits`.
+    The title comes from the existing `pageTitle()`, so no new brand
+    string.
+  - It's in the sitemap.
+  - Its layout is a `PageHero` and a grid of thumbnails, each with "Photo:
+    author · licence (link) · source (link)". It renders only what
+    `imageCredits` holds, and says so if it's empty.
+- **Footer, a frozen component, changed as approved:** one "Photo credits"
+  link in the bottom bar, before Privacy Policy.
 
-## Checks
+### 5. `npm run images:import` (`scripts/images-import.ts`)
 
-- `typecheck`, `build`, `npm test` and `verify:roundtrip` (back at full
-  strength) all pass.
-- The public page is identical to `demo-baseline`, and the home baseline
-  matches `bf94e25`.
-- `npm run migrate -- --dry-run` passes against a local database with 0011
-  pending, and then against the public proxy (you run that one).
+The logic lives in `server/src/media/import.ts`, so it can be tested with a
+fake Wikimedia server and `memoryStore()`.
 
-## Questions
+1. Find every distinct `https://upload.wikimedia.org/…` URL in any image
+   column, drafts included (`storedImages()`).
+2. For each URL, one at a time:
+   - Download it with `User-Agent: Teyvat-image-import/1.0 (+https://github.com/SasinduN/Teyvat)`.
+   - Wait at least 2 s between requests.
+   - On 429 or 503, honour `Retry-After`; otherwise back off exponentially
+     from 5 s, up to 5 tries.
+   - Refuse anything over 10 MB, and anything that isn't JPEG, PNG, WebP or
+     AVIF by its bytes (`sniffImage`).
+3. Upload to R2 as `library/<timestamp>-<random>.<ext>` and insert a
+   `media` row (`uploaded_by` null).
+4. In one transaction per image:
+   - Rewrite every image column (plain and list) **where the value is still
+     that exact URL**.
+   - Move its `image_credits` row to the new URL (`source_url` still names
+     the Commons page).
+   - If the transaction fails, the R2 object is deleted, the same as a
+     failed upload.
+5. `--dry-run` lists the URLs and the rows using each, and downloads
+   nothing.
 
-1. **Credits on the public site (needed for CC BY-SA):**
-   - A. A small "Photo: Author, CC BY-SA 4.0" line on each credited image.
-     Touches several frozen components.
-   - B. A `/photo-credits` page linked from the footer. One new page type
-     (route, head tags, sitemap) and one footer link.
-   - C. Neither yet: go straight to step 5 and replace the Wikimedia photos
-     with licensed or own photos in R2.
+Other details:
 
-   My recommendation: B. It's the smallest change to the frozen design, and
-   it's what #12 tried to do.
-2. **The two caption fixes (p6, p7):** apply them in 0011, or leave the
-   locations as they are and let an admin change them?
-3. **The production `DATABASE_URL` warning:** log only (as planned), or
-   refuse to start?
+- It reads `DATABASE_URL` and the five `R2_*` variables. It refuses to run
+  without R2, and prints the target database first, like `media:rebase`.
+- It's re-runnable: a URL already moved is no longer found.
+- A failure on one image is reported, and the others carry on.
+
+### 6. Newsletter
+
+**Does anything send newsletters? No.**
+
+- Nothing reads `newsletter_subscribers`. Resend is only used for
+  new-enquiry emails.
+- On `main` the footer form doesn't even call `POST /api/newsletter`. It
+  shows "Welcome to Travel Eye Dispatch!" and stores nothing. #12 was what
+  wired it up.
+
+In PR A:
+
+- **The form posts to `/api/newsletter`**, with a hidden honeypot field and
+  real error messages. A success message for a subscription that never
+  happened is worse than none.
+- **A consent line under the button:** "By subscribing you agree to receive
+  occasional emails from us. Unsubscribe at any time from the link in every
+  email." It ends with "Privacy Policy" linking to `privacyUrl` when that's
+  set (no `href` while unset, like the bottom bar).
+- **Migration `0012_newsletter_unsubscribe.sql`:**
+  - `unsubscribe_token uuid not null unique default gen_random_uuid()`, so
+    existing rows get one;
+  - `consented_at timestamptz not null default now()`.
+- **`POST /api/newsletter/unsubscribe {token}`:**
+  - deletes the row, so the address is gone, not just flagged;
+  - always answers 200 (no membership leak);
+  - is rate-limited like subscribing.
+
+  It's a POST because link scanners in mail clients follow GETs.
+- **Public `/unsubscribe?token=…`:**
+  - a small page with one "Unsubscribe" button;
+  - `noindex`, not in the sitemap;
+  - no link to it on the site;
+  - a missing or malformed token shows a message.
+
+  `newsletterUnsubscribeUrl(origin, token)` in `shared/site-paths.ts` builds
+  the link any future sender must put in every email (plus the
+  `List-Unsubscribe` header).
+- **Launch checklist:** item 12 adds that the privacy policy must cover the
+  newsletter. A new item records that nothing sends newsletters.
+
+**Proposal: hide the form until sending exists.** Until then, every address
+collected is personal data held for a mailing that can't happen. I haven't
+hidden it in this PR, because that's your call. It would be a one-line
+change in `Footer.tsx`.
+
+### 7. Housekeeping
+
+- `docs/reviews/ui-review-2026-10-09.md` is committed.
+  `docs/reviews/*/` (the screenshots) goes into `.gitignore`.
+- `scripts/bundle-report.ts`:
+  - drops #11's "Explore" row (no such page since the revert);
+  - marks Home's map again;
+  - adds Photo credits and Unsubscribe.
+- CLAUDE.md notes:
+  - images: the allow-list is temporarily Unsplash + R2 + Wikimedia;
+  - credits;
+  - newsletter;
+  - the TLS table's pointer.
+- `docs/SCHEMA.md`: `image_credits`, and the new newsletter columns.
+- README: the TLS table, and `images:import`.
+
+### Checks
+
+- `typecheck`, `build`, `npm test` and `verify:roundtrip` all pass.
+- The home baseline matches `bf94e25`. The footer's new link and consent
+  line are inside `Footer`, which that test doesn't compare.
+- `git diff demo-baseline -- src/components/` changes only `Footer.tsx`, as
+  approved.
+
+## PR B
+
+- Removes `upload.wikimedia.org` from `WIKIMEDIA_ORIGINS` (and the constant
+  itself). `IMAGE_HOST_REFUSED` goes back to "the media library or
+  Unsplash".
+- `security.test.ts` expects exactly Unsplash, R2 and CARTO.
+- **`0013_wikimedia_fallback.sql`:** any row still on a 0010 Wikimedia URL
+  goes back to its seed URL. It mirrors 0010 in reverse, with the same
+  guards.
+- Merge **only after** `images:import` and an `images:audit` (run with PR
+  B's branch) that reports nothing blocked.
