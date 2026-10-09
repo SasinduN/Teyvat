@@ -47,37 +47,37 @@ export function UnsubscribePage() {
         title="Unsubscribe"
       />
 
-      <section className="bg-[#FBF9F6] py-16 sm:py-20" data-unsubscribe>
+      <section className="bg-[var(--background)] py-16 sm:py-20" data-unsubscribe>
         <div className="mx-auto max-w-xl space-y-6 px-4 text-center sm:px-6">
           {state === 'done' ? (
-            <p role="status" className="flex items-center justify-center gap-2 text-lg text-[#0F2E23]">
-              <CheckCircle2 className="h-5 w-5 text-[#1C4737]" aria-hidden="true" />
+            <p role="status" className="flex items-center justify-center gap-2 text-lg text-[var(--brand-primary)]">
+              <CheckCircle2 className="h-5 w-5 text-[var(--brand-primary)]" aria-hidden="true" />
               You’re unsubscribed. We won’t email you again.
             </p>
           ) : valid ? (
             <>
-              <p className="font-light text-[#1A1A1A]/75">
+              <p className="font-light text-[var(--text-primary)]/75">
                 Press the button to stop receiving our newsletter. Your email address is deleted, not just paused.
               </p>
               <button
                 type="button"
                 onClick={() => void unsubscribe()}
                 disabled={state === 'sending'}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0F2E23] px-8 py-3.5 font-bold text-white transition-colors hover:bg-[#1C4737] disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--inverse-surface)] px-8 py-3.5 font-bold text-white transition-colors hover:bg-[var(--brand-secondary)] disabled:opacity-60"
               >
                 <MailX className="h-5 w-5" aria-hidden="true" />
                 {state === 'sending' ? 'Unsubscribing…' : 'Unsubscribe'}
               </button>
               {error && (
-                <p role="alert" className="text-sm text-[#B3261E]">
+                <p role="alert" className="text-sm text-[var(--danger)]">
                   {error}
                 </p>
               )}
             </>
           ) : (
-            <p className="font-light text-[#1A1A1A]/75">
+            <p className="font-light text-[var(--text-primary)]/75">
               This unsubscribe link is incomplete. Open the link from the newsletter email again, or{' '}
-              <Link to={paths.contact} className="text-[#1C4737] underline underline-offset-2">
+              <Link to={paths.contact} className="text-[var(--brand-primary)] underline underline-offset-2">
                 contact us
               </Link>{' '}
               and we’ll remove your address.

@@ -158,7 +158,13 @@ describe('pages and links, in Chrome', { skip }, () => {
   });
 
   test('cards, journal cards and search results land on their pages', async () => {
-    const page = await openPage('/');
+    // The home page's destination cards (redesign PR 4).
+    const home = await openPage('/');
+    await home.evaluate(`document.querySelector('#discover a[href="/destinations/ella"]').click(), true`);
+    await at(home, '/destinations/ella');
+
+    // The journal cards live on /journal (redesign PR 3).
+    const page = await openPage('/journal');
     await page.evaluate(`document.querySelector('#journal a[href="/journal/ultimate-ella-guide"]').click(), true`);
     await at(page, '/journal/ultimate-ella-guide');
 
@@ -175,20 +181,24 @@ describe('pages and links, in Chrome', { skip }, () => {
   });
 
   test('a new page opens at the top, and Back returns to where you were', async () => {
-    const page = await openPage('/');
-    await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
+    // The tour cards are on /tours since redesign PR 4 trimmed the home page:
+    // the last card is well down that page.
+    const page = await openPage('/tours');
+    const last = `[...document.querySelectorAll('#tours a')].filter((a) => a.textContent.trim() === 'View Full Journey').at(-1)`;
+    await page.evaluate(`${last}.scrollIntoView({ block: 'center' }), true`);
     await sleep(300);
     const before = await scrollY(page);
-    assert.ok(before > 1000, 'precondition: well down the page');
+    assert.ok(before > 1000, `precondition: well down the page (${before})`);
 
-    await clickLink(page, '#tours', 'View Full Journey');
-    await at(page, '/tours/island-in-7-days');
+    const href = await page.evaluate<string>(`${last}.getAttribute('href')`);
+    await page.evaluate(`${last}.click(), true`);
+    await at(page, href);
     await sleep(300);
     assert.equal(await scrollY(page), 0, 'the tour page opens at the top');
 
     await page.evaluate('history.back(), true');
-    await at(page, '/');
-    await waitFor(page, `Math.abs(scrollY - ${before}) <= 2`, `the home page back at ${before}`, 5_000);
+    await at(page, '/tours');
+    await waitFor(page, `Math.abs(scrollY - ${before}) <= 2`, `the tours list back at ${before}`, 5_000);
   });
 
   test('"Explore" lands on its own page, "Contact" on the About form, focused', async () => {
@@ -298,18 +308,25 @@ describe('pages and links, in Chrome', { skip }, () => {
     const cards = `document.querySelectorAll('main a[href^="/destinations/"]').length`;
     assert.equal(await page.evaluate<number>(cards), beaches);
 
+    // Picking a category keeps the page where it is.
+    await page.evaluate(`document.documentElement.style.scrollBehavior = 'auto', document.querySelector('main [role=group]').scrollIntoView({ block: 'center' }), true`);
+    await sleep(300);
+    const scrolled = await scrollY(page);
+    assert.ok(scrolled > 100, `precondition: scrolled to the filters (${scrolled})`);
     await page.evaluate(`[...document.querySelectorAll('main [role=group] button')].find((b) => b.textContent.startsWith('All')).click(), true`);
     await at(page, '/destinations');
     await waitFor(page, `${cards} === ${all}`, `all ${all} destinations`, 5_000);
+    await sleep(300);
+    assert.equal(await scrollY(page), scrolled, 'the page stayed where it was');
 
     const experiences = await openPage('/experiences');
     const hrefs = await experiences.evaluate<string[]>(`[...document.querySelectorAll('#experiences a')].map((a) => a.getAttribute('href'))`);
     assert.ok(hrefs.length > 0, 'the category cards are links');
     for (const href of hrefs) assert.match(href, /^\/destinations\?category=[A-Za-z%0-9]+$/);
 
-    // On the home page they still filter the map.
+    // The home page no longer has the category cards (redesign PR 4).
     const home = await openPage('/');
-    assert.equal(await home.evaluate<number>(`document.querySelectorAll('#experiences a').length`), 0);
+    assert.equal(await home.evaluate<number>(`document.querySelectorAll('#experiences').length`), 0);
   });
 
   test('Leaflet loads only on pages that show a map', async () => {
@@ -318,7 +335,8 @@ describe('pages and links, in Chrome', { skip }, () => {
         `performance.getEntriesByType('resource').some((r) => /leaflet/.test(r.name)) || Boolean(document.querySelector('link[data-leaflet]'))`
       );
 
-    for (const path of ['/destinations', '/destinations/ella', '/experiences', '/about', '/journal/ultimate-ella-guide', '/plan', '/journal']) {
+    // The home page has no map since redesign PR 4.
+    for (const path of ['/', '/destinations', '/destinations/ella', '/experiences', '/about', '/journal/ultimate-ella-guide', '/plan', '/journal']) {
       const page = await openPage(path);
       await page.evaluate('window.scrollTo(0, document.body.scrollHeight), true');
       await sleep(600);
@@ -329,16 +347,11 @@ describe('pages and links, in Chrome', { skip }, () => {
     await waitFor(tour, `document.querySelectorAll('[data-route-map] .route-stop-marker').length === 6`, 'the route map');
     assert.equal(await leaflet(tour), true, 'the tour page');
 
-    const home = await openPage('/');
-    await home.evaluate(`document.querySelector('#explore-map').scrollIntoView(), true`);
-    await waitFor(home, `document.querySelector('#explore-map .leaflet-container')`, 'the home map');
-    assert.equal(await leaflet(home), true, 'the home page');
-
     // /explore: the map is the page. It starts below the fold (at 1280 x 900), but
     // within the 400 px the map starts loading ahead (LAZY_MARGIN), so Leaflet
     // arrives with the page rather than on scroll. Leaflet is still its own
-    // chunk, never in a page's first load (npm run bundle:report). Flagged in
-    // redesign PR 3 for review; the home page's lazy-load test is unchanged.
+    // chunk, never in a page's first load (npm run bundle:report). Accepted on
+    // #23; browser-map test 1 checks the chunk arrives after the page's own.
     const explore = await openPage('/explore');
     const mapTop = await explore.evaluate<number>(`document.querySelector('#explore-map .grid').getBoundingClientRect().top`);
     assert.ok(mapTop > 900, `the map starts below the fold (${mapTop}px)`);

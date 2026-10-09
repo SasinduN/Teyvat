@@ -28,7 +28,9 @@
   --surface-channels: 245 247 243;
   --inverse-channels: 11 25 24;
   --photo-channels: 24 30 32;
-  --home-hero-overlay: linear-gradient(90deg, rgb(var(--photo-channels) / .62), rgb(var(--photo-channels) / .32) 42%, transparent 82%);
+  --home-hero-overlay: linear-gradient(90deg, rgb(var(--photo-channels) / .8), rgb(var(--photo-channels) / .78) 55%, rgb(var(--photo-channels) / .5) 75%, rgb(var(--photo-channels) / .15));
+  /* Phones: the copy spans the width, so the overlay does too. */
+  --home-hero-overlay-narrow: linear-gradient(180deg, rgb(var(--photo-channels) / .72), rgb(var(--photo-channels) / .8) 30%, rgb(var(--photo-channels) / .82));
   --pearl-channels: 255 255 255;
   color-scheme: light;
   --background: var(--palette-frosted-pearl);
@@ -47,6 +49,8 @@
   --inverse-deep: var(--palette-forest-night);
   --inverse-raised: var(--palette-glass-surface);
   --inverse-accent: var(--palette-champagne-gold);
+  /* Small gold text directly on a photo (eyebrows, the current breadcrumb): paler, for AA over the overlay. */
+  --accent-on-photo: #EBD6A4;
   --on-inverse: var(--palette-ivory-text);
   --on-accent: var(--palette-charcoal-ink);
   --on-secondary: var(--white);
@@ -79,6 +83,8 @@
   --warning: #7a6214;
   --on-feedback: #ffffff;
   --shadow: 0 12px 40px rgb(var(--inverse-channels) / .08);
+  --shadow-card: 0 8px 30px rgb(var(--inverse-channels) / .08);
+  --shadow-card-hover: 0 18px 44px rgb(var(--inverse-channels) / .14);
   --glow: rgb(var(--gold-channels) / .2);
   --glass-tint: rgb(var(--pearl-channels) / .18);
   --glass-bg: rgb(var(--pearl-channels) / .58);
@@ -99,7 +105,8 @@
   --glass-scroll-thumb: rgb(var(--teal-channels) / .62);
   --glass-scroll-edge: rgb(var(--pearl-channels) / .38);
   --glass-scroll-hover: var(--brand-secondary);
-  --page-hero-overlay: linear-gradient(90deg, rgb(var(--photo-channels) / .60), rgb(var(--photo-channels) / .22) 52%, transparent 85%);
+  --page-hero-overlay: linear-gradient(90deg, rgb(var(--photo-channels) / .8), rgb(var(--photo-channels) / .78) 60%, rgb(var(--photo-channels) / .45) 76%, rgb(var(--photo-channels) / .12));
+  --page-hero-overlay-narrow: linear-gradient(180deg, rgb(var(--photo-channels) / .72), rgb(var(--photo-channels) / .8) 30%, rgb(var(--photo-channels) / .82));
   --button-primary-bg: var(--brand-primary);
   --button-primary-hover: var(--palette-tropical-teal);
   --button-primary-text: var(--white);
@@ -129,6 +136,9 @@
   --page-gutter: clamp(1rem, 3vw, 2.5rem);
   --header-height: 5.5rem;
   --ease-premium: cubic-bezier(.22, 1, .36, 1);
+  --hero-content-max: 55rem;
+  --content-reading-width: 46rem;
+  --heading-space: clamp(2rem, 4vw, 3rem);
 }
 @media (max-width: 639px) {
   :root { --header-height: 5rem; }

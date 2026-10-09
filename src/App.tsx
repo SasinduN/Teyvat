@@ -1,11 +1,11 @@
 import { Suspense, lazy } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useSearchParams } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 
 import { queryClient } from '@/lib/queryClient';
 import { ScrollRestorer } from '@/lib/ScrollRestorer';
 import { PublicLayout } from '@/pages/PublicLayout';
-import { paths } from '@shared/site-paths';
+import { LEGACY_HOME_SECTIONS, paths } from '@shared/site-paths';
 
 /**
  * The admin panel is code-split: a traveller visiting the marketing site never
@@ -45,6 +45,9 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then((m) => ({ de
  */
 function HomeRoute() {
   const [params] = useSearchParams();
+  const { hash } = useLocation();
+  const section = LEGACY_HOME_SECTIONS[hash.slice(1)];
+  if (section) return <Navigate to={section} replace />;
   const tour = params.get('tour');
   if (tour) return <Navigate to={paths.tour(tour)} replace />;
   const destination = params.get('destination');

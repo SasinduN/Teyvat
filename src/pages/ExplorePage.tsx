@@ -8,6 +8,7 @@ import { usePageSubject, usePageTitle, usePublicSite } from '@/context/PublicSit
 import { useDestinations, useTours } from '@/hooks/useSiteContent';
 import { goToSection } from '@/lib/routeFocus';
 import type { CategoryType } from '@/types';
+import { KEEP_SCROLL } from '@/lib/ScrollRestorer';
 import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
@@ -48,7 +49,7 @@ export function ExplorePage() {
         next.delete('mapTour');
         return next;
       },
-      { replace: true, preventScrollReset: true }
+      { replace: true, state: KEEP_SCROLL }
     );
 
   return (

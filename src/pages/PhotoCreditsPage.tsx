@@ -27,16 +27,16 @@ export function PhotoCreditsPage() {
         subtitle={PAGE_DESCRIPTIONS.photoCredits}
       />
 
-      <section className="bg-[#FBF9F6] py-16 sm:py-20" data-photo-credits>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="bg-[var(--background)] py-16 sm:py-20" data-photo-credits>
+        <div className="te-container">
           {credits.length === 0 ? (
-            <p className="mx-auto max-w-2xl text-center font-light text-[#1A1A1A]/70">
+            <p className="mx-auto max-w-2xl text-center font-light text-[var(--text-primary)]/70">
               None of the photos on the site currently need a credit.
             </p>
           ) : (
             <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {credits.map((credit) => (
-                <li key={credit.url} className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/5">
+                <li key={credit.url} className="te-card min-w-0 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
                   <img
                     src={credit.url}
                     alt={`Photo by ${credit.author}`}
@@ -44,14 +44,14 @@ export function PhotoCreditsPage() {
                     className="h-48 w-full object-cover"
                   />
                   <div className="space-y-1.5 p-5 text-sm">
-                    <p className="font-semibold text-[#0F2E23]">{credit.author}</p>
-                    <p className="text-[#1A1A1A]/70">
+                    <p className="font-semibold text-[var(--brand-primary)]">{credit.author}</p>
+                    <p className="text-[var(--text-primary)]/70">
                       {credit.licenseUrl ? (
                         <a
                           href={credit.licenseUrl}
                           target="_blank"
                           rel="noopener noreferrer license"
-                          className="text-[#1C4737] underline underline-offset-2 hover:text-[#0F2E23]"
+                          className="text-[var(--brand-primary)] underline underline-offset-2 hover:text-[var(--brand-primary)]"
                         >
                           {credit.license}
                         </a>
@@ -64,7 +64,7 @@ export function PhotoCreditsPage() {
                         href={credit.sourceUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-[#1C4737] underline underline-offset-2 hover:text-[#0F2E23]"
+                        className="inline-flex items-center gap-1 text-xs text-[var(--brand-primary)] underline underline-offset-2 hover:text-[var(--brand-primary)]"
                       >
                         Original
                         <ExternalLink className="h-3 w-3" aria-hidden="true" />
