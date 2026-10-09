@@ -180,6 +180,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     for (const path of [
       '/', '/destinations', '/destinations?category=Beaches', '/destinations/ella', '/experiences',
       '/experiences/safari-yala', '/tours', '/tours/island-in-7-days', '/journal/ultimate-ella-guide', '/about',
+      '/explore', '/explore?mapTour=wild-sri-lanka', '/plan', '/journal',
       '/photo-credits', '/unsubscribe', '/unsubscribe?token=00000000-0000-4000-8000-000000000000'
     ]) {
       const res = await get(closed, path);
@@ -188,9 +189,9 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
       assert.equal(res.headers.get('cache-control'), 'no-cache', path);
     }
 
-    for (const path of ['/nope', '/destinations/nowhere', '/tours/Not-A-Slug!', '/journal/', '/experiences/a/b', '/index', '/explore', '/plan']) {
+    for (const path of ['/nope', '/destinations/nowhere', '/tours/Not-A-Slug!', '/nope/', '/experiences/a/b', '/index']) {
       const res = await get(closed, path);
-      // `/journal/` is a trailing slash first: 301 to /journal, which is a 404.
+      // `/nope/` is a trailing slash first: 301 to /nope, which is a 404.
       const final = res.status === 301 ? await get(closed, res.headers.get('location')!) : res;
       assert.equal(final.status, 404, path);
       assert.match(final.headers.get('content-type') ?? '', /text\/html/, `${path}: the shell, with its 404 page`);
@@ -279,6 +280,22 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     assert.equal(canonicalOf(h), null);
     assert.equal(metaContent(h, 'og:url'), null);
 
+    // Redesign PR 3's pages: their own titles (the brand once), descriptions and canonicals.
+    for (const page of ['explore', 'plan', 'journal'] as const) {
+      ({ head: h } = await head(open, `/${page}`));
+      assert.equal(titleOf(h), PAGE_TITLES[page], page);
+      assert.equal(metaContent(h, 'description'), PAGE_DESCRIPTIONS[page], page);
+      assert.equal(canonicalOf(h), `${SITE}/${page}`, page);
+      assert.equal((titleOf(h)!.match(/Travel Eye/g) ?? []).length, 1, `${page}: the brand once`);
+    }
+    // A route on the map is the same page: the canonical has no query.
+    ({ head: h } = await head(open, '/explore?mapTour=wild-sri-lanka'));
+    assert.equal(canonicalOf(h), `${SITE}/explore`);
+    // `/journal/` is now a trailing slash on a real page.
+    const slash = await get(closed, '/journal/');
+    assert.equal(slash.status, 301);
+    assert.equal(slash.headers.get('location'), '/journal');
+
     ({ head: h } = await head(open, '/photo-credits'));
     assert.equal(titleOf(h), PAGE_TITLES.photoCredits);
     assert.equal(metaContent(h, 'description'), PAGE_DESCRIPTIONS.photoCredits);
@@ -366,7 +383,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
 
     const locs = [...xml.matchAll(/<loc>([^<]*)<\/loc>/g)].map((m) => m[1]);
     for (const loc of locs) assert.ok(loc.startsWith(`${SITE}/`), loc);
-    for (const path of ['/', '/destinations', '/experiences', '/tours', '/about', '/photo-credits']) {
+    for (const path of ['/', '/destinations', '/experiences', '/tours', '/about', '/photo-credits', '/explore', '/plan', '/journal']) {
       assert.ok(locs.includes(`${SITE}${path}`), path);
     }
     assert.ok(!locs.some((l) => l.includes('/unsubscribe')), 'never the unsubscribe page');
@@ -374,7 +391,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     const count = async (table: string) =>
       (await pool.query(`select count(*)::int as n from public.${table} where published`)).rows[0].n as number;
     const rows = (await count('destinations')) + (await count('featured_experiences')) + (await count('tours')) + (await count('articles'));
-    assert.equal(locs.length, 6 + rows, 'the fixed pages plus every published row');
+    assert.equal(locs.length, 9 + rows, 'the fixed pages plus every published row');
     assert.ok(!locs.includes(`${SITE}/destinations/galle`), 'not the unpublished one');
     assert.ok(!locs.some((l) => l.includes('?')), 'no filtered lists');
     assert.match(xml, new RegExp(`<url><loc>${SITE}/destinations/ella</loc><lastmod>\\d{4}-\\d{2}-\\d{2}</lastmod></url>`));

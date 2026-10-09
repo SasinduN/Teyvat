@@ -101,7 +101,6 @@ export function PublicLayout() {
         <Section name="Navbar">
           <Navbar
             onOpenSearch={openSearch}
-            onOpenPlanner={() => openInquiry(pageSubject?.inquiry ?? 'Custom Travel Journey Request')}
           />
         </Section>
 

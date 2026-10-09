@@ -191,12 +191,14 @@ describe('pages and links, in Chrome', { skip }, () => {
     await waitFor(page, `Math.abs(scrollY - ${before}) <= 2`, `the home page back at ${before}`, 5_000);
   });
 
-  test('"Explore" lands on the home map, "Contact" on the About form, focused', async () => {
+  test('"Explore" lands on its own page, "Contact" on the About form, focused', async () => {
     const page = await openPage('/tours');
+    // Redesign PR 3: Explore is a page of its own, opened at the top with focus on its heading.
     await clickLink(page, 'header nav', 'Explore');
-    await at(page, '/#explore-map');
-    await waitFor(page, `Math.abs(document.querySelector('#explore-map').getBoundingClientRect().top) < 2`, 'the map at the top', 5_000);
-    assert.equal(await page.evaluate<string>('document.activeElement.id'), 'explore-map', 'focus on the map section');
+    await at(page, '/explore');
+    await waitFor(page, `document.activeElement === document.querySelector('main h1')`, 'focus on the Explore heading', 5_000);
+    assert.equal(await page.evaluate<string>('document.activeElement.textContent.trim()'), 'Explore Sri Lanka');
+    assert.ok(await page.evaluate<boolean>(`scrollY < 2 && Boolean(document.querySelector('#explore-map'))`), 'at the top, with the map below');
 
     await clickLink(page, 'header nav', 'Contact');
     await at(page, '/about#contact');
@@ -254,22 +256,32 @@ describe('pages and links, in Chrome', { skip }, () => {
     assert.equal(await message(page), 'I would like to inquire about: Island in 7 Days');
     await closeModal(page);
 
-    // The Navbar's "Plan Your Trip" uses the page's subject too.
+    // A destination's own "Plan A Trip" button uses the page's subject. (The
+    // Navbar's "Plan Your Trip" carried it until redesign PR 3, which made it
+    // a link to /plan: checked below.)
     page = await openPage('/destinations/ella');
-    await page.evaluate(`[...document.querySelectorAll('header button')].find((b) => b.textContent.trim() === 'Plan Your Trip').click(), true`);
+    await page.evaluate(`[...document.querySelectorAll('main button')].find((b) => b.textContent.trim() === 'Plan A Trip to Ella').click(), true`);
     await waitFor(page, `document.querySelector('.fixed.inset-0 textarea')`, 'the enquiry form');
     assert.equal(await message(page), 'I would like to inquire about: Ella');
+    await closeModal(page);
+    assert.equal(
+      await page.evaluate<string>(`[...document.querySelectorAll('header a')].find((a) => a.textContent.trim() === 'Plan Your Trip').getAttribute('href')`),
+      '/plan',
+      "the Navbar's Plan Your Trip is a link to /plan"
+    );
 
     page = await openPage('/experiences/safari-yala');
     await page.evaluate(`[...document.querySelectorAll('main button')].find((b) => b.textContent.trim() === 'Enquire About This Experience').click(), true`);
     await waitFor(page, `document.querySelector('.fixed.inset-0 textarea')`, 'the enquiry form');
     assert.match(await message(page), /^I would like to inquire about: Experience: Safari in Yala \(.+\)$/);
 
-    // Elsewhere, as before.
-    page = await openPage('/tours');
-    await page.evaluate(`[...document.querySelectorAll('header button')].find((b) => b.textContent.trim() === 'Plan Your Trip').click(), true`);
+    // /plan: the journey builder's quote request names the chosen journey.
+    page = await openPage('/plan');
+    await page.evaluate(`document.querySelector('#planner form button[type=submit]').click(), true`);
+    await waitFor(page, `[...document.querySelectorAll('#planner button')].some((b) => b.textContent.trim() === 'Request Custom Quote')`, 'a sample journey');
+    await page.evaluate(`[...document.querySelectorAll('#planner button')].find((b) => b.textContent.trim() === 'Request Custom Quote').click(), true`);
     await waitFor(page, `document.querySelector('.fixed.inset-0 textarea')`, 'the enquiry form');
-    assert.equal(await message(page), 'I would like to inquire about: Custom Travel Journey Request');
+    assert.equal(await message(page), 'I would like to inquire about: Journey Plan: Custom Culture & Nature (6–8 days) — Around the Island');
 
     // The About page's form is inline.
     page = await openPage('/about');
@@ -306,7 +318,7 @@ describe('pages and links, in Chrome', { skip }, () => {
         `performance.getEntriesByType('resource').some((r) => /leaflet/.test(r.name)) || Boolean(document.querySelector('link[data-leaflet]'))`
       );
 
-    for (const path of ['/destinations', '/destinations/ella', '/experiences', '/about', '/journal/ultimate-ella-guide']) {
+    for (const path of ['/destinations', '/destinations/ella', '/experiences', '/about', '/journal/ultimate-ella-guide', '/plan', '/journal']) {
       const page = await openPage(path);
       await page.evaluate('window.scrollTo(0, document.body.scrollHeight), true');
       await sleep(600);
@@ -321,6 +333,33 @@ describe('pages and links, in Chrome', { skip }, () => {
     await home.evaluate(`document.querySelector('#explore-map').scrollIntoView(), true`);
     await waitFor(home, `document.querySelector('#explore-map .leaflet-container')`, 'the home map');
     assert.equal(await leaflet(home), true, 'the home page');
+
+    // /explore: the map is the page. It starts below the fold (at 1280 x 900), but
+    // within the 400 px the map starts loading ahead (LAZY_MARGIN), so Leaflet
+    // arrives with the page rather than on scroll. Leaflet is still its own
+    // chunk, never in a page's first load (npm run bundle:report). Flagged in
+    // redesign PR 3 for review; the home page's lazy-load test is unchanged.
+    const explore = await openPage('/explore');
+    const mapTop = await explore.evaluate<number>(`document.querySelector('#explore-map .grid').getBoundingClientRect().top`);
+    assert.ok(mapTop > 900, `the map starts below the fold (${mapTop}px)`);
+    await waitFor(explore, `document.querySelector('#explore-map .leaflet-container')`, 'the Explore map');
+    assert.equal(await leaflet(explore), true, '/explore loads Leaflet for its map');
+  });
+
+  test('"View route on map" on /tours opens /explore with that route', async () => {
+    const page = await openPage('/tours');
+    await page.evaluate(`(() => {
+      const card = [...document.querySelectorAll('#tours h3')].find((h) => h.textContent.trim() === 'Cultural Sri Lanka').closest('.group');
+      [...card.querySelectorAll('button')].find((b) => b.textContent.trim() === 'View route on map').click();
+      return true;
+    })()`);
+    await waitFor(page, `location.pathname === '/explore' && new URLSearchParams(location.search).get('mapTour') === 'cultural-sri-lanka'`, '/explore?mapTour=cultural-sri-lanka');
+    await waitFor(page, `document.querySelectorAll('#explore-map .route-stop-marker').length === 4`, 'the route on the map', 10_000);
+    assert.match(await page.evaluate<string>(`document.querySelector('#explore-map [data-route-chip]').textContent`), /Cultural Sri Lanka/);
+
+    // Clearing the route drops it from the URL too.
+    await page.evaluate(`document.querySelector('#explore-map [aria-label="Clear route"]').click(), true`);
+    await waitFor(page, `!new URLSearchParams(location.search).has('mapTour') && !document.querySelector('#explore-map .route-stop-marker')`, 'the route cleared');
   });
 
   test('an admin edit shows on the next page without a reload', async () => {

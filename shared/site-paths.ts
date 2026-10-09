@@ -5,8 +5,14 @@
  */
 export const paths = {
   home: '/',
-  explore: '/#explore-map',
-  journalSection: '/#journal',
+  /** The map, hidden gems and the quick search (redesign PR 3). */
+  explore: '/explore',
+  /** A tour's route on the Explore map ("View route on map"). */
+  tourOnMap: (id: string) => `/explore?mapTour=${encodeURIComponent(id)}#explore-map`,
+  /** The journey builder. */
+  plan: '/plan',
+  /** Every article and the photo stories. */
+  journal: '/journal',
   destinations: '/destinations',
   destinationsIn: (category: string) => `/destinations?category=${encodeURIComponent(category)}`,
   destination: (id: string) => `/destinations/${encodeURIComponent(id)}`,
@@ -45,6 +51,7 @@ export const NAV_LINKS: ReadonlyArray<{ label: string; to: string }> = [
   { label: 'Destinations', to: paths.destinations },
   { label: 'Experiences', to: paths.experiences },
   { label: 'Tours', to: paths.tours },
+  { label: 'Journal', to: paths.journal },
   { label: 'About', to: paths.about },
   { label: 'Contact', to: paths.contact }
 ];

@@ -54,7 +54,7 @@ const ROW_PAGES = [
 ] as const;
 
 /** The first published row's image in a table, for a fixed page's share image. */
-async function firstImage(table: 'hero_slides' | 'destinations' | 'featured_experiences' | 'tours', where = 'published'): Promise<string | null> {
+async function firstImage(table: 'hero_slides' | 'destinations' | 'featured_experiences' | 'tours' | 'articles', where = 'published'): Promise<string | null> {
   const { rows } = await pool.query<{ image: string }>(
     `select image from public.${table} where ${where} order by sort_order asc, id asc limit 1`
   );
@@ -84,6 +84,13 @@ const FIXED_PAGES: Record<string, () => Promise<[string, string, string | null]>
   [paths.experiences]: async () => [PAGE_TITLES.experiences, PAGE_DESCRIPTIONS.experiences, await firstImage('featured_experiences')],
   [paths.tours]: async () => [PAGE_TITLES.tours, PAGE_DESCRIPTIONS.tours, await firstImage('tours')],
   [paths.about]: async () => [PAGE_TITLES.about, PAGE_DESCRIPTIONS.about, await firstImage('hero_slides')],
+  [paths.explore]: async () => [
+    PAGE_TITLES.explore,
+    PAGE_DESCRIPTIONS.explore,
+    (await firstImage('destinations', 'published and featured')) ?? (await firstImage('destinations'))
+  ],
+  [paths.plan]: async () => [PAGE_TITLES.plan, PAGE_DESCRIPTIONS.plan, await firstImage('hero_slides')],
+  [paths.journal]: async () => [PAGE_TITLES.journal, PAGE_DESCRIPTIONS.journal, await firstImage('articles')],
   [paths.photoCredits]: async () => [PAGE_TITLES.photoCredits, PAGE_DESCRIPTIONS.photoCredits, await firstImage('hero_slides')]
 };
 

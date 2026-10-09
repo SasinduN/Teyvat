@@ -19,29 +19,23 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const ROOTS = ['src/components', 'src/pages'];
 const HEX = /#(?:[0-9a-f]{6}|[0-9a-f]{3})\b/gi;
 
-/** Hex colours each not-yet-restyled file may still have (redesign PR 2). */
+/** Hex colours each not-yet-restyled file may still have (after redesign PR 3). */
 const ALLOWED: Record<string, number> = {
   'src/components/CTASection.tsx': 13,
   'src/components/DestinationSpotlight.tsx': 16,
   'src/components/ExperiencesSection.tsx': 10,
   'src/components/FeaturedExperiences.tsx': 23,
   'src/components/HeroSection.tsx': 20,
-  'src/components/HiddenGemsSection.tsx': 33,
   'src/components/InquiryForm.tsx': 42,
   'src/components/InquiryModal.tsx': 5,
-  'src/components/InteractiveMapSection.tsx': 65,
   'src/components/IntroSection.tsx': 42,
-  'src/components/JournalSection.tsx': 16,
   'src/components/PageCards.tsx': 35,
   'src/components/PageHero.tsx': 8,
-  'src/components/PhotoStorySection.tsx': 8,
   'src/components/PlanCard.tsx': 9,
-  'src/components/QuickSearch.tsx': 21,
   'src/components/RouteMap.tsx': 1,
   'src/components/SearchModal.tsx': 19,
   'src/components/SiteStatus.tsx': 9,
   'src/components/ToursSection.tsx': 26,
-  'src/components/TravelPlanner.tsx': 46,
   // Untouched in PR 2 by decision; its own PR switches it to tokens.
   'src/components/WhatsAppButton.tsx': 5,
   'src/components/WhyTravelEye.tsx': 11,

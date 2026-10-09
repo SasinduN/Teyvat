@@ -42,7 +42,6 @@ const ALLOWED: Record<string, number> = {
   'src/components/Navbar.tsx': 1,
   'src/components/PhotoStorySection.tsx': 1,
   'src/components/WhyTravelEye.tsx': 1,
-  'src/lib/planner.ts': 1,
   'src/pages/HomePage.tsx': 2,
   'src/types/index.ts': 1
 };

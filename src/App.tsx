@@ -30,6 +30,9 @@ const ToursPage = lazy(() => import('@/pages/ToursPage').then((m) => ({ default:
 const TourPage = lazy(() => import('@/pages/TourPage').then((m) => ({ default: m.TourPage })));
 const ArticlePage = lazy(() => import('@/pages/ArticlePage').then((m) => ({ default: m.ArticlePage })));
 const AboutPage = lazy(() => import('@/pages/AboutPage').then((m) => ({ default: m.AboutPage })));
+const ExplorePage = lazy(() => import('@/pages/ExplorePage').then((m) => ({ default: m.ExplorePage })));
+const PlanPage = lazy(() => import('@/pages/PlanPage').then((m) => ({ default: m.PlanPage })));
+const JournalPage = lazy(() => import('@/pages/JournalPage').then((m) => ({ default: m.JournalPage })));
 const PhotoCreditsPage = lazy(() => import('@/pages/PhotoCreditsPage').then((m) => ({ default: m.PhotoCreditsPage })));
 const UnsubscribePage = lazy(() => import('@/pages/UnsubscribePage').then((m) => ({ default: m.UnsubscribePage })));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
@@ -68,12 +71,15 @@ export function App() {
           {/* -------------------------------------------------- public */}
           <Route element={<PublicLayout />}>
             <Route index element={<HomeRoute />} />
+            <Route path="explore" element={<ExplorePage />} />
+            <Route path="plan" element={<PlanPage />} />
             <Route path="destinations" element={<DestinationsPage />} />
             <Route path="destinations/:slug" element={<DestinationPage />} />
             <Route path="experiences" element={<ExperiencesPage />} />
             <Route path="experiences/:slug" element={<ExperiencePage />} />
             <Route path="tours" element={<ToursPage />} />
             <Route path="tours/:slug" element={<TourPage />} />
+            <Route path="journal" element={<JournalPage />} />
             <Route path="journal/:slug" element={<ArticlePage />} />
             <Route path="about" element={<AboutPage />} />
             <Route path="photo-credits" element={<PhotoCreditsPage />} />
