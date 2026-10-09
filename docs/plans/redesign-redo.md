@@ -1,6 +1,19 @@
 # Plan: redo the UI redesign from #12
 
-Status: DRAFT, waiting for approval. Nothing is built until it's approved.
+Status: APPROVED (2026-10-09), with these decisions:
+
+1. **Order:** the new pages first (`/explore`, `/plan`, `/journal`), then
+   trim the home page. The order below stands.
+2. **Dark theme: in, as PR 7** (requirements under PR 7). PR 2 defines
+   every colour as a theme token, so PR 7 only adds the dark values.
+3. **The three extras are in:**
+   - the scroll-to-top button, in PR 2;
+   - `llms.txt`, as PR 6b;
+   - the admin restyle, as PR 8, last.
+
+The PRs are built by the owner's Claude Code, re-applying the teammate's
+#12 design with the corrections below. The teammate reviews and approves
+every PR.
 
 #12 (the "glass" redesign, dark theme, and the `/explore`, `/plan` and
 `/journal` pages) was reverted by #13, and
@@ -15,22 +28,13 @@ Nothing is re-applied wholesale. Each PR takes the relevant parts of #12's
 diff (`git diff 12c972a b46de13 -- <paths>`), and reworks them where this
 plan says.
 
-## First, before any of this: `main` is red, and #15 isn't deployed
+## Before PR 0: `main` was red, holding #15's deploy
 
-CI failed on `main` at `8250129` (#16's merge) in
-`browser-whatsapp.test.ts`:
-
-> phone: never over the map zoom buttons … — "steps aside from the zoom
-> buttons", `true !== false`
-
-- The same tree passed CI as #16's pull-request run, so this is a flaky
-  timing check, not a code fault.
-- **Railway's *Wait for CI* is holding that deploy.** Production is still on
-  #14: migration 0013 hasn't run, and the CSP still allows Wikimedia. Both
-  are harmless now that no row uses Wikimedia.
-- **To deploy #15:** in GitHub Actions, re-run the failed job of run
-  `37899931982`. That's yours to do; I haven't.
-- PR 0 below fixes the flake.
+CI failed on `main` at `8250129` (#16's merge), in a flaky timing check in
+`browser-whatsapp.test.ts`: "steps aside from the zoom buttons". The same
+tree passed as #16's PR run. *Wait for CI* held the deploy, so production
+stayed on #14. On 9 October the failed job of run `37899931982` was
+re-run. PR 0 fixes the flake.
 
 ---
 
@@ -55,12 +59,15 @@ CI failed on `main` at `8250129` (#16's merge) in
 3. **Evidence in every PR:**
    - before/after screenshots, desktop (1280 px) and phone (375 px), of
      every page the PR touches, made with `npm run screenshots` (PR 0) and
-     committed under `docs/screenshots/<branch>/`;
+     committed under `docs/screenshots/<branch>/`. Once PR 7 has merged,
+     in light **and** dark;
    - green CI on the last commit;
    - the PR description lists every re-baselined pixel test and why.
-4. **Approval by the other teammate.** The author never merges their own
-   PR.
-5. **Tests are never deleted or weakened.**
+4. **One PR open at a time.** Each is merged before the next starts, so
+   the PRs never conflict.
+5. **Approval by the other teammate.** Nobody merges their own PR, and
+   nobody merges on red CI.
+6. **Tests are never deleted or weakened** to make CI pass.
    - When a change is intended, the test is updated to assert the new
      behaviour.
    - A pixel baseline moves to a newer commit only for sections the PR
@@ -77,11 +84,11 @@ CI failed on `main` at `8250129` (#16's merge) in
 | 2 | Images blocked on `/explore` (`img-src` `data:`) | Leaflet 1.9.4 sets a removed or aborted tile's `src` to a `data:` GIF (`emptyImageUrl` in `_removeTile` / `_abortLoading`) to cancel its request. `/explore` pans and zooms more, so it shows. **Probably already happens on `main` when anyone pans**; no test pans with the CSP recorder on. | A small `TileLayer` subclass in `src/lib/leaflet.ts` overriding those two methods to blank tiles with `src=""` (no request, no CSP check). Leaflet's own `_tileReady` guard is unaffected. `browser-csp` gains a pan and two zooms while recording. | 0 |
 | 3 | Map filter chips squashed at 375 px | #12's `.te-container :where(.grid, .flex) > * { min-width: 0; }` let the chip buttons shrink below their text | That rule only on `.grid` children (where it was meant for long text), plus `shrink-0` on the chips. New test: at 375 px, no chip's label overflows (`scrollWidth <= clientWidth`) and chips don't overlap. | 2 and 3 |
 | 4 | WhatsApp button covers the slideshow's Next button | The new hero controls aren't marked `data-keep-clear` | Mark the controls group `data-keep-clear`, so the button fades over them as it does over the map. New `browser-whatsapp` case: on the phone home page, the Next, Previous and Pause buttons each take the tap. | 5 |
-| 5 | New "Travel Eye" strings | Hardcoded in titles, headings, `llms.txt`, labels, ids and storage keys | Visible text goes through `shared/brand.ts`: `/journal` is `pageTitle('Journal')` with an `<h1>` of "Journal" (no brand twice). Internal identifiers become brand-neutral (`.site` root class, `site:theme` storage key, `site-fonts` link id). `llms.txt` isn't brought back (question 3). New test (`brand-strings.test.ts`): the 27 lines in `src/` that say "Travel Eye" on `main` today are an explicit allow-list (`shared/brand.ts` is the source), so any new one fails. | 2 onward (the test in 0) |
-| 6 | Scroll-to-top button stacks with WhatsApp over card buttons | Two floating controls, only one with keep-clear rules | Not brought back (question 4). | n/a |
+| 5 | New "Travel Eye" strings | Hardcoded in titles, headings, `llms.txt`, labels, ids and storage keys | Visible text goes through `shared/brand.ts`: `/journal` is `pageTitle('Journal')` with an `<h1>` of "Journal" (no brand twice). Internal identifiers become brand-neutral (`.site` root class, `site:theme` storage key, `site-fonts` link id). `llms.txt` comes back built from `shared/brand.ts` (PR 6b). New test (`brand-strings.test.ts`): the 27 lines in `src/` that say "Travel Eye" on `main` today are an explicit allow-list (`shared/brand.ts` is the source), so any new one fails. | 2 onward (the test in 0) |
+| 6 | Scroll-to-top button stacks with WhatsApp over card buttons | Two floating controls, only one with keep-clear rules | Rebuilt in PR 2 on the same `data-keep-clear` rules as WhatsApp, with tests (see PR 2). | 2 |
 | 7 | WhatsApp over the `/plan` panel corner | The panel isn't keep-clear | The planner's option grid gets `data-keep-clear`, with a test like 4. | 4 |
 | 8 | Low contrast: hero controls, `/plan` hero subtitle, footer "Coming soon" links at 60 % | Thin white outlines and light text on photos | Measured, not eyeballed: a test computes WCAG contrast for those elements (against the darkest overlay pixel of the photo zone) and needs 4.5:1 for text and 3:1 for controls. Fixed with the existing overlay tokens. | 2, 4, 5 |
-| 9 | Dark theme only spot-checked | | Its own PR, with the contrast test over every page in both themes (question 2). | 7 |
+| 9 | Dark theme only spot-checked | | PR 7: the contrast test over every page type in both themes, plus screenshots of each. | 7 |
 
 ## The 22 tests #12 failed, one by one
 
@@ -167,6 +174,28 @@ rough.
 - `.te-container` scoped (problem 3).
 - The Navbar without `framer-motion`.
 - The Footer restyled on top of `main`'s newsletter and credits markup.
+- **Every colour is a theme token** (a CSS variable in `palette.css`):
+  - no hex or `rgb()` left in the components or styles this PR touches;
+  - the components PRs 3 to 6 restyle switch from hex to tokens as they
+    are restyled;
+  - a test fails on a hex colour in `src/components/` or `src/pages/`
+    outside an allow-list that shrinks with each PR and is empty by PR 6.
+
+  PR 7 then only adds dark values.
+- **The scroll-to-top button:**
+  - hidden until the visitor has scrolled down (more than one screen);
+  - never overlaps the WhatsApp button, the map's zoom buttons and Quick
+    Jump bar, the slideshow controls or the enquiry form's submit button.
+    It uses the same `data-keep-clear` mechanism as `WhatsAppButton`
+    (fades away rather than covering), and its own spot doesn't collide
+    with WhatsApp's;
+  - hidden while the enquiry or search modal is open;
+  - tests in a new `browser-scroll-top.test.ts`, phone and desktop:
+    - hidden at the top, shown after scrolling;
+    - never covering any of those controls through a scroll sweep (as
+      the WhatsApp test does);
+    - never intersecting the WhatsApp button;
+    - a click returns to the top and moves focus to the page's `<h1>`.
 - Re-baselined: Navbar only.
 - Screenshots: every page, since this changes the header and footer
   everywhere.
@@ -210,15 +239,56 @@ rough.
 - May split in two (pages; modals and forms) if the screenshots get too
   many to review.
 
-### PR 7: dark theme (question 2)
-- The theme toggle, `theme-init.ts` (CSP-safe module script) and the dark
-  palette.
-- The contrast test runs over every page in both themes.
+### PR 6b: `llms.txt`
+- `GET /llms.txt`, served by Express like `sitemap.xml`, and only when
+  `SITE_INDEXABLE=true` (otherwise a 404, as the sitemap is).
+- Generated per request from **published** rows only: destinations,
+  experiences, tours and articles (title, link, one-line description).
+  The fixed pages come from `paths` and `PAGE_TITLES`.
+- The site name comes from `shared/brand.ts`, and every link is absolute,
+  from `PUBLIC_SITE_URL` (or the request's origin, as for the sitemap).
+- Never `/admin`, `/api`, drafts, settings, enquiries or anything private.
+  Values go through the same escaping as the sitemap.
+- Tests in `pages.test.ts`: 404 when not indexable; published rows only (an
+  unpublished one is absent); absolute URLs from `PUBLIC_SITE_URL`; the
+  brand from `brand.ts`; no `/admin` or `/api`.
 
-### PR 8: admin restyle
+### PR 7: dark theme
+- **Tokens:** PR 2 made every colour a variable. This PR adds the dark
+  values under `:root[data-theme="dark"]`, and the light values stay the
+  defaults.
+- **Which theme:** the system preference (`prefers-color-scheme`) unless
+  the visitor has chosen, with a visible toggle in the Navbar (labelled
+  "Switch to dark/light theme"). The choice is kept per visitor in
+  `localStorage` (`site:theme`); a blocked `localStorage` falls back to the
+  system preference without errors. The toggle follows system changes
+  while there's no saved choice.
+- **No flash of the wrong theme, with no inline script:**
+  - `public/theme-init.js`, a tiny classic (render-blocking, not
+    `type="module"`, which is deferred) same-origin script, linked in
+    `<head>` **before** the stylesheet;
+  - it sets `data-theme` and `color-scheme` on `<html>` before first paint;
+  - `<meta name="color-scheme" content="light dark">` too.
+
+  `script-src 'self'` already allows it, and `'unsafe-inline'` is never
+  added. A test loads every page type with each saved choice and each
+  system setting, and checks `data-theme` is right at first paint
+  (`DOMContentLoaded`, before any React render).
+- **Contrast:** the contrast test (problem 8) runs on every page type in
+  both themes: 4.5:1 for text and 3:1 for controls and focus rings.
+- **The map:** CARTO's dark basemap (`dark_all`, same host
+  `basemaps.cartocdn.com`, same key) when dark, so the CSP is unchanged.
+  The existing warm tint is re-tuned for dark so markers and labels stay
+  readable, checked in screenshots and by the marker contrast test.
+  Switching theme swaps the tile layer without reloading the map.
+- **Screenshots:** every page type, light and dark, at 1280 px and 375 px.
+
+### PR 8: admin restyle (last)
 - #12's 14 `src/admin/` files, on top of `main`'s admin, which now includes
   the Photo credits page.
-- Screenshots of every admin page.
+- **Visual only:** no change to routes, requests, validation, permissions
+  or behaviour. Every existing admin test passes unchanged.
+- Screenshots of every admin page, light and dark.
 
 **Not brought back from #12:**
 
@@ -226,7 +296,7 @@ rough.
 - the ~30 audit Markdown files (about 9,000 lines);
 - the Python audit scripts;
 - `scripts/verify-live-content.ts`;
-- `public/llms.txt` (question 3).
+- #12's static `public/llms.txt`, replaced by PR 6b's generated one.
 
 ---
 
@@ -261,16 +331,8 @@ The `demo-baseline` line and the "public page must look identical to
 request review (1 approval)* and *Require status checks: `checks`* for
 `main`. The review found #11 self-merged and #12 merged red.
 
-## Questions
+## Decisions (9 October 2026)
 
-1. **The order of PRs 3 to 5.** The plan adds the new pages before taking
-   sections off home, so content is never missing; home briefly shows the
-   map on both pages. OK, or would you rather do home first?
-2. **The dark theme:** in (PR 7) or out? It doubles the screens to review
-   and test.
-3. **`llms.txt`:** leave it out (my recommendation: no clear benefit, and
-   it's another brand string), or serve it from the server using
-   `shared/brand.ts`?
-4. **The scroll-to-top button:** leave it out (my recommendation: browsers
-   and phones have their own, and it collides with WhatsApp), or bring it
-   back with the keep-clear rules?
+1. Order: the new pages first, then the home page trim.
+2. Dark theme: in, as PR 7, with the requirements above.
+3. Scroll-to-top in PR 2; `llms.txt` as PR 6b; admin restyle as PR 8.
