@@ -1,10 +1,8 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigationType } from 'react-router-dom';
 
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { InquiryModal } from '@/components/InquiryModal';
-import { SearchModal } from '@/components/SearchModal';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { SiteError, SiteLoading } from '@/components/SiteStatus';
 import { PublicSiteContext, type PageSubject, type PublicSiteApi } from '@/context/PublicSiteContext';
@@ -14,6 +12,18 @@ import { queryClient, queryKeys } from '@/lib/queryClient';
 import { focusPageHeading, goToSection } from '@/lib/routeFocus';
 import { whatsappMessage, whatsappUrl } from '@shared/whatsapp';
 import { Section } from './Section';
+
+/**
+ * The enquiry and search modals are their own chunks, out of every page's
+ * first load (`npm run bundle:report`). Each is
+ * mounted the first time it opens and stays mounted after, so its closing
+ * animation still plays; both chunks are fetched once the browser is idle
+ * after the first page, so opening one doesn't wait on the network.
+ */
+const loadInquiryModal = () => import('@/components/InquiryModal');
+const loadSearchModal = () => import('@/components/SearchModal');
+const InquiryModal = lazy(() => loadInquiryModal().then((m) => ({ default: m.InquiryModal })));
+const SearchModal = lazy(() => loadSearchModal().then((m) => ({ default: m.SearchModal })));
 
 /**
  * Every public page: the Navbar, the page, the Footer, and what floats over
@@ -32,14 +42,38 @@ export function PublicLayout() {
   const [inquirySubject, setInquirySubject] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [pageSubject, setPageSubject] = useState<PageSubject | null>(null);
+  /** Whether each modal has been opened yet: mounted from then on. */
+  const [inquiryMounted, setInquiryMounted] = useState(false);
+  const [searchMounted, setSearchMounted] = useState(false);
 
   const openInquiry = useCallback(
     (subject?: string) => {
       setInquirySubject(subject ?? pageSubject?.inquiry ?? 'General Sri Lanka Trip Inquiry');
+      setInquiryMounted(true);
       setInquiryOpen(true);
     },
     [pageSubject]
   );
+
+  const openSearch = useCallback(() => {
+    setSearchMounted(true);
+    setSearchOpen(true);
+  }, []);
+
+  // Fetch both modal chunks once the first page is up and the browser is idle.
+  useEffect(() => {
+    if (loading || error) return;
+    const prefetch = () => {
+      void loadInquiryModal().catch(() => undefined);
+      void loadSearchModal().catch(() => undefined);
+    };
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(prefetch, { timeout: 3000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = setTimeout(prefetch, 1500);
+    return () => clearTimeout(id);
+  }, [loading, error]);
 
   const number = content.siteSettings.whatsappNumber;
   const whatsappHref = number
@@ -49,12 +83,12 @@ export function PublicLayout() {
   const api = useMemo<PublicSiteApi>(
     () => ({
       openInquiry,
-      openSearch: () => setSearchOpen(true),
+      openSearch,
       whatsappHref,
       pageSubject,
       setPageSubject
     }),
-    [openInquiry, whatsappHref, pageSubject]
+    [openInquiry, openSearch, whatsappHref, pageSubject]
   );
 
   if (loading) return <SiteLoading />;
@@ -65,7 +99,7 @@ export function PublicLayout() {
       <div className="min-h-screen bg-[#FBF9F6] text-[#1A1A1A] font-sans selection:bg-[#1C4737] selection:text-[#F5EFEB]">
         <Section name="Navbar">
           <Navbar
-            onOpenSearch={() => setSearchOpen(true)}
+            onOpenSearch={openSearch}
             onOpenPlanner={() => openInquiry(pageSubject?.inquiry ?? 'Custom Travel Journey Request')}
           />
         </Section>
@@ -95,17 +129,25 @@ export function PublicLayout() {
           <Footer />
         </Section>
 
-        <Section name="InquiryModal">
-          <InquiryModal
-            isOpen={inquiryOpen}
-            onClose={() => setInquiryOpen(false)}
-            prefilledSubject={inquirySubject}
-          />
-        </Section>
+        {inquiryMounted && (
+          <Section name="InquiryModal">
+            <Suspense fallback={null}>
+              <InquiryModal
+                isOpen={inquiryOpen}
+                onClose={() => setInquiryOpen(false)}
+                prefilledSubject={inquirySubject}
+              />
+            </Suspense>
+          </Section>
+        )}
 
-        <Section name="SearchModal">
-          <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
-        </Section>
+        {searchMounted && (
+          <Section name="SearchModal">
+            <Suspense fallback={null}>
+              <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+            </Suspense>
+          </Section>
+        )}
 
         {/* WhatsApp chat: only once a number is set in Admin → Settings. */}
         {whatsappHref && (
