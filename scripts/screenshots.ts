@@ -388,6 +388,22 @@ async function main(): Promise<void> {
           await map.evaluate(`(() => { const box = document.querySelector('#explore-map .leaflet-container')?.closest('.grid'); if (box) window.scrollTo(0, box.getBoundingClientRect().top + scrollY - 100); return true; })()`);
           await map.evaluate(QUIET);
           await shoot(map, join(out, `state-map-${suffix}`), false);
+          // The map's first view (nothing picked), then the category chips scrolled under the header.
+          const first = await open(chrome, `${site.url}/explore`, viewport, dark);
+          await first.evaluate(`document.getElementById('explore-map')?.scrollIntoView({ block: 'start' }), true`);
+          await waitFor(first, `document.querySelector('#explore-map .leaflet-marker-icon')`, 10_000);
+          await first.evaluate(LOADED);
+          await first.evaluate(`(() => { const box = document.querySelector('#explore-map .leaflet-container')?.closest('.grid'); if (box) window.scrollTo(0, box.getBoundingClientRect().top + scrollY - 100); return true; })()`);
+          await first.evaluate(QUIET);
+          await shoot(first, join(out, `state-map-view-${suffix}`), false);
+          await first.evaluate(`(() => {
+            const header = document.querySelector('header')?.getBoundingClientRect();
+            const chip = document.querySelector('#explore-map [aria-pressed]')?.getBoundingClientRect();
+            if (header && chip) window.scrollTo(0, chip.top + scrollY - (header.height - chip.height) / 2);
+            return true;
+          })()`);
+          await first.evaluate(QUIET);
+          await shoot(first, join(out, `state-header-${suffix}`), false);
           const tour = await open(chrome, `${site.url}/tours/island-in-7-days`, viewport, dark);
           await tour.evaluate(`[...document.querySelectorAll('main button')].find((b) => /enquire|inquire/i.test(b.textContent))?.click(), true`);
           await waitFor(tour, `document.querySelector('[role=dialog] form, .fixed.inset-0 form')`, 5_000);

@@ -60,6 +60,10 @@ Update the Status column when a phase lands.
     `--subtle`, `--round`, `--3d` (edge light and the same-origin grain
     `/images/glass-noise.svg`) and `--card`. It's solid where
     `backdrop-filter` is missing or reduced transparency is on.
+  - Write `-webkit-backdrop-filter` (and any `-webkit-` twin) *before* the
+    standard property. The build (Lightning CSS) keeps only the last of the
+    pair, and Chrome and Firefox ignore the prefixed one: in the other order
+    no glass blurred outside Safari. `browser-glass` checks it.
   - Buttons are `.te-button` with `--primary`, `--secondary`, `--outline` or
     `--icon`, and take their colours from where they sit (`index.css`):
     emerald on the page, pearl on photos and dark sections, lagoon in the
@@ -136,6 +140,11 @@ Update the Status column when a phase lands.
   - Each page is a lazy chunk. Map code is only in the Explore and tour
     pages' chunks, and Leaflet (JS and its unpkg stylesheet) loads through
     `loadLeaflet()` (`src/lib/leaflet.ts`) when a map is about to render.
+  - The Explore map frames the whole island first, and each filter's
+    markers after, padded clear of every overlay (measured: the Map Guide,
+    Quick Jump, the zoom buttons, the credit); a resize refits until the
+    visitor moves the map. Markers that would overlap are nudged apart at
+    each zoom. `browser-map-framing` checks it at three sizes, both themes.
     `npm run bundle:report` prints what each page type loads.
   - Navigations run in a transition: the URL changes a moment before the
     page. `<body data-route>` names the page actually on screen; tests wait
