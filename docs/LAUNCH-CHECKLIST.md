@@ -114,7 +114,10 @@ off in a pull request, so the history shows when each was done.
       - in the CARTO dashboard, **restrict the key to the site's domains and
         add the real domain at launch**; it currently serves requests with
         no referrer at all, so anyone could use it;
-      - confirm the CARTO plan covers commercial use.
+      - confirm the CARTO plan covers commercial use;
+      - on the live `/explore`, check the map shows streets, not "API key
+        required" tiles. Vite inlines `VITE_CARTO_KEY` when the client is
+        built, so it must be set before the build that's deployed.
 
       **Blocks:** commercial go-live. **Who:** Owner (CARTO account).
 - [ ] **16. Image audit before each CSP change.** `npm run images:audit`
