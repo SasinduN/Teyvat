@@ -39,7 +39,7 @@ const NavItem: React.FC<{
       cn(
         'flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold transition-colors',
         isActive
-          ? 'bg-[var(--accent)] text-[var(--brand-primary)]'
+          ? 'bg-[var(--accent)] text-[var(--on-accent)]'
           : 'text-[var(--sand)]/75 hover:bg-white/10 hover:text-white'
       )
     }
@@ -48,7 +48,7 @@ const NavItem: React.FC<{
     <span className="truncate">{label}</span>
     {badge ? (
       <span
-        className="ml-auto rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-bold text-[var(--brand-primary)]"
+        className="ml-auto rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-bold text-[var(--on-accent)]"
         aria-label={`${badge} new`}
       >
         {badge}
