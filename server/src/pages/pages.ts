@@ -1,5 +1,5 @@
 /**
- * The public site's HTML, robots.txt and sitemap.xml (phase 8b).
+ * The public site's HTML, robots.txt, sitemap.xml (phase 8b) and llms.txt.
  *
  * Every page is the same `index.html` shell (the client renders the page),
  * but Express gives each its own status and `<head>`: a destination, tour,
@@ -14,6 +14,7 @@
  */
 import { Router, type Request, type Response } from 'express';
 
+import { BRAND_NAME, BRAND_TAGLINE } from '../../../shared/brand';
 import { HOME_DESCRIPTION, HOME_TITLE, PAGE_DESCRIPTIONS, PAGE_TITLES, pageTitle } from '../../../shared/page-meta';
 import { paths } from '../../../shared/site-paths';
 import { SLUG_PATTERN } from '../../../shared/content-schema';
@@ -211,8 +212,62 @@ async function sitemapXml(origin: string): Promise<string> {
   return ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">', ...urls, '</urlset>', ''].join('\n');
 }
 
+/** A page's name: its title without the " | <brand>" suffix. */
+const pageName = (title: string): string => {
+  const suffix = ` | ${BRAND_NAME}`;
+  return title.endsWith(suffix) ? title.slice(0, -suffix.length) : title;
+};
+
 /**
- * `robots.txt`, `sitemap.xml`, and every other GET that reaches it (after the
+ * Text from a row, made safe for one Markdown list item: one line, and the
+ * characters that would start a link, emphasis, code or HTML escaped. (The
+ * sitemap escapes for XML; this file is Markdown, so it escapes for that.)
+ */
+export function markdownText(value: string): string {
+  return value.replace(/\s+/g, ' ').trim().replace(/[\\`*_[\]()<>#!|]/g, '\\$&');
+}
+
+/**
+ * `llms.txt` (llmstxt.org): what the site is, for language models, in
+ * Markdown. The fixed pages, then every **published** destination,
+ * experience, tour and article, each a link with its one-line description.
+ * Built per request from the rows, so it's never stale; never the admin,
+ * the API, drafts, settings or enquiries.
+ */
+export async function llmsTxt(origin: string): Promise<string> {
+  const item = (name: string, path: string, description: string | null) =>
+    `- [${markdownText(name)}](${origin}${path})${description ? `: ${markdownText(description)}` : ''}`;
+  const fixed = [
+    item('Home', paths.home, HOME_DESCRIPTION),
+    item(pageName(PAGE_TITLES.explore), paths.explore, PAGE_DESCRIPTIONS.explore),
+    item(pageName(PAGE_TITLES.destinations), paths.destinations, PAGE_DESCRIPTIONS.destinations),
+    item(pageName(PAGE_TITLES.experiences), paths.experiences, PAGE_DESCRIPTIONS.experiences),
+    item(pageName(PAGE_TITLES.tours), paths.tours, PAGE_DESCRIPTIONS.tours),
+    item(pageName(PAGE_TITLES.plan), paths.plan, PAGE_DESCRIPTIONS.plan),
+    item(pageName(PAGE_TITLES.journal), paths.journal, PAGE_DESCRIPTIONS.journal),
+    item(pageName(PAGE_TITLES.about), paths.about, PAGE_DESCRIPTIONS.about),
+    item(pageName(PAGE_TITLES.photoCredits), paths.photoCredits, PAGE_DESCRIPTIONS.photoCredits)
+  ];
+  // Table and column names are constants, never from a request.
+  const sections = [
+    { heading: 'Destinations', sql: 'select id, name as title, short_description as description from public.destinations', path: paths.destination },
+    { heading: 'Experiences', sql: 'select id, title, description from public.featured_experiences', path: paths.experience },
+    { heading: 'Tours', sql: 'select id, title, short_desc as description from public.tours', path: paths.tour },
+    { heading: 'Journal', sql: 'select id, title, snippet as description from public.articles', path: paths.article }
+  ] as const;
+  const lines = [`# ${BRAND_NAME}`, '', `> ${BRAND_TAGLINE}. ${HOME_DESCRIPTION}`, '', '## Pages', '', ...fixed];
+  for (const section of sections) {
+    const { rows } = await pool.query<{ id: string; title: string; description: string | null }>(
+      `${section.sql} where published order by sort_order asc, id asc`
+    );
+    if (rows.length === 0) continue;
+    lines.push('', `## ${section.heading}`, '', ...rows.map((row) => item(row.title, section.path(row.id), row.description)));
+  }
+  return [...lines, ''].join('\n');
+}
+
+/**
+ * `robots.txt`, `sitemap.xml`, `llms.txt`, and every other GET that reaches it (after the
  * API and the static files): the page shell with that page's status and head.
  */
 export function pagesRouter(options: { template: string; site: SiteConfig }): Router {
@@ -230,6 +285,19 @@ export function pagesRouter(options: { template: string; site: SiteConfig }): Ro
     }
     try {
       res.set('Cache-Control', 'no-cache').type('application/xml').send(await sitemapXml(originOf(req, site)));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Like the sitemap: only once the site is open to search engines.
+  router.get('/llms.txt', async (req, res, next) => {
+    if (!site.indexable) {
+      res.status(404).set('Cache-Control', 'no-cache').type('text/plain').send('Not found\n');
+      return;
+    }
+    try {
+      res.set('Cache-Control', 'no-cache').type('text/markdown').send(await llmsTxt(originOf(req, site)));
     } catch (error) {
       next(error);
     }

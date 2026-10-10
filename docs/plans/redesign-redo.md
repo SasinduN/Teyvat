@@ -329,7 +329,10 @@ Parts 1 and 2 below in one PR, with these specifics:
 - The site name comes from `shared/brand.ts`, and every link is absolute,
   from `PUBLIC_SITE_URL` (or the request's origin, as for the sitemap).
 - Never `/admin`, `/api`, drafts, settings, enquiries or anything private.
-  Values go through the same escaping as the sitemap.
+  Values go through the same escaping as the sitemap. **As built:** the
+  file is Markdown, so row text is escaped for Markdown (`markdownText`:
+  one line, link and emphasis characters backslashed) rather than with the
+  sitemap's XML escaping, which would print `&amp;` in plain text.
 - Tests in `pages.test.ts`: 404 when not indexable; published rows only (an
   unpublished one is absent); absolute URLs from `PUBLIC_SITE_URL`; the
   brand from `brand.ts`; no `/admin` or `/api`.

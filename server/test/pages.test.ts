@@ -11,7 +11,7 @@ import './test-db';
  *     escaped for their context, with absolute URLs from PUBLIC_SITE_URL and
  *     an absolute https share image;
  *   - nothing cached: an edit shows in the next response;
- *   - SITE_INDEXABLE: robots.txt, noindex and the sitemap, both ways.
+ *   - SITE_INDEXABLE: robots.txt, noindex, the sitemap and llms.txt, both ways.
  *
  * Needs `npm run build` (the page shell); skipped with a message otherwise.
  */
@@ -26,7 +26,8 @@ import { createApp } from '../src/app';
 import type { SiteConfig } from '../src/env';
 import { pool } from '../src/db';
 import { injectHead, renderHead, shareImage, summarise, type PageMeta } from '../src/pages/head';
-import { robotsTxt } from '../src/pages/pages';
+import { BRAND_NAME } from '../../shared/brand';
+import { markdownText, robotsTxt } from '../src/pages/pages';
 import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
 
@@ -395,5 +396,47 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     assert.ok(!locs.includes(`${SITE}/destinations/galle`), 'not the unpublished one');
     assert.ok(!locs.some((l) => l.includes('?')), 'no filtered lists');
     assert.match(xml, new RegExp(`<url><loc>${SITE}/destinations/ella</loc><lastmod>\\d{4}-\\d{2}-\\d{2}</lastmod></url>`));
+  });
+
+  test('llms.txt: a 404 until the site is indexable', async () => {
+    const res = await get(closed, '/llms.txt');
+    assert.equal(res.status, 404);
+    assert.equal(res.headers.get('cache-control'), 'no-cache');
+  });
+
+  test('llms.txt: the brand, the fixed pages and every published row, as absolute links', async () => {
+    await pool.query(`update public.destinations set published = false where id = 'galle'`);
+    await pool.query(`update public.tours set title = 'Island [in] 7 *Days*' where id = 'island-in-7-days'`);
+    const res = await get(open, '/llms.txt');
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get('content-type') ?? '', /text\/markdown/);
+    assert.equal(res.headers.get('cache-control'), 'no-cache');
+    const text = await res.text();
+
+    assert.ok(text.startsWith(`# ${BRAND_NAME}\n\n> `), 'the brand from shared/brand.ts, then the summary');
+    for (const heading of ['## Pages', '## Destinations', '## Experiences', '## Tours', '## Journal']) {
+      assert.ok(text.includes(`\n${heading}\n`), heading);
+    }
+
+    const links = [...text.matchAll(/\]\(([^)\s]+)\)/g)].map((m) => m[1]);
+    for (const link of links) assert.ok(link.startsWith(`${SITE}/`), link);
+    for (const path of ['/', '/explore', '/destinations', '/experiences', '/tours', '/plan', '/journal', '/about', '/photo-credits']) {
+      assert.ok(links.includes(`${SITE}${path}`), path);
+    }
+    const count = async (table: string) =>
+      (await pool.query(`select count(*)::int as n from public.${table} where published`)).rows[0].n as number;
+    const rows = (await count('destinations')) + (await count('featured_experiences')) + (await count('tours')) + (await count('articles'));
+    assert.equal(links.length, 9 + rows, 'the fixed pages plus every published row');
+    assert.ok(links.includes(`${SITE}/destinations/ella`));
+    assert.ok(!links.includes(`${SITE}/destinations/galle`), 'not the unpublished one');
+    assert.ok(!links.some((l) => /\/admin|\/api\/|\/unsubscribe/.test(l)), 'never the admin, the API or the unsubscribe page');
+
+    // A row's text can't break out of its list item.
+    assert.ok(text.includes(`- [Island \\[in\\] 7 \\*Days\\*](${SITE}/tours/island-in-7-days)`), 'escaped');
+  });
+
+  test('markdownText: one line, Markdown syntax escaped', () => {
+    assert.equal(markdownText('  Ella &\n Kandy  '), 'Ella & Kandy');
+    assert.equal(markdownText('[a](b) *c* _d_ `e` <f> #g !h |i| \\j'), '\\[a\\]\\(b\\) \\*c\\* \\_d\\_ \\`e\\` \\<f\\> \\#g \\!h \\|i\\| \\\\j');
   });
 });
