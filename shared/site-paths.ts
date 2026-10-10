@@ -44,6 +44,21 @@ export const UNSUBSCRIBE_TOKEN_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[
 export const newsletterUnsubscribeUrl = (origin: string, token: string): string =>
   `${origin}${paths.unsubscribe}?token=${encodeURIComponent(token)}`;
 
+/**
+ * The home page's old sections, each now on a page of its own (redesign
+ * PR 4): a saved `/#planner` still lands on the planner. Hashes never reach
+ * the server, so `HomeRoute` (src/App.tsx) redirects these in the browser.
+ */
+export const LEGACY_HOME_SECTIONS: Readonly<Record<string, string>> = {
+  'explore-map': `${paths.explore}#explore-map`,
+  'hidden-gems': paths.explore,
+  planner: paths.plan,
+  journal: paths.journal,
+  tours: paths.tours,
+  experiences: paths.experiences,
+  about: paths.about
+};
+
 /** The site's navigation, in order: the Navbar (desktop and mobile) and the Footer. */
 export const NAV_LINKS: ReadonlyArray<{ label: string; to: string }> = [
   { label: 'Home', to: paths.home },

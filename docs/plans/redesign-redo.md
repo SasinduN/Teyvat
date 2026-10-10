@@ -21,14 +21,28 @@ PRs 0 and 1 are merged (#17, #19). From PR 2, fewer and larger PRs:
 
 | PR | Scope | Was |
 |---|---|---|
-| 2 | Global styles, colour tokens (#12's palette), the shared glass style, Navbar, Footer, scroll-to-top | PR 2 |
-| 3 | `/explore`, `/plan`, `/journal` | PRs 3 and 4 |
-| 4 | Home and all the other pages, cards and modals | PRs 5 and 6 |
-| 5 | Dark theme | PR 7 |
-| 6 | Admin restyle | PR 8 |
+| 2 | Global styles, colour tokens (#12's palette), the shared glass style, Navbar, Footer, scroll-to-top | PR 2 (#22, merged) |
+| 3 | `/explore`, `/plan`, `/journal` | PRs 3 and 4 (#23, merged) |
+| 4 | All the remaining public UI from #12: home, the list and detail pages (destinations, experiences, tours), About and contact, the 404, Photo Credits, every card and modal; plus the heading fix (below) | PRs 5 and 6 |
+| 5 | Dark theme **and** the admin restyle (visual only), started once PR 4 is merged | PRs 7 and 8 |
 | any time | `llms.txt`, its own small PR | PR 6b |
 
-The sections below use the new numbers.
+The sections below use the new numbers; "PR 6" (the admin restyle) is now
+part of PR 5.
+
+**Decided on #23 (10 October 2026):**
+
+- `/explore` loads Leaflet with the page: its map is below the fold but
+  within `LAZY_MARGIN`. Accepted. The home page stays free of map code.
+- The `/destinations?mapTour=` 301 is dropped: that URL only existed in
+  #12, which never deployed.
+- One `<h1>` per page, and no other heading repeating it: `/explore`'s map
+  section is "Find Your Place on the Map". PR 4 adds a test over every
+  page type.
+- From PR 4, a PR description lists at most 10 screenshot pairs to
+  attach. The next PR may be built on a branch off the one in review, and
+  is pushed once that one is merged and the branch is rebased onto
+  `main`.
 
 **Pace:** a redesign PR is pushed and opened as soon as typecheck, tests
 and build pass locally. Its description lists the pages that changed and the
@@ -259,6 +273,33 @@ rough.
 - Titles from `pageTitle()` (problem 5). Planner keep-clear (problem 7).
 - Bundle report: Plan and Journal rows.
 
+### PR 4 as built (10 October 2026)
+
+Parts 1 and 2 below in one PR, with these specifics:
+
+- **Kept from `main`:** photos from the rows (no `TravelImage`), so
+  `IntroSection` keeps its Unsplash photos and articles their authors'
+  photos (#12's initials and Wikimedia photos aren't brought back). The
+  modals keep their behaviour: #12's labels and look, not its focus-trap
+  hook (`useModalFocus`, used by the Navbar's menu), which would be its own
+  change. `CTASection` goes: nothing uses it once home is trimmed.
+- **The hero's "Explore Sri Lanka"** goes to `/explore` (main's went to
+  the map; #12's to `/destinations`), "Plan Your Journey" to `/plan`.
+- **Problem 8, measured:** `browser-hero-contrast` replaces each header's
+  photo with white (the worst case), captures the background with the text
+  hidden, and measures every text, and the icons of icon-only controls,
+  against the pixels behind them: 4.5:1, 3:1 for large text and icons.
+  #12's overlays failed it (2.0 to 4.3); the overlays are darker under the
+  text, and small gold text on photos is a paler gold (`--accent-on-photo`).
+- **A bug found on the way:** `preventScrollReset` only works with the
+  data router, so clearing a route on `/explore` and picking a category on
+  `/destinations` jumped to the top and moved focus. `KEEP_SCROLL`
+  (`src/lib/ScrollRestorer.tsx`) fixes both, with tests.
+- **Tests that used the home page's map and sections** now use `/explore`,
+  `/tours` and `/journal`, assertions kept. `browser-map` test 1 keeps
+  "nothing of the map at page load" on the home page; on `/explore` it
+  checks Leaflet isn't preloaded and arrives after the page's own chunk.
+
 ### PR 4 (part 1): the home page
 - The new hero, with slide controls marked `data-keep-clear` and their
   contrast fixed (problems 4 and 8).
@@ -293,7 +334,7 @@ rough.
   unpublished one is absent); absolute URLs from `PUBLIC_SITE_URL`; the
   brand from `brand.ts`; no `/admin` or `/api`.
 
-### PR 5: dark theme
+### PR 5: dark theme (and the admin restyle, below)
 - **Tokens:** PR 2 made every colour a variable. This PR adds the dark
   values under `:root[data-theme="dark"]`, and the light values stay the
   defaults.
@@ -323,7 +364,7 @@ rough.
   Switching theme swaps the tile layer without reloading the map.
 - **Screenshots:** every page type, light and dark, at 1280 px and 375 px.
 
-### PR 6: admin restyle (last)
+### PR 5 (continued): admin restyle
 - #12's 14 `src/admin/` files, on top of `main`'s admin, which now includes
   the Photo credits page.
 - **Visual only:** no change to routes, requests, validation, permissions

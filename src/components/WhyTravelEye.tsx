@@ -54,15 +54,15 @@ export const WhyTravelEye: React.FC = () => {
   const pillars = usePillars();
 
   return (
-    <section className="py-24 bg-[#FBF9F6] relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-24 bg-[var(--background)] relative overflow-hidden">
+      <div className="te-container">
         
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs uppercase tracking-[0.2em] font-bold text-[#1C4737] bg-[#1C4737]/10 px-4 py-1.5 rounded-full inline-block mb-3">
+        <div className="te-section-header te-section-header--stack">
+          <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--brand-primary)] bg-[var(--brand-secondary)]/10 px-4 py-1.5 rounded-full inline-block mb-3">
             The Travel Eye Difference
           </span>
-          <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[#0F2E23] tracking-tight">
+          <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[var(--brand-primary)] tracking-tight">
             Travel With A Clearer View.
           </h2>
         </div>
@@ -80,17 +80,17 @@ export const WhyTravelEye: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-50px' }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4C3B5]/40 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
+                className="bg-[var(--surface)] p-8 rounded-3xl shadow-sm border border-[var(--border-strong)]/40 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
               >
-                <div className="w-14 h-14 rounded-2xl bg-[#0F2E23] text-[#D4AF37] flex items-center justify-center mb-6 group-hover:bg-[#1C4737] transition-colors shadow-md">
+                <div className="w-14 h-14 rounded-2xl bg-[var(--inverse-surface)] text-[var(--accent-text)] flex items-center justify-center mb-6 group-hover:bg-[var(--brand-secondary)] transition-colors shadow-md">
                   <IconComponent className="w-7 h-7" />
                 </div>
 
-                <h3 className="font-heading text-xl font-bold text-[#0F2E23] mb-3 group-hover:text-[#1C4737] transition-colors">
+                <h3 className="font-heading text-xl font-bold text-[var(--brand-primary)] mb-3 group-hover:text-[var(--brand-primary)] transition-colors">
                   {p.title}
                 </h3>
 
-                <p className="text-xs text-[#1A1A1A]/80 font-light leading-relaxed">
+                <p className="text-xs text-[var(--text-primary)]/80 font-light leading-relaxed">
                   {p.desc}
                 </p>
               </motion.div>

@@ -7,11 +7,12 @@ import './test-db';
  *
  *   - with no number set there is no button and no wa.me link at all;
  *   - the link's message follows the page the visitor is on: a
- *     destination, tour or experience page, a tour route while the home
+ *     destination, tour or experience page, a tour route while the Explore
  *     map is on screen, or nothing in particular;
  *   - the old `?destination=` and `?tour=` links land on the pages;
  *   - on a phone it never covers the map's zoom buttons or Quick Jump bar,
- *     the pages' main buttons, or an enquiry form's submit button;
+ *     the home page's slide controls, the pages' main buttons, or an
+ *     enquiry form's submit button;
  *   - admin Settings shows "Test in WhatsApp" only once a number is saved.
  *
  * Needs `npm run build` and Chrome; skipped with a message otherwise.
@@ -277,9 +278,9 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
       'noopener noreferrer'
     );
 
-    // A spotlight card goes to the destination's page.
+    // A home destination card goes to the destination's page.
     const name = await page.evaluate<string>(`(() => {
-      const card = document.querySelector('#destinations a[href^="/destinations/"]');
+      const card = document.querySelector('#discover a[href^="/destinations/"]');
       card.click();
       return card.querySelector('img').alt;
     })()`);
@@ -299,9 +300,11 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     await waitFor(page, `document.body.dataset.route === '/experiences/safari-yala'`, 'the experience page');
     await expectHref(page, expected({ kind: 'experience', id: 'safari-yala', title: 'Safari in Yala' }), 'an experience page');
 
-    // Home again: a route on the map counts while the map is on screen.
     await follow(page, 'nav', 'Home', '/');
     await expectHref(page, expected({ kind: 'general' }), 'home again');
+
+    // A route on the Explore map (from /tours, redesign PR 3) counts while the map is on screen.
+    await follow(page, 'nav', 'Tours', '/tours');
     await page.evaluate(`(() => {
       const card = [...document.querySelectorAll('#tours h3')].find((h) => h.textContent.trim() === 'Wild Sri Lanka Expedition').closest('.group');
       [...card.querySelectorAll('button')].find((b) => b.textContent.trim() === 'View route on map').click();
@@ -328,7 +331,8 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
   });
 
   test('phone: never over the map zoom buttons or Quick Jump bar, shown again once clear', async () => {
-    const page = await openPage({ mobile: true });
+    // The map is on /explore since redesign PR 4 trimmed the home page.
+    const page = await openPage({ mobile: true, path: '/explore' });
     await page.evaluate(`document.querySelector('#explore-map').scrollIntoView(), true`);
     await waitFor(page, `document.querySelector('#explore-map .leaflet-control-zoom')`, 'the zoom buttons');
     await page.evaluate(RECORD);
@@ -359,12 +363,26 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     assert.equal(await coveredBy(page, '#explore-map .leaflet-control-zoom-out'), null, 'zoom out takes the tap');
 
     // Away from the map, it's back.
-    await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
+    await page.evaluate(`window.scrollTo(0, 0), true`);
     await expectShown(page, true, 'back once clear of the map');
   });
 
-  test('phone: hidden while the enquiry form is open, so the submit button is clear', async () => {
+  test("phone: the home page's slide controls each take the tap", async () => {
+    // Problem 4 of docs/plans/redesign-redo.md: #12's WhatsApp button covered "Next".
     const page = await openPage({ mobile: true });
+    await waitFor(page, `document.querySelectorAll('[aria-label="Featured destinations"] button').length === 3`, 'the slide controls');
+    await page.evaluate(RECORD);
+    for (const label of ['Previous featured destination', 'Pause slideshow', 'Next featured destination']) {
+      assert.equal(await coveredBy(page, `[aria-label="${label}"]`), null, `${label} takes the tap`);
+    }
+    // They're near the bottom right, where the button sits: it steps aside, and comes back below the hero.
+    await explainOnFailure(page, () => expectShown(page, false, 'steps aside from the slide controls'));
+    await page.evaluate(`document.querySelector('#discover').scrollIntoView(), true`);
+    await expectShown(page, true, 'back below the hero');
+  });
+
+  test('phone: hidden while the enquiry form is open, so the submit button is clear', async () => {
+    const page = await openPage({ mobile: true, path: '/tours' });
     await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
     await expectShown(page, true, 'precondition: shown');
 

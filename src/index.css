@@ -92,6 +92,18 @@
   .te-button--icon { width: 44px; height: 44px; padding: 0; flex: none; }
   .te-button--ghost-inverse { background: transparent; color: var(--on-inverse); }
   .te-button--ghost-inverse:hover { background: rgb(var(--pearl-channels) / .12); }
+  .te-button--lg { min-height: 56px; padding: 1rem 2rem; font-size: 1rem; }
+  /* Secondary, outline, icon and text-link buttons take their colours from the context (below). */
+  .te-button--secondary { background: var(--button-secondary-bg); color: var(--button-secondary-text); border-color: var(--button-edge); }
+  .te-button--outline { background: transparent; color: var(--button-outline-text); border-color: var(--button-edge); }
+  .te-button--icon:not(.glass):not(.te-button--ghost-inverse) { background: var(--button-secondary-bg); color: var(--button-secondary-text); border-color: var(--button-edge); }
+  .te-button--secondary:hover, .te-button--outline:hover, .te-button--icon:not(.glass):not(.te-button--ghost-inverse):hover {
+    background: var(--button-secondary-hover);
+    border-color: var(--button-hover-edge);
+  }
+  .te-button--text-link { background: transparent; color: var(--button-outline-text); padding-inline: .25rem; text-underline-offset: .3rem; }
+  .te-button--text-link:hover { text-decoration: underline; }
+  .te-button > svg { flex-shrink: 0; }
   @media (hover: hover) and (pointer: fine) {
     .te-button--primary:hover { transform: translateY(-1px); }
   }
@@ -102,6 +114,77 @@
   @media (forced-colors: active) {
     .te-button { border-color: ButtonText; }
   }
+
+  /*
+   * On photos and dark surfaces: light text and edges for the secondary
+   * buttons, and the light gold for `--accent-text`.
+   */
+  :where(.te-hero, .te-page-hero, footer, .glass--inverse, [class*="bg-[var(--inverse-surface)]"], [class*="bg-[var(--inverse-deep)]"]) {
+    --accent-text: var(--inverse-accent);
+    --button-secondary-bg: rgb(var(--photo-channels) / .55);
+    --button-secondary-hover: rgb(var(--photo-channels) / .7);
+    --button-secondary-text: var(--on-inverse);
+    --button-outline-text: var(--on-inverse);
+    --button-edge: rgb(var(--pearl-channels) / .48);
+    --button-hover-edge: rgb(var(--pearl-channels) / .75);
+  }
+
+  /* Cards: a soft shadow, and a small lift on hover with a pointer. */
+  .te-card { box-shadow: var(--shadow-card); transition: transform 250ms var(--ease-premium), box-shadow 250ms ease, border-color 250ms ease; }
+  .te-card:focus-within { box-shadow: var(--shadow-card-hover); }
+  @media (hover: hover) and (pointer: fine) {
+    .te-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-card-hover); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .te-card, .te-card img { transition: none; }
+    .te-card:hover { transform: none; }
+  }
+
+  /* Section headings: the badge and title on the left, the intro beside them from 768 px. */
+  .te-section-header { display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: var(--heading-space); text-align: left; }
+  .te-section-header--stack { display: block; max-width: var(--content-reading-width); }
+  .te-section-header--stack p { margin-inline: 0; }
+  @media (min-width: 768px) {
+    .te-section-header:not(.te-section-header--stack) { flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 2rem; }
+  }
+  .te-eyebrow { display: inline-block; margin-bottom: .9rem; font-size: .7rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--accent-text); }
+  .te-reading-column { max-width: var(--content-reading-width); min-width: 0; }
+
+  /* A row of calls to action: full width on phones. */
+  .te-cta-group { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: flex-start; gap: 1rem; }
+  .te-cta-group > :where(a, button) { min-height: 3.25rem; }
+  @media (max-width: 639px) {
+    .te-cta-group > :where(a, button) { width: 100%; }
+  }
+
+  /* The home page: four places to begin, then planning. */
+  .te-home-discover { padding-block: clamp(3.5rem, 7vw, 6rem); }
+  .te-home-discover .te-card { height: 24rem; }
+  @media (max-width: 767px) {
+    .te-home-discover .te-card { height: 23rem; }
+  }
+  .te-home-plan { background: linear-gradient(140deg, var(--background-secondary), var(--background)); padding-block: clamp(3.5rem, 7vw, 6rem); }
+  .te-home-plan h2 { font-size: clamp(1.9rem, 3.6vw, 3.1rem); line-height: 1.16; font-weight: 700; }
+  .te-home-plan-panel { display: flex; align-items: center; justify-content: space-between; gap: 2rem; padding: clamp(1.25rem, 3vw, 3rem); }
+  .te-home-plan-panel .te-reading-column { max-width: 38rem; }
+  .te-home-plan-panel .te-cta-group { flex-shrink: 0; max-width: 21rem; }
+  @media (max-width: 1023px) {
+    .te-home-plan-panel { flex-direction: column; align-items: flex-start; }
+    .te-home-plan-panel .te-cta-group { max-width: none; }
+  }
+
+  /* A destination card's caption: dark glass inset from the photo's edges. */
+  .te-destination-caption { margin: .75rem; padding: 1.1rem; }
+
+  /* A tour card's two badges, side by side and wrapping on narrow cards. */
+  .te-tour-badges { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; position: absolute; top: 1rem; left: 1rem; right: 1rem; }
+  .te-tour-badges > div { position: static; }
+  @media (max-width: 639px) {
+    .te-route-heading { flex-wrap: wrap; }
+  }
+
+  /* The enquiry and search modals: scroll inside the panel on short screens. */
+  .te-modal-panel { max-height: calc(100dvh - 2rem); overflow-y: auto; overscroll-behavior: contain; }
 
   /*
    * The header. At the top of a page it sits on the page's photo, over a dark
@@ -181,6 +264,85 @@
     .te-scroll-top { transition: none; }
   }
 }
+
+/*
+ * The home hero and the page headers. Unlayered, as in #12, so their type
+ * scale and spacing win over the Tailwind sizes in the markup. Text sits
+ * directly on the photo, over a dark gradient; only the slide controls are
+ * glass.
+ */
+.te-hero {
+  min-height: 100vh;
+  min-height: 100dvh;
+  isolation: isolate;
+  padding-block: calc(var(--header-height) + 2.5rem) 8rem;
+}
+.te-hero-slide { position: absolute; inset: 0; opacity: 0; transform: scale(1.025); pointer-events: none; transition: opacity 700ms ease, transform 7s ease; }
+.te-hero-slide[data-active="true"] { opacity: 1; transform: scale(1); }
+.te-hero-overlay { background: linear-gradient(180deg, rgb(var(--photo-channels) / .48), transparent 26%), var(--home-hero-overlay); pointer-events: none; }
+@media (max-width: 767px) {
+  .te-hero-overlay { background: var(--home-hero-overlay-narrow); }
+}
+.te-hero-content { text-align: left; }
+/* Text straight on the photo: the paler gold (server/test/browser-hero-contrast.test.ts). */
+:is(.te-hero-copy, .te-hero-caption, .te-page-hero-copy) { --accent-text: var(--accent-on-photo); }
+.te-hero-copy { max-width: 52rem; min-width: 0; }
+.te-hero-badge { max-width: 100%; gap: .5rem; line-height: 1.6; font-size: clamp(.6rem, 1vw, .75rem); letter-spacing: .12em; }
+.te-hero-badge > :first-child { flex-shrink: 0; }
+.te-hero-title, .te-page-title { text-wrap: balance; }
+.te-hero-title {
+  max-width: var(--hero-content-max);
+  font-size: clamp(2.65rem, 6.4vw, 5.8rem);
+  line-height: 1.08;
+  letter-spacing: -.035em;
+  color: var(--on-inverse);
+  text-shadow: 0 2px 16px rgb(var(--photo-channels) / .35);
+}
+.te-hero-emphasis { color: var(--inverse-accent); }
+.te-hero-copy .te-hero-subtitle { max-width: 34rem; margin-bottom: 2rem; font-size: clamp(1rem, 1.7vw, 1.3rem); text-shadow: 0 1px 8px rgb(var(--photo-channels) / .5); }
+.te-hero-caption { display: inline-flex; max-width: min(100%, 45rem); white-space: normal; text-shadow: 0 1px 5px rgb(var(--photo-channels) / .5); }
+.te-hero-controls { position: absolute; bottom: 2rem; right: max(1rem, calc((100vw - var(--container-max)) / 2)); z-index: 25; display: flex; gap: .5rem; }
+.te-hero-controls button { display: grid; place-items: center; }
+@media (max-width: 639px) {
+  .te-hero-controls { bottom: 1.25rem; }
+  .te-hero-caption { margin-top: 1.5rem; max-width: calc(100% - 3rem); font-size: .65rem; }
+  .te-hero-copy .te-hero-title { font-size: clamp(2.25rem, 10vw, 3.7rem); }
+}
+@media (max-height: 700px) {
+  .te-hero { padding-block: calc(var(--header-height) + 1.5rem) 6rem; }
+  .te-hero-title { font-size: clamp(2.25rem, 5vw, 4rem); margin-bottom: 1rem; }
+  .te-hero-badge { margin-bottom: 1rem; }
+  .te-hero-copy .te-hero-subtitle { margin-bottom: 1.25rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .te-hero-slide { transition: none; transform: none; }
+}
+
+.te-page-hero {
+  isolation: isolate;
+  min-height: clamp(26rem, 56svh, 36rem);
+  display: flex;
+  align-items: flex-end;
+  padding-block: calc(var(--header-height) + var(--heading-space)) var(--heading-space);
+  color: var(--on-inverse);
+}
+.te-page-hero--compact { min-height: clamp(22rem, 44svh, 28rem); }
+.te-page-hero-overlay { background: linear-gradient(180deg, rgb(var(--photo-channels) / .48), transparent 35%), var(--page-hero-overlay); pointer-events: none; }
+@media (max-width: 767px) {
+  .te-page-hero-overlay { background: var(--page-hero-overlay-narrow); }
+}
+.te-page-hero-content { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.te-page-hero-copy { width: 100%; max-width: var(--content-reading-width); min-width: 0; }
+.te-page-title {
+  max-width: var(--hero-content-max);
+  font-size: clamp(2.25rem, 4.5vw, 4.25rem);
+  line-height: 1.12;
+  overflow-wrap: break-word;
+  color: var(--on-inverse);
+  text-shadow: 0 2px 14px rgb(var(--photo-channels) / .3);
+}
+.te-page-description { max-width: 36rem; }
+.te-page-description, .te-page-breadcrumbs, .te-hero-chip { text-shadow: 0 1px 8px rgb(var(--photo-channels) / .4); }
 
 /* Leaflet Map Customizations */
 .leaflet-container {

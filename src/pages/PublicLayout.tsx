@@ -11,6 +11,7 @@ import { useSiteContent } from '@/hooks/useSiteContent';
 import { ErrorBoundary } from '@/lib/ErrorBoundary';
 import { queryClient, queryKeys } from '@/lib/queryClient';
 import { focusPageHeading, goToSection } from '@/lib/routeFocus';
+import { keepsScroll } from '@/lib/ScrollRestorer';
 import { whatsappMessage, whatsappUrl } from '@shared/whatsapp';
 import { Section } from './Section';
 
@@ -196,7 +197,8 @@ function RouteEffects() {
 
     const frame = requestAnimationFrame(() => {
       if (hash && (isFirst || navigationType !== 'POP') && goToSection(hash, 'auto')) return;
-      if (!isFirst) focusPageHeading();
+      // A filter or a cleared route on the same page keeps focus where it was.
+      if (!isFirst && !keepsScroll(location.state)) focusPageHeading();
     });
     return () => cancelAnimationFrame(frame);
     // Once per navigation: the key changes even when the URL doesn't.

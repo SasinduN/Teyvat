@@ -3,10 +3,14 @@
 import './test-db';
 
 /**
- * The map on the real built site, in headless Chrome.
+ * The map on the real built site (on /explore since redesign PR 4 trimmed
+ * the home page), in headless Chrome.
  *
- *   1. Lazy start: nothing of Leaflet or the tiles loads until the map nears
- *      the viewport; then the map comes up with all its markers.
+ *   1. Leaflet stays out of every first load: the home page, which has no
+ *      map, loads nothing of it; /explore fetches it as its own chunk once
+ *      the page is up (the map is within LAZY_MARGIN of the fold there, so
+ *      straight away: accepted on #23); then the map comes up with all its
+ *      markers.
  *   3. Changing the category filter fits the map to that category's markers.
  *   4. Each marker's colour and icon come from its destination's FIRST
  *      category; the legend shows all seven.
@@ -62,7 +66,7 @@ describe('the map, in Chrome', { skip }, () => {
       mobile: Boolean(options.mobile)
     });
     if (options.mobile) await page.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
-    await page.send('Page.navigate', { url: `${app.baseUrl}/` });
+    await page.send('Page.navigate', { url: `${app.baseUrl}/explore` });
     await waitFor(page, `document.querySelector('#explore-map')`, 'the page');
     await page.evaluate(`document.querySelector('#explore-map').scrollIntoView({ block: 'start' }), true`);
     await waitFor(page, `document.querySelectorAll('#explore-map .leaflet-marker-icon').length > 0`, 'markers');
@@ -114,14 +118,8 @@ describe('the map, in Chrome', { skip }, () => {
     await pool.end();
   }, HOOK_TIMEOUT);
 
-  test('1. Leaflet and the tiles load only when the map nears the viewport; then all markers draw', async () => {
-    const page = await chrome.newPage();
-    await page.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
-    await page.send('Page.navigate', { url: `${app.baseUrl}/` });
-    await waitFor(page, `document.readyState === 'complete' && document.querySelector('#explore-map')`, 'the page');
-    await sleep(2000);
-
-    const atLoad = await page.evaluate<{ leaflet: boolean; tiles: number; map: boolean; preload: boolean }>(`(() => {
+  test('1. Leaflet stays out of the first load: none on the home page, its own chunk on /explore; then all markers draw', async () => {
+    const mapResources = `(() => {
       const e = performance.getEntriesByType('resource').map((r) => r.name);
       return {
         leaflet: e.some((n) => n.includes('/assets/leaflet') && n.endsWith('.js')),
@@ -129,17 +127,40 @@ describe('the map, in Chrome', { skip }, () => {
         map: Boolean(document.querySelector('#explore-map .leaflet-container')),
         preload: Boolean(document.querySelector('link[rel=modulepreload][href*="leaflet"]'))
       };
-    })()`);
-    assert.deepEqual(atLoad, { leaflet: false, tiles: 0, map: false, preload: false }, 'nothing of the map at page load');
+    })()`;
 
-    await page.evaluate(`document.querySelector('#explore-map').scrollIntoView({ block: 'start' }), true`);
+    // The home page: nothing of the map at page load, nor scrolled to the end.
+    const home = await chrome.newPage();
+    await home.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
+    await home.send('Page.navigate', { url: `${app.baseUrl}/` });
+    await waitFor(home, `document.readyState === 'complete' && document.querySelector('#discover')`, 'the home page');
+    await sleep(2000);
+    const atLoad = await home.evaluate<{ leaflet: boolean; tiles: number; map: boolean; preload: boolean }>(mapResources);
+    assert.deepEqual(atLoad, { leaflet: false, tiles: 0, map: false, preload: false }, 'nothing of the map at page load');
+    await home.evaluate('window.scrollTo(0, document.body.scrollHeight), true');
+    await sleep(1000);
+    assert.deepEqual(await home.evaluate(mapResources), atLoad, 'nor at the end of the page');
+
+    // /explore: never preloaded with the page; fetched once the page's own code has run.
+    const page = await chrome.newPage();
+    await page.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
+    await page.send('Page.navigate', { url: `${app.baseUrl}/explore` });
     await waitFor(page, `document.querySelector('#explore-map .leaflet-container')`, 'the map to start');
     await waitFor(page, `[...document.querySelectorAll('img.leaflet-tile')].some((t) => t.complete && t.naturalWidth > 0)`, 'tiles');
-
-    const loaded = await page.evaluate<boolean>(
-      `performance.getEntriesByType('resource').some((r) => r.name.includes('/assets/leaflet') && r.name.endsWith('.js'))`
-    );
-    assert.ok(loaded, 'Leaflet loaded once the map neared the viewport');
+    const order = await page.evaluate<{ preload: boolean; leafletStart: number; pageEnd: number }>(`(async () => {
+      const e = performance.getEntriesByType('resource');
+      const leaflet = e.find((r) => r.name.includes('/assets/leaflet') && r.name.endsWith('.js'));
+      const explore = e.find((r) => r.name.includes('/assets/ExplorePage') && r.name.endsWith('.js'));
+      // The page as the server sends it (once loaded, Vite adds the dynamic import's own preload).
+      const html = await fetch('/explore').then((r) => r.text());
+      return {
+        preload: /<link[^>]+modulepreload[^>]+leaflet/.test(html),
+        leafletStart: leaflet ? leaflet.startTime : -1,
+        pageEnd: explore ? explore.responseEnd : Infinity
+      };
+    })()`);
+    assert.equal(order.preload, false, 'Leaflet is not preloaded with the page');
+    assert.ok(order.leafletStart >= order.pageEnd, `Leaflet fetched after the page's own chunk (${order.leafletStart} >= ${order.pageEnd})`);
 
     // The bug this replaced: markers only appeared after a filter was clicked.
     await waitFor(page, `document.querySelectorAll('#explore-map .leaflet-marker-icon').length === 20`, 'all 20 markers without any interaction');

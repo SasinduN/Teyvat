@@ -143,7 +143,8 @@ describe('the scroll-to-top button, in Chrome', { skip }, () => {
   });
 
   test('phone: never over the map zoom buttons, the Quick Jump bar or the WhatsApp button', async () => {
-    const page = await openPage('/', true);
+    // The map is on /explore since redesign PR 4 trimmed the home page.
+    const page = await openPage('/explore', true);
     await page.evaluate(`document.querySelector('#explore-map').scrollIntoView(), true`);
     await poll(page, `document.querySelector('#explore-map .leaflet-control-zoom')`, 'the map', 20_000);
     await still(page);

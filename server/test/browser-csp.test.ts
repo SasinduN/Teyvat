@@ -115,18 +115,32 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     await pool.end();
   }, HOOK_TIMEOUT);
 
-  test('the public page: every section, and the map with keyed CARTO tiles and its credit', async () => {
-    await visit('/', `document.querySelector('#explore-map')`);
+  test('the home page, and the Explore map with keyed CARTO tiles and its credit', async () => {
+    // Scroll the whole page so lazy images (and on /explore, the map's tiles) load.
+    const scrollThrough = async () => {
+      const height = await page.evaluate<number>('document.body.scrollHeight');
+      for (let y = 0; y <= height; y += 600) {
+        await page.evaluate(`window.scrollTo(0, ${y})`);
+        await sleep(150);
+      }
+    };
 
-    // Scroll the whole page so lazy images and the map's tiles load.
-    const height = await page.evaluate<number>('document.body.scrollHeight');
-    for (let y = 0; y <= height; y += 600) {
-      await page.evaluate(`window.scrollTo(0, ${y})`);
-      await sleep(150);
-    }
-    await waitFor(`document.querySelector('.leaflet-tile')`, 'map tiles to be requested');
+    // The home page: every section (redesign PR 4: the hero, the destination cards, planning).
+    await visit('/', `document.querySelector('#discover')`);
+    await scrollThrough();
     await sleep(800);
     await collect('/ (scrolled)');
+    assert.ok(
+      await page.evaluate<boolean>(`[...document.querySelectorAll('img')].some((i) => i.src.startsWith('https://images.unsplash.com'))`),
+      'Unsplash images are on the page'
+    );
+
+    // The map lives on /explore.
+    await visit('/explore', `document.querySelector('#explore-map')`);
+    await scrollThrough();
+    await waitFor(`document.querySelector('.leaflet-tile')`, 'map tiles to be requested');
+    await sleep(800);
+    await collect('/explore (scrolled)');
 
     // The tiles: CARTO's exact host, keyed when the build had VITE_CARTO_KEY
     // (local builds read it from .env; CI has none and gets the keyless
@@ -171,12 +185,7 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     await sleep(1500);
     await zoom('out');
     await sleep(1500);
-    await collect('/ (map zoomed in and out)');
-
-    assert.ok(
-      await page.evaluate<boolean>(`[...document.querySelectorAll('img')].some((i) => i.src.startsWith('https://images.unsplash.com'))`),
-      'Unsplash images are on the page'
-    );
+    await collect('/explore (map zoomed in and out)');
   });
 
   test('every page type (phase 8): lists, details, About, the 404', async () => {

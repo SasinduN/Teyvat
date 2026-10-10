@@ -4,6 +4,16 @@ import { useLocation, useNavigationType } from 'react-router-dom';
 /** Positions by history entry, kept for the tab's life (and across a reload). */
 const STORAGE_KEY = 'teyvat-scroll-positions';
 
+/**
+ * Navigation state for a change of the page's own query (a filter, clearing
+ * a route): the page stays where it is, and focus where it was. React
+ * Router's `preventScrollReset` only works with its data router.
+ */
+export const KEEP_SCROLL = { keepScroll: true } as const;
+
+export const keepsScroll = (state: unknown): boolean =>
+  typeof state === 'object' && state !== null && (state as { keepScroll?: unknown }).keepScroll === true;
+
 function load(): Map<string, number> {
   try {
     return new Map(JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? '[]') as [string, number][]);
@@ -21,7 +31,8 @@ function load(): Map<string, number> {
  * Positions are recorded as the page scrolls, under the current history
  * entry's key, so the clamp a shorter next page causes never overwrites them
  * (scroll events arrive after the commit that changes the key). A link to a
- * hash is left to the layout, which scrolls to that section.
+ * hash is left to the layout, which scrolls to that section, and a
+ * navigation with `KEEP_SCROLL` stays put.
  */
 export function ScrollRestorer() {
   const location = useLocation();
@@ -52,7 +63,7 @@ export function ScrollRestorer() {
     if (navigationType === 'POP') {
       const y = positions.current.get(location.key);
       if (y !== undefined) window.scrollTo({ top: y, behavior: 'instant' });
-    } else if (!location.hash) {
+    } else if (!location.hash && !keepsScroll(location.state)) {
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
   }, [location.key, navigationType, location.hash]);

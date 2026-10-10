@@ -19,35 +19,10 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const ROOTS = ['src/components', 'src/pages'];
 const HEX = /#(?:[0-9a-f]{6}|[0-9a-f]{3})\b/gi;
 
-/** Hex colours each not-yet-restyled file may still have (after redesign PR 3). */
+/** Hex colours each not-yet-restyled file may still have (after redesign PR 4). */
 const ALLOWED: Record<string, number> = {
-  'src/components/CTASection.tsx': 13,
-  'src/components/DestinationSpotlight.tsx': 16,
-  'src/components/ExperiencesSection.tsx': 10,
-  'src/components/FeaturedExperiences.tsx': 23,
-  'src/components/HeroSection.tsx': 20,
-  'src/components/InquiryForm.tsx': 42,
-  'src/components/InquiryModal.tsx': 5,
-  'src/components/IntroSection.tsx': 42,
-  'src/components/PageCards.tsx': 35,
-  'src/components/PageHero.tsx': 8,
-  'src/components/PlanCard.tsx': 9,
-  'src/components/RouteMap.tsx': 1,
-  'src/components/SearchModal.tsx': 19,
-  'src/components/SiteStatus.tsx': 9,
-  'src/components/ToursSection.tsx': 26,
-  // Untouched in PR 2 by decision; its own PR switches it to tokens.
-  'src/components/WhatsAppButton.tsx': 5,
-  'src/components/WhyTravelEye.tsx': 11,
-  'src/pages/AboutPage.tsx': 14,
-  'src/pages/ArticlePage.tsx': 7,
-  'src/pages/DestinationPage.tsx': 27,
-  'src/pages/DestinationsPage.tsx': 12,
-  'src/pages/ExperiencePage.tsx': 13,
-  'src/pages/NotFoundPage.tsx': 11,
-  'src/pages/PhotoCreditsPage.tsx': 8,
-  'src/pages/TourPage.tsx': 23,
-  'src/pages/UnsubscribePage.tsx': 9
+  // Untouched by decision in PRs 2 to 4; its own PR switches it to tokens.
+  'src/components/WhatsAppButton.tsx': 5
 };
 
 function files(path: string): string[] {

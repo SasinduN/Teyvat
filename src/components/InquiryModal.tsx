@@ -27,15 +27,17 @@ export const InquiryModal: React.FC<InquiryModalProps> = ({
         onClick={onClose}
       >
         <motion.div
+          role="dialog" aria-label="Plan your Sri Lanka journey"
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-[#D4C3B5]/60 relative text-[#1A1A1A]"
+          className="te-modal-panel bg-[var(--surface)] rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-[var(--border-strong)]/60 relative text-[var(--text-primary)]"
         >
           <button
+            type="button" aria-label="Close enquiry"
             onClick={onClose}
-            className="absolute top-4 right-4 z-20 w-9 h-9 bg-[#F5EFEB] text-[#0F2E23] rounded-full flex items-center justify-center hover:bg-[#0F2E23] hover:text-white transition-colors"
+            className="te-button te-button--icon absolute top-4 right-4 z-20"
           >
             <X className="w-5 h-5" />
           </button>

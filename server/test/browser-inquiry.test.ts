@@ -1,11 +1,16 @@
 /**
- * The honeypot is the only change phase 6 makes to a frozen component
- * (`InquiryModal`). Its HTML differs by design, so the comparison is visual:
- * the modal as it was before phase 6 and as it is now are rendered in a real
- * headless Chrome with the built stylesheet, and no pixel may differ by more
- * than 2 colour levels (see TOLERANCE). A control renders the baseline twice,
- * so the method proves itself first. A second test checks the honeypot can't
- * be reached with Tab.
+ * The enquiry modal and its form look exactly as approved: the modal at its
+ * baseline commit (`InquiryModal` and `InquiryForm`, read with `git show`)
+ * and as it is now are rendered in a real headless Chrome with the built
+ * stylesheet, and no pixel may differ by more than 2 colour levels (see
+ * TOLERANCE). A control renders the baseline twice, so the method proves
+ * itself first.
+ *
+ * The honeypot (phase 6) must change nothing visible: the modal with it
+ * removed from the page renders pixel for pixel the same. (Until redesign
+ * PR 4 the baseline was faed6bc, the modal before the honeypot, which proved
+ * the same thing.) A second test checks the honeypot can't be reached with
+ * Tab.
  *
  * Needs `npm run build` first (for the CSS) and an installed Chrome; skipped
  * with a message otherwise. Offline on purpose: the site's Google Fonts are
@@ -28,8 +33,11 @@ import { HOOK_TIMEOUT } from './timeouts';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-/** The last commit before phase 6 touched InquiryModal. */
-const BASELINE_COMMIT = 'faed6bc';
+/**
+ * The approved InquiryModal: redesign PR 4's (4e9942d). Until then it was
+ * faed6bc, the last commit before phase 6 touched it.
+ */
+const BASELINE_COMMIT = '4e9942d';
 
 const executable = findChrome();
 const cssDir = join(REPO_ROOT, 'dist', 'assets');
@@ -41,13 +49,21 @@ const skip = !executable
     ? 'no built CSS; run `npm run build` first'
     : false;
 
-/** Serves `baseline:InquiryModal` from git, resolving its imports from src/components. */
+/** The files read from the baseline commit; the rest of the imports resolve from src/components. */
+const BASELINE_FILES = ['InquiryModal', 'InquiryForm'];
+
+/** Serves `baseline:InquiryModal`, and its `./InquiryForm`, from git. */
 const baselinePlugin: Plugin = {
   name: 'baseline',
   setup(b) {
     b.onResolve({ filter: /^baseline:InquiryModal$/ }, () => ({ path: 'InquiryModal', namespace: 'baseline' }));
-    b.onLoad({ filter: /.*/, namespace: 'baseline' }, () => ({
-      contents: execFileSync('git', ['show', `${BASELINE_COMMIT}:src/components/InquiryModal.tsx`], {
+    b.onResolve({ filter: /^\.\/\w+$/ }, (args) =>
+      args.namespace === 'baseline' && BASELINE_FILES.includes(args.path.slice(2))
+        ? { path: args.path.slice(2), namespace: 'baseline' }
+        : undefined
+    );
+    b.onLoad({ filter: /.*/, namespace: 'baseline' }, (args) => ({
+      contents: execFileSync('git', ['show', `${BASELINE_COMMIT}:src/components/${args.path}.tsx`], {
         cwd: REPO_ROOT,
         encoding: 'utf8'
       }),
@@ -193,11 +209,16 @@ describe('InquiryModal with the honeypot, in Chrome', { skip }, () => {
       assert.equal(heading, 'form');
       const honeypots = await now.page.evaluate<number>(`document.querySelectorAll('[name="leave_blank_hp"]').length`);
       assert.equal(honeypots, 1, 'the current version has the honeypot');
-      const baselineHoneypots = await before.page.evaluate<number>(`document.querySelectorAll('[name="leave_blank_hp"]').length`);
-      assert.equal(baselineHoneypots, 0, 'the baseline does not');
 
       const diff = await differingPixels(now.page, before.png, now.png);
       assert.equal(diff, 0, `${diff} pixel(s) differ: screenshots in ${diff ? keep() : ''}`);
+
+      // The honeypot changes no pixel: the same modal without it looks the same.
+      await now.page.evaluate(`document.querySelector('[name="leave_blank_hp"]').closest('[aria-hidden="true"]').remove(), true`);
+      await new Promise((r) => setTimeout(r, 300));
+      const { data } = (await now.page.send('Page.captureScreenshot', { format: 'png' })) as { data: string };
+      const withoutHoneypot = await differingPixels(now.page, now.png, data);
+      assert.equal(withoutHoneypot, 0, `removing the honeypot changes ${withoutHoneypot} pixel(s)`);
     });
   }
 

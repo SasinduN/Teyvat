@@ -6,9 +6,10 @@ import './test-db';
  * Tour routes on the map, and the destination panel additions, on the real
  * built site in headless Chrome:
  *
- *   - "View route on map" scrolls to the map and draws the numbered stops in
- *     order with a dashed line, all in view and clear of the overlays, even
- *     when it was picked before the map had loaded;
+ *   - "View route on map" (on /tours since redesign PR 3) opens /explore,
+ *     scrolls to the map and draws the numbered stops in order with a dashed
+ *     line, all in view and clear of the overlays, though the map had not
+ *     loaded when it was picked;
  *   - the chip names the tour; ✕ and Escape restore the previous view and
  *     filter; choosing a filter leaves the route and applies the filter;
  *   - the Google Maps link carries the destination's coordinates (side
@@ -51,7 +52,8 @@ describe('tour routes and the destination panel, in Chrome', { skip }, () => {
     throw new Error(`timed out waiting for ${what}`);
   }
 
-  async function openPage(options: { mobile?: boolean } = {}): Promise<Page> {
+  /** `/explore` (the map) by default; `/tours` for the tour cards. */
+  async function openPage(options: { mobile?: boolean; path?: string } = {}): Promise<Page> {
     const page = await chrome.newPage();
     await page.send('Page.enable');
     await page.send('Emulation.setDeviceMetricsOverride', {
@@ -60,10 +62,23 @@ describe('tour routes and the destination panel, in Chrome', { skip }, () => {
       deviceScaleFactor: 1,
       mobile: Boolean(options.mobile)
     });
-    await page.send('Page.navigate', { url: `${app.baseUrl}/` });
-    await waitFor(page, `document.querySelectorAll('#tours h3').length === 4`, 'the tour cards');
+    const path = options.path ?? '/explore';
+    await page.send('Page.navigate', { url: `${app.baseUrl}${path}` });
+    await waitFor(
+      page,
+      path === '/tours' ? `document.querySelectorAll('#tours h3').length === 4` : `document.querySelector('#explore-map')`,
+      path === '/tours' ? 'the tour cards' : 'the map section'
+    );
     return page;
   }
+
+  /**
+   * Shows a tour's route the way Back or Forward to a shared link does: the
+   * URL changes in the page (React Router's popstate), and /explore stays
+   * mounted with its filter.
+   */
+  const routeFromUrl = (page: Page, id: string) =>
+    page.evaluate(`history.pushState(null, '', '/explore?mapTour=${id}'), dispatchEvent(new PopStateEvent('popstate')), true`);
 
   async function openMap(page: Page): Promise<void> {
     await page.evaluate(`document.querySelector('#explore-map').scrollIntoView({ block: 'start' }), true`);
@@ -142,12 +157,8 @@ describe('tour routes and the destination panel, in Chrome', { skip }, () => {
   }, HOOK_TIMEOUT);
 
   test('picked before the map loads: scrolls there and draws the numbered stops, in order, dashed, all in view', async () => {
-    const page = await openPage();
-    // Jump straight to the tours, as a nav link would. The page scrolls
-    // smoothly by default, and a smooth scroll down passes the map, which
-    // would start it on the way.
-    await page.evaluate(`document.documentElement.style.scrollBehavior = 'auto', document.querySelector('#tours').scrollIntoView(), true`);
-    await sleep(500);
+    // The tours are on /tours, which has no map at all.
+    const page = await openPage({ path: '/tours' });
     assert.equal(
       await page.evaluate<boolean>(`Boolean(document.querySelector('#explore-map .leaflet-container'))`),
       false,
@@ -155,8 +166,10 @@ describe('tour routes and the destination panel, in Chrome', { skip }, () => {
     );
 
     await viewRoute(page, 'Wild Sri Lanka Expedition');
+    await waitFor(page, `location.pathname === '/explore'`, '/explore');
     await waitFor(page, `document.querySelectorAll('#explore-map .route-stop-marker').length === 4`, 'the route');
     await settle(page);
+    await waitFor(page, `Math.abs(document.querySelector('#explore-map').getBoundingClientRect().top) < 2`, 'the map scrolled to the top', 5_000);
 
     const state = await routeState(page);
     assert.deepEqual(state.stops, ['Stop 1: Wilpattu', 'Stop 2: Sigiriya', 'Stop 3: Minneriya', 'Stop 4: Yala']);
@@ -188,6 +201,25 @@ describe('tour routes and the destination panel, in Chrome', { skip }, () => {
   });
 
   test('✕ and Escape go back to the view and filter from before the route', async () => {
+    // From /tours: back to the view /explore shows on its own, and the route
+    // leaves the URL.
+    const explore = await openPage();
+    await openMap(explore);
+    const own = await view(explore);
+    for (const leave of ['Escape', '✕'] as const) {
+      const page = await openPage({ path: '/tours' });
+      await viewRoute(page, 'Cultural Sri Lanka');
+      await waitFor(page, `document.querySelectorAll('#explore-map .route-stop-marker').length === 4`, 'the route');
+      await settle(page);
+      if (leave === 'Escape') await pressEscape(page);
+      else await page.evaluate(`document.querySelector('[aria-label="Clear route"]').click(), true`);
+      await waitFor(page, `!document.querySelector('[data-route-chip]') && !location.search.includes('mapTour')`, 'the chip and the parameter to go');
+      await settle(page);
+      assertSameView(own, await view(page), `from /tours, ${leave}`);
+    }
+
+    // On /explore with a filter: the route arrives through the URL, and
+    // leaving it restores that filter's view exactly.
     const page = await openPage();
     await openMap(page);
     await clickFilter(page, 'Beaches');
@@ -196,8 +228,7 @@ describe('tour routes and the destination panel, in Chrome', { skip }, () => {
     assert.equal(before.markers.length, 6, 'precondition: the Beaches filter');
 
     for (const leave of ['Escape', '✕'] as const) {
-      await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
-      await viewRoute(page, 'Cultural Sri Lanka');
+      await routeFromUrl(page, 'cultural-sri-lanka');
       await waitFor(page, `document.querySelectorAll('#explore-map .route-stop-marker').length === 4`, 'the route');
       await settle(page);
 
@@ -213,14 +244,13 @@ describe('tour routes and the destination panel, in Chrome', { skip }, () => {
   });
 
   test('choosing a filter leaves the route and applies the filter, framed', async () => {
-    const page = await openPage();
-    await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
+    const page = await openPage({ path: '/tours' });
     await viewRoute(page, 'Island in 7 Days');
     await waitFor(page, `document.querySelectorAll('#explore-map .route-stop-marker').length === 6`, 'the route');
     await settle(page);
 
     await clickFilter(page, 'Culture');
-    await waitFor(page, `!document.querySelector('[data-route-chip]')`, 'the chip to go');
+    await waitFor(page, `!document.querySelector('[data-route-chip]') && !location.search.includes('mapTour')`, 'the chip and the parameter to go');
     await settle(page);
 
     const state = await routeState(page);

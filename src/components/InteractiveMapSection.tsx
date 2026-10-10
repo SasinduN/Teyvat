@@ -563,7 +563,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
             Interactive Island Map
           </span>
           <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[var(--brand-primary)] tracking-tight mb-3">
-            Explore Sri Lanka
+            Find Your Place on the Map
           </h2>
           <p className="text-lg text-[var(--text-primary)]/70 font-serif italic">
             “Pick a place. Start your story.”
