@@ -65,7 +65,7 @@ export function App() {
           <Route
             path="/admin/*"
             element={
-              <Suspense fallback={<div className="min-h-screen bg-[#FBF9F6]" />}>
+              <Suspense fallback={<div className="min-h-screen bg-[var(--background)]" />}>
                 <AdminApp />
               </Suspense>
             }

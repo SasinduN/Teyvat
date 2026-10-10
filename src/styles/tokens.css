@@ -130,6 +130,58 @@
   --glass-noise-opacity: .02;
 }
 
+/*
+ * The dark theme (redesign PR 5): the same names, other values. Chosen by
+ * public/theme-init.js before the first paint: the visitor's saved choice
+ * (`site:theme`), else the system's. Photos keep their own overlays, which
+ * are dark in both themes.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --brand-channels: 23 51 47;
+  --teal-channels: 58 181 163;
+  --gold-channels: 226 191 121;
+  --surface-channels: 23 51 47;
+  --inverse-channels: 0 0 0;
+  --background: var(--palette-forest-night);
+  --background-secondary: #10231F;
+  --surface: var(--palette-glass-surface);
+  --surface-glass: rgb(var(--surface-channels) / .9);
+  --brand-primary: var(--palette-lagoon-glow);
+  /* A fill (buttons, chosen chips) under white text, never a text colour: deep enough for white. */
+  --brand-secondary: #1F7F72;
+  --accent: var(--palette-soft-gold);
+  --accent-hover: var(--palette-champagne-gold);
+  --accent-text: var(--palette-soft-gold);
+  --text-primary: var(--palette-ivory-text);
+  --text-secondary: var(--palette-muted-text);
+  --text-muted: var(--palette-muted-text);
+  --inverse-surface: #0E2B27;
+  --inverse-raised: #1B3D38;
+  --border: color-mix(in srgb, var(--palette-muted-text) 20%, var(--palette-glass-surface));
+  --border-strong: color-mix(in srgb, var(--palette-muted-text) 35%, var(--palette-glass-surface));
+  --emerald-edge: var(--palette-lagoon-glow);
+  --sand: var(--palette-ivory-text);
+  --danger: #ffb4ab;
+  --danger-hover: #ffd0ca;
+  --success: #9ed7b4;
+  --warning: var(--palette-soft-gold);
+  --on-feedback: var(--palette-forest-night);
+  --shadow: 0 12px 40px rgb(0 0 0 / .3);
+  --shadow-card: 0 8px 30px rgb(0 0 0 / .32);
+  --shadow-card-hover: 0 18px 44px rgb(0 0 0 / .45);
+  --glass-tint: rgb(17 47 43 / .38);
+  --glass-bg: rgb(var(--surface-channels) / .58);
+  /* Nearly opaque: map overlays sit on bright tiles. */
+  --glass-strong-bg: rgb(var(--surface-channels) / .95);
+  --glass-border: rgb(var(--pearl-channels) / .16);
+  --glass-highlight: rgb(var(--pearl-channels) / .12);
+  --glass-shadow: 0 12px 36px rgb(0 0 0 / .3);
+  --button-secondary-bg: rgb(var(--pearl-channels) / .06);
+  --button-secondary-hover: rgb(var(--pearl-channels) / .12);
+  --glass-saturation: 112%;
+}
+
 /* Layout tokens shared by the header, footer and floating controls. */
 :root {
   --container-max: 80rem;

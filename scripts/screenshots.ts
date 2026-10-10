@@ -3,6 +3,7 @@
  *
  *   npm run screenshots -- --base origin/main
  *   npm run screenshots -- --base origin/main --pages /,/about --dark
+ *   npm run screenshots -- --base origin/main --pages / --admin --dark
  *
  * Builds `--base` in a throwaway git worktree and the working tree as it is,
  * serves each from its own scratch database on the local test server, and
@@ -12,6 +13,10 @@
  * (git-ignored: never committed). It then compares each pair and writes
  * `summary.md` there: identical, or how much differs and where. A PR lists
  * the pages that changed; the author drags those pairs into it on GitHub.
+ *
+ * `--admin` adds the admin: the login page, then (signed in as a throwaway
+ * admin created in each scratch database) the dashboard, a collection, two
+ * editors, the media library, photo credits, enquiries and settings.
  *
  * Animations would make two identical builds differ, so each page is shot
  * with `prefers-reduced-motion: reduce` emulated (the map honours it), after
@@ -36,6 +41,9 @@ import { parseArgs } from 'node:util';
 
 import { Client } from 'pg';
 
+import { randomBytes } from 'node:crypto';
+
+import { passwords } from '../server/src/auth/passwords';
 import { findChrome, launchChrome, type Chrome, type Page } from '../server/test/chrome';
 
 const ROOT = resolve(import.meta.dirname, '..');
@@ -54,6 +62,7 @@ const { values } = parseArgs({
     base: { type: 'string', default: 'origin/main' },
     pages: { type: 'string' },
     dark: { type: 'boolean', default: false },
+    admin: { type: 'boolean', default: false },
     out: { type: 'string' }
   },
   strict: true
@@ -103,6 +112,21 @@ interface Site {
   url?: string;
 }
 
+/** The admin pages `--admin` captures, signed in (the login page comes first, signed out). */
+const ADMIN_PAGES = [
+  '/admin',
+  '/admin/destinations',
+  '/admin/destinations/ella',
+  '/admin/tours/wild-sri-lanka',
+  '/admin/media',
+  '/admin/credits',
+  '/admin/inquiries',
+  '/admin/settings'
+];
+
+/** A throwaway admin for the scratch databases: local only, a new password each run. */
+const SHOTS_ADMIN = { email: 'screenshots@example.test', password: randomBytes(18).toString('base64url') };
+
 async function prepare(site: Site): Promise<void> {
   const db = scratchUrl(site.database);
   await admin(`drop database if exists ${site.database}`);
@@ -110,6 +134,19 @@ async function prepare(site: Site): Promise<void> {
   console.log(`\n[${site.label}] build`);
   run('npm', ['run', 'build'], site.dir);
   run('npx', ['tsx', 'scripts/migrate.ts'], site.dir, { ...process.env, DATABASE_URL: db });
+  if (values.admin) {
+    const client = new Client({ connectionString: db });
+    await client.connect();
+    try {
+      await client.query('insert into public.users (email, password_hash, full_name) values ($1, $2, $3)', [
+        SHOTS_ADMIN.email,
+        await passwords.hash(SHOTS_ADMIN.password),
+        'Screenshots'
+      ]);
+    } finally {
+      await client.end();
+    }
+  }
 
   const port = await freePort();
   const env: NodeJS.ProcessEnv = { ...process.env, DATABASE_URL: db, PORT: String(port), NODE_ENV: 'development' };
@@ -153,6 +190,23 @@ async function open(chrome: Chrome, url: string, viewport: (typeof VIEWPORTS)[ke
   await page.send('Page.navigate', { url });
   await waitFor(page, `document.readyState === 'complete' && document.body.dataset.route`);
   await sleep(1000);
+  return page;
+}
+
+/** An admin page (no public route marker): loaded, then still. */
+async function openAdmin(chrome: Chrome, url: string, viewport: (typeof VIEWPORTS)[keyof typeof VIEWPORTS], dark: boolean): Promise<Page> {
+  const page = await chrome.newPage();
+  await page.send('Emulation.setDeviceMetricsOverride', { ...viewport, deviceScaleFactor: 1 });
+  await page.send('Emulation.setEmulatedMedia', {
+    features: [
+      { name: 'prefers-color-scheme', value: dark ? 'dark' : 'light' },
+      { name: 'prefers-reduced-motion', value: 'reduce' }
+    ]
+  });
+  await page.send('Page.navigate', { url });
+  await waitFor(page, `document.readyState === 'complete' && document.querySelector('main, form')`);
+  await page.evaluate(LOADED);
+  await page.evaluate(QUIET);
   return page;
 }
 
@@ -308,6 +362,20 @@ async function main(): Promise<void> {
             await menu.evaluate(`document.querySelector('header button[aria-label*="menu" i]')?.click(), true`);
             await menu.evaluate(QUIET);
             await shoot(menu, join(out, `state-menu-${suffix}`), false);
+          }
+          if (values.admin) {
+            const login = await openAdmin(chrome, `${site.url}/admin/login`, viewport, dark);
+            await shoot(login, join(out, `admin-login-${suffix}`), true);
+            const status = await login.evaluate<number>(`fetch('/api/auth/login', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(${JSON.stringify(SHOTS_ADMIN)})
+            }).then((r) => r.status)`);
+            if (status !== 200) throw new Error(`[${site.label}] admin sign-in failed (${status})`);
+            for (const path of ADMIN_PAGES) {
+              const page = await openAdmin(chrome, site.url + path, viewport, dark);
+              await shoot(page, join(out, `${slug(path)}-${suffix}`), true);
+              console.log(`  ${slug(path)}-${suffix}`);
+            }
           }
           const tour = await open(chrome, `${site.url}/tours/island-in-7-days`, viewport, dark);
           await tour.evaluate(`[...document.querySelectorAll('main button')].find((b) => /enquire|inquire/i.test(b.textContent))?.click(), true`);

@@ -5,7 +5,8 @@ import { Link } from 'react-router-dom';
 import { paths } from '@shared/site-paths';
 import { matchesTravelTiming } from '@/lib/travelTiming';
 import { loadLeaflet } from '@/lib/leaflet';
-import { mapTiles } from '@/lib/mapTiles';
+import { addThemedTiles, onThemeChangeWhileMapped } from '@/lib/mapTiles';
+import { tokenValue } from '@/lib/theme';
 import { MAP_CATEGORIES, MAP_CATEGORY_STYLES, markerHtml, routeStopHtml, type MapCategory } from '@/lib/mapMarkers';
 import { airportTravelTime, googleMapsUrl } from '@/lib/googleMaps';
 import { Destination, CategoryType, TourPackage } from '../types';
@@ -278,11 +279,14 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
         // Just the credit itself, without Leaflet's own "Leaflet" prefix.
         map.attributionControl.setPrefix(false);
 
-        // Custom Light/Sand styled Map Tiles (CARTO Voyager, keyed: src/lib/mapTiles.ts)
-        L.tileLayer(mapTiles.url, {
-          maxZoom: 19,
-          attribution: mapTiles.attribution
-        }).addTo(map);
+        // CARTO's Voyager tiles, or its dark basemap in the dark theme (keyed: src/lib/mapTiles.ts).
+        addThemedTiles(L, map, { maxZoom: 19 });
+        // A route's line takes the theme's colour.
+        onThemeChangeWhileMapped(map, () =>
+          map.eachLayer((l) => {
+            if (l instanceof L.Polyline && l.options.className === 'route-line') l.setStyle({ color: tokenValue('--brand-secondary') });
+          })
+        );
 
         // Add Zoom Control to bottom-right
         L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -499,7 +503,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
     const layer = L.layerGroup();
     L.polyline(points, {
       // An SVG attribute: var() doesn't resolve there, so use the token's value.
-      color: getComputedStyle(document.documentElement).getPropertyValue('--brand-secondary').trim() || 'currentColor',
+      color: tokenValue('--brand-secondary'),
       weight: 3,
       dashArray: '8 8',
       interactive: false,
@@ -581,7 +585,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                 aria-pressed={isSelected}
                 className={`shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-300 flex items-center space-x-1.5 shadow-xs ${
                   isSelected
-                    ? 'bg-[var(--inverse-surface)] text-[var(--accent)] shadow-md scale-105 border border-[var(--emerald-edge)]'
+                    ? 'bg-[var(--inverse-surface)] text-[var(--accent-text)] shadow-md scale-105 border border-[var(--emerald-edge)]'
                     : 'bg-[var(--surface)] text-[var(--text-primary)]/80 hover:bg-[var(--brand-secondary)] hover:text-white border border-[var(--border-strong)]/50'
                 }`}
               >
@@ -720,14 +724,14 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                         alt={activeDest.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent" />
                       
-                      <div className="absolute top-3 right-3 bg-[var(--inverse-surface)]/90 text-[var(--accent)] px-2.5 py-1 rounded-full text-xs font-bold flex items-center space-x-1 border border-[var(--accent)]/30">
+                      <div className="absolute top-3 right-3 bg-[var(--inverse-surface)]/90 text-[var(--accent-text)] px-2.5 py-1 rounded-full text-xs font-bold flex items-center space-x-1 border border-[var(--accent)]/30">
                         <span>★ {activeDest.rating}</span>
                       </div>
 
                       <div className="absolute bottom-3 left-3 right-3 text-white">
-                        <span className="text-[10px] uppercase tracking-widest text-[var(--accent)] font-semibold">
+                        <span className="text-[10px] uppercase tracking-widest text-[var(--accent-text)] font-semibold">
                           {activeDest.region} • {activeDest.province}
                         </span>
                         <h3 className="font-heading text-2xl font-bold">{activeDest.name}</h3>
@@ -744,7 +748,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                       {activeDest.category.map((cat) => (
                         <span
                           key={cat}
-                          className="bg-[var(--brand-secondary)] text-[var(--accent)] border border-[var(--emerald-edge)]/50 px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                          className="bg-[var(--brand-secondary)] text-[var(--on-secondary)] border border-[var(--emerald-edge)]/50 px-2.5 py-0.5 rounded-full text-xs font-semibold"
                         >
                           {cat}
                         </span>
@@ -754,11 +758,11 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                     {/* Best Time & Elevation */}
                     <div className="grid grid-cols-2 gap-3 p-3 bg-white/5 rounded-xl border border-white/10 text-xs mb-3">
                       <div>
-                        <span className="text-white/50 block text-[10px] uppercase tracking-wider">Best Time</span>
+                        <span className="text-white/75 block text-[10px] uppercase tracking-wider">Best Time</span>
                         <span className="font-semibold text-white">{activeDest.bestTime}</span>
                       </div>
                       <div>
-                        <span className="text-white/50 block text-[10px] uppercase tracking-wider">Elevation/Type</span>
+                        <span className="text-white/75 block text-[10px] uppercase tracking-wider">Elevation/Type</span>
                         <span className="font-semibold text-white">{activeDest.elevation || activeDest.region}</span>
                       </div>
                     </div>
@@ -767,13 +771,13 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                     <PlaceLinks
                       dest={activeDest}
                       className="flex flex-col items-start gap-1.5 text-xs mb-5"
-                      linkClassName="inline-flex items-center gap-1.5 font-semibold text-[var(--accent)] hover:text-white transition-colors"
+                      linkClassName="inline-flex items-center gap-1.5 font-semibold text-[var(--accent-text)] hover:text-white transition-colors"
                       timeClassName="flex items-center gap-1.5 text-white/70"
                     />
 
                     {/* Top Experiences */}
                     <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--accent)] mb-2 flex items-center space-x-1">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--accent-text)] mb-2 flex items-center space-x-1">
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>Top Experiences</span>
                       </h4>
@@ -791,7 +795,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                   {/* Primary CTA Button */}
                   <Link
                     to={paths.destination(activeDest.id)}
-                    className="w-full py-3.5 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-hover)] hover:from-[var(--accent-hover)] hover:to-[var(--accent-hover)] text-[var(--brand-primary)] rounded-xl font-bold text-sm shadow-lg flex items-center justify-center space-x-2 transition-all duration-300 transform hover:-translate-y-0.5"
+                    className="w-full py-3.5 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-hover)] hover:from-[var(--accent-hover)] hover:to-[var(--accent-hover)] text-[var(--on-accent)] rounded-xl font-bold text-sm shadow-lg flex items-center justify-center space-x-2 transition-all duration-300 transform hover:-translate-y-0.5"
                   >
                     <span>Explore {activeDest.name}</span>
                     <ArrowUpRight className="w-4 h-4" />
@@ -799,7 +803,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                 </motion.div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center text-white/60">
-                  <MapPin className="w-12 h-12 text-[var(--accent)] mb-3 animate-bounce" />
+                  <MapPin className="w-12 h-12 text-[var(--accent-text)] mb-3 animate-bounce" />
                   <p className="font-heading text-lg text-white">Click any location marker on the map to explore</p>
                 </div>
               )}
@@ -820,31 +824,32 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                 />
                 <div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-[10px] uppercase font-bold text-[var(--accent)]">{activeDest.region}</span>
-                    <span className="text-xs text-white/50">• Best: {activeDest.bestTime}</span>
+                    <span className="text-[10px] uppercase font-bold text-[var(--accent-text)]">{activeDest.region}</span>
+                    <span className="text-xs text-white/75">• Best: {activeDest.bestTime}</span>
                   </div>
                   <h3 className="font-heading text-xl font-bold text-white">{activeDest.name}</h3>
                   <p className="text-xs text-white/70 line-clamp-2 mt-1">{activeDest.shortDescription}</p>
                   <PlaceLinks
                     dest={activeDest}
                     className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px]"
-                    linkClassName="inline-flex items-center gap-1 font-semibold text-[var(--accent)] hover:text-white transition-colors"
+                    linkClassName="inline-flex items-center gap-1 font-semibold text-[var(--accent-text)] hover:text-white transition-colors"
                     timeClassName="flex items-center gap-1 text-white/70"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                <div className="flex gap-1.5 overflow-x-auto">
+              <div className="flex items-center justify-between gap-3 pt-2 border-t border-white/10">
+                {/* Scrolls sideways when the categories don't fit; each keeps its one line. */}
+                <div className="no-scrollbar flex min-w-0 gap-1.5 overflow-x-auto">
                   {activeDest.category.map((c) => (
-                    <span key={c} className="text-[10px] bg-[var(--brand-secondary)] text-[var(--accent)] px-2 py-0.5 rounded-full font-semibold">
+                    <span key={c} className="shrink-0 whitespace-nowrap text-[10px] bg-[var(--brand-secondary)] text-[var(--on-secondary)] px-2 py-0.5 rounded-full font-semibold">
                       {c}
                     </span>
                   ))}
                 </div>
                 <Link
                   to={paths.destination(activeDest.id)}
-                  className="px-5 py-2.5 bg-[var(--accent)] text-[var(--brand-primary)] rounded-xl font-bold text-xs flex items-center space-x-1 shrink-0"
+                  className="px-5 py-2.5 bg-[var(--accent)] text-[var(--on-accent)] rounded-xl font-bold text-xs flex items-center space-x-1 shrink-0"
                 >
                   <span>Explore {activeDest.name}</span>
                   <ChevronRight className="w-4 h-4" />

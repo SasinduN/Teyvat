@@ -51,16 +51,21 @@
  * heading focused after navigation (`data-route-focus`) isn't a control and
  * keeps no ring.
  */
-.site :where(a, button, input, select, textarea, summary, [tabindex]):not([data-route-focus]):focus-visible {
+.site :where(a, button, input, select, textarea, summary, [tabindex]):not([data-route-focus]):focus-visible,
+.te-admin :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
   box-shadow: 0 0 0 6px var(--inverse-deep);
 }
 @media (forced-colors: active) {
-  .site :where(a, button, input, select, textarea, summary, [tabindex]):not([data-route-focus]):focus-visible { outline-color: Highlight; box-shadow: none; }
+  .site :where(a, button, input, select, textarea, summary, [tabindex]):not([data-route-focus]):focus-visible,
+  .te-admin :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline-color: Highlight; box-shadow: none; }
 }
 
 @layer components {
+  /* The admin's phone top bar: the page gutter. */
+  .te-admin-toolbar { padding-inline: var(--page-gutter); }
+
   /* The page's content column, as in the header and footer. */
   .te-container {
     width: min(calc(100% - 2 * var(--page-gutter)), var(--container-max));
@@ -116,11 +121,12 @@
   }
 
   /*
-   * On photos and dark surfaces: light text and edges for the secondary
-   * buttons, and the light gold for `--accent-text`.
+   * On photos and dark surfaces (white text says it's one): light text and
+   * edges for the secondary buttons, and the light gold for `--accent-text`.
    */
-  :where(.te-hero, .te-page-hero, footer, .glass--inverse, [class*="bg-[var(--inverse-surface)]"], [class*="bg-[var(--inverse-deep)]"]) {
-    --accent-text: var(--inverse-accent);
+  :where(.te-hero, .te-page-hero, footer, .glass--inverse, .text-white, [class*="bg-[var(--inverse-surface)]"], [class*="bg-[var(--inverse-deep)]"]) {
+    /* The paler gold: AA on dark surfaces even under a light tint (browser-contrast). */
+    --accent-text: var(--accent-on-photo);
     --button-secondary-bg: rgb(var(--photo-channels) / .55);
     --button-secondary-hover: rgb(var(--photo-channels) / .7);
     --button-secondary-text: var(--on-inverse);
@@ -348,7 +354,7 @@
 .leaflet-container {
   width: 100%;
   height: 100%;
-  background-color: #e5ece9 !important;
+  background-color: var(--background-secondary) !important;
   font-family: var(--font-sans);
   z-index: 10;
 }
@@ -358,8 +364,9 @@
   border-radius: 1rem;
   overflow: hidden;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(212, 195, 181, 0.3);
-  background: #ffffff;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
 }
 
 .leaflet-popup-content {
@@ -368,7 +375,7 @@
 }
 
 .leaflet-popup-tip {
-  background: #ffffff;
+  background: var(--surface);
 }
 
 /* Map credit (OpenStreetMap / CARTO): required, but kept small and quiet. It
@@ -378,13 +385,13 @@
   margin: 0 6px 6px 0;
   padding: 1px 6px;
   border-radius: 9999px;
-  background: rgba(251, 249, 246, 0.75);
-  color: rgba(26, 26, 26, 0.55);
+  background: rgb(var(--surface-channels) / .85);
+  color: var(--text-secondary);
   font-size: 9px;
   line-height: 1.5;
 }
 .leaflet-container .leaflet-control-attribution a {
-  color: rgba(28, 71, 55, 0.8);
+  color: var(--brand-primary);
   text-decoration: none;
 }
 .leaflet-container .leaflet-control-attribution a:hover {
@@ -435,8 +442,8 @@
   width: 32px;
   height: 32px;
   border-radius: 9999px;
-  border: 2px solid #ffffff;
-  box-shadow: 0 4px 10px rgba(15, 46, 35, 0.25);
+  border: 2px solid var(--white);
+  box-shadow: 0 4px 10px rgb(var(--inverse-channels) / .25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -452,7 +459,7 @@
   outline: none;
 }
 .custom-leaflet-marker:focus-visible .map-marker-disc {
-  box-shadow: 0 0 0 3px #d4af37, 0 4px 10px rgba(15, 46, 35, 0.25);
+  box-shadow: 0 0 0 3px var(--accent), 0 4px 10px rgb(var(--inverse-channels) / .25);
 }
 
 /* A marker's name: hidden until hovered or focused, for the active marker,
@@ -463,14 +470,14 @@
   left: 50%;
   transform: translateX(-50%);
   white-space: nowrap;
-  background: #0f2e23;
-  color: #ffffff;
+  background: var(--inverse-deep);
+  color: var(--white);
   font-size: 10px;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 2px 6px rgba(15, 46, 35, 0.25);
+  border: 1px solid rgb(var(--pearl-channels) / .2);
+  box-shadow: 0 2px 6px rgb(var(--inverse-channels) / .25);
   opacity: 0;
   transition: opacity 0.2s ease;
   pointer-events: none;
@@ -502,10 +509,10 @@
   width: 28px;
   height: 28px;
   border-radius: 9999px;
-  background: #fbf9f6;
-  color: #0f2e23;
-  border: 2px solid #ffffff;
-  box-shadow: 0 0 0 2px #1c4737, 0 4px 10px rgba(15, 46, 35, 0.3);
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 2px solid var(--white);
+  box-shadow: 0 0 0 2px var(--brand-secondary), 0 4px 10px rgb(var(--inverse-channels) / .3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -517,7 +524,7 @@
   outline: none;
 }
 .route-stop-marker:focus-visible .route-stop-disc {
-  box-shadow: 0 0 0 2px #1c4737, 0 0 0 5px #d4af37;
+  box-shadow: 0 0 0 2px var(--brand-secondary), 0 0 0 5px var(--accent);
 }
 .map-marker-label.route-stop-label {
   top: 33px;
@@ -528,6 +535,10 @@
    sit with the sand and green palette. Kept subtle. */
 #explore-map .leaflet-tile-pane {
   filter: sepia(0.14) saturate(0.88) brightness(1.01);
+}
+/* Dark: CARTO's dark basemap (src/lib/mapTiles.ts), with a little of the same green. */
+:root[data-theme="dark"] #explore-map .leaflet-tile-pane {
+  filter: sepia(0.18) hue-rotate(110deg) saturate(1.1) brightness(1.08);
 }
 
 /* Hide horizontal scrollbars for clean galleries */

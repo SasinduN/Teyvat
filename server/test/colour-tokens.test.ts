@@ -1,5 +1,5 @@
 /**
- * The redesign moves every colour in the public components to a theme token
+ * The redesign moves every colour in the public site and the admin to a theme token
  * (`src/styles/tokens.css`, used as `var(--…)`), so the dark theme only has
  * to change the tokens (docs/plans/redesign-redo.md).
  *
@@ -16,12 +16,13 @@ import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const ROOTS = ['src/components', 'src/pages'];
+// The admin too, since redesign PR 5 restyled it.
+const ROOTS = ['src/components', 'src/pages', 'src/admin', 'src/App.tsx'];
 const HEX = /#(?:[0-9a-f]{6}|[0-9a-f]{3})\b/gi;
 
-/** Hex colours each not-yet-restyled file may still have (after redesign PR 4). */
+/** Hex colours each not-yet-restyled file may still have (after redesign PR 5). */
 const ALLOWED: Record<string, number> = {
-  // Untouched by decision in PRs 2 to 4; its own PR switches it to tokens.
+  // Untouched by decision in PRs 2 to 5; its own PR switches it to tokens.
   'src/components/WhatsAppButton.tsx': 5
 };
 
@@ -31,7 +32,7 @@ function files(path: string): string[] {
   return readdirSync(full).flatMap((name) => files(join(path, name)));
 }
 
-test('no new hex colours in the public components and pages', () => {
+test('no new hex colours in the public site or the admin', () => {
   const problems: string[] = [];
   for (const file of ROOTS.flatMap(files).map((f) => relative(REPO_ROOT, join(REPO_ROOT, f)).replace(/\\/g, '/'))) {
     if (!/\.tsx?$/.test(file)) continue;

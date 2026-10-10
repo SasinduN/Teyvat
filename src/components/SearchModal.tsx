@@ -108,7 +108,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
               ))}
 
               {filtered.length === 0 && (
-                <div className="text-center py-8 text-xs text-[var(--text-primary)]/60">
+                <div className="text-center py-8 text-xs text-[var(--text-secondary)]">
                   No locations found matching “{searchTerm}”. Try searching for “Ella”, “Beaches”, or “Yala”.
                 </div>
               )}

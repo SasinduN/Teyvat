@@ -125,7 +125,7 @@ export const IntroSection: React.FC = () => {
         </div>
 
         {/* Asymmetric Image Collage */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-12 items-center">
           <div className="md:col-span-7 relative">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -138,8 +138,9 @@ export const IntroSection: React.FC = () => {
                 alt="Ella misty mountain gap"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              <div className="absolute bottom-6 left-6 text-white">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent" />
+              {/* Clear of the second photo, which covers this one's bottom right from sm up. */}
+              <div className="absolute bottom-6 left-6 right-6 sm:right-auto sm:max-w-[36%] text-white">
                 <span className="text-xs uppercase tracking-widest text-[var(--accent-text)] font-semibold">Highlands</span>
                 <p className="font-heading text-xl font-bold">Misty Tea Estates of Ella & Nuwara Eliya</p>
               </div>

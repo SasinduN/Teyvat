@@ -46,14 +46,14 @@ export const JournalSection: React.FC = () => {
                     alt={art.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute top-4 left-4 bg-[var(--inverse-surface)] text-[var(--accent)] text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
+                  <div className="absolute top-4 left-4 bg-[var(--inverse-surface)] text-[var(--accent-text)] text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
                     {art.category}
                   </div>
                 </div>
 
                 {/* Body */}
                 <div className="p-6 space-y-3">
-                  <div className="flex items-center space-x-3 text-xs text-[var(--text-primary)]/50">
+                  <div className="flex items-center space-x-3 text-xs text-[var(--text-secondary)]">
                     <span className="flex items-center space-x-1">
                       <Calendar className="w-3.5 h-3.5" />
                       <span>{art.date}</span>

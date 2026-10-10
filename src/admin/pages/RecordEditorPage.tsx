@@ -147,7 +147,7 @@ export const RecordEditorPage: React.FC = () => {
     <div>
       <Link
         to={`/admin/${collection.slug}`}
-        className="mb-4 inline-flex items-center gap-1 text-[11px] font-bold text-[#1C4737] transition-colors hover:text-[#0F2E23]"
+        className="mb-4 inline-flex items-center gap-1 text-[11px] font-bold text-[var(--brand-primary)] transition-colors hover:text-[var(--brand-primary)]"
       >
         <ChevronLeft className="h-3.5 w-3.5" />
         Back to {collection.label}
@@ -163,7 +163,7 @@ export const RecordEditorPage: React.FC = () => {
               target="_blank"
               rel="noopener noreferrer"
               data-view-page
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[#D4C3B5]/60 bg-white px-4 py-2.5 text-xs font-bold text-[#0F2E23] transition-colors hover:bg-[#F5EFEB]"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-strong)]/60 bg-[var(--surface)] px-4 py-2.5 text-xs font-bold text-[var(--brand-primary)] transition-colors hover:bg-[var(--background-secondary)]"
             >
               View page
               <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
@@ -217,7 +217,7 @@ export const RecordEditorPage: React.FC = () => {
             />
           </Card>
 
-          <div className="sticky bottom-0 mt-4 flex items-center justify-end gap-2 rounded-2xl border border-[#D4C3B5]/50 bg-[#FBF9F6]/95 p-3 backdrop-blur">
+          <div className="sticky bottom-0 mt-4 flex items-center justify-end gap-2 rounded-2xl border border-[var(--border-strong)]/50 bg-[var(--background)]/95 p-3 backdrop-blur">
             <Link to={`/admin/${collection.slug}`}>
               <Button type="button" variant="secondary">
                 Cancel

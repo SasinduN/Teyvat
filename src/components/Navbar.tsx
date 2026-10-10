@@ -7,6 +7,7 @@ import { BRAND_NAME } from '@shared/brand';
 import { NAV_LINKS, paths } from '@shared/site-paths';
 import { Logo } from './Logo';
 import { SiteLink } from './SiteLink';
+import { ThemeToggle } from './ThemeToggle';
 
 interface NavbarProps {
   onOpenSearch: () => void;
@@ -85,6 +86,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
 
             {/* Right Side Buttons */}
             <div className="hidden sm:flex items-center gap-3">
+              <ThemeToggle />
               <button
                 type="button"
                 onClick={onOpenSearch}
@@ -101,8 +103,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
               </SiteLink>
             </div>
 
-            {/* Mobile: search and the menu */}
+            {/* Mobile: the theme, search and the menu */}
             <div className="flex items-center gap-1 lg:hidden">
+              <ThemeToggle className="sm:hidden" />
               <button
                 type="button"
                 onClick={onOpenSearch}

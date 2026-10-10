@@ -70,7 +70,7 @@ const CreditFields: React.FC<{
         placeholder={placeholder}
         onChange={(e) => onChange({ ...draft, [name]: e.target.value })}
       />
-      {errors?.[name] && <p className="text-[11px] text-[#B3261E]">{errors[name]}</p>}
+      {errors?.[name] && <p className="text-[11px] text-[var(--danger)]">{errors[name]}</p>}
     </div>
   );
   return (
@@ -132,7 +132,7 @@ const CreditCard: React.FC<{ item: ImageCreditItem; onSaved: () => void }> = ({ 
             ) : (
               <Badge tone="muted">Not used: not shown on the site</Badge>
             )}
-            <span className="truncate font-mono text-[10px] text-[#1A1A1A]/50" title={item.url}>
+            <span className="truncate font-mono text-[10px] text-[var(--text-primary)]/50" title={item.url}>
               {item.url}
             </span>
           </div>
@@ -142,7 +142,7 @@ const CreditCard: React.FC<{ item: ImageCreditItem; onSaved: () => void }> = ({ 
                 const link = usageLink(u);
                 return (
                   <li key={`${u.table}/${u.id}`}>
-                    <Link to={link.to} className="text-[#1C4737] underline">
+                    <Link to={link.to} className="text-[var(--brand-primary)] underline">
                       {link.label}
                     </Link>
                   </li>
@@ -164,13 +164,13 @@ const CreditCard: React.FC<{ item: ImageCreditItem; onSaved: () => void }> = ({ 
                   Cancel
                 </Button>
                 {item.usedBy.length > 0 && (
-                  <p className="w-full text-[11px] text-[#B3261E]">
+                  <p className="w-full text-[11px] text-[var(--danger)]">
                     This photo is on the site. Without a credit it disappears from the Photo Credits page.
                   </p>
                 )}
               </>
             ) : (
-              <Button type="button" variant="ghost" icon={Trash2} className="text-[#B3261E]" onClick={() => setConfirming(true)}>
+              <Button type="button" variant="ghost" icon={Trash2} className="text-[var(--danger)]" onClick={() => setConfirming(true)}>
                 Delete
               </Button>
             )}
@@ -223,7 +223,7 @@ const NewCredit: React.FC<{ onSaved: () => void }> = ({ onSaved }) => {
         </FieldLabel>
         <Input id={`${id}-url`} value={url} placeholder="https://…" onChange={(e) => setUrl(e.target.value)} />
         <FieldHelp>Exactly as the record stores it: copy it from the media library or the record’s image field.</FieldHelp>
-        {errors?.url && <p className="text-[11px] text-[#B3261E]">{errors.url}</p>}
+        {errors?.url && <p className="text-[11px] text-[var(--danger)]">{errors.url}</p>}
       </div>
       <CreditFields draft={draft} onChange={setDraft} errors={errors} />
       <div className="flex gap-2">

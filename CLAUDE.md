@@ -52,6 +52,15 @@ Update the Status column when a phase lands.
     importing `'zod'` directly brings back an `eval` probe the CSP reports.
   - A new external host (fonts, tiles, scripts) needs adding to the CSP;
     `server/test/browser-csp.test.ts` fails until it is.
+- **Themes** (redesign PR 5): every colour is a token in
+  `src/styles/tokens.css`, with dark values under `:root[data-theme="dark"]`.
+  `public/theme-init.js` (a classic script, above the stylesheets) sets the
+  theme before the first paint: the saved choice (`site:theme`, from the
+  Navbar's toggle), else the system's. The maps swap to CARTO's `dark_all`
+  tiles in place (`src/lib/mapTiles.ts`). `browser-contrast` measures AA on
+  every page type in both themes, photos painted white (the worst case);
+  `browser-hero-contrast` the photo headers. Text on a gold fill is
+  `--on-accent`; `--brand-secondary` is a fill under white text, never text.
 - **Error boundaries:** each public section is wrapped in `Section`
   (`src/pages/Section.tsx`, renders nothing on error), and each page in a
   boundary in `PublicLayout.tsx`; admin pages fall back to `PageCrash`.

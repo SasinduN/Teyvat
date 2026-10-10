@@ -44,7 +44,7 @@ export const FeaturedExperiences: React.FC = () => {
                   alt={item.title}
                   className="w-full h-full object-cover group-hover:scale-[1.035] transition-transform duration-700"
                 />
-                <div className="glass glass--inverse absolute top-4 left-4 text-[var(--accent-text)] px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1">
+                <div className="glass glass--inverse glass--strong absolute top-4 left-4 text-[var(--accent-text)] px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1">
                   <Star className="w-3.5 h-3.5 fill-[var(--accent)] text-[var(--accent-text)]" />
                   <span>{item.rating}</span>
                 </div>
@@ -70,7 +70,7 @@ export const FeaturedExperiences: React.FC = () => {
                     {item.description}
                   </p>
 
-                  <div className="flex items-center space-x-4 text-xs text-[var(--text-primary)]/60 pt-2 border-t border-[var(--border-strong)]/30">
+                  <div className="flex items-center space-x-4 text-xs text-[var(--text-secondary)] pt-2 border-t border-[var(--border-strong)]/30">
                     <span className="flex items-center space-x-1">
                       <Clock className="w-3.5 h-3.5 text-[var(--brand-primary)]" />
                       <span>{item.duration}</span>

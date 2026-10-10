@@ -19,11 +19,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-[#0F2E23] text-white hover:bg-[#1C4737] border-transparent',
+  primary: 'bg-[var(--inverse-surface)] text-white hover:bg-[var(--brand-secondary)] border-transparent',
   secondary:
-    'bg-white text-[#0F2E23] hover:bg-[#F5EFEB] border-[#D4C3B5]',
-  ghost: 'bg-transparent text-[#1C4737] hover:bg-[#1C4737]/10 border-transparent',
-  danger: 'bg-[#B3261E] text-white hover:bg-[#8C1D18] border-transparent'
+    'bg-[var(--surface)] text-[var(--brand-primary)] hover:bg-[var(--background-secondary)] border-[var(--border-strong)]',
+  ghost: 'bg-transparent text-[var(--brand-primary)] hover:bg-[var(--brand-secondary)]/10 border-transparent',
+  danger: 'bg-[var(--danger)] text-[var(--on-feedback)] hover:bg-[var(--danger-hover)] border-transparent'
 };
 
 export const Button: React.FC<ButtonProps> = ({
@@ -42,7 +42,7 @@ export const Button: React.FC<ButtonProps> = ({
       'inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5',
       'text-xs font-bold transition-colors',
       'disabled:cursor-not-allowed disabled:opacity-60',
-      'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-1',
+      'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1',
       VARIANTS[variant],
       className
     )}
@@ -59,10 +59,10 @@ export const Button: React.FC<ButtonProps> = ({
 /* ------------------------------------------------------------------- input */
 
 const CONTROL_BASE =
-  'w-full rounded-xl border border-[#D4C3B5]/70 bg-white px-3.5 py-2.5 text-xs font-medium ' +
-  'text-[#1A1A1A] placeholder:text-[#1A1A1A]/35 transition-colors ' +
-  'focus:border-[#1C4737] focus:outline-none focus:ring-1 focus:ring-[#1C4737] ' +
-  'disabled:bg-[#F5EFEB] disabled:text-[#1A1A1A]/50';
+  'w-full rounded-xl border border-[var(--border-strong)]/70 bg-[var(--surface)] px-3.5 py-2.5 text-xs font-medium ' +
+  'text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/35 transition-colors ' +
+  'focus:border-[var(--inverse-raised)] focus:outline-none focus:ring-1 focus:ring-[var(--inverse-raised)] ' +
+  'disabled:bg-[var(--background-secondary)] disabled:text-[var(--text-primary)]/50';
 
 export const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = ({
   className,
@@ -93,15 +93,15 @@ export const FieldLabel: React.FC<{
 }> = ({ htmlFor, children, required }) => (
   <label
     htmlFor={htmlFor}
-    className="block text-[10px] font-bold uppercase tracking-[0.12em] text-[#1C4737]"
+    className="block text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]"
   >
     {children}
-    {required && <span className="ml-1 text-[#B3261E]">*</span>}
+    {required && <span className="ml-1 text-[var(--danger)]">*</span>}
   </label>
 );
 
 export const FieldHelp: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <p className="text-[11px] font-light leading-relaxed text-[#1A1A1A]/55">{children}</p>
+  <p className="text-[11px] font-light leading-relaxed text-[var(--text-primary)]/55">{children}</p>
 );
 
 /* -------------------------------------------------------------------- card */
@@ -112,7 +112,7 @@ export const Card: React.FC<{ className?: string; children: React.ReactNode }> =
 }) => (
   <div
     className={cn(
-      'rounded-2xl border border-[#D4C3B5]/60 bg-white shadow-sm shadow-[#0F2E23]/5',
+      'rounded-2xl border border-[var(--border-strong)]/60 bg-[var(--surface)] shadow-sm shadow-[var(--inverse-surface)]/5',
       className
     )}
   >
@@ -125,11 +125,11 @@ export const Card: React.FC<{ className?: string; children: React.ReactNode }> =
 type BadgeTone = 'neutral' | 'success' | 'warning' | 'muted' | 'gold';
 
 const TONES: Record<BadgeTone, string> = {
-  neutral: 'bg-[#1C4737]/10 text-[#1C4737]',
-  success: 'bg-[#1C7C54]/12 text-[#146844]',
-  warning: 'bg-[#B3261E]/10 text-[#B3261E]',
-  muted: 'bg-[#1A1A1A]/8 text-[#1A1A1A]/60',
-  gold: 'bg-[#D4AF37]/20 text-[#7A6214]'
+  neutral: 'bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)]',
+  success: 'bg-[var(--success)]/12 text-[var(--success)]',
+  warning: 'bg-[var(--danger)]/10 text-[var(--danger)]',
+  muted: 'bg-[var(--text-primary)]/8 text-[var(--text-primary)]/60',
+  gold: 'bg-[var(--accent)]/20 text-[var(--warning)]'
 };
 
 export const Badge: React.FC<{ tone?: BadgeTone; children: React.ReactNode }> = ({
@@ -149,14 +149,14 @@ export const Badge: React.FC<{ tone?: BadgeTone; children: React.ReactNode }> = 
 /* ---------------------------------------------------------------- feedback */
 
 export const Spinner: React.FC<{ label?: string }> = ({ label = 'Loading' }) => (
-  <div className="flex items-center justify-center gap-2 py-16 text-[#1C4737]">
+  <div className="flex items-center justify-center gap-2 py-16 text-[var(--brand-primary)]">
     <LoaderCircle className="h-4 w-4 animate-spin" />
     <span className="text-xs font-bold uppercase tracking-[0.15em]">{label}</span>
   </div>
 );
 
 export const ErrorNote: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="rounded-xl border border-[#B3261E]/30 bg-[#B3261E]/8 px-4 py-3 text-xs font-medium text-[#B3261E]">
+  <div className="rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/8 px-4 py-3 text-xs font-medium text-[var(--danger)]">
     {children}
   </div>
 );
@@ -167,12 +167,12 @@ export const EmptyState: React.FC<{
   children?: React.ReactNode;
 }> = ({ icon: Icon, title, children }) => (
   <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1C4737]/10 text-[#1C4737]">
+    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)]">
       <Icon className="h-5 w-5" />
     </div>
-    <h3 className="font-heading text-lg font-bold text-[#0F2E23]">{title}</h3>
+    <h3 className="font-heading text-lg font-bold text-[var(--brand-primary)]">{title}</h3>
     {children && (
-      <div className="max-w-sm text-xs font-light leading-relaxed text-[#1A1A1A]/60">
+      <div className="max-w-sm text-xs font-light leading-relaxed text-[var(--text-primary)]/60">
         {children}
       </div>
     )}
@@ -188,9 +188,9 @@ export const PageHeader: React.FC<{
 }> = ({ title, description, actions }) => (
   <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <h1 className="font-heading text-2xl font-bold tracking-tight text-[#0F2E23]">{title}</h1>
+      <h1 className="font-heading text-2xl font-bold tracking-tight text-[var(--brand-primary)]">{title}</h1>
       {description && (
-        <p className="mt-1 max-w-2xl text-xs font-light leading-relaxed text-[#1A1A1A]/60">
+        <p className="mt-1 max-w-2xl text-xs font-light leading-relaxed text-[var(--text-primary)]/60">
           {description}
         </p>
       )}

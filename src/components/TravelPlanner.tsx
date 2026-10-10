@@ -66,7 +66,7 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
         
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--accent)] bg-white/10 px-4 py-1.5 rounded-full inline-block mb-3 border border-[var(--accent)]/30">
+          <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--accent-text)] bg-white/10 px-4 py-1.5 rounded-full inline-block mb-3 border border-[var(--accent)]/30">
             Interactive Journey Engine
           </span>
           <h2 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight mb-4">
@@ -84,7 +84,7 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
             
             {/* 1. Travel Style */}
             <div>
-              <label className="text-xs uppercase tracking-widest text-[var(--accent)] font-bold block mb-3 flex items-center space-x-2">
+              <label className="text-xs uppercase tracking-widest text-[var(--accent-text)] font-bold block mb-3 flex items-center space-x-2">
                 <Sparkles className="w-4 h-4" />
                 <span>1. Select Travel Style</span>
               </label>
@@ -96,7 +96,7 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
                     onClick={() => setStyle(s)}
                     className={`py-3 px-4 rounded-2xl text-xs font-semibold transition-all border ${
                       style === s
-                        ? 'bg-[var(--accent)] text-[var(--brand-primary)] font-bold border-[var(--accent)] shadow-lg scale-102'
+                        ? 'bg-[var(--accent)] text-[var(--on-accent)] font-bold border-[var(--accent)] shadow-lg scale-102'
                         : 'bg-white/5 text-white hover:bg-white/10 border-white/10'
                     }`}
                   >
@@ -108,7 +108,7 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
 
             {/* 2. Trip Duration */}
             <div>
-              <label className="text-xs uppercase tracking-widest text-[var(--accent)] font-bold block mb-3 flex items-center space-x-2">
+              <label className="text-xs uppercase tracking-widest text-[var(--accent-text)] font-bold block mb-3 flex items-center space-x-2">
                 <Calendar className="w-4 h-4" />
                 <span>2. Select Trip Duration</span>
               </label>
@@ -120,7 +120,7 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
                     onClick={() => setDuration(d)}
                     className={`py-3 px-4 rounded-2xl text-xs font-semibold transition-all border ${
                       duration === d
-                        ? 'bg-[var(--accent)] text-[var(--brand-primary)] font-bold border-[var(--accent)] shadow-lg scale-102'
+                        ? 'bg-[var(--accent)] text-[var(--on-accent)] font-bold border-[var(--accent)] shadow-lg scale-102'
                         : 'bg-white/5 text-white hover:bg-white/10 border-white/10'
                     }`}
                   >
@@ -132,7 +132,7 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
 
             {/* 3. Preferred Region */}
             <div>
-              <label className="text-xs uppercase tracking-widest text-[var(--accent)] font-bold block mb-3 flex items-center space-x-2">
+              <label className="text-xs uppercase tracking-widest text-[var(--accent-text)] font-bold block mb-3 flex items-center space-x-2">
                 <MapPin className="w-4 h-4" />
                 <span>3. Select Preferred Focus Region</span>
               </label>
@@ -144,7 +144,7 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
                     onClick={() => setRegion(r)}
                     className={`py-3 px-4 rounded-2xl text-xs font-semibold transition-all border ${
                       region === r
-                        ? 'bg-[var(--accent)] text-[var(--brand-primary)] font-bold border-[var(--accent)] shadow-lg scale-102'
+                        ? 'bg-[var(--accent)] text-[var(--on-accent)] font-bold border-[var(--accent)] shadow-lg scale-102'
                         : 'bg-white/5 text-white hover:bg-white/10 border-white/10'
                     }`}
                   >
@@ -158,7 +158,7 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
             <div className="text-center pt-4">
               <button
                 type="submit"
-                className="px-10 py-4 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-hover)] hover:from-[var(--accent-hover)] hover:to-[var(--accent-hover)] text-[var(--brand-primary)] font-bold text-base rounded-full shadow-2xl transition-all transform hover:-translate-y-0.5 flex items-center space-x-2 mx-auto"
+                className="px-10 py-4 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-hover)] hover:from-[var(--accent-hover)] hover:to-[var(--accent-hover)] text-[var(--on-accent)] font-bold text-base rounded-full shadow-2xl transition-all transform hover:-translate-y-0.5 flex items-center space-x-2 mx-auto"
               >
                 <Compass className="w-5 h-5" />
                 <span>Build My Journey</span>
@@ -243,7 +243,7 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
                 </p>
                 <button
                   onClick={() => onSavePlan(`Custom ${style} (${duration}) — ${region}`)}
-                  className="px-6 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--brand-primary)] rounded-xl font-bold text-xs shrink-0 shadow-md flex items-center space-x-1"
+                  className="px-6 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] rounded-xl font-bold text-xs shrink-0 shadow-md flex items-center space-x-1"
                 >
                   <span>Request Custom Quote</span>
                   <ArrowRight className="w-4 h-4" />

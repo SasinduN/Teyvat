@@ -63,26 +63,26 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
 
                 {/* Top Badge */}
                 <div className="absolute top-5 left-5 right-5 flex items-center justify-between z-10">
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-[var(--accent)] bg-[var(--inverse-surface)]/80 backdrop-blur-md px-3 py-1 rounded-full border border-[var(--accent)]/30">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-[var(--accent-text)] bg-[var(--inverse-surface)]/80 backdrop-blur-md px-3 py-1 rounded-full border border-[var(--accent)]/30">
                     {gem.tag}
                   </span>
-                  <span className="text-xs text-white/70 font-medium flex items-center space-x-1 bg-black/30 px-2.5 py-1 rounded-full">
-                    <MapPin className="w-3 h-3 text-[var(--accent)]" />
+                  <span className="text-xs text-white/90 font-medium flex items-center space-x-1 bg-black/60 px-2.5 py-1 rounded-full">
+                    <MapPin className="w-3 h-3 text-[var(--accent-text)]" />
                     <span>{gem.region}</span>
                   </span>
                 </div>
 
                 {/* Content */}
                 <div className="relative z-10 text-white space-y-2">
-                  <h3 className="font-heading text-2xl sm:text-3xl font-bold group-hover:text-[var(--accent)] transition-colors">
+                  <h3 className="font-heading text-2xl sm:text-3xl font-bold group-hover:text-[var(--accent-text)] transition-colors">
                     {gem.name}
                   </h3>
 
-                  <p className="text-xs text-white/80 line-clamp-2 font-light leading-relaxed">
+                  <p className="text-xs text-white/90 line-clamp-2 font-light leading-relaxed">
                     {gem.description}
                   </p>
 
-                  <div className="pt-2 flex items-center space-x-2 text-xs font-semibold text-[var(--accent)] group-hover:text-white transition-colors">
+                  <div className="pt-2 flex items-center space-x-2 text-xs font-semibold text-[var(--accent-text)] group-hover:text-white transition-colors">
                     <span>Discover Secret Spot</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </div>
@@ -128,7 +128,7 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                 
                 <div className="absolute bottom-6 left-6 right-6 text-white space-y-1">
-                  <span className="text-xs uppercase tracking-widest text-[var(--accent)] font-bold">
+                  <span className="text-xs uppercase tracking-widest text-[var(--accent-text)] font-bold">
                     {selectedGem.region}
                   </span>
                   <h3 className="font-heading text-3xl font-bold">{selectedGem.name}</h3>
@@ -148,7 +148,7 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
                 </p>
 
                 <div className="pt-4 border-t border-[var(--border-strong)]/40 flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-primary)]/60 flex items-center gap-1">
+                  <span className="text-xs text-[var(--text-secondary)] flex items-center gap-1">
                     <Sparkles className="w-4 h-4 text-[var(--brand-primary)]" /> Secret Uncrowded Destination
                   </span>
                   <button
@@ -157,7 +157,7 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
                       setSelectedGem(null);
                       onOpenInquiry(name);
                     }}
-                    className="px-6 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--brand-primary)] font-bold rounded-2xl text-xs shadow-md transition-all"
+                    className="px-6 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-bold rounded-2xl text-xs shadow-md transition-all"
                   >
                     Include in My Journey
                   </button>

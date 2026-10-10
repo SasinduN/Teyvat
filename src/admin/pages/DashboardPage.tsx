@@ -48,16 +48,16 @@ export const DashboardPage: React.FC = () => {
         <div className="space-y-6">
           {/* Enquiries callout */}
           <Link to="/admin/inquiries" className="block">
-            <Card className="flex items-center justify-between p-5 transition-colors hover:border-[#1C4737]/50">
+            <Card className="flex items-center justify-between p-5 transition-colors hover:border-[var(--inverse-raised)]/50">
               <div className="flex items-center gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0F2E23] text-[#D4AF37]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--inverse-surface)] text-[var(--accent-text)]">
                   <Inbox className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="font-heading text-lg font-bold text-[#0F2E23]">
+                  <div className="font-heading text-lg font-bold text-[var(--brand-primary)]">
                     Traveller enquiries
                   </div>
-                  <div className="mt-0.5 text-xs font-light text-[#1A1A1A]/60">
+                  <div className="mt-0.5 text-xs font-light text-[var(--text-primary)]/60">
                     {newInquiries > 0
                       ? `${newInquiries} awaiting a reply`
                       : 'Nothing new'}
@@ -67,19 +67,19 @@ export const DashboardPage: React.FC = () => {
               </div>
               <div className="flex items-center gap-3">
                 {newInquiries > 0 && <Badge tone="gold">{newInquiries} new</Badge>}
-                <ArrowUpRight className="h-4 w-4 text-[#1C4737]" />
+                <ArrowUpRight className="h-4 w-4 text-[var(--brand-primary)]" />
               </div>
             </Card>
           </Link>
 
           <Link to="/admin/settings" className="block">
-            <Card className="flex items-center gap-4 p-5 transition-colors hover:border-[#1C4737]/50">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0F2E23] text-[#D4AF37]">
+            <Card className="flex items-center gap-4 p-5 transition-colors hover:border-[var(--inverse-raised)]/50">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--inverse-surface)] text-[var(--accent-text)]">
                 <Settings className="h-5 w-5" />
               </div>
               <div>
-                <div className="font-heading text-lg font-bold text-[#0F2E23]">Site settings</div>
-                <div className="mt-0.5 text-xs font-light text-[#1A1A1A]/60">
+                <div className="font-heading text-lg font-bold text-[var(--brand-primary)]">Site settings</div>
+                <div className="mt-0.5 text-xs font-light text-[var(--text-primary)]/60">
                   Address, phone, contact email and the footer's social and legal links.
                 </div>
               </div>
@@ -88,7 +88,7 @@ export const DashboardPage: React.FC = () => {
 
           {/* Content collections */}
           <div>
-            <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#1A1A1A]/45">
+            <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-primary)]/45">
               Content
             </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -96,19 +96,19 @@ export const DashboardPage: React.FC = () => {
                 const Icon = c.icon;
                 return (
                   <Link key={c.slug} to={`/admin/${c.slug}`}>
-                    <Card className="h-full p-5 transition-colors hover:border-[#1C4737]/50">
+                    <Card className="h-full p-5 transition-colors hover:border-[var(--inverse-raised)]/50">
                       <div className="flex items-start justify-between">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1C4737]/10 text-[#1C4737]">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)]">
                           <Icon className="h-4.5 w-4.5" />
                         </div>
-                        <span className="font-heading text-2xl font-bold text-[#0F2E23]">
+                        <span className="font-heading text-2xl font-bold text-[var(--brand-primary)]">
                           {counts.data?.[c.table] ?? 0}
                         </span>
                       </div>
-                      <div className="mt-4 font-heading text-base font-bold text-[#0F2E23]">
+                      <div className="mt-4 font-heading text-base font-bold text-[var(--brand-primary)]">
                         {c.label}
                       </div>
-                      <p className="mt-1 text-[11px] font-light leading-relaxed text-[#1A1A1A]/55">
+                      <p className="mt-1 text-[11px] font-light leading-relaxed text-[var(--text-primary)]/55">
                         {c.description}
                       </p>
                     </Card>
