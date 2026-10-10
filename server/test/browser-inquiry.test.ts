@@ -34,10 +34,12 @@ import { HOOK_TIMEOUT } from './timeouts';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 /**
- * The approved InquiryModal: redesign PR 4's (4e9942d). Until then it was
+ * The approved InquiryModal: the focus-trap PR's (d106be5), which opens it
+ * with focus on its first control (the Close button, ringed when nothing
+ * has been clicked yet). Before: redesign PR 4's 4e9942d, and before that
  * faed6bc, the last commit before phase 6 touched it.
  */
-const BASELINE_COMMIT = '4e9942d';
+const BASELINE_COMMIT = 'd106be5';
 
 const executable = findChrome();
 const cssDir = join(REPO_ROOT, 'dist', 'assets');

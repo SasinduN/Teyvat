@@ -62,7 +62,7 @@ Update the Status column when a phase lands.
   - The honeypot in `InquiryModal` must stay its form's first child (Tailwind
     v4's `space-y-*` puts a margin on every child but the last).
   - `server/test/browser-inquiry.test.ts` compares its render against
-    `4e9942d` (redesign PR 4).
+    `d106be5` (the focus-trap PR).
 - **Newsletter** (`server/src/routes/newsletter.ts`): the Footer form stores
   addresses; nothing sends them yet. Unsubscribing is a POST from the
   `/unsubscribe?token=` page (never a GET) and deletes the row. Its honeypot
