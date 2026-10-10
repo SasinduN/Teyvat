@@ -8,6 +8,16 @@
     --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
+  /*
+   * The scrollbar's space stays reserved when a dialog or the phone menu
+   * locks scrolling (useModalFocus: body overflow hidden), so the page and
+   * the fixed header don't jump sideways by its width. While a dialog is
+   * open, the reserved strip is dark like the dialog's backdrop (the
+   * backdrop, being fixed, stops at the strip).
+   */
+  html { scrollbar-gutter: stable; }
+  html:has(.site [aria-modal="true"]) { background-color: var(--inverse-deep); }
+
   body {
     font-family: var(--font-sans);
     background-color: var(--background);
