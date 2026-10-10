@@ -64,15 +64,15 @@ const skip = !executable
  * ones; the rest are measured.
  */
 const SECTIONS: { name: string; baseline: string; props: string; height?: number }[] = [
-  // Redesign PR 2 (0d95f86): the Navbar's approved new design.
-  { name: 'Navbar', baseline: '0d95f86', props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
-  // Redesign PR 4 (4e9942d): the approved new designs of these five.
+  // Redesign PR 5 (194fa9d): the Navbar with the theme toggle (was 0d95f86, PR 2).
+  { name: 'Navbar', baseline: '194fa9d', props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
+  // Redesign PR 4 (4e9942d): the approved new design.
   { name: 'DestinationSpotlight', baseline: '4e9942d', props: '{ onSelectDestination() {} }' },
-  { name: 'FeaturedExperiences', baseline: '4e9942d', props: '{ onSelectExperience() {} }' },
-  { name: 'ToursSection', baseline: '4e9942d', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
-  { name: 'ExperiencesSection', baseline: '4e9942d', props: '{ onSelectCategory() {} }' },
-  // Redesign PR 3 (ce487de): the journal cards' approved new design.
-  { name: 'JournalSection', baseline: 'ce487de', props: '{}' },
+  // Redesign PR 5 (194fa9d): these four with their AA contrast fixes (were 4e9942d; JournalSection ce487de).
+  { name: 'FeaturedExperiences', baseline: '194fa9d', props: '{ onSelectExperience() {} }' },
+  { name: 'ToursSection', baseline: '194fa9d', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
+  { name: 'ExperiencesSection', baseline: '194fa9d', props: '{ onSelectCategory() {} }' },
+  { name: 'JournalSection', baseline: '194fa9d', props: '{}' },
   { name: 'SearchModal', baseline: '4e9942d', props: '{ isOpen: true, onClose() {}, onSelectDestination() {} }', height: 900 }
 ];
 
