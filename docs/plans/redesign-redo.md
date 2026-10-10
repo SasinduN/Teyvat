@@ -334,6 +334,23 @@ Parts 1 and 2 below in one PR, with these specifics:
   unpublished one is absent); absolute URLs from `PUBLIC_SITE_URL`; the
   brand from `brand.ts`; no `/admin` or `/api`.
 
+### PR 5 as built (10 October 2026)
+
+- As planned below: dark tokens, `public/theme-init.js`, the toggle,
+  `site:theme`, CARTO `dark_all` swapped in place, the admin restyle
+  (visual only: #12's drawer focus trap and its editor cache change are
+  left out).
+- **Contrast, measured everywhere.** `browser-contrast` checks every page
+  type in both themes at both widths: each photo is painted white (the
+  worst case), the text hidden, and every piece of text and icon-only
+  control is measured against the pixels behind it. It found about a
+  hundred shortfalls, in both themes, from earlier PRs as well; fixed with
+  tokens rather than one by one (faint text, chips on photos, gold text,
+  text on gold, the dark teal fill, photo-card gradients) plus two layout
+  faults.
+- The hex guard covers `src/admin`; only `WhatsAppButton` is left.
+- `npm run screenshots -- --admin` captures the admin, signed in.
+
 ### PR 5: dark theme (and the admin restyle, below)
 - **Tokens:** PR 2 made every colour a variable. This PR adds the dark
   values under `:root[data-theme="dark"]`, and the light values stay the
