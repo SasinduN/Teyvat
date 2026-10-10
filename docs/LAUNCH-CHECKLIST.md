@@ -163,9 +163,10 @@ off in a pull request, so the history shows when each was done.
 - [ ] **21. Open the site to search engines: set `SITE_INDEXABLE=true`** on
       the API service, last, once the domain (8), `PUBLIC_SITE_URL` and the
       real content (12–14) are in. Until then robots.txt disallows
-      everything, every page says `noindex`, and there is no sitemap. After
-      setting it, check `/robots.txt` names the sitemap and `/sitemap.xml`
-      lists the pages, then submit the sitemap in Google Search Console.
+      everything, every page says `noindex`, and there is no sitemap or
+      `llms.txt`. After setting it, check `/robots.txt` names the sitemap,
+      `/sitemap.xml` and `/llms.txt` list the pages, then submit the sitemap
+      in Google Search Console.
       **Blocks:** search traffic. **Who:** Railway admin + owner.
 
 ## Always

@@ -131,6 +131,9 @@ Update the Status column when a phase lands.
   - Every injected value goes through `escapeHtml` (`shared/html.ts`).
   - Titles come from `shared/page-meta.ts`, and the brand from
     `shared/brand.ts`, for the client too.
+  - `GET /llms.txt` (llmstxt.org) is Markdown built per request from the
+    published rows and `paths`, like the sitemap, and only when
+    `SITE_INDEXABLE` is true. Row text goes through `markdownText`.
 
 ### Where things live
 
@@ -181,10 +184,10 @@ Update the Status column when a phase lands.
     new-enquiry emails. Off without the first two.
   - `PUBLIC_SITE_URL`: the public `https://` origin. Every absolute URL the
     server writes comes from it (canonical, `og:url`, share images, the
-    sitemap, the email's link). Unset: each request's own host.
+    sitemap, `llms.txt`, the email's link). Unset: each request's own host.
   - `SITE_INDEXABLE`: `true` opens the site to search engines. Unset or
     anything else keeps them out (robots.txt `Disallow: /`, `noindex` on
-    every page, no sitemap). Launch checklist item 21.
+    every page, no sitemap, no `llms.txt`). Launch checklist item 21.
 - **Never log request data.** `errorHandler` logs errors through
   `describeForLog` (no Postgres `detail`, no request bodies). Enquiry names,
   emails and messages must never reach the logs.
