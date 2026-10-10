@@ -15,7 +15,9 @@ import './test-db';
  *   4. Each marker's colour and icon come from its destination's FIRST
  *      category; the legend shows all seven.
  * Plus quick checks for 2 (touch: one finger isn't captured) and 5 (labels,
- * keyboard).
+ * keyboard), the dark theme's zoom buttons, and Quick Jump's scrolling.
+ * The framing (the whole island, nothing under an overlay) is in
+ * browser-map-framing.
  *
  * Needs `npm run build` and Chrome; skipped with a message otherwise.
  */
@@ -303,6 +305,168 @@ describe('the map, in Chrome', { skip }, () => {
       return r.width > 0 && r.height > 0;
     })()`);
     assert.equal(visible, false);
+  });
+
+  /** /explore at `size` in `theme`, without motion (fits land at once), scrolled to the map, its markers drawn. */
+  async function openMapAt(size: { width: number; height: number }, theme: 'light' | 'dark'): Promise<Page> {
+    const mobile = size.width < 640;
+    const page = await chrome.newPage();
+    await page.send('Page.enable');
+    await page.send('Emulation.setDeviceMetricsOverride', { ...size, deviceScaleFactor: 1, mobile });
+    await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }, { name: 'prefers-reduced-motion', value: 'reduce' }] });
+    if (mobile) await page.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    await page.send('Page.navigate', { url: `${app.baseUrl}/explore` });
+    await waitFor(page, `document.querySelector('#explore-map') && document.documentElement.dataset.theme === ${JSON.stringify(theme)}`, 'the page');
+    await page.evaluate(`document.querySelector('#explore-map .leaflet-container, #explore-map [data-keep-clear]').scrollIntoView({ block: 'center' }), true`);
+    await waitFor(page, `document.querySelectorAll('#explore-map .leaflet-marker-icon').length > 0 && document.querySelector('#explore-map .leaflet-container').dataset.view`, 'markers');
+    return page;
+  }
+
+  /**
+   * Everything that could hide a marker, against every marker as drawn (its
+   * disc, scaled when active): the Map Guide (the Key on phones), Quick Jump,
+   * the credit and the zoom buttons; the map's own edges; other markers; and
+   * the active marker's name.
+   */
+  const markerClashes = (page: Page) =>
+    page.evaluate<string[]>(`(() => {
+      const map = document.querySelector('#explore-map .leaflet-container');
+      const area = map.parentElement;
+      const box = (el) => el.getBoundingClientRect();
+      const shown = (el) => { const r = box(el); return r.width > 0 && r.height > 0; };
+      const overlays = [
+        ...[...area.querySelectorAll('[data-map-overlay]')].filter(shown).map((el) => [el.textContent.includes('Map Guide') ? 'the Map Guide' : 'the Key', box(el)]),
+        ['Quick Jump', box(area.querySelector('[data-keep-clear]'))],
+        ['the credit', box(map.querySelector('.leaflet-control-attribution'))],
+        ['the zoom buttons', box(map.querySelector('.leaflet-control-zoom'))]
+      ];
+      const overlap = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+      const markers = [...map.querySelectorAll('.leaflet-marker-icon')].map((m) => ({
+        name: m.getAttribute('aria-label'),
+        disc: box(m.querySelector('.map-marker-disc')),
+        label: m.querySelector('.map-marker.is-active') ? box(m.querySelector('.map-marker-label')) : null
+      }));
+      const frame = box(map);
+      const out = [];
+      for (const m of markers) {
+        for (const [what, r] of overlays) if (overlap(m.disc, r)) out.push(m.name + ' under ' + what);
+        if (m.disc.left < frame.left || m.disc.right > frame.right || m.disc.top < frame.top || m.disc.bottom > frame.bottom) out.push(m.name + ' off the map');
+        for (const n of markers) {
+          if (n === m) continue;
+          // Discs are round: overlapping when their centres are closer than their radii.
+          const d = Math.hypot((m.disc.left + m.disc.right - n.disc.left - n.disc.right) / 2, (m.disc.top + m.disc.bottom - n.disc.top - n.disc.bottom) / 2);
+          if (m.name < n.name && d < (m.disc.width + n.disc.width) / 2) out.push(m.name + ' overlaps ' + n.name);
+          if (m.label && overlap(m.label, n.disc)) out.push(m.name + "'s name hides " + n.name);
+        }
+      }
+      return out;
+    })()`);
+
+  test('the selected marker hides no neighbour: picking each place in turn, nothing overlaps it or sits under its name', async () => {
+    const page = await openMapAt({ width: 1280, height: 800 }, 'light');
+    await settle(page);
+    const names = await page.evaluate<string[]>(`[...document.querySelectorAll('#explore-map [data-keep-clear] button')].map((b) => b.textContent.trim())`);
+    assert.equal(names.length, 20);
+    for (const name of names) {
+      await page.evaluate(`[...document.querySelectorAll('#explore-map [data-keep-clear] button')].find((b) => b.textContent.trim() === ${JSON.stringify(name)}).click(), true`);
+      await settle(page);
+      const clashes = (await markerClashes(page)).filter((c) => c.includes(name));
+      // Picking flies in (the view is the visitor's now), so only clashes with markers count.
+      assert.deepEqual(clashes.filter((c) => !c.includes(' under ') && !c.includes(' off the map')), [], name);
+    }
+  });
+
+  test('the Map Guide counts exactly the published destinations: one marker each', async () => {
+    const page = await openMapAt({ width: 1280, height: 800 }, 'light');
+    const content = await (await fetch(`${app.baseUrl}/api/content`)).json() as { destinations: Array<{ id: string }> };
+    const shown = await page.evaluate<{ count: number; markers: number }>(`({
+      count: Number([...document.querySelectorAll('#explore-map [data-map-overlay] strong')][0].textContent),
+      markers: document.querySelectorAll('#explore-map .leaflet-marker-icon').length
+    })`);
+    assert.deepEqual(shown, { count: content.destinations.length, markers: content.destinations.length });
+
+    // Unpublishing one takes it off the map, and the count says so.
+    await pool.query(`update public.destinations set published = false where id = 'galle'`);
+    try {
+      const fewer = await openMapAt({ width: 1280, height: 800 }, 'light');
+      await waitFor(fewer, `document.querySelectorAll('#explore-map .leaflet-marker-icon').length === ${content.destinations.length - 1}`, 'one marker fewer');
+      const label = await fewer.evaluate<string>(`[...document.querySelectorAll('#explore-map [data-map-overlay] strong')][0].textContent`);
+      assert.equal(Number(label), content.destinations.length - 1);
+    } finally {
+      await pool.query(`update public.destinations set published = true where id = 'galle'`);
+    }
+  });
+
+  test('dark: the zoom buttons are dark glass with light icons (AA on any backdrop) and show the focus ring', async () => {
+    const page = await openMapAt({ width: 1280, height: 800 }, 'dark');
+    const buttons = await page.evaluate<Array<{ label: string; ratio: number; background: number }>>(`(() => {
+      const probe = document.createElement('canvas').getContext('2d');
+      const rgba = (css) => { probe.clearRect(0, 0, 1, 1); probe.fillStyle = '#000'; probe.fillStyle = css; probe.fillRect(0, 0, 1, 1); const d = probe.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255]; };
+      const lum = ([r, g, b]) => { const c = [r, g, b].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+      const over = (top, under) => [0, 1, 2].map((i) => top[i] * top[3] + under[i] * (1 - top[3]));
+      const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+      return [...document.querySelectorAll('#explore-map .leaflet-control-zoom a')].map((a) => {
+        const s = getComputedStyle(a), fg = rgba(s.color), bg = rgba(s.backgroundColor);
+        // The glass over the brightest and the darkest tile.
+        const worst = Math.min(...[[255, 255, 255], [0, 0, 0]].map((tile) => ratio(over(fg, over(bg, tile)), over(bg, tile))));
+        return { label: a.getAttribute('aria-label'), ratio: Math.round(worst * 100) / 100, background: Math.round(lum(over(bg, [255, 255, 255])) * 100) / 100 };
+      });
+    })()`);
+    assert.equal(buttons.length, 2);
+    for (const b of buttons) {
+      assert.ok(b.ratio >= 4.5, `${b.label}: ${b.ratio}:1`);
+      assert.ok(b.background < 0.1, `${b.label}: a dark background (luminance ${b.background} even over white)`);
+    }
+
+    // Tab from the last Quick Jump place reaches the zoom buttons; the focused one shows the ring.
+    await page.evaluate(`document.querySelector('#explore-map .leaflet-control-zoom-in').focus(), true`);
+    const ring = await page.evaluate<{ focused: boolean; style: string; width: number }>(`(() => {
+      const a = document.querySelector('#explore-map .leaflet-control-zoom-in'), s = getComputedStyle(a);
+      return { focused: a.matches(':focus-visible'), style: s.outlineStyle, width: parseFloat(s.outlineWidth) };
+    })()`);
+    assert.ok(ring.focused, 'precondition: keyboard-style focus');
+    assert.ok(ring.style !== 'none' && ring.width >= 2, `the focus ring: ${ring.style} ${ring.width}px`);
+  });
+
+  test('Quick Jump: no scrollbar, still scrolls (trackpad and keyboard), and fades only at an end with more past it', async () => {
+    const page = await openMapAt({ width: 1280, height: 800 }, 'dark');
+    const row = `document.querySelector('#explore-map .te-quick-jump')`;
+    const state = () =>
+      page.evaluate<{ scrollbar: number; overflow: boolean; left: number; before: string; after: string; mask: string }>(`(() => {
+        const r = ${row}, s = getComputedStyle(r);
+        return {
+          scrollbar: r.offsetHeight - r.clientHeight,
+          overflow: r.scrollWidth > r.clientWidth,
+          left: Math.round(r.scrollLeft),
+          before: r.dataset.moreBefore,
+          after: r.dataset.moreAfter,
+          mask: s.maskImage || s.webkitMaskImage
+        };
+      })()`);
+
+    let now = await state();
+    assert.ok(now.overflow, 'precondition: more places than fit');
+    assert.equal(now.scrollbar, 0, 'no scrollbar takes space');
+    assert.equal(await page.evaluate<string>(`getComputedStyle(${row}).scrollbarWidth`), 'none', 'no scrollbar is drawn');
+    assert.deepEqual([now.before, now.after], ['false', 'true'], 'at the start: more after it only');
+    assert.match(now.mask, /gradient/, 'the end with more fades');
+
+    // A trackpad's sideways swipe scrolls it.
+    const r = await page.evaluate<{ x: number; y: number }>(`(() => { const b = ${row}.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; })()`);
+    await page.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: r.x, y: r.y, deltaX: 400, deltaY: 0 });
+    await waitFor(page, `${row}.scrollLeft > 0`, 'a sideways scroll');
+    await waitFor(page, `${row}.dataset.moreBefore === 'true'`, 'the start to fade once scrolled');
+
+    // Tab reaches the last place, and it scrolls into view clear of the fade.
+    await page.evaluate(`[...${row}.querySelectorAll('button')].at(-1).focus(), true`);
+    await waitFor(page, `${row}.dataset.moreAfter === 'false'`, 'the end reached');
+    now = await state();
+    assert.deepEqual([now.before, now.after], ['true', 'false'], 'at the end: more before it only');
+    const last = await page.evaluate<{ inside: boolean }>(`(() => {
+      const r = ${row}.getBoundingClientRect(), b = [...${row}.querySelectorAll('button')].at(-1).getBoundingClientRect();
+      return { inside: b.left >= r.left && b.right <= r.right };
+    })()`);
+    assert.ok(last.inside, 'the focused place is wholly in view');
   });
 
   test('2. touch: one finger is left to the page; the map takes two', async () => {

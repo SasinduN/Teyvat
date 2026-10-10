@@ -494,6 +494,55 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   text-decoration: underline;
 }
 
+/* The zoom buttons: Leaflet's own white in the light theme; dark glass with
+   light icons in the dark one. Keyboard focus shows the site's ring. */
+:root[data-theme="dark"] .leaflet-container .leaflet-control-zoom.leaflet-bar {
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
+}
+:root[data-theme="dark"] .leaflet-container .leaflet-control-zoom a {
+  background-color: rgb(var(--surface-channels) / .92);
+  color: var(--text-primary);
+  border-bottom-color: var(--glass-border);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+:root[data-theme="dark"] .leaflet-container .leaflet-control-zoom a:first-child { border-radius: 11px 11px 0 0; }
+:root[data-theme="dark"] .leaflet-container .leaflet-control-zoom a:last-child { border-radius: 0 0 11px 11px; border-bottom: none; }
+:root[data-theme="dark"] .leaflet-container .leaflet-control-zoom a:hover,
+:root[data-theme="dark"] .leaflet-container .leaflet-control-zoom a:focus {
+  background-color: var(--inverse-raised);
+  color: var(--text-primary);
+}
+:root[data-theme="dark"] .leaflet-container .leaflet-control-zoom a.leaflet-disabled {
+  background-color: rgb(var(--surface-channels) / .92);
+  color: var(--text-secondary);
+}
+
+/* Quick Jump's places: scrolled by touch, trackpad or Tab, with no
+   scrollbar. An end fades where more places are past it
+   (`data-more-before/after`, set by InteractiveMapSection). The padding
+   (taken back by the margin) is room for the focus ring inside the scroller;
+   the scroll padding keeps a place scrolled to clear of the fade. */
+.te-quick-jump {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  padding: 6px;
+  margin: -6px 0;
+  scroll-padding-inline: 2.5rem;
+  --fade-before: 0px;
+  --fade-after: 0px;
+}
+.te-quick-jump::-webkit-scrollbar { display: none; }
+.te-quick-jump[data-more-before="true"] { --fade-before: 2.5rem; }
+.te-quick-jump[data-more-after="true"] { --fade-after: 2.5rem; }
+.te-quick-jump:is([data-more-before="true"], [data-more-after="true"]) {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--fade-before), #000 calc(100% - var(--fade-after)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 var(--fade-before), #000 calc(100% - var(--fade-after)), transparent);
+}
+
 /* Custom Pin Pulse Animation */
 @keyframes pulse-ring {
   0% {

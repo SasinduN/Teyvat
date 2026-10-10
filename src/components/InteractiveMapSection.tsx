@@ -81,6 +81,20 @@ const LABEL_ZOOM = 9;
 const FIT_MAX_ZOOM = 9;
 /** A route is framed no closer than this. */
 const ROUTE_MAX_ZOOM = 10;
+/**
+ * The whole island, Point Pedro and the Jaffna peninsula to Dondra Head, and
+ * the islands off Jaffna to the east coast: the "All" view frames this (and
+ * any marker outside it). Geography, not content.
+ */
+const SRI_LANKA_BOUNDS: [[number, number], [number, number]] = [[5.9, 79.65], [9.84, 81.9]];
+/** A marker's radius on screen (the active one is scaled 1.25), and the gap kept between markers. */
+const MARKER_RADIUS = 16;
+const ACTIVE_RADIUS = 20;
+const MARKER_GAP = 4;
+/** The space kept between a framed marker's centre and an overlay or the map's edge. */
+const FIT_MARGIN = ACTIVE_RADIUS + 12;
+
+type Padding = { top: number; right: number; bottom: number; left: number };
 /** Start loading Leaflet and tiles this far before the map scrolls into view. */
 const LAZY_MARGIN = '400px 0px';
 
@@ -130,6 +144,16 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
   const markersGroupRef = useRef<any>(null);
   const leafletRef = useRef<typeof import('leaflet') | null>(null);
   const markersByIdRef = useRef<Map<string, any>>(new Map());
+  /** Each marker's own place: markers are drawn nudged from it where they would overlap. */
+  const markerHomesRef = useRef<Map<string, [number, number]>>(new Map());
+  /** The padding of the last fit: framed markers are kept inside it. */
+  const safePaddingRef = useRef<Padding | null>(null);
+  /** Whether the visitor has moved the map (or picked a place) since the last fit; a resize refits only if not. */
+  const userMovedRef = useRef(false);
+  /** Set while one of our own moves runs, so it isn't taken for the visitor's. */
+  const programmaticMoveRef = useRef(false);
+  const refitRef = useRef<() => void>(() => {});
+  const spreadMarkersRef = useRef<() => void>(() => {});
   // Markers wait for this: before it there is no map to put them on. (Without
   // it, the first markers were never drawn until something re-rendered.)
   const [mapReady, setMapReady] = useState(false);
@@ -162,6 +186,17 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
   const clearRoute = (restoreView: boolean) => {
     restoreOnClearRef.current = restoreView;
     onClearRoute?.();
+  };
+
+  /** Picks a place (a marker or Quick Jump) and flies to it: from then on the view is the visitor's. */
+  const flyToPlace = (dest: Destination) => {
+    setActiveDest(dest);
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    programmaticMoveRef.current = true;
+    userMovedRef.current = true;
+    const animate = !(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
+    map.flyTo([dest.latitude, dest.longitude], 9.5, { animate, duration: 1.2 });
   };
 
   const chooseCategory = (cat: CategoryType | 'All') => {
@@ -228,17 +263,37 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
     );
   }, [filteredDestinations, selectedWhereFromParent, searchRequestId]);
 
-  // Keep the selected place in view in the Quick Jump row, scrolling only that row.
+  // Keep the selected place in view in the Quick Jump row, scrolling only
+  // that row, and clear of the faded edges.
   const quickJumpRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const row = quickJumpRef.current;
     const selected = row?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]');
     if (!row || !selected) return;
-    const left = selected.offsetLeft;
-    const right = left + selected.offsetWidth;
+    const fade = parseFloat(getComputedStyle(row).scrollPaddingLeft) || 0;
+    const left = selected.offsetLeft - fade;
+    const right = selected.offsetLeft + selected.offsetWidth + fade;
     if (left < row.scrollLeft) row.scrollLeft = left;
     else if (right > row.scrollLeft + row.clientWidth) row.scrollLeft = right - row.clientWidth;
   }, [activeDest?.id]);
+
+  // Which ends of the Quick Jump row have more places past them (each fades, index.css).
+  const [quickJumpEdges, setQuickJumpEdges] = useState({ before: false, after: false });
+  const updateQuickJumpEdges = () => {
+    const row = quickJumpRef.current;
+    if (!row) return;
+    const before = row.scrollLeft > 1;
+    const after = row.scrollLeft + row.clientWidth < row.scrollWidth - 1;
+    setQuickJumpEdges((edges) => (edges.before === before && edges.after === after ? edges : { before, after }));
+  };
+  useEffect(() => {
+    updateQuickJumpEdges();
+    const row = quickJumpRef.current;
+    if (!row || !('ResizeObserver' in window)) return;
+    const observer = new ResizeObserver(updateQuickJumpEdges);
+    observer.observe(row);
+    return () => observer.disconnect();
+  }, [filteredDestinations]);
 
   // Initialize Leaflet only when the map is about to be seen: until then the
   // page downloads neither Leaflet nor a single tile.
@@ -264,12 +319,16 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
         // trackpad drag as before.
         const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches ?? false;
 
-        // Create Leaflet map centered on Sri Lanka
+        // Centred on Sri Lanka; the first fit (below, once the markers are
+        // known) frames the whole island clear of the overlays.
         const map = L.map(container, {
           center: [7.8731, 80.7718],
-          zoom: 7.8,
-          minZoom: 7,
+          zoom: 7.5,
+          // Low enough for the whole island on a phone's short map.
+          minZoom: 6,
           maxZoom: 13,
+          // Fits land between whole zoom levels, so the island fills the map.
+          zoomSnap: 0.25,
           zoomControl: false,
           scrollWheelZoom: false,
           dragging: !coarsePointer,
@@ -310,9 +369,29 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
           container.addEventListener('touchmove', onTouchMove, { passive: true });
         }
 
-        // The map's height follows the side panel's on large screens.
+        // Our own moves (fits, flights) end at 'moveend'; any other move is the visitor's.
+        map.on('movestart', () => {
+          if (!programmaticMoveRef.current) userMovedRef.current = true;
+        });
+        map.on('moveend', () => {
+          programmaticMoveRef.current = false;
+          // What's in view, "west,south,east,north" (for the tests, like data-zoom).
+          container.dataset.view = map.getBounds().toBBoxString();
+          spreadMarkersRef.current();
+        });
+
+        // The map's height follows the side panel's on large screens. While
+        // the view is still the framed one, a new size frames it again.
         if ('ResizeObserver' in window) {
-          resizeObserver = new ResizeObserver(() => map.invalidateSize());
+          resizeObserver = new ResizeObserver(() => {
+            // invalidateSize may move the map itself; that isn't the visitor.
+            // (The observer also fires once on starting: no new size, no refit.)
+            const moved = userMovedRef.current;
+            const before = map.getSize();
+            map.invalidateSize();
+            userMovedRef.current = moved;
+            if (!moved && !map.getSize().equals(before)) refitRef.current();
+          });
           resizeObserver.observe(container);
         }
 
@@ -361,6 +440,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
 
     markersGroupRef.current.clearLayers();
     markersByIdRef.current.clear();
+    markerHomesRef.current.clear();
 
     filteredDestinations.forEach((dest) => {
       const isActive = activeDest?.id === dest.id;
@@ -381,18 +461,13 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
         marker.getElement()?.setAttribute('aria-label', dest.name);
       });
 
-      marker.on('click', () => {
-        setActiveDest(dest);
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.flyTo([dest.latitude, dest.longitude], 9.5, {
-            duration: 1.2
-          });
-        }
-      });
+      marker.on('click', () => flyToPlace(dest));
 
       markersByIdRef.current.set(dest.id, marker);
+      markerHomesRef.current.set(dest.id, [dest.latitude, dest.longitude]);
       markersGroupRef.current.addLayer(marker);
     });
+    spreadMarkersRef.current();
   }, [mapReady, filteredDestinations]);
 
   // The active marker: a class toggle, so focus and hover state survive.
@@ -403,48 +478,207 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
       marker.getElement()?.querySelector('.map-marker')?.classList.toggle('is-active', active);
       marker.setZIndexOffset(active ? 1000 : 0);
     });
+    spreadMarkersRef.current();
   }, [mapReady, activeDest, filteredDestinations]);
 
-  /** How far down the map the visible top overlays reach, plus a margin. */
-  const topOverlayClearance = (): number => {
-    const container = mapContainerRef.current;
-    if (!container?.parentElement) return 80;
-    const top = container.getBoundingClientRect().top;
-    let clearance = 40;
-    container.parentElement.querySelectorAll('[data-map-overlay]').forEach((el) => {
-      const box = el.getBoundingClientRect();
-      if (box.height > 0) clearance = Math.max(clearance, box.bottom - top + 16);
-    });
-    return Math.round(clearance);
-  };
-
-  /** Frames `points`, smoothly unless the visitor prefers reduced motion. */
-  const fitPoints = (points: [number, number][], maxZoom: number) => {
+  /**
+   * The padding that keeps framed markers clear of everything drawn on the
+   * map: our overlays (the Map Guide or the Key, the route chip, Quick Jump)
+   * and Leaflet's controls (zoom, the credit), all measured. Each overlay is
+   * cleared from one of the two edges it is nearest (the Map Guide by keeping
+   * markers below it, or to its right); of those choices, the one that shows
+   * `bounds` largest wins.
+   */
+  const clearPadding = (bounds: any): Padding => {
     const L = leafletRef.current;
     const map = mapInstanceRef.current;
-    if (!L || !map || points.length === 0) return;
+    const container = mapContainerRef.current;
+    const base: Padding = { top: FIT_MARGIN, right: FIT_MARGIN, bottom: FIT_MARGIN, left: FIT_MARGIN };
+    if (!L || !map || !container?.parentElement) return base;
+    const c = container.getBoundingClientRect();
+    const overlays = [
+      ...container.parentElement.querySelectorAll('[data-map-overlay], [data-keep-clear]'),
+      ...container.querySelectorAll('.leaflet-control')
+    ]
+      .map((el) => el.getBoundingClientRect())
+      .filter((r) => r.width > 0 && r.height > 0 && r.right > c.left && r.left < c.right && r.bottom > c.top && r.top < c.bottom)
+      .map((r) => {
+        const box = { top: r.top - c.top, right: r.right - c.left, bottom: r.bottom - c.top, left: r.left - c.left };
+        // How far from each edge the markers must stay to miss this overlay.
+        const needs: [keyof Padding, number][] = [
+          ['top', box.bottom + FIT_MARGIN],
+          ['bottom', c.height - box.top + FIT_MARGIN],
+          ['left', box.right + FIT_MARGIN],
+          ['right', c.width - box.left + FIT_MARGIN]
+        ];
+        const gaps: Record<keyof Padding, number> = { top: box.top, bottom: c.height - box.bottom, left: box.left, right: c.width - box.right };
+        return needs.sort((a, b) => gaps[a[0]] - gaps[b[0]]).slice(0, 2);
+      });
 
-    const animate = !(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
-    if (points.length === 1) {
-      map.flyTo(points[0], maxZoom, { animate, duration: 0.8 });
-      return;
+    let best = base;
+    let bestZoom = -Infinity;
+    for (let choice = 0; choice < 1 << overlays.length; choice += 1) {
+      const padding = { ...base };
+      overlays.forEach((options, i) => {
+        const [edge, need] = options[(choice >> i) & 1];
+        padding[edge] = Math.max(padding[edge], Math.ceil(need));
+      });
+      // No room left (Leaflet would answer its closest zoom for that).
+      if (padding.left + padding.right >= c.width - 40 || padding.top + padding.bottom >= c.height - 40) continue;
+      const zoom = map.getBoundsZoom(bounds, false, L.point(padding.left + padding.right, padding.top + padding.bottom));
+      if (zoom > bestZoom) {
+        bestZoom = zoom;
+        best = padding;
+      }
     }
-    // Room for what sits on the map: the overlays along the top (the Map
-    // Guide, or the Key on phones, and the route chip), measured, and the
-    // Quick Jump bar (bottom) and zoom buttons (bottom right).
-    const options = {
-      paddingTopLeft: [40, topOverlayClearance()] as [number, number],
-      paddingBottomRight: [64, 90] as [number, number],
+    return best;
+  };
+
+  /**
+   * Frames `points` (with `island`, the whole island too) clear of the
+   * overlays: smoothly, unless `animate` is false or the visitor prefers
+   * reduced motion.
+   */
+  const fitPoints = (points: [number, number][], maxZoom: number, options: { island?: boolean; animate?: boolean } = {}) => {
+    const L = leafletRef.current;
+    const map = mapInstanceRef.current;
+    if (!L || !map || (points.length === 0 && !options.island)) return;
+    // Not laid out yet: the resize that follows frames it.
+    const size = map.getSize();
+    if (size.x < 100 || size.y < 100) return;
+
+    const bounds = options.island ? L.latLngBounds(SRI_LANKA_BOUNDS) : L.latLngBounds(points[0], points[0]);
+    points.forEach((p) => bounds.extend(p));
+    const padding = clearPadding(bounds);
+    safePaddingRef.current = padding;
+    userMovedRef.current = false;
+    programmaticMoveRef.current = true;
+
+    const animate = (options.animate ?? true) && !(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
+    const fit = {
+      paddingTopLeft: [padding.left, padding.top] as [number, number],
+      paddingBottomRight: [padding.right, padding.bottom] as [number, number],
       maxZoom
     };
-    if (animate) map.flyToBounds(L.latLngBounds(points), { ...options, duration: 0.8 });
-    else map.fitBounds(L.latLngBounds(points), { ...options, animate: false });
+    if (animate) map.flyToBounds(bounds, { ...fit, duration: 0.8 });
+    else map.fitBounds(bounds, { ...fit, animate: false });
+    // A view that didn't change fires no 'moveend': spread the markers for it now.
+    spreadMarkersRef.current();
+  };
+
+  /** The view for what's chosen now: the route's stops, or the filter's markers ("All": the whole island). */
+  const fitCurrent = (animate: boolean) => {
+    const stops = routeTour?.stops ?? [];
+    if (stops.length > 0) {
+      fitPoints(stops.map((s) => [s.lat, s.lng] as [number, number]), ROUTE_MAX_ZOOM, { animate });
+      return;
+    }
+    fitPoints(
+      filteredDestinations.map((d) => [d.latitude, d.longitude] as [number, number]),
+      FIT_MAX_ZOOM,
+      { island: selectedCategory === 'All', animate }
+    );
+  };
+  refitRef.current = () => fitCurrent(false);
+
+  /**
+   * Markers closer than their own size are nudged apart at the current zoom,
+   * so none hides another: the active marker stays on its place, and its
+   * neighbours (and any marker under its name) move aside; two others share
+   * the move. While the view is the framed one, a nudge never pushes a
+   * marker under an overlay. Redone after every move and change of markers.
+   */
+  spreadMarkersRef.current = () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const size = map.getSize();
+    const safe = userMovedRef.current ? null : safePaddingRef.current;
+    const activeId = activeDest?.id;
+
+    const items: { marker: any; home: [number, number]; active: boolean; r: number; x: number; y: number; clamp: boolean }[] = [];
+    markersByIdRef.current.forEach((marker, id) => {
+      const home = markerHomesRef.current.get(id);
+      if (!home) return;
+      const p = map.latLngToContainerPoint(home);
+      const clamp = Boolean(safe && p.x >= safe.left && p.x <= size.x - safe.right && p.y >= safe.top && p.y <= size.y - safe.bottom);
+      items.push({ marker, home, active: id === activeId, r: id === activeId ? ACTIVE_RADIUS : MARKER_RADIUS, x: p.x, y: p.y, clamp });
+    });
+    const active = items.find((it) => it.active);
+    const labelEl: HTMLElement | null | undefined = active?.marker.getElement()?.querySelector('.map-marker-label');
+    // The active marker's name, under it (index.css: 37px below the icon's top, which is 16px above its centre).
+    const label = labelEl ? { w: labelEl.offsetWidth, h: labelEl.offsetHeight, dy: 21 } : null;
+
+    for (let pass = 0; pass < 40; pass += 1) {
+      let moved = false;
+      for (let i = 0; i < items.length; i += 1) {
+        for (let j = i + 1; j < items.length; j += 1) {
+          const a = items[i];
+          const b = items[j];
+          let dx = b.x - a.x;
+          let dy = b.y - a.y;
+          let d = Math.hypot(dx, dy);
+          const min = a.r + b.r + MARKER_GAP;
+          if (d >= min) continue;
+          // Two on one spot: a fixed direction for the pair, the same every time.
+          if (d < 0.01) {
+            dx = Math.cos(j * 2.4);
+            dy = Math.sin(j * 2.4);
+            d = 1;
+          }
+          const push = min - d;
+          const share = a.active ? 0 : b.active ? 1 : 0.5;
+          a.x -= (dx / d) * push * share;
+          a.y -= (dy / d) * push * share;
+          b.x += (dx / d) * push * (1 - share);
+          b.y += (dy / d) * push * (1 - share);
+          moved = true;
+        }
+      }
+      if (active && label) {
+        const box = {
+          left: active.x - label.w / 2 - MARKER_GAP,
+          right: active.x + label.w / 2 + MARKER_GAP,
+          top: active.y + label.dy - MARKER_GAP,
+          bottom: active.y + label.dy + label.h + MARKER_GAP
+        };
+        for (const it of items) {
+          if (it === active) continue;
+          const nx = Math.min(Math.max(it.x, box.left), box.right);
+          const ny = Math.min(Math.max(it.y, box.top), box.bottom);
+          if (Math.hypot(it.x - nx, it.y - ny) >= it.r) continue;
+          // Out from under the name the shortest way: below it, or to a side.
+          const down = box.bottom + it.r - it.y;
+          const left = it.x - (box.left - it.r);
+          const right = box.right + it.r - it.x;
+          if (down <= Math.min(left, right)) it.y += down;
+          else if (left < right) it.x -= left;
+          else it.x += right;
+          moved = true;
+        }
+      }
+      if (safe) {
+        for (const it of items) {
+          if (!it.clamp) continue;
+          it.x = Math.min(Math.max(it.x, safe.left), size.x - safe.right);
+          it.y = Math.min(Math.max(it.y, safe.top), size.y - safe.bottom);
+        }
+      }
+      if (!moved) break;
+    }
+
+    for (const it of items) {
+      const home = map.latLngToContainerPoint(it.home);
+      const nudged = Math.hypot(it.x - home.x, it.y - home.y) > 0.5;
+      it.marker.setLatLng(nudged ? map.containerPointToLatLng([it.x, it.y]) : it.home);
+    }
   };
 
   // Leaving route mode: ✕ or Escape go back to the view from before the
   // route; choosing a filter frames that filter (the next effect). Declared
   // first, so the re-fit is requested before that effect runs.
-  const fittedCategoryRef = useRef<CategoryType | 'All' | null>('All');
+  // null: the first fit, as soon as the map is up, frames the whole island.
+  const fittedCategoryRef = useRef<CategoryType | 'All' | null>(null);
+  const firstFitDoneRef = useRef(false);
   const fittedTimingRef = useRef<string>('Anytime');
   useEffect(() => {
     const was = wasRouteRef.current;
@@ -466,16 +700,14 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
     preRouteViewRef.current = null;
   }, [routeTour]);
 
-  // A new category filter frames its markers, smoothly.
+  // A new category filter frames its markers, smoothly (the first view at once).
   useEffect(() => {
     if (!mapReady || routeTour) return;
     if (fittedCategoryRef.current === selectedCategory && fittedTimingRef.current === selectedTimingFromParent) return;
     fittedCategoryRef.current = selectedCategory;
     fittedTimingRef.current = selectedTimingFromParent;
-    fitPoints(
-      filteredDestinations.map((d) => [d.latitude, d.longitude] as [number, number]),
-      FIT_MAX_ZOOM
-    );
+    fitCurrent(firstFitDoneRef.current);
+    firstFitDoneRef.current = true;
   }, [mapReady, selectedCategory, selectedTimingFromParent, filteredDestinations, routeTour]);
 
   // Route mode: the tour's numbered stops, joined in order by a dashed line,
@@ -533,6 +765,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
     layer.addTo(map);
     routeLayerRef.current = layer;
     fitPoints(points, ROUTE_MAX_ZOOM);
+    firstFitDoneRef.current = true;
   }, [mapReady, routeTour]);
 
   // While a route shows, the faded category markers leave the tab order.
@@ -546,16 +779,6 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
       else el.removeAttribute('aria-hidden');
     });
   }, [mapReady, routeTour, filteredDestinations]);
-
-  // Center map on active destination if selection changes
-  const handleDestinationClick = (dest: Destination) => {
-    setActiveDest(dest);
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.flyTo([dest.latitude, dest.longitude], 9.5, {
-        duration: 1.2
-      });
-    }
-  };
 
   return (
     <section id="explore-map" className="py-20 bg-[var(--background-secondary)] relative overflow-hidden">
@@ -608,10 +831,10 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
             No destinations match this category and season. Try another combination to explore more of Sri Lanka.
           </p>
         )}
-        <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-[var(--border-strong)]/60 bg-[var(--surface)] grid grid-cols-1 lg:grid-cols-12 min-h-[620px]">
+        <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-[var(--border-strong)]/60 bg-[var(--surface)] grid grid-cols-1 lg:grid-cols-12 lg:min-h-[620px]">
           
           {/* Map Area */}
-          <div className="lg:col-span-8 relative h-[450px] sm:h-[550px] lg:h-auto lg:min-h-[620px] w-full">
+          <div className="lg:col-span-8 relative h-[520px] sm:h-[560px] lg:h-auto lg:min-h-[620px] w-full">
             <div ref={mapContainerRef} className="w-full h-full" />
 
             {/* Map Legend Overlay */}
@@ -686,15 +909,23 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
             </AnimatePresence>
 
             {/* Quick Location Pills */}
-            <div ref={quickJumpRef} role="group" aria-label="Jump to a place on the map" data-keep-clear className="glass glass--strong absolute bottom-4 left-4 right-16 z-20 p-2 rounded-2xl shadow-md overflow-x-auto flex items-center gap-2">
+            <div role="group" aria-label="Jump to a place on the map" data-keep-clear className="glass glass--strong absolute bottom-4 left-4 right-16 z-20 p-1.5 rounded-2xl shadow-md flex items-center gap-1">
               <span className="text-[11px] font-bold text-[var(--brand-primary)] uppercase tracking-wider px-2 shrink-0">
                 Quick Jump:
               </span>
+              {/* The places scroll (touch, trackpad, or Tab to each), with no scrollbar; an edge fades where there are more. */}
+              <div
+                ref={quickJumpRef}
+                onScroll={updateQuickJumpEdges}
+                className="te-quick-jump relative min-w-0 flex-1 flex items-center gap-2"
+                data-more-before={quickJumpEdges.before}
+                data-more-after={quickJumpEdges.after}
+              >
               {filteredDestinations.map((dest) => (
                 <button
                   key={dest.id}
                   type="button"
-                  onClick={() => handleDestinationClick(dest)}
+                  onClick={() => flyToPlace(dest)}
                   aria-pressed={activeDest?.id === dest.id}
                   className={`shrink-0 text-xs px-2.5 py-1 rounded-xl transition-colors font-medium whitespace-nowrap ${
                     activeDest?.id === dest.id
@@ -705,6 +936,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                   {dest.name}
                 </button>
               ))}
+              </div>
             </div>
           </div>
 
