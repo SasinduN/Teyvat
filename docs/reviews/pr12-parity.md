@@ -74,7 +74,7 @@ not.
 | B1 | Primary button on the page | deep emerald, white text, reflection and sheen, lifts and glows on hover | gold, dark text, flat | **Restore** |
 | B2 | Primary on photos and dark sections (header "Plan Your Trip", hero "Plan Your Journey", Build My Journey, Subscribe, map "Explore <place>", phone menu) | pearl, emerald text | gold | **Restore** |
 | B3 | Primary, dark theme | lagoon `#3AB5A3`, dark text | gold | **Restore** |
-| B4 | Icon buttons (theme, search, menu, close) | round, pearl edge, light tint | bare icons (`ghost-inverse`) | **Restore** |
+| B4 | Icon buttons (theme, search, menu, close) | round, pearl edge, light tint, sheen | bare icons (`ghost-inverse`) | **Restore** round, edged and tinted; **no sheen** on icon buttons, and no blur inside dialogs and the header (#12 also dropped it there): both made the enquiry dialog's Close button paint differently from one render to the next |
 | B5 | Buttons not using the shared style (planner, hidden gem "Include in My Journey", map buttons, footer Subscribe, Request Custom Quote) | `te-button` | gold Tailwind fills | **Restore** `te-button` |
 | B6 | Dark `--background-secondary` | `#17332F` | `#10231F` | **Restore** (text on it measured) |
 | B7 | Dark `--brand-secondary` | lagoon soft `#63C9B8` | `#1F7F72` | **Keep main**: it's a fill under white text (chosen chips, Quick Jump); `#63C9B8` under white is 2:1 |
@@ -126,3 +126,18 @@ not.
 | WhatsApp kept off the slide arrows | hero controls stay `data-keep-clear` |
 | CARTO tiles (Voyager, `dark_all`) | `src/lib/mapTiles.ts` unchanged |
 | No tests deleted or weakened | pixel baselines move only for sections this PR restyles |
+
+## Tests
+
+- Thresholds unchanged: `browser-contrast` (every page type, light and
+  dark, 1280 and 375 px), `browser-hero-contrast`, `browser-glass`.
+- `server/test/contrast-capture.ts` pins sticky elements where they were
+  measured. The detail pages' sidebar card is sticky; once the test
+  scrolled to its second screen the card had moved, and its text was
+  compared with the pixels now at its old place (a pearl button with
+  emerald text read as 1.5:1). Sticky and relative lay out the same until
+  they stick, so nothing else changes.
+- Pixel baselines moved to `e6cdc02` for the six sections restyled on
+  purpose: Navbar, FeaturedExperiences, ToursSection, ExperiencesSection,
+  JournalSection, SearchModal. DestinationSpotlight (`4e9942d`) and the
+  enquiry modal (`d106be5`) are unchanged.
