@@ -15,6 +15,13 @@
 export const CARTO_TILES_ORIGIN = 'https://basemaps.cartocdn.com';
 
 const VOYAGER_PATH = '/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+/** The dark theme's basemap: same host and key, so the CSP is unchanged. */
+const DARK_PATH = '/rastertiles/dark_all/{z}/{x}/{y}{r}.png';
+
+const withKey = (path: string, key: string | undefined | null): string => {
+  const trimmed = key?.trim();
+  return `${CARTO_TILES_ORIGIN}${path}${trimmed ? `?key=${encodeURIComponent(trimmed)}` : ''}`;
+};
 
 /**
  * The Voyager tile URL template, with the key when there is one. Without a
@@ -22,8 +29,12 @@ const VOYAGER_PATH = '/rastertiles/voyager/{z}/{x}/{y}{r}.png';
  * failing.
  */
 export function cartoVoyagerUrl(key: string | undefined | null): string {
-  const trimmed = key?.trim();
-  return `${CARTO_TILES_ORIGIN}${VOYAGER_PATH}${trimmed ? `?key=${encodeURIComponent(trimmed)}` : ''}`;
+  return withKey(VOYAGER_PATH, key);
+}
+
+/** CARTO's dark basemap (`dark_all`), for the dark theme. */
+export function cartoDarkUrl(key: string | undefined | null): string {
+  return withKey(DARK_PATH, key);
 }
 
 /**

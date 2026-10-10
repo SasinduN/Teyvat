@@ -38,8 +38,8 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
           
           {/* Where field */}
           <div className="md:col-span-4 bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
-            <label className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[var(--accent)] font-bold mb-1">
-              <MapPin className="w-3.5 h-3.5 text-[var(--accent)]" />
+            <label className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[var(--accent-text)] font-bold mb-1">
+              <MapPin className="w-3.5 h-3.5 text-[var(--accent-text)]" />
               <span>Where to go?</span>
             </label>
             <select
@@ -60,8 +60,8 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
 
           {/* What experience field */}
           <div className="md:col-span-4 bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
-            <label className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[var(--accent)] font-bold mb-1">
-              <Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" />
+            <label className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[var(--accent-text)] font-bold mb-1">
+              <Sparkles className="w-3.5 h-3.5 text-[var(--accent-text)]" />
               <span>What Experience?</span>
             </label>
             <select
@@ -79,8 +79,8 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
 
           {/* When traveling field */}
           <div className="md:col-span-3 bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
-            <label className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[var(--accent)] font-bold mb-1">
-              <Calendar className="w-3.5 h-3.5 text-[var(--accent)]" />
+            <label className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[var(--accent-text)] font-bold mb-1">
+              <Calendar className="w-3.5 h-3.5 text-[var(--accent-text)]" />
               <span>When Travelling?</span>
             </label>
             <select
@@ -100,7 +100,7 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
           <div className="md:col-span-1">
             <button
               type="submit"
-              className="w-full h-full min-h-[52px] bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--brand-primary)] font-bold rounded-2xl flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transition-all duration-300 transform active:scale-95"
+              className="w-full h-full min-h-[52px] bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-bold rounded-2xl flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transition-all duration-300 transform active:scale-95"
               title="Search Destinations"
             >
               <Search className="w-5 h-5 hidden md:block" />

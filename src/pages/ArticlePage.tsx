@@ -36,7 +36,7 @@ function ArticleView({ a }: { a: Article }) {
 
       <article className="py-14 sm:py-20">
         <div className="te-container"><div className="te-reading-column">
-          <div className="mb-10 flex flex-wrap gap-4 items-center justify-between border-b border-[var(--border-strong)]/40 pb-6 text-xs text-[var(--text-primary)]/60">
+          <div className="mb-10 flex flex-wrap gap-4 items-center justify-between border-b border-[var(--border-strong)]/40 pb-6 text-xs text-[var(--text-secondary)]">
             <div className="flex items-center space-x-3">
               <img src={a.author.avatar} alt="" className="h-11 w-11 rounded-full object-cover" />
               <div>

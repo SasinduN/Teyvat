@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { loadLeaflet } from '@/lib/leaflet';
-import { mapTiles } from '@/lib/mapTiles';
+import { addThemedTiles, onThemeChangeWhileMapped } from '@/lib/mapTiles';
+import { tokenValue } from '@/lib/theme';
 import { routeStopHtml } from '@/lib/mapMarkers';
 import type { TourStop } from '@/types';
 
@@ -27,13 +28,13 @@ export const RouteMap: React.FC<{ stops: TourStop[] }> = ({ stops }) => {
         attributionControl: true
       });
       map.attributionControl.setPrefix(false);
-      L.tileLayer(mapTiles.url, { maxZoom: 19, attribution: mapTiles.attribution }).addTo(map);
+      addThemedTiles(L, map, { maxZoom: 19 });
       L.control.zoom({ position: 'bottomright' }).addTo(map);
 
       const points = stops.map((s) => [s.lat, s.lng] as [number, number]);
-      // An SVG attribute: var() doesn't resolve there, so use the token's value.
-      const color = getComputedStyle(document.documentElement).getPropertyValue('--brand-secondary').trim() || 'currentColor';
-      L.polyline(points, { color, weight: 3, dashArray: '8 8', interactive: false, className: 'route-line' }).addTo(map);
+      // An SVG attribute: var() doesn't resolve there, so use the token's value, and follow the theme.
+      const line = L.polyline(points, { color: tokenValue('--brand-secondary'), weight: 3, dashArray: '8 8', interactive: false, className: 'route-line' }).addTo(map);
+      onThemeChangeWhileMapped(map, () => line.setStyle({ color: tokenValue('--brand-secondary') }));
       stops.forEach((stop, i) => {
         const marker = L.marker([stop.lat, stop.lng], {
           icon: L.divIcon({

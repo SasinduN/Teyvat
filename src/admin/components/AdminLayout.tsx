@@ -39,8 +39,8 @@ const NavItem: React.FC<{
       cn(
         'flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold transition-colors',
         isActive
-          ? 'bg-[#D4AF37] text-[#0F2E23]'
-          : 'text-[#F5EFEB]/75 hover:bg-white/10 hover:text-white'
+          ? 'bg-[var(--accent)] text-[var(--brand-primary)]'
+          : 'text-[var(--sand)]/75 hover:bg-white/10 hover:text-white'
       )
     }
   >
@@ -48,7 +48,7 @@ const NavItem: React.FC<{
     <span className="truncate">{label}</span>
     {badge ? (
       <span
-        className="ml-auto rounded-full bg-[#D4AF37] px-2 py-0.5 text-[10px] font-bold text-[#0F2E23]"
+        className="ml-auto rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-bold text-[var(--brand-primary)]"
         aria-label={`${badge} new`}
       >
         {badge}
@@ -79,10 +79,10 @@ export const AdminLayout: React.FC = () => {
   const closeMobile = () => setMobileOpen(false);
 
   const sidebar = (
-    <div className="flex h-full flex-col bg-[#0F2E23] p-4">
+    <div className="flex h-full flex-col bg-[var(--inverse-surface)] p-4">
       <div className="mb-6 px-2 pt-2">
         <div className="font-heading text-lg font-bold text-white">Travel Eye</div>
-        <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">
+        <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent-text)]">
           Content Admin
         </div>
       </div>
@@ -97,7 +97,7 @@ export const AdminLayout: React.FC = () => {
           onNavigate={closeMobile}
         />
 
-        <div className="px-3 pb-1 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#F5EFEB]/40">
+        <div className="px-3 pb-1 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--sand)]/40">
           Content
         </div>
         {COLLECTIONS.map((c) => (
@@ -110,7 +110,7 @@ export const AdminLayout: React.FC = () => {
           />
         ))}
 
-        <div className="px-3 pb-1 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#F5EFEB]/40">
+        <div className="px-3 pb-1 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--sand)]/40">
           Site
         </div>
         <NavItem to="/admin/media" icon={Images} label="Media library" onNavigate={closeMobile} />
@@ -123,14 +123,14 @@ export const AdminLayout: React.FC = () => {
           href="/"
           target="_blank"
           rel="noreferrer"
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-[#F5EFEB]/75 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-[var(--sand)]/75 transition-colors hover:bg-white/10 hover:text-white"
         >
           <ExternalLink className="h-4 w-4 shrink-0" />
           <span>View live site</span>
         </a>
         <button
           onClick={() => void handleSignOut(false)}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-[#F5EFEB]/75 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-[var(--sand)]/75 transition-colors hover:bg-white/10 hover:text-white"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           <span>Sign out</span>
@@ -138,13 +138,13 @@ export const AdminLayout: React.FC = () => {
         <button
           onClick={() => void handleSignOut(true)}
           title="Ends your session on every browser and device"
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-[#F5EFEB]/75 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-[var(--sand)]/75 transition-colors hover:bg-white/10 hover:text-white"
         >
           <MonitorOff className="h-4 w-4 shrink-0" />
           <span>Sign out everywhere</span>
         </button>
 
-        <div className="truncate px-3 pt-3 text-[10px] font-light text-[#F5EFEB]/40">
+        <div className="truncate px-3 pt-3 text-[10px] font-light text-[var(--sand)]/40">
           {user?.fullName || user?.email}
         </div>
       </div>
@@ -152,7 +152,7 @@ export const AdminLayout: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#FBF9F6]">
+    <div className="te-admin min-h-screen bg-[var(--background)]">
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 hidden w-64 lg:block">{sidebar}</aside>
 
@@ -160,26 +160,27 @@ export const AdminLayout: React.FC = () => {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={closeMobile} />
-          <aside className="absolute inset-y-0 left-0 w-64 shadow-2xl">{sidebar}</aside>
+          <aside id="admin-navigation" className="absolute inset-y-0 left-0 w-64 shadow-2xl">{sidebar}</aside>
         </div>
       )}
 
       <div className="lg:pl-64">
         {/* Mobile top bar */}
-        <div className="sticky top-0 z-40 flex items-center gap-3 border-b border-[#D4C3B5]/50 bg-[#FBF9F6]/95 px-4 py-3 backdrop-blur lg:hidden">
+        <div className="te-admin-toolbar sticky top-0 z-40 flex items-center gap-3 border-b border-[var(--border-strong)]/50 bg-[var(--background)]/95 py-3 backdrop-blur lg:hidden">
           <button
             onClick={() => setMobileOpen((v) => !v)}
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0F2E23] text-white"
+            aria-expanded={mobileOpen} aria-controls="admin-navigation"
+            className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--inverse-surface)] text-white"
           >
             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
-          <span className="font-heading text-base font-bold text-[#0F2E23]">
+          <span className="font-heading text-base font-bold text-[var(--brand-primary)]">
             Travel Eye Admin
           </span>
         </div>
 
-        <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <main className="te-container py-8">
           {/* A page that throws shows PageCrash; the sidebar keeps working. */}
           <ErrorBoundary
             name="admin page"

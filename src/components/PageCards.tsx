@@ -29,10 +29,10 @@ export const DestinationCard: React.FC<{ dest: Destination }> = ({ dest }) => (
       className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]"
     />
     <div className="absolute inset-0 bg-gradient-to-t from-[var(--inverse-surface)] via-[var(--inverse-surface)]/40 to-transparent" />
-    <div className="glass glass--inverse absolute left-4 top-4 flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold text-[var(--accent-text)]">
+    <div className="glass glass--inverse glass--strong absolute left-4 top-4 flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold text-[var(--accent-text)]">
       <Star className="h-3.5 w-3.5 fill-[var(--accent)]" aria-hidden="true" /> {dest.rating}
     </div>
-    <div className="glass glass--inverse te-destination-caption relative z-10 space-y-2 p-6 text-white">
+    <div className="glass glass--inverse glass--strong te-destination-caption relative z-10 space-y-2 p-6 text-white">
       <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--accent-text)]">{dest.region} Region</p>
       <h3 className="font-heading text-2xl font-bold">{dest.name}</h3>
       <p className="line-clamp-2 text-xs font-light text-white/80">{dest.shortDescription}</p>
@@ -50,8 +50,8 @@ export const TourCard: React.FC<{ tour: TourPackage }> = ({ tour }) => (
   >
     <div className="relative h-48 overflow-hidden">
       <img src={tour.image} alt={tour.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-      <div className="glass glass--inverse absolute left-4 top-4 flex items-center space-x-1.5 rounded-full px-3 py-1 text-xs font-bold text-[var(--accent-text)]">
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent" />
+      <div className="glass glass--inverse glass--strong absolute left-4 top-4 flex items-center space-x-1.5 rounded-full px-3 py-1 text-xs font-bold text-[var(--accent-text)]">
         <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
         <span>{tour.days} Days</span>
       </div>
@@ -75,7 +75,7 @@ export const ExperienceCard: React.FC<{ item: ExperienceItem }> = ({ item }) => 
   >
     <div className="relative h-48 overflow-hidden">
       <img src={item.image} alt={item.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]" />
-      <div className="glass glass--inverse absolute left-4 top-4 flex items-center space-x-1 rounded-full px-3 py-1 text-xs font-bold text-[var(--accent-text)]">
+      <div className="glass glass--inverse glass--strong absolute left-4 top-4 flex items-center space-x-1 rounded-full px-3 py-1 text-xs font-bold text-[var(--accent-text)]">
         <Star className="h-3.5 w-3.5 fill-[var(--accent)]" aria-hidden="true" />
         <span>{item.rating}</span>
       </div>
@@ -105,7 +105,7 @@ export const ArticleCard: React.FC<{ art: Article }> = ({ art }) => (
       </div>
     </div>
     <div className="space-y-2 p-5">
-      <p className="text-xs text-[var(--text-primary)]/50">
+      <p className="text-xs text-[var(--text-secondary)]">
         {art.date} • {art.readTime}
       </p>
       <h3 className="font-heading text-lg font-bold leading-snug text-[var(--brand-primary)]">{art.title}</h3>

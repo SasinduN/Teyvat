@@ -76,7 +76,7 @@ export function DestinationsPage() {
               })}
             </div>
 
-            <p className="mb-6 text-sm text-[var(--text-primary)]/60" role="status">
+            <p className="mb-6 text-sm text-[var(--text-secondary)]" role="status">
               Showing <strong className="text-[var(--brand-primary)]">{shown.length}</strong>{' '}
               {shown.length === 1 ? 'destination' : 'destinations'}
               {category !== 'All' && <> for <strong className="text-[var(--brand-primary)]">{category}</strong></>}

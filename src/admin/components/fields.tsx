@@ -26,7 +26,7 @@ export const StringListField: React.FC<{
     <div className="space-y-2">
       {value.map((item, i) => (
         <div key={i} className="flex items-start gap-2">
-          <span className="mt-2.5 w-5 shrink-0 text-right text-[11px] font-bold text-[#1A1A1A]/35">
+          <span className="mt-2.5 w-5 shrink-0 text-right text-[11px] font-bold text-[var(--text-primary)]/35">
             {i + 1}
           </span>
 
@@ -90,8 +90,8 @@ export const IconGhost: React.FC<{
     className={cn(
       'flex h-8 w-8 items-center justify-center rounded-lg transition-colors disabled:opacity-25',
       tone === 'danger'
-        ? 'text-[#B3261E] hover:bg-[#B3261E]/10'
-        : 'text-[#1C4737] hover:bg-[#1C4737]/10'
+        ? 'text-[var(--danger)] hover:bg-[var(--danger)]/10'
+        : 'text-[var(--brand-primary)] hover:bg-[var(--brand-secondary)]/10'
     )}
   >
     {children}
@@ -121,8 +121,8 @@ export const MultiSelectField: React.FC<{
           className={cn(
             'rounded-full border px-3.5 py-1.5 text-[11px] font-bold transition-colors',
             active
-              ? 'border-transparent bg-[#1C4737] text-white'
-              : 'border-[#D4C3B5] bg-white text-[#1A1A1A]/65 hover:border-[#1C4737] hover:text-[#1C4737]'
+              ? 'border-transparent bg-[var(--brand-secondary)] text-white'
+              : 'border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text-primary)]/65 hover:border-[var(--inverse-raised)] hover:text-[var(--brand-primary)]'
           )}
         >
           {option}
@@ -143,16 +143,16 @@ export const ToggleField: React.FC<{
   return (
     <label
       htmlFor={id}
-      className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#D4C3B5]/70 bg-white px-3.5 py-2.5"
+      className="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--border-strong)]/70 bg-[var(--surface)] px-3.5 py-2.5"
     >
       <input
         id={id}
         type="checkbox"
         checked={value}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 shrink-0 accent-[#1C4737]"
+        className="h-4 w-4 shrink-0 accent-[var(--inverse-raised)]"
       />
-      <span className="text-xs font-medium text-[#1A1A1A]">{label}</span>
+      <span className="text-xs font-medium text-[var(--text-primary)]">{label}</span>
     </label>
   );
 };
@@ -187,9 +187,9 @@ export const ItineraryField: React.FC<{
   return (
     <div className="space-y-3">
       {value.map((day, i) => (
-        <div key={i} className="rounded-xl border border-[#D4C3B5]/70 bg-[#FBF9F6] p-4">
+        <div key={i} className="rounded-xl border border-[var(--border-strong)]/70 bg-[var(--background)] p-4">
           <div className="mb-3 flex items-center justify-between">
-            <span className="rounded-full bg-[#1C4737] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+            <span className="rounded-full bg-[var(--brand-secondary)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
               Day {day.day}
             </span>
             <div className="flex items-center gap-1">

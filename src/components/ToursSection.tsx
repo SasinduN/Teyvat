@@ -51,14 +51,14 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
                     alt={tour.title}
                     className="w-full h-full object-cover group-hover:scale-[1.035] transition-transform duration-700"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent" />
                   
-                  <div className="te-tour-badges"><div className="glass glass--inverse absolute top-4 left-4 text-[var(--accent-text)] px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center space-x-1.5">
+                  <div className="te-tour-badges"><div className="glass glass--inverse glass--strong absolute top-4 left-4 text-[var(--accent-text)] px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center space-x-1.5">
                     <Calendar className="w-3.5 h-3.5" />
                     <span>{tour.days} Days / {tour.days - 1} Nights</span>
                   </div>
 
-                  <div className="glass glass--inverse absolute top-4 right-4 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                  <div className="glass glass--inverse glass--strong absolute top-4 right-4 text-white px-3 py-1 rounded-full text-xs font-semibold">
                     From ${tour.priceFrom} USD
                   </div></div>
 
@@ -105,7 +105,7 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
                             <span>{place}</span>
                           </span>
                           {i < tour.route.length - 1 && (
-                            <span className="text-xs text-[var(--text-primary)]/30 self-center">→</span>
+                            <span className="text-xs text-[var(--text-primary)]/30 self-center" aria-hidden="true">→</span>
                           )}
                         </React.Fragment>
                       ))}
