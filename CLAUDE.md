@@ -28,6 +28,9 @@ this file or anywhere else in git.
 | 7b | Launch decisions: `docs/LAUNCH-CHECKLIST.md` | owner's checklist |
 | 8a | Real pages and links: routes, layout, page types, code splitting (`docs/plans/phase-8-pages.md`) | done |
 | 8b | Server side of phase 8: head tags, 404 status, 301s, sitemap, robots | done (#8) |
+| R | Redesign: #12 redone in PRs 0–5 (`docs/plans/redesign-redo.md`) | done (#17, #19, #22, #23, #24, #26) |
+| R+ | #12 parity: glass, buttons, header, Explore and planner markup (`docs/reviews/pr12-parity.md`) | in review (#28) |
+| R++ | `llms.txt` (#29); dialogs keep the scrollbar's space (#30) | in review |
 
 Update the Status column when a phase lands.
 
@@ -52,6 +55,23 @@ Update the Status column when a phase lands.
     importing `'zod'` directly brings back an `eval` probe the CSP reports.
   - A new external host (fonts, tiles, scripts) needs adding to the CSP;
     `server/test/browser-csp.test.ts` fails until it is.
+- **Glass and buttons** (#12 parity, `docs/reviews/pr12-parity.md`):
+  - Glass is `src/styles/glass.css`: `.glass` plus `--inverse`, `--strong`,
+    `--subtle`, `--round`, `--3d` (edge light and the same-origin grain
+    `/images/glass-noise.svg`) and `--card`. It's solid where
+    `backdrop-filter` is missing or reduced transparency is on.
+  - Buttons are `.te-button` with `--primary`, `--secondary`, `--outline` or
+    `--icon`, and take their colours from where they sit (`index.css`):
+    emerald on the page, pearl on photos and dark sections, lagoon in the
+    dark theme. No gold Tailwind fills for buttons.
+  - Text on photos: the overlays are dark under the copy only
+    (`--copy-edge`, and `--photo-top-shade` under the clear header). When
+    a light tint can't hold AA, darken the photo under the text, not the
+    whole panel. `browser-contrast` measures it (sticky elements pinned).
+- **Dialogs** (enquiry, search, hidden gem, photo story, the phone menu)
+  use `useModalFocus`: focus trapped, Escape closes, the page behind inert
+  and not scrolling. `html { scrollbar-gutter: stable }` keeps the
+  scrollbar's space while scrolling is locked, so nothing shifts (#30).
 - **Themes** (redesign PR 5): every colour is a token in
   `src/styles/tokens.css`, with dark values under `:root[data-theme="dark"]`.
   `public/theme-init.js` (a classic script, above the stylesheets) sets the

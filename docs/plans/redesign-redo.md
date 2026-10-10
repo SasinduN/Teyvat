@@ -1,6 +1,9 @@
 # Plan: redo the UI redesign from #12
 
-Status: APPROVED (2026-10-09), with these decisions:
+Status: **DONE** (10 October 2026). PRs 0–5 are merged (#17, #19, #22, #23,
+#24, #26), with the modal focus trap (#27). #12 parity (#28), `llms.txt`
+(#29) and the scrollbar-gutter fix (#30) are the last three. Approved
+2026-10-09, with these decisions:
 
 1. **Order:** the new pages first (`/explore`, `/plan`, `/journal`), then
    trim the home page. The order below stands.
