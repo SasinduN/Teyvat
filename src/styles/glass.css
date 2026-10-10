@@ -1,28 +1,34 @@
 /*
- * The glass style: one shared set of classes for translucent surfaces (the
- * header, the mobile menu, floating controls; more as later PRs restyle the
- * pages).
+ * The glass style (#12's, docs/reviews/pr12-parity.md): one shared set of
+ * classes for translucent surfaces.
  *
  *   .glass            light glass on the page (dark text)
  *   .glass--inverse   dark glass over photos or dark sections (light text)
  *   .glass--strong    less see-through, for text-heavy panels
+ *   .glass--subtle    the lightest tint, for small chips on photos
  *   .glass--round     a circular floating control
+ *   .glass--3d        depth: an inner edge highlight and a fine grain
+ *                     (/images/glass-noise.svg, same origin), for panels
+ *   .glass--card      a card's caption: a lighter blur (#12's glass3d--card)
  *
  * Every surface starts solid (`--glass-solid`) and only becomes translucent,
- * with a backdrop blur, where the browser supports `backdrop-filter`. It
- * stays solid when the visitor asks for reduced transparency, and uses the
- * system colours in forced-colours mode. The blur is lighter on phones.
+ * with a backdrop blur and a faint reflection, where the browser supports
+ * `backdrop-filter`. It stays solid when the visitor asks for reduced
+ * transparency, and uses the system colours in forced-colours mode. The blur
+ * is lighter on phones.
  *
  * Contrast: text on glass is checked against the glass composited over both
  * a white and a black backdrop, the extremes a photo can put behind it
- * (server/test/browser-glass.test.ts): 4.5:1 or more.
+ * (server/test/browser-glass.test.ts), and on photos painted white
+ * (browser-contrast). Where a light tint isn't enough for the text, the
+ * component darkens the photo under the text, not the whole glass.
  */
 :root {
-  --glass-blur: 14px;
+  --glass-blur: 16px;
   --glass-radius: 1.5rem;
 }
 @media (max-width: 767px) {
-  :root { --glass-blur: 8px; }
+  :root { --glass-blur: 10px; }
 }
 
 .glass {
@@ -31,26 +37,46 @@
   color: var(--text-primary);
   border: 1px solid var(--glass-border);
   border-radius: var(--glass-radius);
-  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 -1px 0 rgb(var(--photo-channels) / .1), var(--glass-shadow);
 }
 .glass--strong { --glass-current: var(--glass-strong-bg); }
+.glass--subtle { --glass-current: var(--glass-subtle-bg); }
 .glass--inverse {
   --glass-solid: var(--inverse-deep);
   --glass-bg: var(--glass-inverse-bg);
+  --glass-subtle-bg: var(--glass-inverse-bg);
   --glass-strong-bg: var(--glass-inverse-strong);
   --glass-current: var(--glass-inverse-bg);
-  --glass-border: rgb(var(--pearl-channels) / .2);
-  --glass-highlight: rgb(var(--pearl-channels) / .18);
+  --glass-border: rgb(var(--pearl-channels) / .28);
+  --glass-highlight: rgb(var(--pearl-channels) / .32);
+  --glass-reflection: var(--glass-photo-reflection);
   color: var(--on-inverse);
 }
 .glass--inverse.glass--strong { --glass-current: var(--glass-inverse-strong); }
+/* Small chips on photos: a light tint can't hold small gold text over a bright photo, so a darker one. */
+.glass--inverse.glass--subtle { --glass-current: var(--glass-inverse-subtle); }
 .glass--round { border-radius: 999px; }
+.glass--card { --glass-blur: 12px; --glass-radius: 1rem; }
+/* Dark theme: text-heavy light glass (the map's overlays) drops the reflection; on bright tiles it costs AA. */
+:root[data-theme="dark"] .glass--strong:not(.glass--inverse) { --glass-reflection: linear-gradient(transparent, transparent); }
+
+/* Depth (#12's glass3d): an inner edge light and a fine grain over the tint. */
+.glass--3d {
+  position: relative;
+  isolation: isolate;
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 1px 0 0 rgb(var(--pearl-channels) / .08),
+    inset 0 -1px 0 rgb(var(--photo-channels) / .18), 0 2px 5px rgb(var(--photo-channels) / .08), var(--glass-shadow);
+}
+.glass--3d::before,
+.glass--3d::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+.glass--3d::before { z-index: -1; box-shadow: inset 0 1px 1px var(--glass-highlight), inset 0 -1px 2px rgb(var(--photo-channels) / .12); }
+.glass--3d::after { z-index: -1; background-image: url('/images/glass-noise.svg'); background-size: 160px; opacity: var(--glass-noise-opacity); }
 
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass {
-    background: var(--glass-current);
-    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+    background: var(--glass-reflection), var(--glass-current);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation)) brightness(var(--glass-brightness));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation)) brightness(var(--glass-brightness));
   }
 }
 
@@ -60,6 +86,7 @@
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
+  .glass--3d::after { display: none; }
 }
 
 @media (forced-colors: active) {
@@ -71,4 +98,5 @@
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
+  .glass--3d::before, .glass--3d::after { display: none; }
 }

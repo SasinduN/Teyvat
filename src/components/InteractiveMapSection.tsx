@@ -562,7 +562,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
       <div className="te-container">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10">
+        <div className="te-section-header te-section-header--stack">
           <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--brand-primary)] bg-[var(--brand-secondary)]/10 px-4 py-1 rounded-full inline-block mb-3">
             Interactive Island Map
           </span>
@@ -603,6 +603,11 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
         </div>
 
         {/* Main Map Container + Side Information Card */}
+        {filteredDestinations.length === 0 && (
+          <p role="status" className="mb-4 rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] p-4 text-sm text-[var(--brand-primary)]">
+            No destinations match this category and season. Try another combination to explore more of Sri Lanka.
+          </p>
+        )}
         <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-[var(--border-strong)]/60 bg-[var(--surface)] grid grid-cols-1 lg:grid-cols-12 min-h-[620px]">
           
           {/* Map Area */}
@@ -617,6 +622,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                 </span>
                 <span className="text-[var(--text-primary)]/70">
                   Showing <strong className="text-[var(--brand-primary)]">{filteredDestinations.length}</strong> location markers
+                  {selectedTimingFromParent !== 'Anytime' && <span className="block mt-1">Season: {selectedTimingFromParent}</span>}
                 </span>
               </div>
               <MapLegendList className="mt-2 pt-2 border-t border-[var(--border-strong)]/40 grid grid-cols-2 gap-x-3 gap-y-1" />
@@ -680,13 +686,14 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
             </AnimatePresence>
 
             {/* Quick Location Pills */}
-            <div ref={quickJumpRef} role="group" aria-label="Jump to a place on the map" data-keep-clear className="glass glass--strong absolute bottom-4 left-4 right-16 sm:right-auto z-20 p-2 shadow-md overflow-x-auto max-w-full flex items-center gap-2 no-scrollbar">
+            <div ref={quickJumpRef} role="group" aria-label="Jump to a place on the map" data-keep-clear className="glass glass--strong absolute bottom-4 left-4 right-16 z-20 p-2 rounded-2xl shadow-md overflow-x-auto flex items-center gap-2">
               <span className="text-[11px] font-bold text-[var(--brand-primary)] uppercase tracking-wider px-2 shrink-0">
                 Quick Jump:
               </span>
-              {filteredDestinations.slice(0, 6).map((dest) => (
+              {filteredDestinations.map((dest) => (
                 <button
                   key={dest.id}
+                  type="button"
                   onClick={() => handleDestinationClick(dest)}
                   aria-pressed={activeDest?.id === dest.id}
                   className={`shrink-0 text-xs px-2.5 py-1 rounded-xl transition-colors font-medium whitespace-nowrap ${
@@ -724,7 +731,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                         alt={activeDest.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 via-40% to-transparent to-80%" />
                       
                       <div className="absolute top-3 right-3 bg-[var(--inverse-surface)]/90 text-[var(--accent-text)] px-2.5 py-1 rounded-full text-xs font-bold flex items-center space-x-1 border border-[var(--accent)]/30">
                         <span>★ {activeDest.rating}</span>
@@ -734,7 +741,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                         <span className="text-[10px] uppercase tracking-widest text-[var(--accent-text)] font-semibold">
                           {activeDest.region} • {activeDest.province}
                         </span>
-                        <h3 className="font-heading text-2xl font-bold">{activeDest.name}</h3>
+                        <h3 className="te-place-name font-heading text-2xl font-bold">{activeDest.name}</h3>
                       </div>
                     </div>
 
@@ -748,7 +755,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                       {activeDest.category.map((cat) => (
                         <span
                           key={cat}
-                          className="bg-[var(--brand-secondary)] text-[var(--on-secondary)] border border-[var(--emerald-edge)]/50 px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                          className="bg-[var(--inverse-raised)] text-[var(--on-inverse)] border border-[var(--emerald-edge)]/50 px-2.5 py-0.5 rounded-full text-xs font-semibold"
                         >
                           {cat}
                         </span>
@@ -795,9 +802,9 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                   {/* Primary CTA Button */}
                   <Link
                     to={paths.destination(activeDest.id)}
-                    className="w-full py-3.5 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-hover)] hover:from-[var(--accent-hover)] hover:to-[var(--accent-hover)] text-[var(--on-accent)] rounded-xl font-bold text-sm shadow-lg flex items-center justify-center space-x-2 transition-all duration-300 transform hover:-translate-y-0.5"
+                    className="te-button te-button--primary w-full py-3.5 font-bold text-sm"
                   >
-                    <span>Explore {activeDest.name}</span>
+                    <span className="te-place-name">Explore {activeDest.name}</span>
                     <ArrowUpRight className="w-4 h-4" />
                   </Link>
                 </motion.div>
@@ -816,18 +823,18 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
         <div className="lg:hidden mt-6 bg-[var(--inverse-surface)] text-white p-6 rounded-3xl shadow-xl border border-white/10">
           {activeDest && (
             <div className="space-y-4">
-              <div className="flex items-center space-x-4">
+              <div className="flex items-start gap-4">
                 <img
                   src={activeDest.image}
                   alt={activeDest.name}
-                  className="w-20 h-20 rounded-2xl object-cover border border-white/20 shrink-0"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-white/20 shrink-0"
                 />
-                <div>
-                  <div className="flex items-center space-x-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <span className="text-[10px] uppercase font-bold text-[var(--accent-text)]">{activeDest.region}</span>
                     <span className="text-xs text-white/75">• Best: {activeDest.bestTime}</span>
                   </div>
-                  <h3 className="font-heading text-xl font-bold text-white">{activeDest.name}</h3>
+                  <h3 className="te-place-name font-heading text-xl font-bold text-white">{activeDest.name}</h3>
                   <p className="text-xs text-white/70 line-clamp-2 mt-1">{activeDest.shortDescription}</p>
                   <PlaceLinks
                     dest={activeDest}
@@ -838,21 +845,20 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-3 pt-2 border-t border-white/10">
-                {/* Scrolls sideways when the categories don't fit; each keeps its one line. */}
-                <div className="no-scrollbar flex min-w-0 gap-1.5 overflow-x-auto">
+              <div className="flex flex-col gap-3 pt-2 border-t border-white/10 sm:flex-row sm:flex-wrap sm:items-center">
+                <div className="flex flex-wrap gap-1.5">
                   {activeDest.category.map((c) => (
-                    <span key={c} className="shrink-0 whitespace-nowrap text-[10px] bg-[var(--brand-secondary)] text-[var(--on-secondary)] px-2 py-0.5 rounded-full font-semibold">
+                    <span key={c} className="shrink-0 whitespace-nowrap text-[10px] bg-[var(--inverse-raised)] text-[var(--on-inverse)] px-2 py-0.5 rounded-full font-semibold">
                       {c}
                     </span>
                   ))}
                 </div>
                 <Link
                   to={paths.destination(activeDest.id)}
-                  className="px-5 py-2.5 bg-[var(--accent)] text-[var(--on-accent)] rounded-xl font-bold text-xs flex items-center space-x-1 shrink-0"
+                  className="te-button te-button--primary w-full sm:w-auto min-w-0 px-4 py-3 font-bold text-xs"
                 >
-                  <span>Explore {activeDest.name}</span>
-                  <ChevronRight className="w-4 h-4" />
+                  <span className="te-place-name">Explore {activeDest.name}</span>
+                  <ChevronRight className="w-4 h-4 shrink-0" />
                 </Link>
               </div>
             </div>

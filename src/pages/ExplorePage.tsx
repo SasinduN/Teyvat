@@ -63,10 +63,8 @@ export function ExplorePage() {
       />
 
       <Section name="QuickSearch">
-        {/* QuickSearch overlaps the hero above it by 64–80px, which suits the
-            home hero; this one keeps less room under its subtitle, so the
-            spacer lets the bar overlap only the hero's bottom padding. */}
-        <div className="pt-10">
+        {/* #12's search bar: dark glass, the container's width, right under the header. */}
+        <div className="te-destination-explorer">
           <QuickSearch
             onSearchSubmit={(nextWhere, nextFilter, nextTiming) => {
               clearRoute();

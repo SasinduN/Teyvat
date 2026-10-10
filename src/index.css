@@ -28,21 +28,26 @@
   outline: none;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: var(--background-secondary);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--brand-secondary);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--brand-primary);
-}
+/* Scrollbars (#12): thin, with a teal glass thumb; the track stays clear. */
+html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass-scroll-thumb) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: linear-gradient(160deg, var(--glass-scroll-edge), var(--glass-scroll-thumb) 42%); border: 2px solid transparent; background-clip: padding-box; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--glass-scroll-hover); background-clip: padding-box; }
+::-webkit-scrollbar-corner { background: transparent; }
+/* Chromium draws ::-webkit-scrollbar only when scrollbar-width/-color are unset. */
+@supports selector(::-webkit-scrollbar) { html, .site *, .te-admin * { scrollbar-width: auto; scrollbar-color: auto; } }
+@media (forced-colors: active) { html, .site *, .te-admin * { scrollbar-color: auto; } }
+
+/* "Skip to content": off screen until it has keyboard focus. */
+.skip-link { position: fixed; top: 1rem; left: 1rem; z-index: 110; transform: translateY(-180%); background: var(--palette-frosted-pearl); color: var(--palette-deep-emerald); padding: .8rem 1.2rem; border-radius: .8rem; font-weight: 700; }
+.skip-link:focus { transform: translateY(0); }
+
+/* Type (#12): balanced headings, one scale for every section heading. */
+.site h1, .site h2 { text-wrap: balance; }
+.site p { text-wrap: pretty; }
+.site main section h2 { font-size: clamp(1.9rem, 3.6vw, 3.1rem); line-height: 1.16; }
+.site main > section:not(.te-hero):not(.te-page-hero), .site main > article { padding-block: clamp(3.5rem, 7vw, 6rem); }
 
 /*
  * Keyboard focus, everywhere on the public site (`.site`, PublicLayout): a
@@ -75,76 +80,141 @@
   /* Long text in a grid cell may shrink; flex children (buttons, chips) keep their size. */
   .te-container :where(.grid) > * { min-width: 0; }
 
+  /*
+   * Buttons (#12's): pills that take their colours from where they sit.
+   * Primary is the deep emerald on the page (lagoon in the dark theme), and
+   * pearl with emerald text on photos and dark sections; secondary is a tint
+   * with an edge. Every filled button has a faint reflection and a sheen on
+   * its top edge, and lifts a little under a pointer.
+   */
   .te-button {
     position: relative;
+    overflow: hidden;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: .5rem;
-    min-height: 44px;
-    padding: .65rem 1.25rem;
-    border: 1px solid transparent;
+    gap: .6rem;
+    min-height: 48px;
+    max-width: 100%;
+    padding: .8rem 1.5rem;
+    border: 1px solid var(--button-border, transparent);
     border-radius: 999px;
+    background-color: var(--button-bg, transparent);
+    color: var(--button-text, inherit);
     font-family: var(--font-sans);
     font-weight: 650;
     font-size: .875rem;
-    line-height: 1.3;
+    line-height: 1.4;
+    text-align: center;
+    white-space: normal;
     cursor: pointer;
-    transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, transform 200ms ease;
+    transition: transform 220ms var(--ease-premium), box-shadow 220ms ease, border-color 220ms ease, background-color 220ms ease, color 220ms ease;
   }
-  .te-button--primary { background: var(--accent); color: var(--on-accent); }
-  .te-button--primary:hover { background: var(--accent-hover); }
-  .te-button--icon { width: 44px; height: 44px; padding: 0; flex: none; }
-  .te-button--ghost-inverse { background: transparent; color: var(--on-inverse); }
-  .te-button--ghost-inverse:hover { background: rgb(var(--pearl-channels) / .12); }
+  .te-button--primary { --button-bg: var(--button-primary-bg); --button-text: var(--button-primary-text); --button-border: var(--button-primary-border); --button-hover-bg: var(--button-primary-hover); --button-reflection: var(--button-primary-reflection); --button-sheen: var(--button-primary-sheen); }
+  .te-button--secondary { --button-bg: var(--button-secondary-bg); --button-text: var(--button-secondary-text); --button-border: var(--button-edge); --button-hover-bg: var(--button-secondary-hover); }
+  .te-button--outline { --button-text: var(--button-outline-text); --button-border: var(--button-edge); --button-hover-bg: var(--button-secondary-hover); }
+  .te-button--icon { width: 44px; height: 44px; min-height: 44px; padding: 0; flex: none; border-radius: 50%; --button-bg: var(--button-secondary-bg); --button-text: var(--button-secondary-text); --button-border: var(--button-edge); --button-hover-bg: var(--button-secondary-hover); }
   .te-button--lg { min-height: 56px; padding: 1rem 2rem; font-size: 1rem; }
-  /* Secondary, outline, icon and text-link buttons take their colours from the context (below). */
-  .te-button--secondary { background: var(--button-secondary-bg); color: var(--button-secondary-text); border-color: var(--button-edge); }
-  .te-button--outline { background: transparent; color: var(--button-outline-text); border-color: var(--button-edge); }
-  .te-button--icon:not(.glass):not(.te-button--ghost-inverse) { background: var(--button-secondary-bg); color: var(--button-secondary-text); border-color: var(--button-edge); }
-  .te-button--secondary:hover, .te-button--outline:hover, .te-button--icon:not(.glass):not(.te-button--ghost-inverse):hover {
-    background: var(--button-secondary-hover);
-    border-color: var(--button-hover-edge);
+  .te-button--text-link { --button-text: var(--button-outline-text); padding-inline: .25rem; text-underline-offset: .3rem; }
+  .te-button:where(.te-button--primary, .te-button--secondary, .te-button--icon) {
+    background-image: var(--button-reflection, var(--glass-reflection));
+    box-shadow: inset 0 1px 0 var(--glass-highlight), 0 4px 12px rgb(var(--photo-channels) / .12);
   }
-  .te-button--text-link { background: transparent; color: var(--button-outline-text); padding-inline: .25rem; text-underline-offset: .3rem; }
-  .te-button--text-link:hover { text-decoration: underline; }
+  .te-button:where(.te-button--primary, .te-button--secondary, .te-button--icon)::before {
+    content: '';
+    position: absolute;
+    inset: 1px 1px auto;
+    height: 38%;
+    border-radius: inherit;
+    background: linear-gradient(110deg, var(--button-sheen), transparent 65%);
+    pointer-events: none;
+    opacity: .45;
+    transition: opacity 220ms ease;
+  }
   .te-button > svg { flex-shrink: 0; }
-  @media (hover: hover) and (pointer: fine) {
-    .te-button--primary:hover { transform: translateY(-1px); }
+  .te-button:disabled, .te-button[aria-disabled="true"] { opacity: .6; cursor: not-allowed; box-shadow: none; transform: none; }
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .te-button:where(.te-button--secondary, .te-button--icon) { backdrop-filter: blur(8px) saturate(110%); -webkit-backdrop-filter: blur(8px) saturate(110%); }
   }
+  @media (hover: hover) and (pointer: fine) {
+    .te-button:where(:not(:disabled):not([aria-disabled="true"]):not(.te-button--text-link)):hover {
+      background-color: var(--button-hover-bg, var(--button-bg));
+      border-color: var(--button-hover-edge);
+      transform: translateY(-1px);
+    }
+    .te-button:where(.te-button--primary, .te-button--secondary, .te-button--icon):where(:not(:disabled)):hover {
+      box-shadow: inset 0 1px 0 var(--glass-highlight), 0 6px 18px var(--button-hover-glow);
+    }
+    .te-button:where(:not(:disabled))::before { transition: opacity 220ms ease; }
+    .te-button:where(:not(:disabled)):hover::before { opacity: .8; }
+    .te-button--text-link:hover { text-decoration: underline; }
+  }
+  .te-button:where(:not(:disabled)):active { transform: translateY(0); }
   @media (prefers-reduced-motion: reduce) {
     .te-button { transition: none; }
-    .te-button--primary:hover { transform: none; }
+    .te-button:hover { transform: none !important; }
+  }
+  /* On a photo header (#12): clean fills and outlines, without the reflection, sheen or blur. */
+  :is(.te-hero, .te-page-hero) .te-button,
+  :is(.te-hero, .te-page-hero) .te-button:hover { background-image: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  :is(.te-hero, .te-page-hero) .te-button::before { content: none; }
+  /* The slide controls sit right of the copy, where the photo is clear: dark glass under their icons. */
+  .te-hero-controls .te-button--icon { --button-bg: var(--glass-inverse-bg); --button-hover-bg: var(--glass-inverse-strong); }
+  @media (prefers-reduced-transparency: reduce) {
+    .te-button:where(.te-button--secondary, .te-button--icon) { --button-bg: var(--button-secondary-solid); --button-hover-bg: var(--button-secondary-solid); backdrop-filter: none; -webkit-backdrop-filter: none; }
   }
   @media (forced-colors: active) {
-    .te-button { border-color: ButtonText; }
+    .te-button { border-color: ButtonText; background: ButtonFace; color: ButtonText; box-shadow: none; }
+    .te-button::before { display: none; }
   }
 
   /*
-   * On photos and dark surfaces (white text says it's one): light text and
-   * edges for the secondary buttons, and the light gold for `--accent-text`.
+   * On photos and dark surfaces (white text says it's one): pearl primary
+   * buttons with emerald text, light secondary tints and edges, and the
+   * light gold for `--accent-text`.
    */
-  :where(.te-hero, .te-page-hero, footer, .glass--inverse, .text-white, [class*="bg-[var(--inverse-surface)]"], [class*="bg-[var(--inverse-deep)]"]) {
+  :where(.te-hero, .te-page-hero, .te-nav, footer, .glass--inverse, .text-white, [class*="bg-[var(--inverse-surface)]"], [class*="bg-[var(--inverse-deep)]"]) {
     /* The paler gold: AA on dark surfaces even under a light tint (browser-contrast). */
     --accent-text: var(--accent-on-photo);
-    --button-secondary-bg: rgb(var(--photo-channels) / .55);
-    --button-secondary-hover: rgb(var(--photo-channels) / .7);
+    --button-primary-bg: var(--photo-button-bg);
+    --button-primary-hover: var(--photo-button-hover);
+    --button-primary-text: var(--photo-button-text);
+    --button-primary-border: rgb(var(--pearl-channels) / .65);
+    --button-secondary-bg: rgb(var(--pearl-channels) / .1);
+    --button-secondary-hover: rgb(var(--pearl-channels) / .2);
     --button-secondary-text: var(--on-inverse);
+    --button-secondary-solid: var(--inverse-deep);
     --button-outline-text: var(--on-inverse);
     --button-edge: rgb(var(--pearl-channels) / .48);
     --button-hover-edge: rgb(var(--pearl-channels) / .75);
+    --button-hover-glow: rgb(var(--pearl-channels) / .14);
   }
 
-  /* Cards: a soft shadow, and a small lift on hover with a pointer. */
+  /* Close buttons on photos: dark glass. */
+  .te-button--icon.glass--inverse { --button-bg: var(--glass-inverse-strong); --button-hover-bg: var(--inverse-deep); }
+
+  /* Cards: a soft shadow; with a pointer, a small lift, a gold edge and the photo easing in. */
   .te-card { box-shadow: var(--shadow-card); transition: transform 250ms var(--ease-premium), box-shadow 250ms ease, border-color 250ms ease; }
+  .te-card img { transition: transform 600ms var(--ease-premium); }
   .te-card:focus-within { box-shadow: var(--shadow-card-hover); }
   @media (hover: hover) and (pointer: fine) {
-    .te-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-card-hover); }
+    .te-card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: var(--shadow-card-hover), 0 0 0 1px var(--glass-gold-glow); }
+    .te-card:hover img { transform: scale(1.035); }
   }
   @media (prefers-reduced-motion: reduce) {
     .te-card, .te-card img { transition: none; }
-    .te-card:hover { transform: none; }
+    .te-card:hover, .te-card:hover img { transform: none; }
   }
+  /* Photo stories: the caption shows on keyboard focus, and always on touch screens. */
+  .te-photo-card:focus-visible .te-photo-caption, .te-photo-card:focus-visible .te-photo-overlay { opacity: 1; transform: none; }
+  @media (hover: none) {
+    .te-photo-card .te-photo-caption, .te-photo-card .te-photo-overlay { opacity: 1; transform: none; }
+  }
+  /* Place names wrap at word boundaries; metadata must not squeeze them. */
+  .te-place-name { overflow-wrap: normal; word-break: normal; hyphens: none; white-space: normal; min-width: 0; max-width: 100%; }
+
+  /* The Explore page's search bar: the container's width, over the page. */
+  .te-search { position: relative; z-index: 30; }
 
   /* Section headings: the badge and title on the left, the intro beside them from 768 px. */
   .te-section-header { display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: var(--heading-space); text-align: left; }
@@ -192,12 +262,7 @@
   /* The enquiry and search modals: scroll inside the panel on short screens. */
   .te-modal-panel { max-height: calc(100dvh - 2rem); overflow-y: auto; overscroll-behavior: contain; }
 
-  /*
-   * The header. At the top of a page it sits on the page's photo, over a dark
-   * gradient strong enough for its white text; once scrolled it becomes dark
-   * glass (the gradient stays underneath, so the switch never lowers
-   * contrast).
-   */
+  /* The header: clear at the top of a page (below), dark glass once scrolled. */
   .te-nav {
     height: var(--header-height);
     display: flex;
@@ -209,13 +274,30 @@
     color: var(--on-inverse);
     transition: background-color 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
   }
-  /* Only at the top: the gradient on the photo. Scrolled, `.glass` gives the background. */
+  /*
+   * At the top: no surface of its own (#12). The page's photo carries a dark
+   * band along its top (`--photo-top-shade`, on the hero and page headers),
+   * which is what keeps the links readable. Scrolled: dark glass.
+   */
+  .te-nav { --glass-blur: 16px; --glass-inverse-strong: var(--glass-nav-scrolled); }
   .te-nav[data-scrolled="false"] {
-    background: linear-gradient(180deg, rgb(var(--photo-channels) / .82), rgb(var(--photo-channels) / .55) 70%, rgb(var(--photo-channels) / .3));
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
-  .te-nav[data-scrolled="true"] { border-color: rgb(var(--pearl-channels) / .1); box-shadow: 0 4px 24px rgb(var(--photo-channels) / .18); }
+  .te-nav[data-scrolled="true"] { border-color: rgb(var(--pearl-channels) / .1); box-shadow: inset 0 -1px 0 rgb(var(--pearl-channels) / .08), 0 4px 24px rgb(var(--photo-channels) / .18); }
+  @media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+    .te-nav[data-scrolled="false"] { background: var(--inverse-deep); }
+  }
+  /* Phones: a slightly smaller logo, so theme, plan, search and menu fit beside it. */
+  @media (max-width: 639px) {
+    .te-nav .te-logo { gap: .4rem; }
+    .te-nav .te-logo svg { width: 24px; height: 24px; }
+    .te-nav .te-logo > div:last-child > div:first-child { font-size: 1rem; }
+    .te-nav-phone-actions { gap: .25rem; }
+  }
   .te-nav-link {
     position: relative;
     display: inline-flex;
@@ -285,7 +367,7 @@
 }
 .te-hero-slide { position: absolute; inset: 0; opacity: 0; transform: scale(1.025); pointer-events: none; transition: opacity 700ms ease, transform 7s ease; }
 .te-hero-slide[data-active="true"] { opacity: 1; transform: scale(1); }
-.te-hero-overlay { background: linear-gradient(180deg, rgb(var(--photo-channels) / .48), transparent 26%), var(--home-hero-overlay); pointer-events: none; }
+.te-hero-overlay { background: var(--photo-top-shade), var(--home-hero-overlay); pointer-events: none; }
 @media (max-width: 767px) {
   .te-hero-overlay { background: var(--home-hero-overlay-narrow); }
 }
@@ -333,7 +415,7 @@
   color: var(--on-inverse);
 }
 .te-page-hero--compact { min-height: clamp(22rem, 44svh, 28rem); }
-.te-page-hero-overlay { background: linear-gradient(180deg, rgb(var(--photo-channels) / .48), transparent 35%), var(--page-hero-overlay); pointer-events: none; }
+.te-page-hero-overlay { background: var(--photo-top-shade), var(--page-hero-overlay); pointer-events: none; }
 @media (max-width: 767px) {
   .te-page-hero-overlay { background: var(--page-hero-overlay-narrow); }
 }

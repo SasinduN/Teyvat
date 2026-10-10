@@ -334,6 +334,19 @@ Parts 1 and 2 below in one PR, with these specifics:
   unpublished one is absent); absolute URLs from `PUBLIC_SITE_URL`; the
   brand from `brand.ts`; no `/admin` or `/api`.
 
+### #12 parity (10 October 2026)
+
+After PR 5, the live site still looked flatter than #12. The audit
+(`docs/reviews/pr12-parity.md`) lists every difference with a decision.
+This PR restores #12's glass (reflection, depth, grain, lighter tints,
+16 px blur), its button system (emerald / pearl / lagoon pills with a
+sheen), the transparent header at the top of a page, the section heading
+scale, and the Explore, planner, hidden-gem, photo-story and journal markup
+PR 3 and PR 4 didn't carry over. Where #12's lighter tints fail AA, the
+photo is darkened only under the text (overlays, card gradients), and the
+few places that still can't reach AA keep a darker tint, listed in the
+audit.
+
 ### PR 5 as built (10 October 2026)
 
 - As planned below: dark tokens, `public/theme-init.js`, the toggle,
