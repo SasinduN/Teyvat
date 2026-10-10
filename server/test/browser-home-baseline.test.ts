@@ -64,16 +64,17 @@ const skip = !executable
  * ones; the rest are measured.
  */
 const SECTIONS: { name: string; baseline: string; props: string; height?: number }[] = [
-  // Redesign PR 5 (194fa9d): the Navbar with the theme toggle (was 0d95f86, PR 2).
-  { name: 'Navbar', baseline: '194fa9d', props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
+  // #12 parity (e6cdc02): #12's round icon buttons and pearl Plan button (was 194fa9d, PR 5).
+  { name: 'Navbar', baseline: 'e6cdc02', props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
   // Redesign PR 4 (4e9942d): the approved new design.
   { name: 'DestinationSpotlight', baseline: '4e9942d', props: '{ onSelectDestination() {} }' },
-  // Redesign PR 5 (194fa9d): these four with their AA contrast fixes (were 4e9942d; JournalSection ce487de).
-  { name: 'FeaturedExperiences', baseline: '194fa9d', props: '{ onSelectExperience() {} }' },
-  { name: 'ToursSection', baseline: '194fa9d', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
-  { name: 'ExperiencesSection', baseline: '194fa9d', props: '{ onSelectCategory() {} }' },
-  { name: 'JournalSection', baseline: '194fa9d', props: '{}' },
-  { name: 'SearchModal', baseline: '4e9942d', props: '{ isOpen: true, onClose() {}, onSelectDestination() {} }', height: 900 }
+  // #12 parity (e6cdc02): #12's glass chips, lighter photo gradients, te-container headers (were 194fa9d).
+  { name: 'FeaturedExperiences', baseline: 'e6cdc02', props: '{ onSelectExperience() {} }' },
+  { name: 'ToursSection', baseline: 'e6cdc02', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
+  { name: 'ExperiencesSection', baseline: 'e6cdc02', props: '{ onSelectCategory() {} }' },
+  { name: 'JournalSection', baseline: 'e6cdc02', props: '{}' },
+  // #12 parity (e6cdc02): every match listed, as in #12 (was 4e9942d).
+  { name: 'SearchModal', baseline: 'e6cdc02', props: '{ isOpen: true, onClose() {}, onSelectDestination() {} }', height: 900 }
 ];
 
 const baselineOf = (name: string): string => SECTIONS.find((s) => s.name === name)!.baseline;

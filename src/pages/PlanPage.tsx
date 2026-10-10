@@ -34,11 +34,11 @@ export function PlanPage() {
 
       <section className="bg-[var(--background)] py-16 sm:py-20">
         <div className="te-container">
-          <div className="glass glass--strong p-6 sm:p-10">
-            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--brand-primary)]">
+          <div className="glass glass--strong glass--3d p-6 sm:p-8">
+            <h2 className="font-heading text-[var(--brand-primary)]">
               Let us take care of the details.
             </h2>
-            <p className="my-4 max-w-2xl text-[var(--text-secondary)]">
+            <p className="my-4 text-[var(--text-secondary)]">
               Your journey is a starting point. Our local travel designers confirm availability, transfers and the right
               pace for you.
             </p>

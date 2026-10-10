@@ -125,6 +125,11 @@ const MEASURE = `(async (png, targets, top, worst) => {
  */
 export async function shortfalls(page: Page, decoder: Page, options: { roots: string; skip?: string; viewportHeight: number }): Promise<string[]> {
   await page.evaluate(`document.documentElement.style.scrollBehavior = 'auto', window.scrollTo(0, 0), true`);
+  // A sticky element (a detail page's sidebar card) would move as the screens
+  // below are captured, so its text would be compared with whatever pixels
+  // end up at its old place. Pinned where it is at the top (sticky and
+  // relative lay out the same until they stick), every rect stays true.
+  await page.evaluate(`(() => { for (const el of document.querySelectorAll('*')) if (getComputedStyle(el).position === 'sticky') el.style.position = 'relative'; return true; })()`);
   const found = await page.evaluate<Target[]>(targets(options.roots, options.skip ?? ''));
   await page.evaluate(`(() => { const s = document.createElement('style'); s.id = 'background-only'; s.textContent = ${JSON.stringify(BACKGROUND_ONLY)}; document.head.append(s); return true; })()`);
 

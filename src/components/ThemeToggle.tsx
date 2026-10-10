@@ -15,7 +15,7 @@ export const ThemeToggle: React.FC<{ className?: string }> = ({ className = '' }
     <button
       type="button"
       onClick={() => chooseTheme(next)}
-      className={`te-button te-button--icon te-button--ghost-inverse ${className}`}
+      className={`te-button te-button--icon ${className}`}
       aria-label={label}
       title={label}
       data-theme-toggle

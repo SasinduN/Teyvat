@@ -14,8 +14,8 @@ interface NavbarProps {
 }
 
 /**
- * The header: dark glass once the page has scrolled, over a dark gradient on
- * the page's photo before that (index.css, `.te-nav`). The current page's
+ * The header: dark glass once the page has scrolled; before that it's clear,
+ * over the dark band along the page photo's top (index.css, `.te-nav`). The current page's
  * link is marked (`aria-current`, a gold underline). On phones the links
  * open in a solid full-screen menu that holds focus until it closes (Escape,
  * the close button, or a link). No animation library: CSS transitions only.
@@ -90,7 +90,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
               <button
                 type="button"
                 onClick={onOpenSearch}
-                className="te-button te-button--icon te-button--ghost-inverse"
+                className="te-button te-button--icon"
                 aria-label="Search Destinations"
                 title="Search Destinations"
               >
@@ -104,12 +104,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
             </div>
 
             {/* Mobile: the theme, search and the menu */}
-            <div className="flex items-center gap-1 lg:hidden">
+            <div className="te-nav-phone-actions flex items-center gap-1.5 lg:hidden">
               <ThemeToggle className="sm:hidden" />
+              <SiteLink
+                to={paths.plan}
+                onClick={handleLinkClick}
+                className="te-button te-button--primary te-button--icon sm:hidden"
+                aria-label="Plan Your Trip"
+                title="Plan Your Trip"
+              >
+                <Compass className="w-5 h-5" aria-hidden="true" />
+              </SiteLink>
               <button
                 type="button"
                 onClick={onOpenSearch}
-                className="te-button te-button--icon te-button--ghost-inverse sm:hidden"
+                className="te-button te-button--icon sm:hidden"
                 aria-label="Search"
               >
                 <Search className="w-5 h-5" aria-hidden="true" />
@@ -117,7 +126,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="te-button te-button--icon te-button--ghost-inverse"
+                className="te-button te-button--icon"
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-navigation"
                 aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
@@ -148,7 +157,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
             type="button"
             aria-label="Close menu"
             onClick={handleLinkClick}
-            className="te-button te-button--icon te-button--ghost-inverse absolute top-5 right-5"
+            className="te-button te-button--icon absolute top-5 right-5"
           >
             <X className="w-6 h-6" aria-hidden="true" />
           </button>

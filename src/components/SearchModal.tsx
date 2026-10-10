@@ -86,7 +86,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             </span>
 
             <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
-              {filtered.slice(0, 6).map((dest) => (
+              {filtered.map((dest) => (
                 <Link
                   key={dest.id}
                   to={paths.destination(dest.id)}

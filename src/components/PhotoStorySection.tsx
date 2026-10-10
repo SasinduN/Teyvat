@@ -1,3 +1,4 @@
+import { useModalFocus } from '@/hooks/useModalFocus';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePhotoStories } from '@/hooks/useSiteContent';
@@ -7,13 +8,15 @@ import { Camera, MapPin, X, Maximize2 } from 'lucide-react';
 export const PhotoStorySection: React.FC = () => {
   const PHOTO_STORIES = usePhotoStories();
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoStory | null>(null);
+  // Keyboard focus stays in the dialog, Escape closes it, and focus returns to the photo.
+  const dialogRef = useModalFocus(Boolean(selectedPhoto), () => setSelectedPhoto(null));
 
   return (
     <section className="py-24 bg-[var(--inverse-surface)] text-white relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="te-container">
         
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="te-section-header te-section-header--stack">
           <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--accent-text)] bg-white/10 px-4 py-1.5 rounded-full inline-block mb-3 border border-[var(--accent)]/30">
             Visual Storytelling
           </span>
@@ -34,15 +37,24 @@ export const PhotoStorySection: React.FC = () => {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true, margin: '-50px' }}
               transition={{ duration: 0.5, delay: idx * 0.08 }}
+              role="button"
+              tabIndex={0}
+              aria-label={`Open ${photo.title}`}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  setSelectedPhoto(photo);
+                }
+              }}
               onClick={() => setSelectedPhoto(photo)}
-              className="group relative rounded-2xl overflow-hidden shadow-lg border border-white/10 aspect-[3/4] cursor-pointer bg-black"
+              className="te-card te-photo-card group relative rounded-2xl overflow-hidden shadow-lg border border-white/10 aspect-[3/4] cursor-pointer bg-black"
             >
               <img
                 src={photo.image}
                 alt={photo.title}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                className="w-full h-full object-cover group-hover:scale-[1.035] transition-transform duration-700 ease-out"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="te-photo-overlay absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
               <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                 <div className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center">
@@ -50,7 +62,7 @@ export const PhotoStorySection: React.FC = () => {
                 </div>
               </div>
 
-              <div className="absolute bottom-4 left-4 right-4 text-white opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-y-0 translate-y-2 duration-300">
+              <div className="te-photo-caption absolute bottom-4 left-4 right-4 text-white opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-y-0 translate-y-2 duration-300">
                 <span className="text-[10px] uppercase font-bold text-[var(--accent-text)] flex items-center gap-1">
                   <MapPin className="w-3 h-3" /> {photo.location}
                 </span>
@@ -76,12 +88,19 @@ export const PhotoStorySection: React.FC = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
+              ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Photo story"
+              tabIndex={-1}
               onClick={(e) => e.stopPropagation()}
-              className="relative max-w-4xl w-full max-h-[90vh] bg-[var(--inverse-surface)] rounded-3xl overflow-hidden shadow-2xl border border-white/20 flex flex-col md:flex-row"
+              className="te-modal-panel relative max-w-4xl w-full max-h-[90vh] bg-[var(--inverse-surface)] rounded-3xl overflow-hidden shadow-2xl border border-white/20 flex flex-col md:flex-row"
             >
               <button
+                type="button"
+                aria-label="Close photo story"
                 onClick={() => setSelectedPhoto(null)}
-                className="absolute top-4 right-4 z-20 w-10 h-10 bg-black/60 text-white rounded-full flex items-center justify-center hover:bg-black transition-colors"
+                className="te-button te-button--icon glass glass--inverse absolute top-4 right-4 z-20"
               >
                 <X className="w-5 h-5" />
               </button>

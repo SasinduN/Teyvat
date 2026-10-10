@@ -22,7 +22,7 @@ export const Logo: React.FC<LogoProps> = ({ variant = 'auto', className = '', si
   const currentSize = iconSizes[size];
 
   return (
-    <div className={`inline-flex items-center gap-2.5 font-sans select-none ${sizeClasses[size]} ${className}`}>
+    <div className={`te-logo inline-flex items-center gap-2.5 font-sans select-none ${sizeClasses[size]} ${className}`}>
       {/* Eye + Travel Location Pin Icon */}
       <div className="relative flex items-center justify-center transition-transform hover:scale-105 duration-300">
         <svg

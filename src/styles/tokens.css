@@ -28,7 +28,15 @@
   --surface-channels: 245 247 243;
   --inverse-channels: 11 25 24;
   --photo-channels: 24 30 32;
-  --home-hero-overlay: linear-gradient(90deg, rgb(var(--photo-channels) / .8), rgb(var(--photo-channels) / .78) 55%, rgb(var(--photo-channels) / .5) 75%, rgb(var(--photo-channels) / .15));
+  /*
+   * Photo overlays (#12's, lighter on the right): dark under the copy, which
+   * ends about 37rem in from the container's edge, then fading out so the
+   * photo shows. Measured by browser-hero-contrast on a white photo.
+   */
+  --copy-edge: calc(max(var(--page-gutter), (100% - var(--container-max)) / 2) + 37rem);
+  --home-hero-overlay: linear-gradient(90deg, rgb(var(--photo-channels) / .8), rgb(var(--photo-channels) / .72) var(--copy-edge), rgb(var(--photo-channels) / .3) calc(var(--copy-edge) + 14rem), rgb(var(--photo-channels) / .06) calc(var(--copy-edge) + 32rem), transparent calc(var(--copy-edge) + 44rem));
+  /* A band along the photo's top, under the header's links and buttons (the header itself is clear there). */
+  --photo-top-shade: linear-gradient(180deg, rgb(var(--photo-channels) / .62), rgb(var(--photo-channels) / .38) 5.5rem, transparent 12.5rem);
   /* Phones: the copy spans the width, so the overlay does too. */
   --home-hero-overlay-narrow: linear-gradient(180deg, rgb(var(--photo-channels) / .72), rgb(var(--photo-channels) / .8) 30%, rgb(var(--photo-channels) / .82));
   --pearl-channels: 255 255 255;
@@ -99,13 +107,15 @@
   --glass-emerald-glow: rgb(var(--teal-channels) / .18);
   --glass-inverse-bg: rgb(var(--photo-channels) / .58);
   --glass-inverse-strong: rgb(var(--photo-channels) / .9);
+  /* Chips on photos (rating, days, price): AA for small gold text on a white photo (browser-contrast). */
+  --glass-inverse-subtle: rgb(var(--photo-channels) / .78);
   --glass-photo-reflection: linear-gradient(135deg, rgb(var(--pearl-channels) / .07), transparent 48%, rgb(var(--pearl-channels) / .02));
   --glass-nav-bg: rgb(var(--photo-channels) / .76);
   --glass-nav-scrolled: rgb(var(--photo-channels) / .93);
   --glass-scroll-thumb: rgb(var(--teal-channels) / .62);
   --glass-scroll-edge: rgb(var(--pearl-channels) / .38);
   --glass-scroll-hover: var(--brand-secondary);
-  --page-hero-overlay: linear-gradient(90deg, rgb(var(--photo-channels) / .8), rgb(var(--photo-channels) / .78) 60%, rgb(var(--photo-channels) / .45) 76%, rgb(var(--photo-channels) / .12));
+  --page-hero-overlay: linear-gradient(90deg, rgb(var(--photo-channels) / .8), rgb(var(--photo-channels) / .74) calc(var(--copy-edge) + 10rem), rgb(var(--photo-channels) / .35) calc(var(--copy-edge) + 20rem), rgb(var(--photo-channels) / .08) calc(var(--copy-edge) + 32rem), transparent calc(var(--copy-edge) + 42rem));
   --page-hero-overlay-narrow: linear-gradient(180deg, rgb(var(--photo-channels) / .72), rgb(var(--photo-channels) / .8) 30%, rgb(var(--photo-channels) / .82));
   --button-primary-bg: var(--brand-primary);
   --button-primary-hover: var(--palette-tropical-teal);
@@ -144,7 +154,7 @@
   --surface-channels: 23 51 47;
   --inverse-channels: 0 0 0;
   --background: var(--palette-forest-night);
-  --background-secondary: #10231F;
+  --background-secondary: var(--palette-glass-surface);
   --surface: var(--palette-glass-surface);
   --surface-glass: rgb(var(--surface-channels) / .9);
   --brand-primary: var(--palette-lagoon-glow);
@@ -171,15 +181,21 @@
   --shadow-card: 0 8px 30px rgb(0 0 0 / .32);
   --shadow-card-hover: 0 18px 44px rgb(0 0 0 / .45);
   --glass-tint: rgb(17 47 43 / .38);
-  --glass-bg: rgb(var(--surface-channels) / .58);
-  /* Nearly opaque: map overlays sit on bright tiles. */
+  --glass-bg: rgb(var(--surface-channels) / .54);
+  /* Nearly opaque: map overlays sit on bright tiles (#12's .86 fails AA there). */
   --glass-strong-bg: rgb(var(--surface-channels) / .95);
-  --glass-border: rgb(var(--pearl-channels) / .16);
-  --glass-highlight: rgb(var(--pearl-channels) / .12);
+  --glass-border: rgb(var(--pearl-channels) / .2);
+  --glass-highlight: rgb(var(--pearl-channels) / .25);
+  /* A fainter reflection: over the dark tint a bright one lifts the backdrop under lagoon text below AA. */
+  --glass-reflection: linear-gradient(135deg, rgb(var(--pearl-channels) / .04), transparent 42%, rgb(var(--pearl-channels) / .01));
   --glass-shadow: 0 12px 36px rgb(0 0 0 / .3);
-  --button-secondary-bg: rgb(var(--pearl-channels) / .06);
-  --button-secondary-hover: rgb(var(--pearl-channels) / .12);
+  /* Buttons (#12): lagoon fills with dark text; secondary on the green tint. */
+  --button-primary-hover: var(--palette-lagoon-soft);
+  --button-primary-text: var(--palette-forest-night);
+  --button-secondary-bg: var(--glass-tint);
+  --button-secondary-hover: var(--glass-strong-bg);
   --glass-saturation: 112%;
+  --glass-noise-opacity: .025;
 }
 
 /* Layout tokens shared by the header, footer and floating controls. */

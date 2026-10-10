@@ -49,7 +49,7 @@ import { findChrome, launchChrome, type Chrome, type Page } from '../server/test
 const ROOT = resolve(import.meta.dirname, '..');
 
 const PAGES = [
-  '/', '/destinations', '/destinations/ella', '/experiences', '/experiences/safari-yala', '/tours',
+  '/', '/explore', '/plan', '/journal', '/destinations', '/destinations/ella', '/experiences', '/experiences/safari-yala', '/tours',
   '/tours/island-in-7-days', '/journal/ultimate-ella-guide', '/about', '/photo-credits', '/no-such-page'
 ];
 const VIEWPORTS = {
@@ -377,6 +377,17 @@ async function main(): Promise<void> {
               console.log(`  ${slug(path)}-${suffix}`);
             }
           }
+          // The map with a place picked from Quick Jump (its second place), the map in view.
+          const map = await open(chrome, `${site.url}/explore`, viewport, dark);
+          await map.evaluate(`document.getElementById('explore-map')?.scrollIntoView({ block: 'start' }), true`);
+          await waitFor(map, `document.querySelector('#explore-map .leaflet-marker-icon')`, 10_000);
+          await map.evaluate(`document.querySelectorAll('#explore-map [role=group] button')[1]?.click(), true`);
+          await map.evaluate(LOADED);
+          await map.evaluate(QUIET);
+          // The map and its side card, just under the header.
+          await map.evaluate(`(() => { const box = document.querySelector('#explore-map .leaflet-container')?.closest('.grid'); if (box) window.scrollTo(0, box.getBoundingClientRect().top + scrollY - 100); return true; })()`);
+          await map.evaluate(QUIET);
+          await shoot(map, join(out, `state-map-${suffix}`), false);
           const tour = await open(chrome, `${site.url}/tours/island-in-7-days`, viewport, dark);
           await tour.evaluate(`[...document.querySelectorAll('main button')].find((b) => /enquire|inquire/i.test(b.textContent))?.click(), true`);
           await waitFor(tour, `document.querySelector('[role=dialog] form, .fixed.inset-0 form')`, 5_000);

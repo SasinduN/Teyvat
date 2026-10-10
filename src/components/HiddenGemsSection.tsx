@@ -1,3 +1,4 @@
+import { useModalFocus } from '@/hooks/useModalFocus';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHiddenGems } from '@/hooks/useSiteContent';
@@ -11,13 +12,15 @@ interface HiddenGemsSectionProps {
 export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInquiry }) => {
   const HIDDEN_GEMS = useHiddenGems();
   const [selectedGem, setSelectedGem] = useState<HiddenGem | null>(null);
+  // Keyboard focus stays in the dialog, Escape closes it, and focus returns to the card.
+  const dialogRef = useModalFocus(Boolean(selectedGem), () => setSelectedGem(null));
 
   return (
-    <section className="py-24 bg-[var(--background-secondary)] text-[var(--text-primary)] relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="hidden-gems" className="py-24 bg-[var(--background-secondary)] text-[var(--text-primary)] relative overflow-hidden">
+      <div className="te-container">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 border-b border-[var(--border-strong)]/60 pb-8">
+        <div className="te-section-header border-b border-[var(--border-strong)]/60 pb-8">
           <div>
             <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--brand-primary)] bg-[var(--brand-secondary)]/10 px-4 py-1.5 rounded-full inline-block mb-3">
               Editorial Off-Beat Collection
@@ -46,15 +49,24 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-50px' }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Open ${gem.name}`}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setSelectedGem(gem);
+                  }
+                }}
                 onClick={() => setSelectedGem(gem)}
-                className={`relative rounded-3xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 cursor-pointer group bg-[var(--inverse-surface)] border border-[var(--border-strong)]/50 flex flex-col justify-end p-6 sm:p-8 ${spanClass}`}
+                className={`te-card relative rounded-3xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 cursor-pointer group bg-[var(--inverse-surface)] border border-[var(--border-strong)]/50 flex flex-col justify-end p-6 sm:p-8 ${spanClass}`}
               >
                 {/* Background Image */}
                 <div className="absolute inset-0 overflow-hidden">
                   <img
                     src={gem.image}
                     alt={gem.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                    className="w-full h-full object-cover group-hover:scale-[1.035] transition-transform duration-700 ease-out"
                   />
                 </div>
 
@@ -109,12 +121,19 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
+              ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Hidden gem details"
+              tabIndex={-1}
               onClick={(e) => e.stopPropagation()}
-              className="bg-[var(--surface)] rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl border border-[var(--border-strong)]/60 relative text-[var(--text-primary)]"
+              className="te-modal-panel bg-[var(--surface)] rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl border border-[var(--border-strong)]/60 relative text-[var(--text-primary)]"
             >
               <button
+                type="button"
+                aria-label="Close hidden gem details"
                 onClick={() => setSelectedGem(null)}
-                className="absolute top-4 right-4 z-20 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black transition-colors"
+                className="te-button te-button--icon glass glass--inverse absolute top-4 right-4 z-20"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -147,7 +166,7 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
                   {selectedGem.description}
                 </p>
 
-                <div className="pt-4 border-t border-[var(--border-strong)]/40 flex items-center justify-between">
+                <div className="pt-4 border-t border-[var(--border-strong)]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <span className="text-xs text-[var(--text-secondary)] flex items-center gap-1">
                     <Sparkles className="w-4 h-4 text-[var(--brand-primary)]" /> Secret Uncrowded Destination
                   </span>
@@ -157,7 +176,7 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
                       setSelectedGem(null);
                       onOpenInquiry(name);
                     }}
-                    className="px-6 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-bold rounded-2xl text-xs shadow-md transition-all"
+                    className="te-button te-button--primary px-6 py-3 font-bold text-xs"
                   >
                     Include in My Journey
                   </button>

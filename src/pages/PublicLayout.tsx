@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigationType } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
 
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -98,14 +99,29 @@ export function PublicLayout() {
 
   return (
     <PublicSiteContext.Provider value={api}>
+      {/* Framer's animations follow the visitor's reduced-motion setting (#12). */}
+      <MotionConfig reducedMotion="user">
       <div className="site min-h-screen bg-[var(--background)] text-[var(--text-primary)] font-sans selection:bg-[var(--brand-secondary)] selection:text-[var(--on-inverse)]">
+        {/* The first Tab stop: straight past the header to the page. */}
+        <a
+          className="skip-link"
+          href="#main-content"
+          onClick={(event) => {
+            event.preventDefault();
+            const main = document.getElementById('main-content');
+            main?.focus({ preventScroll: true });
+            main?.scrollIntoView();
+          }}
+        >
+          Skip to content
+        </a>
         <Section name="Navbar">
           <Navbar
             onOpenSearch={openSearch}
           />
         </Section>
 
-        <main>
+        <main id="main-content" tabIndex={-1} data-route-focus>
           {/* A page that fails shows the error screen in its place; the next page tries again. */}
           <ErrorBoundary
             name="page"
@@ -161,6 +177,7 @@ export function PublicLayout() {
           </Section>
         )}
       </div>
+      </MotionConfig>
     </PublicSiteContext.Provider>
   );
 }

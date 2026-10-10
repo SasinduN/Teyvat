@@ -9,10 +9,10 @@ export const JournalSection: React.FC = () => {
 
   return (
     <section id="journal" className="py-24 bg-[var(--background)] relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="te-container">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16">
+        <div className="te-section-header">
           <div>
             <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--brand-primary)] bg-[var(--brand-secondary)]/10 px-4 py-1.5 rounded-full inline-block mb-3">
               Stories & Insights
@@ -44,7 +44,7 @@ export const JournalSection: React.FC = () => {
                   <img
                     src={art.image}
                     alt={art.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-[1.035] transition-transform duration-500"
                   />
                   <div className="absolute top-4 left-4 bg-[var(--inverse-surface)] text-[var(--accent-text)] text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
                     {art.category}

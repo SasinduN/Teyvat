@@ -37,7 +37,7 @@ export const Footer: React.FC = () => {
 
   return (
     <footer className="bg-[var(--inverse-deep)] text-white pt-20 pb-12 border-t border-white/10 relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="te-container">
         
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-12 pb-16 border-b border-white/10">
           
@@ -145,7 +145,7 @@ export const Footer: React.FC = () => {
                 <button
                   type="submit"
                   disabled={sending}
-                  className="w-full py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--on-accent)] font-bold text-xs rounded-2xl shadow-md transition-all flex items-center justify-center space-x-1 disabled:opacity-60"
+                  className="te-button te-button--primary w-full py-3 font-bold text-xs"
                 >
                   <span>{sending ? 'Subscribing…' : 'Subscribe'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
