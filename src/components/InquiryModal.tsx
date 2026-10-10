@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useModalFocus } from '@/hooks/useModalFocus';
 import { InquiryForm } from './InquiryForm';
 
 interface InquiryModalProps {
@@ -14,6 +15,9 @@ export const InquiryModal: React.FC<InquiryModalProps> = ({
   onClose,
   prefilledSubject = 'General Sri Lanka Trip Inquiry'
 }) => {
+  // Keyboard focus stays in the dialog, the page behind is inert and doesn't
+  // scroll, Escape closes, and focus goes back to what opened it.
+  const dialogRef = useModalFocus(isOpen, onClose);
   // Unmounted while closed, so each opening starts with a fresh form.
   if (!isOpen) return null;
 
@@ -27,7 +31,11 @@ export const InquiryModal: React.FC<InquiryModalProps> = ({
         onClick={onClose}
       >
         <motion.div
-          role="dialog" aria-label="Plan your Sri Lanka journey"
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Plan your Sri Lanka journey"
+          tabIndex={-1}
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}

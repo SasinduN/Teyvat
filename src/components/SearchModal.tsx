@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useDestinations } from '@/hooks/useSiteContent';
+import { useModalFocus } from '@/hooks/useModalFocus';
 import { paths } from '@shared/site-paths';
 
 interface SearchModalProps {
@@ -18,6 +19,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   // them, otherwise opening the modal changes the hook count and React throws.
   const DESTINATIONS = useDestinations();
   const [searchTerm, setSearchTerm] = useState('');
+  // Keyboard focus stays in the dialog (starting in the search field), the
+  // page behind is inert and doesn't scroll, Escape closes, and focus goes
+  // back to what opened it.
+  const dialogRef = useModalFocus(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -42,7 +47,11 @@ export const SearchModal: React.FC<SearchModalProps> = ({
         onClick={onClose}
       >
         <motion.div
-          role="dialog" aria-label="Search Sri Lanka destinations"
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Search Sri Lanka destinations"
+          tabIndex={-1}
           initial={{ scale: 0.95, y: -20 }}
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.95, y: -20 }}
@@ -54,7 +63,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             <Search className="w-6 h-6 text-[var(--brand-primary)]" />
             <input
               type="text"
-              autoFocus
+              data-autofocus
               aria-label="Search destinations"
               placeholder="Search Ella, Yala, Sigiriya, beaches, safaris..."
               value={searchTerm}
