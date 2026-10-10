@@ -146,9 +146,9 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   .te-button > svg { flex-shrink: 0; }
   .te-button:disabled, .te-button[aria-disabled="true"] { opacity: .6; cursor: not-allowed; box-shadow: none; transform: none; }
   @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .te-button:where(.te-button--secondary, .te-button--icon) { backdrop-filter: blur(8px) saturate(110%); -webkit-backdrop-filter: blur(8px) saturate(110%); }
+    .te-button:where(.te-button--secondary, .te-button--icon) { -webkit-backdrop-filter: blur(8px) saturate(110%); backdrop-filter: blur(8px) saturate(110%); }
     /* Not inside a dialog or the header (#12): they're already a surface of their own. */
-    :is(.te-modal-panel, [role="dialog"], .te-nav) .te-button { backdrop-filter: none; -webkit-backdrop-filter: none; }
+    :is(.te-modal-panel, [role="dialog"], .te-nav) .te-button { -webkit-backdrop-filter: none; backdrop-filter: none; }
   }
   @media (hover: hover) and (pointer: fine) {
     .te-button:where(:not(:disabled):not([aria-disabled="true"]):not(.te-button--text-link)):hover {
@@ -170,12 +170,12 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   }
   /* On a photo header (#12): clean fills and outlines, without the reflection, sheen or blur. */
   :is(.te-hero, .te-page-hero) .te-button,
-  :is(.te-hero, .te-page-hero) .te-button:hover { background-image: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  :is(.te-hero, .te-page-hero) .te-button:hover { background-image: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
   :is(.te-hero, .te-page-hero) .te-button::before { content: none; }
   /* The slide controls sit right of the copy, where the photo is clear: dark glass under their icons. */
   .te-hero-controls .te-button--icon { --button-bg: var(--glass-inverse-bg); --button-hover-bg: var(--glass-inverse-strong); }
   @media (prefers-reduced-transparency: reduce) {
-    .te-button:where(.te-button--secondary, .te-button--icon) { --button-bg: var(--button-secondary-solid); --button-hover-bg: var(--button-secondary-solid); backdrop-filter: none; -webkit-backdrop-filter: none; }
+    .te-button:where(.te-button--secondary, .te-button--icon) { --button-bg: var(--button-secondary-solid); --button-hover-bg: var(--button-secondary-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
   }
   @media (forced-colors: active) {
     .te-button { border-color: ButtonText; background: ButtonFace; color: ButtonText; box-shadow: none; }
@@ -293,13 +293,13 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
    * band along its top (`--photo-top-shade`, on the hero and page headers),
    * which is what keeps the links readable. Scrolled: dark glass.
    */
-  .te-nav { --glass-blur: 16px; --glass-inverse-strong: var(--glass-nav-scrolled); }
+  .te-nav { --glass-blur: var(--glass-nav-blur); --glass-inverse-strong: var(--glass-nav-scrolled); }
   .te-nav[data-scrolled="false"] {
     background: transparent;
     border-color: transparent;
     box-shadow: none;
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
   .te-nav[data-scrolled="true"] { border-color: rgb(var(--pearl-channels) / .1); box-shadow: inset 0 -1px 0 rgb(var(--pearl-channels) / .08), 0 4px 24px rgb(var(--photo-channels) / .18); }
   @media (prefers-reduced-transparency: reduce), (forced-colors: active) {

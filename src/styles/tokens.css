@@ -112,6 +112,7 @@
   --glass-photo-reflection: linear-gradient(135deg, rgb(var(--pearl-channels) / .07), transparent 48%, rgb(var(--pearl-channels) / .02));
   --glass-nav-bg: rgb(var(--photo-channels) / .76);
   --glass-nav-scrolled: rgb(var(--photo-channels) / .93);
+  --glass-nav-blur: 16px;
   --glass-scroll-thumb: rgb(var(--teal-channels) / .62);
   --glass-scroll-edge: rgb(var(--pearl-channels) / .38);
   --glass-scroll-hover: var(--brand-secondary);
@@ -196,6 +197,10 @@
   --button-secondary-hover: var(--glass-strong-bg);
   --glass-saturation: 112%;
   --glass-noise-opacity: .025;
+  /* The scrolled header over a dark page, whose text is light: a deeper tint (with a stronger blur,
+     index.css), so what scrolls under it is a soft blur, never readable text (browser-glass). */
+  --glass-nav-scrolled: rgb(var(--photo-channels) / .96);
+  --glass-nav-blur: 24px;
 }
 
 /* Layout tokens shared by the header, footer and floating controls. */
