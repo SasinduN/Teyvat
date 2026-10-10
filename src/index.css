@@ -108,7 +108,8 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
     text-align: center;
     white-space: normal;
     cursor: pointer;
-    transition: transform 220ms var(--ease-premium), box-shadow 220ms ease, border-color 220ms ease, background-color 220ms ease, color 220ms ease;
+    /* Not box-shadow: the keyboard focus ring is a box-shadow, and appears at once. */
+    transition: transform 220ms var(--ease-premium), border-color 220ms ease, background-color 220ms ease, color 220ms ease;
   }
   .te-button--primary { --button-bg: var(--button-primary-bg); --button-text: var(--button-primary-text); --button-border: var(--button-primary-border); --button-hover-bg: var(--button-primary-hover); --button-reflection: var(--button-primary-reflection); --button-sheen: var(--button-primary-sheen); }
   .te-button--secondary { --button-bg: var(--button-secondary-bg); --button-text: var(--button-secondary-text); --button-border: var(--button-edge); --button-hover-bg: var(--button-secondary-hover); }
@@ -120,7 +121,8 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
     background-image: var(--button-reflection, var(--glass-reflection));
     box-shadow: inset 0 1px 0 var(--glass-highlight), 0 4px 12px rgb(var(--photo-channels) / .12);
   }
-  .te-button:where(.te-button--primary, .te-button--secondary, .te-button--icon)::before {
+  /* The sheen: on text buttons (a 44 px circle is too small to show it). */
+  .te-button:where(.te-button--primary, .te-button--secondary):not(.te-button--icon)::before {
     content: '';
     position: absolute;
     inset: 1px 1px auto;
@@ -135,6 +137,8 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   .te-button:disabled, .te-button[aria-disabled="true"] { opacity: .6; cursor: not-allowed; box-shadow: none; transform: none; }
   @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .te-button:where(.te-button--secondary, .te-button--icon) { backdrop-filter: blur(8px) saturate(110%); -webkit-backdrop-filter: blur(8px) saturate(110%); }
+    /* Not inside a dialog or the header (#12): they're already a surface of their own. */
+    :is(.te-modal-panel, [role="dialog"], .te-nav) .te-button { backdrop-filter: none; -webkit-backdrop-filter: none; }
   }
   @media (hover: hover) and (pointer: fine) {
     .te-button:where(:not(:disabled):not([aria-disabled="true"]):not(.te-button--text-link)):hover {
