@@ -9,7 +9,9 @@ import './test-db';
  *   - opening one moves focus into it (the search: its field);
  *   - Tab and Shift+Tab never leave it;
  *   - the page behind is inert and doesn't scroll;
- *   - Escape closes it, and focus returns to the button that opened it.
+ *   - Escape closes it, and focus returns to the button that opened it;
+ *   - nothing behind it moves sideways when the scrollbar goes (the gutter
+ *     stays reserved: `scrollbar-gutter: stable`).
  *
  * Needs `npm run build` and Chrome; skipped with a message otherwise.
  */
@@ -134,6 +136,22 @@ describe('the enquiry and search dialogs keep focus, in Chrome', { skip }, () =>
     await poll(page, `!document.querySelector('[role=dialog]')`, 'the search closed');
     await poll(page, `document.activeElement === ${opener}`, 'focus back on the search button');
     await assertPageBehindIsInert(page, false);
+  });
+
+  test('opening a dialog moves nothing sideways: the scrollbar’s space stays', async () => {
+    const page = await openPage('/tours');
+    // Where things are drawn (clientWidth isn't: a reserved gutter isn't counted as a scrollbar).
+    const layout = `({
+      header: Math.round(document.querySelector('header a[href="/plan"]').getBoundingClientRect().left),
+      heading: Math.round(document.querySelector('main h1').getBoundingClientRect().left)
+    })`;
+    // The page scrolls, so it has a scrollbar taking space: the case this guards.
+    assert.ok(await page.evaluate<boolean>(`innerWidth - document.documentElement.clientWidth > 0`), 'the page shows a scrollbar');
+    const before = await page.evaluate<object>(layout);
+    await page.evaluate(`[...document.querySelectorAll('#tours button')].find((b) => b.textContent.trim() === 'Inquire').click(), true`);
+    await poll(page, `${DIALOG}?.querySelector('form')`, 'the enquiry form');
+    await assertPageBehindIsInert(page, true);
+    assert.deepEqual(await page.evaluate<object>(layout), before);
   });
 
   test('a click outside still closes the enquiry form', async () => {
