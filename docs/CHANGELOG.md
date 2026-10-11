@@ -1,3 +1,7 @@
+## 2026-10-11 — Fix local map and restore expected photos
+
+Missing/blank CARTO keys now select attributed OpenStreetMap tiles. Restored the original local folder's exact-record Sri Lanka photo corrections, 40 existing WebP assets and photography credits without overwriting admin selections or changing public markup. Share metadata uses the same corrected images. Build and 11 focused tests pass; Chrome verified loaded map tiles/markers and sampled public images. Full database/booking/authenticated-admin checks not run. Details: docs/codex/CHANGELOG.md, BUG-055/056. Build annotation/chunk warnings remain.
+
 ## 2026-10-08 — PR #11 route-split CI repair (BUG-054)
 
 The backend-only upload prematurely changed frontend navigation and advertised four missing React index pages, failing one Navbar visual baseline, Explore navigation, route status and sitemap tests. Keep the original five-page/home-map route contracts in step 1 and defer new routes to the frontend PR. Preserve backend/photo/header improvements and unchanged visual snapshots/CI. Add missing-page 404 regression cases. Local build/typecheck and synthetic round-trip PASS; local browser/database tests BLOCKED by test DB authentication. GitHub acceptance pending. Exact job/tests/evidence: docs/CI_PR11.md (../CI_PR11.md from codex).

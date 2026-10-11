@@ -1,3 +1,9 @@
+## 2026-10-11 — Local map and photo restoration (BUG-055/056)
+
+Fixed missing-key map geography with an attributed OpenStreetMap fallback; configured CARTO keys retain themed basemaps. Restored the original local folder's named photo corrections and 40 WebP assets at the public API boundary, with source/licence credits and matching share metadata. Preserved exact admin photo replacements and existing public markup. Added only the required tile/photo origins to img-src. Updated environment/setup documentation and added focused regression tests and a local browser diagnostic.
+
+VERIFIED: production build/typecheck, 11 focused map/photo tests, image assets over HTTP, Chrome map (20 markers/nine loaded tiles) and image decoding on sampled public pages. Build emits dependency annotation and >500 kB chunk warnings; these do not fail it. Initial sandbox browser attempt failed before rendering; unsandboxed retry succeeded. Full database tests, booking submission, authenticated admin actions, keyed CARTO requests and responsive visual acceptance NOT TESTED. Historical entries retained.
+
 ## 2026-10-08 — PR #11 route-split CI repair (BUG-054)
 
 The backend-only upload prematurely changed frontend navigation and advertised four missing React index pages, failing one Navbar visual baseline, Explore navigation, route status and sitemap tests. Keep the original five-page/home-map route contracts in step 1 and defer new routes to the frontend PR. Preserve backend/photo/header improvements and unchanged visual snapshots/CI. Add missing-page 404 regression cases. Local build/typecheck and synthetic round-trip PASS; local browser/database tests BLOCKED by test DB authentication. GitHub acceptance pending. Exact job/tests/evidence: docs/CI_PR11.md (../CI_PR11.md from codex).

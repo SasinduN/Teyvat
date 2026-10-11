@@ -28,6 +28,8 @@ import { pool } from '../db';
 import { publicImageCredits } from '../media/credits';
 import { asyncRoute } from '../http';
 import { publicStopsByTour } from '../tour-stops';
+import { localPhoto, publicPhoto, publicGallery, photoStoryLocation } from '../../../shared/public-photos';
+import photographs from '../../../shared/travel-photos.json';
 
 /**
  * Table names are interpolated into SQL, so they come only from this frozen
@@ -134,6 +136,34 @@ contentRouter.get(
       imageCredits,
       features: { bookings: req.app.locals.bookings === true }
     };
+
+    // Restore exact legacy seed photos, preserving curated replacements and rows.
+    const photoCollections = [
+      ['destinations', payload.destinations], ['experience_categories', payload.experienceCategories],
+      ['featured_experiences', payload.featuredExperiences], ['tours', payload.tours],
+      ['articles', payload.articles], ['hidden_gems', payload.hiddenGems],
+      ['photo_stories', payload.photoStories], ['hero_slides', payload.heroSlides]
+    ] as const;
+    for (const [table, rows] of photoCollections) {
+      for (const row of rows) {
+        if (table === 'photo_stories' && 'location' in row) {
+          row.location = photoStoryLocation(row.id, row.image, row.location);
+        }
+        row.image = publicPhoto(table, row.id, row.image);
+      }
+    }
+    for (const row of payload.destinations) row.gallery = publicGallery(row.id, row.gallery).map(localPhoto);
+    const used = new Set(photoCollections.flatMap(([, rows]) => rows.map(row => row.image)));
+    for (const row of payload.destinations) for (const image of row.gallery) used.add(image);
+    payload.imageCredits = payload.imageCredits.map(credit => ({ ...credit, url: localPhoto(credit.url) }));
+    for (const photo of photographs) {
+      for (const url of new Set([localPhoto(photo.image), localPhoto(photo.original)])) {
+        if (used.has(url) && !payload.imageCredits.some(credit => credit.url === url)) {
+          payload.imageCredits.push({ url, author: photo.author, license: photo.license,
+            license_url: photo.licenseUrl, source_url: photo.source });
+        }
+      }
+    }
 
     // An admin save must show on the next page load. `no-cache` lets the
     // browser keep a copy but makes it revalidate every time (the ETag Express

@@ -13,6 +13,19 @@
 
 /** The one host tiles come from, for the CSP (`shared/image-hosts.ts`). */
 export const CARTO_TILES_ORIGIN = 'https://basemaps.cartocdn.com';
+export const OSM_TILES_ORIGIN = 'https://tile.openstreetmap.org';
+export const OSM_TILE_URL = `${OSM_TILES_ORIGIN}/{z}/{x}/{y}.png`;
+export const OSM_ATTRIBUTION =
+  '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors';
+
+/** Use real, attributed map tiles even when a local CARTO key is absent. */
+export function mapTileConfig(theme: 'light' | 'dark', key?: string | null) {
+  if (!key?.trim()) return { url: OSM_TILE_URL, attribution: OSM_ATTRIBUTION };
+  return {
+    url: (theme === 'dark' ? cartoDarkUrl : cartoVoyagerUrl)(key),
+    attribution: CARTO_ATTRIBUTION
+  };
+}
 
 const VOYAGER_PATH = '/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 /** The dark theme's basemap: same host and key, so the CSP is unchanged. */

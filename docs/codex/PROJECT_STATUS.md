@@ -1,3 +1,7 @@
+# Local clone runtime — 2026-10-11
+
+Dev site: http://127.0.0.1:5173; API: port 8081; local teyvat_dev on 5433. BUG-055/056 fixed: real map tiles without a CARTO key, restored exact legacy photo corrections/local assets and credits. Existing public markup preserved. VERIFIED: build/typecheck, 11 focused tests, Chrome rendered map with 20 markers/nine loaded tiles, restored images on sampled public pages, admin login and booking page rendering. No captured browser runtime errors on checked pages. NOT TESTED: authenticated admin actions, booking submission, full guarded database suite, live keyed CARTO and responsive visual acceptance. Optional R2/email remain unconfigured. Historical evidence below is retained with its original scope.
+
 # PR #11 CI repair — 2026-10-08
 
 BUG-054 route-split repair implemented; CI acceptance pending, not merge-ready. Local build/typecheck and synthetic round-trip PASS. Local database/browser tests BLOCKED by test DB password authentication. Original PR #11 GitHub evidence: 18/21 files passed; four failures in Navbar baseline/navigation/page status/sitemap. Map and CSP checks passed. Workflow/tests/snapshots unchanged; no DB guard bypass or public markup edits. See ../CI_PR11.md. Historical entries retained below.
