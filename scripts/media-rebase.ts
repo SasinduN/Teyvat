@@ -4,10 +4,11 @@
  *
  *   npm run media:rebase -- --from https://pub-….r2.dev --to https://media.example.lk --dry-run
  *   npm run media:rebase -- --from https://pub-….r2.dev --to https://media.example.lk
+ *   … --prod   # production (PROD_DATABASE_URL), after confirming
  *
  * Rewrites `media.url` and every image column in one transaction. --dry-run
- * reports the counts and rolls back. Runs against DATABASE_URL (in the local
- * .env, production) and prints the target first. Set R2_PUBLIC_BASE_URL to
+ * reports the counts and rolls back. Runs against the local DATABASE_URL, or
+ * with --prod PROD_DATABASE_URL (shared/database-target.ts), and prints the target first. Set R2_PUBLIC_BASE_URL to
  * the new base, in Railway and .env, in the same change.
  */
 import '../shared/load-env';
@@ -16,6 +17,7 @@ import { parseArgs } from 'node:util';
 
 import { Client } from 'pg';
 
+import { scriptDatabaseUrl } from '../shared/database-target';
 import { connectionTargetFor, privateHostHint } from '../shared/pg-connection';
 import { rebaseMedia } from '../server/src/media/maintenance';
 
@@ -24,14 +26,14 @@ async function main(): Promise<void> {
     options: {
       from: { type: 'string' },
       to: { type: 'string' },
-      'dry-run': { type: 'boolean', default: false }
+      'dry-run': { type: 'boolean', default: false },
+      prod: { type: 'boolean', default: false }
     },
     strict: true
   });
   if (!values.from || !values.to) throw new Error('Both --from and --to are required.');
 
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error('DATABASE_URL is not set.');
+  const url = await scriptDatabaseUrl({ prod: values.prod, script: 'media:rebase' });
   const target = connectionTargetFor(url);
   const client = new Client({
     connectionString: target.connectionString,

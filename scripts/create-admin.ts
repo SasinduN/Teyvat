@@ -3,14 +3,19 @@
  *
  *   npm run admin:create -- --email you@x.lk --name "Full Name"
  *   npm run admin:create -- --email you@x.lk --reset-password
+ *   npm run admin:create -- --email you@x.lk --name "Full Name" --prod
  *
  * The password is typed twice at a hidden prompt. It is never accepted as an
  * argument, because arguments land in shell history and in the process list.
  * Nothing here prints the password or its hash.
  *
- * Runs against DATABASE_URL. In the local .env that is PRODUCTION, which is the
- * point: it is how the first admin gets into the deployed site, with no Railway
- * CLI involved. The target is printed before anything is written.
+ * Runs against the local DATABASE_URL. With --prod it runs against
+ * PROD_DATABASE_URL, after printing the host and having it typed back
+ * (shared/database-target.ts): how the first admin gets into the deployed
+ * site, with no Railway CLI involved.
+ *
+ * The account code (and with it the database pool) loads only once the
+ * database is chosen: the pool reads DATABASE_URL when it is imported.
  *
  * Every user is an admin. There is no HTTP route that creates one.
  */
@@ -18,22 +23,14 @@ import '../shared/load-env';
 
 import { parseArgs } from 'node:util';
 
-import {
-  AccountError,
-  createOrResetAdmin,
-  isPublicContactEmail,
-  isValidEmail,
-  normaliseEmail,
-  PASSWORD_MAX,
-  PASSWORD_MIN
-} from '../server/src/auth/accounts';
-import { pool } from '../server/src/db';
+import { scriptDatabaseUrl } from '../shared/database-target';
 import { connectionTargetFor, privateHostHint } from '../shared/pg-connection';
 
 const USAGE =
   'Usage:\n' +
   '  npm run admin:create -- --email you@x.lk --name "Full Name"\n' +
-  '  npm run admin:create -- --email you@x.lk --reset-password';
+  '  npm run admin:create -- --email you@x.lk --reset-password\n' +
+  '  add --prod for production (PROD_DATABASE_URL)';
 
 function fail(message: string): never {
   console.error(`${message}\n`);
@@ -81,23 +78,22 @@ function promptHidden(label: string): Promise<string> {
   });
 }
 
+/** Set once the pool exists, so `finally` can close it. */
+let closePool: () => Promise<void> = async () => undefined;
+let isAccountError: (error: unknown) => boolean = () => false;
+
 async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
       email: { type: 'string' },
       name: { type: 'string' },
-      'reset-password': { type: 'boolean', default: false }
+      'reset-password': { type: 'boolean', default: false },
+      prod: { type: 'boolean', default: false }
     },
     strict: true
   });
 
   if (!values.email) fail(`--email is required.\n\n${USAGE}`);
-
-  const email = normaliseEmail(values.email);
-  if (!isValidEmail(email)) fail(`Not a valid email: ${email}`);
-
-  const fullName = values.name?.trim() || null;
-  const resetPassword = values['reset-password'];
 
   if (!process.stdin.isTTY) {
     fail(
@@ -106,9 +102,22 @@ async function main(): Promise<void> {
     );
   }
 
+  // The database first; the account code (and its pool) load for that one.
+  const url = await scriptDatabaseUrl({ prod: values.prod, script: 'admin:create' });
+  process.env.DATABASE_URL = url;
+  const accounts = await import('../server/src/auth/accounts');
+  const { pool } = await import('../server/src/db');
+  closePool = () => pool.end();
+  isAccountError = (error) => error instanceof accounts.AccountError;
+  const { createOrResetAdmin, isPublicContactEmail, isValidEmail, normaliseEmail, PASSWORD_MAX, PASSWORD_MIN } = accounts;
+
+  const email = normaliseEmail(values.email!);
+  if (!isValidEmail(email)) fail(`Not a valid email: ${email}`);
+
+  const fullName = values.name?.trim() || null;
+  const resetPassword = values['reset-password'];
+
   // Say where this is going before asking for anything.
-  const url = process.env.DATABASE_URL;
-  if (!url) fail('DATABASE_URL is not set. Put it in .env in the project root.');
   const where = new URL(connectionTargetFor(url).connectionString);
   const { rows } = await pool.query<{ db: string }>('select current_database() as db');
   console.log(`database: ${rows[0]?.db} on ${where.hostname}${where.port ? `:${where.port}` : ''}`);
@@ -143,8 +152,8 @@ async function main(): Promise<void> {
 
 main()
   .catch((error: unknown) => {
-    if (error instanceof AccountError) {
-      console.error(`\n${error.message}\n`);
+    if (isAccountError(error)) {
+      console.error(`\n${(error as Error).message}\n`);
     } else {
       console.error(`\ncreate-admin failed: ${error instanceof Error ? error.message : error}`);
       const hint = privateHostHint(error);
@@ -152,4 +161,4 @@ main()
     }
     process.exitCode = 1;
   })
-  .finally(() => pool.end());
+  .finally(() => closePool());

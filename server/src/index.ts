@@ -6,10 +6,18 @@
  * the deploy before any traffic reaches a half-migrated schema. Running them
  * in-process would start serving first and migrate second.
  */
+import { databaseRefusal } from '../../shared/database-target';
 import { createApp } from './app';
 import { startSweep } from './auth/sweep';
 import { pool } from './db';
 import { env } from './env';
+
+// Off Railway, only a local database: a local run must never reach production.
+const refusal = databaseRefusal(env.DATABASE_URL, env.NODE_ENV);
+if (refusal) {
+  console.error(`[api] refusing to start.\n${refusal}`);
+  process.exit(1);
+}
 
 const app = createApp();
 

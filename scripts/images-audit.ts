@@ -4,24 +4,28 @@
  * plus our R2 bucket from R2_PUBLIC_BASE_URL).
  *
  *   npm run images:audit
+ *   npm run images:audit -- --prod   # production (PROD_DATABASE_URL), after confirming
  *
  * Read-only, and enforced as such: the connection is opened with
  * `default_transaction_read_only=on`, so Postgres itself refuses any write.
- * Runs against DATABASE_URL (in the local .env, production). Prints the
- * target first. Content rows only: no personal data is read.
+ * Runs against the local DATABASE_URL, or with --prod PROD_DATABASE_URL
+ * (shared/database-target.ts). Prints the target first. Content rows only: no personal data is read.
  */
 import '../shared/load-env';
 
+import { parseArgs } from 'node:util';
+
 import { Client } from 'pg';
 
+import { scriptDatabaseUrl } from '../shared/database-target';
 import { allowedImageOrigins } from '../shared/image-hosts';
 import { connectionTargetFor, privateHostHint } from '../shared/pg-connection';
 import { r2Config } from '../server/src/env';
 import { auditImages, storedImages } from '../server/src/media/maintenance';
 
 async function main(): Promise<void> {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error('DATABASE_URL is not set.');
+  const { values } = parseArgs({ options: { prod: { type: 'boolean', default: false } }, strict: true });
+  const url = await scriptDatabaseUrl({ prod: values.prod, script: 'images:audit' });
   const target = connectionTargetFor(url);
 
   const client = new Client({

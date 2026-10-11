@@ -251,6 +251,12 @@ Agreed, not started. Each one gets its own plan first.
   emails and messages must never reach the logs.
 - **The local API runs on port 8081**, because Apache holds 8080. Vite proxies
   `/api` there.
+- **Local runs never use production.** `DATABASE_URL` is the local database
+  (`localhost:5433/teyvat_dev`); the server and `migrate` refuse any other
+  host unless `NODE_ENV=production` (`shared/database-target.ts`). Production
+  from a laptop only through `PROD_DATABASE_URL` with `--prod`, in
+  `admin:create`, `images:audit`, `images:import` and `media:rebase`, after
+  the host is typed back.
 - **The brand is undecided.** The code says "Travel Eye". Don't rename it, and
   don't add new brand strings.
 - **`db/migrations/0002_seed.sql` is an upsert.** Never run it by hand against

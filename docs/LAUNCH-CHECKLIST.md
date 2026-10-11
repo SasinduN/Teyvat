@@ -27,15 +27,16 @@ off in a pull request, so the history shows when each was done.
 - [ ] **2. Rotate the Postgres password.** It was exposed during setup (read
       into a local tool session, kept in `.env`, sent over the public proxy).
       Rotate it in Railway, check the API service's `DATABASE_URL` reference
-      still resolves, and update `.env` wherever the public URL is used.
+      still resolves, and update `PROD_DATABASE_URL` in `.env`.
       **Blocks:** go-live. **Who:** Railway admin.
 - [ ] **3. `DATABASE_URL` on the API service is the internal reference**
       (`${{Postgres.DATABASE_URL}}`, a `*.railway.internal` host), so database
       traffic stays on Railway's private network.
       **Blocks:** go-live. **Who:** Railway admin.
 - [ ] **4. Remove the public TCP proxy, or decide to keep it.** It exists so
-      scripts can reach production from a laptop: `admin:create`,
-      `images:audit`, `media:rebase`. Without it, those can't run. Keep it
+      scripts can reach production from a laptop with `--prod`:
+      `admin:create`, `images:audit`, `images:import`, `media:rebase`.
+      Without it, those can't run. Keep it
       until 9 and 16 are done, then decide.
       **Blocks:** reducing what's exposed to the internet. **Who:** Railway
       admin + owner.
@@ -71,7 +72,7 @@ off in a pull request, so the history shows when each was done.
       are served from `r2.dev`, which Cloudflare rate-limits and describes as
       for development.
       1. Connect the domain to the bucket in Cloudflare.
-      2. `npm run media:rebase -- --from <r2.dev base> --to <new base> --dry-run`,
+      2. `npm run media:rebase -- --from <r2.dev base> --to <new base> --dry-run --prod`,
          then the same command without `--dry-run`.
       3. Set `R2_PUBLIC_BASE_URL` to the new base in Railway and `.env`. The
          CSP and the image allow-list follow automatically.
@@ -120,7 +121,7 @@ off in a pull request, so the history shows when each was done.
         built, so it must be set before the build that's deployed.
 
       **Blocks:** commercial go-live. **Who:** Owner (CARTO account).
-- [ ] **16. Image audit before each CSP change.** `npm run images:audit`
+- [ ] **16. Image audit before each CSP change.** `npm run images:audit -- --prod`
       against production must report nothing blocked. *(Last run, 1 October
       2026, before the phase 7 deploy: 70 images, all allowed.)*
       **Blocks:** CSP deploys. **Who:** Developer.
@@ -138,9 +139,9 @@ off in a pull request, so the history shows when each was done.
       Developer.
 - [ ] **23. Copy the Wikimedia photos into R2, then drop the host from the
       CSP.** Once the fix-forward PR for #11 is deployed, run
-      `npm run images:import -- --dry-run` and then `npm run images:import`
-      against production (needs `DATABASE_URL` through the public proxy and
-      the five `R2_*` values in `.env`). Then `npm run images:audit` on the
+      `npm run images:import -- --dry-run --prod` and then
+      `npm run images:import -- --prod` (needs `PROD_DATABASE_URL` and the
+      five `R2_*` values in `.env`). Then `npm run images:audit -- --prod` on the
       branch that removes `upload.wikimedia.org` (item 16) must report
       nothing blocked before that branch is merged. If it's merged first,
       migration 0013 puts the rows still on Wikimedia back on their seed
@@ -168,7 +169,7 @@ off in a pull request, so the history shows when each was done.
 
 - [ ] **18. Review admin accounts.** Real staff only, each with their own
       login and no shared passwords. Use `npm run admin:create --
-      --reset-password` for anyone who needs a new password.
+      --reset-password --prod` for anyone who needs a new password.
       **Blocks:** go-live. **Who:** Owner + developer.
 - [ ] **19. The old Supabase project:** check it for real enquiries from
       before the move to Railway, export any you want to keep, then delete
