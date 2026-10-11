@@ -119,8 +119,10 @@ copies, which would be sharper on a wide screen where a photo fills the
 width (the home hero's Ella slide). But two are upscaled rather than
 sharper (Jaffna's 1920 is 82 KB, Udawalawe's 180 KB; his own notes call
 Udawalawe and Weligama soft), the rest are 0.5–1.5 MB each, and the site
-loads one URL per photo, so cards would download the big file too. Not
-uploaded; a decision for the owner (see PR B). His 1280 px files are the
+loads one URL per photo, so cards would download the big file too. The
+owner's decision: keep R2's 1280 px copies and upload none of these.
+Responsive images (`srcset`, 1920 px only for full-width heroes, not
+Jaffna or Udawalawe) are in CLAUDE.md's backlog. His 1280 px files are the
 same pictures as R2's, re-encoded as WebP: smaller, not better.
 
 **Not checked from here:** that production's rows still point at the R2
