@@ -81,22 +81,26 @@ describe('--prod', () => {
       if (v === undefined) delete process.env[k];
       else process.env[k] = v;
     }
-    mock.restoreAll();
   });
 
   /** `scriptDatabaseUrl` with exit turned into a throw, and what it printed. */
   async function choose(prod: boolean, io: Parameters<typeof scriptDatabaseUrl>[1]) {
     const lines: string[] = [];
-    mock.method(console, 'log', (...a: unknown[]) => void lines.push(a.join(' ')));
-    mock.method(console, 'error', (...a: unknown[]) => void lines.push(a.join(' ')));
-    mock.method(process, 'exit', () => {
-      throw new Error('exit');
-    });
+    const mocks = [
+      mock.method(console, 'log', (...a: unknown[]) => void lines.push(a.join(' '))),
+      mock.method(console, 'error', (...a: unknown[]) => void lines.push(a.join(' '))),
+      mock.method(process, 'exit', () => {
+        throw new Error('exit');
+      })
+    ];
     try {
       return { url: await scriptDatabaseUrl({ prod, script: 'images:audit' }, io), lines };
     } catch (error) {
       if ((error as Error).message !== 'exit') throw error;
       return { url: null, lines };
+    } finally {
+      // Before the test ends: the runner exits the process once the file is done.
+      for (const m of mocks) m.mock.restore();
     }
   }
 
