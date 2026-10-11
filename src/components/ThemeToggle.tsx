@@ -4,7 +4,7 @@ import { chooseTheme, useTheme } from '@/lib/theme';
 
 /**
  * Switches between the light and dark themes, and keeps the choice
- * (`site:theme`). Until the visitor chooses, the theme follows the system
+ * (`site:theme`). Until the visitor chooses, the theme is light
  * (public/theme-init.js).
  */
 export const ThemeToggle: React.FC<{ className?: string }> = ({ className = '' }) => {

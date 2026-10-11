@@ -25,7 +25,7 @@ import { after, before, beforeEach, describe, test } from 'node:test';
 
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
-import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
+import { findChrome, launchChrome, type Chrome, type Page, saveTheme } from './chrome';
 import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
 import { CONTRAST } from './contrast';
 import { HOOK_TIMEOUT } from './timeouts';
@@ -187,6 +187,7 @@ describe('glass surfaces: contrast and focus, in Chrome', { skip }, () => {
       await page.send('Page.bringToFront');
       await page.send('Emulation.setDeviceMetricsOverride', { ...size, deviceScaleFactor: 1, mobile });
       await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'dark' }, { name: 'prefers-reduced-motion', value: 'reduce' }] });
+      await saveTheme(page, 'dark');
       await page.send('Page.navigate', { url: `${app.baseUrl}/explore` });
       await poll(page, `document.body?.dataset.route && document.readyState === 'complete' && document.querySelector('#explore-map [aria-pressed]') && document.documentElement.dataset.theme === 'dark'`, 'the page, dark', 20_000);
       await page.evaluate(`document.documentElement.style.scrollBehavior = 'auto', true`);

@@ -64,14 +64,15 @@ const skip = !executable
  * ones; the rest are measured.
  */
 const SECTIONS: { name: string; baseline: string; props: string; height?: number }[] = [
-  // #12 parity (e6cdc02): #12's round icon buttons and pearl Plan button (was 194fa9d, PR 5).
-  { name: 'Navbar', baseline: 'e6cdc02', props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
-  // Redesign PR 4 (4e9942d): the approved new design.
-  { name: 'DestinationSpotlight', baseline: '4e9942d', props: '{ onSelectDestination() {} }' },
+  // The friend import (aee696e): the header in the page's colours, the logo's home link (was e6cdc02).
+  { name: 'Navbar', baseline: 'aee696e', props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
+  // The friend import (aee696e): photo-first destination cards (was 4e9942d).
+  { name: 'DestinationSpotlight', baseline: 'aee696e', props: '{ onSelectDestination() {} }' },
+  // The friend import (aee696e): content cards and badges (were e6cdc02, #12 parity).
+  { name: 'FeaturedExperiences', baseline: 'aee696e', props: '{ onSelectExperience() {} }' },
+  { name: 'ToursSection', baseline: 'aee696e', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
+  { name: 'ExperiencesSection', baseline: 'aee696e', props: '{ onSelectCategory() {} }' },
   // #12 parity (e6cdc02): #12's glass chips, lighter photo gradients, te-container headers (were 194fa9d).
-  { name: 'FeaturedExperiences', baseline: 'e6cdc02', props: '{ onSelectExperience() {} }' },
-  { name: 'ToursSection', baseline: 'e6cdc02', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
-  { name: 'ExperiencesSection', baseline: 'e6cdc02', props: '{ onSelectCategory() {} }' },
   { name: 'JournalSection', baseline: 'e6cdc02', props: '{}' },
   // #12 parity (e6cdc02): every match listed, as in #12 (was 4e9942d).
   { name: 'SearchModal', baseline: 'e6cdc02', props: '{ isOpen: true, onClose() {}, onSelectDestination() {} }', height: 900 }

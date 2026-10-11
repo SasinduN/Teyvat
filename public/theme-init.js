@@ -5,13 +5,12 @@
  * renders: no flash of the wrong theme, and no inline script (the CSP's
  * script-src is 'self'). Sets data-theme and color-scheme on <html>: the
  * visitor's saved choice (localStorage "site:theme", set by the theme
- * toggle), otherwise the system's preference, which it keeps following
- * while nothing is saved. Blocked storage counts as nothing saved.
+ * toggle), otherwise light, whatever the system prefers (the friend import,
+ * docs/reviews/friend-import.md). Blocked storage counts as nothing saved.
  */
 (function () {
   var KEY = 'site:theme';
   var root = document.documentElement;
-  var media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
   function saved() {
     try {
@@ -23,13 +22,12 @@
   }
 
   function apply() {
-    var theme = saved() || (media && media.matches ? 'dark' : 'light');
+    var theme = saved() || 'light';
     root.setAttribute('data-theme', theme);
     root.style.colorScheme = theme;
   }
 
   apply();
-  if (media && media.addEventListener) media.addEventListener('change', apply);
   // A choice made in another tab.
   window.addEventListener('storage', function (event) {
     if (event.key === KEY || event.key === null) apply();

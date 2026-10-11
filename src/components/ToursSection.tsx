@@ -21,13 +21,13 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
         
         {/* Header */}
         <div className="te-section-header te-section-header--stack">
-          <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--brand-primary)] bg-[var(--brand-secondary)]/10 px-4 py-1.5 rounded-full inline-block mb-3">
+          <span className="te-card-badge uppercase tracking-[0.2em] mb-3">
             Signature Itineraries
           </span>
           <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[var(--brand-primary)] tracking-tight mb-4">
             Your Journey. Your Way.
           </h2>
-          <p className="text-lg text-[var(--text-primary)]/80 font-light leading-relaxed">
+          <p className="text-lg text-[var(--text-secondary)] leading-relaxed">
             Thoughtfully planned multi-day expeditions crafted by local experts to seamlessly weave Sri Lanka’s best highlights.
           </p>
         </div>
@@ -41,11 +41,11 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-50px' }}
               transition={{ duration: 0.6, delay: idx * 0.15 }}
-              className="te-card bg-[var(--surface)] rounded-3xl overflow-hidden shadow-xl border border-[var(--border-strong)]/50 hover:shadow-2xl transition-all duration-500 flex flex-col justify-between group"
+              className="te-card te-content-card overflow-hidden flex flex-col justify-between group"
             >
               <div>
                 {/* Image & Days Banner */}
-                <div className="relative h-64 overflow-hidden">
+                <div className="te-card-photo relative h-52 overflow-hidden">
                   <img
                     src={tour.image}
                     alt={tour.title}
@@ -53,44 +53,44 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/70 via-40% to-transparent to-75%" />
                   
-                  <div className="te-tour-badges"><div className="glass glass--inverse glass--subtle absolute top-4 left-4 text-[var(--accent-text)] px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center space-x-1.5">
+                  <div className="te-tour-badges"><div className="te-card-badge te-card-badge--photo">
                     <Calendar className="w-3.5 h-3.5" />
                     <span>{tour.days} Days / {tour.days - 1} Nights</span>
                   </div>
 
-                  <div className="glass glass--inverse glass--subtle absolute top-4 right-4 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                  <div className="te-card-badge te-card-badge--photo">
                     From ${tour.priceFrom} USD
                   </div></div>
 
-                  <div className="absolute bottom-4 left-4 right-4 text-white">
-                    <span className="text-[10px] uppercase tracking-widest text-[var(--accent-text)] font-semibold">
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <span className="te-card-accent text-[10px] uppercase tracking-widest font-semibold">
                       {tour.category} Tour
                     </span>
-                    <h3 className="font-heading text-2xl font-bold">{tour.title}</h3>
+                    <h3 className="te-card-title font-heading text-2xl font-bold">{tour.title}</h3>
                   </div>
                 </div>
 
                 {/* Body Content */}
-                <div className="p-6 sm:p-8 space-y-4">
-                  <p className="text-xs text-[var(--brand-primary)] font-serif italic">
+                <div className="p-5 sm:p-6 space-y-4">
+                  <p className="te-card-accent text-xs font-serif italic">
                     “{tour.subtitle}”
                   </p>
 
-                  <p className="text-sm text-[var(--text-primary)]/80 font-light leading-relaxed line-clamp-3">
+                  <p className="te-card-description text-sm line-clamp-3">
                     {tour.shortDesc}
                   </p>
 
                   {/* Route Places Flow */}
                   <div>
                     <div className="te-route-heading flex items-center justify-between gap-3 mb-2">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--brand-primary)] block">
+                      <span className="te-card-meta text-[11px] font-bold uppercase tracking-wider block">
                         Journey Route:
                       </span>
                       {onViewRoute && tour.stops.length > 0 && (
                         <button
                           type="button"
                           onClick={() => onViewRoute(tour)}
-                          className="text-[11px] font-bold text-[var(--brand-primary)] hover:text-[var(--brand-primary)] hover:underline underline-offset-2 flex items-center gap-1 shrink-0 transition-colors"
+                          className="te-button te-button--text-link te-button--sm text-[11px] font-bold gap-1 shrink-0"
                         >
                           <MapIcon className="w-3.5 h-3.5" aria-hidden="true" />
                           <span>View route on map</span>
@@ -100,12 +100,12 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
                     <div className="flex flex-wrap gap-1.5">
                       {tour.route.map((place, i) => (
                         <React.Fragment key={i}>
-                          <span className="text-xs bg-[var(--background-secondary)] text-[var(--brand-primary)] px-2.5 py-1 rounded-lg font-semibold border border-[var(--border-strong)]/40 flex items-center space-x-1">
-                            <MapPin className="w-3 h-3 text-[var(--brand-primary)]" />
+                          <span className="te-card-badge">
+                            <MapPin className="w-3 h-3" aria-hidden="true" />
                             <span>{place}</span>
                           </span>
                           {i < tour.route.length - 1 && (
-                            <span className="text-xs text-[var(--text-primary)]/30 self-center" aria-hidden="true">→</span>
+                            <span className="te-card-meta self-center" aria-hidden="true">→</span>
                           )}
                         </React.Fragment>
                       ))}
@@ -115,18 +115,19 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
               </div>
 
               {/* Action Buttons */}
-              <div className="p-6 sm:p-8 pt-0 flex items-center gap-3">
+              <div className="te-card-actions p-5 sm:p-6 pt-0 flex gap-3">
                 <Link
                   to={paths.tour(tour.id)}
-                  className="te-button te-button--secondary flex-1 py-3.5 text-xs font-bold flex items-center justify-center space-x-2"
+                  className="te-button te-button--secondary te-button--sm flex-1"
                 >
                   <span>View Full Journey</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
 
                 <button
+                  type="button"
                   onClick={() => onOpenInquiry(tour.title)}
-                  className="te-button te-button--primary py-3.5 px-5 text-xs font-bold"
+                  className="te-button te-button--primary te-button--sm"
                 >
                   Inquire
                 </button>

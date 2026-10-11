@@ -175,3 +175,20 @@ async function launchOnce(executable: string): Promise<Chrome> {
     }
   };
 }
+
+const themeScripts = new WeakMap<Page, string>();
+
+/**
+ * Saves `theme` as the visitor's choice (`site:theme`) on every document this
+ * page loads from now on, replacing any earlier one. With nothing saved the
+ * site is light whatever the system says, so this is how a test gets dark.
+ */
+export async function saveTheme(page: Page, theme: 'light' | 'dark'): Promise<void> {
+  await page.send('Page.enable');
+  const previous = themeScripts.get(page);
+  if (previous) await page.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: previous });
+  const { identifier } = (await page.send('Page.addScriptToEvaluateOnNewDocument', {
+    source: `try { localStorage.setItem('site:theme', ${JSON.stringify(theme)}); } catch {}`
+  })) as { identifier: string };
+  themeScripts.set(page, identifier);
+}

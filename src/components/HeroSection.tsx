@@ -51,7 +51,11 @@ export const HeroSection: React.FC = () => {
     if (HERO_IMAGES.length < 2 || !visible || !documentVisible || reducedMotion || paused || !readySlides.has(currentBg)) return;
     // One slide ahead, only after the current photograph has finished loading.
     const next = (currentBg + 1) % HERO_IMAGES.length;
-    setSeenSlides(previous => previous.has(next) ? previous : new Set([...previous, next]));
+    // After a pause, so the first photograph and the page's code load first (the slide changes at 7 s).
+    const timer = window.setTimeout(() => {
+      setSeenSlides(previous => previous.has(next) ? previous : new Set([...previous, next]));
+    }, 4500);
+    return () => window.clearTimeout(timer);
   }, [HERO_IMAGES.length, currentBg, readySlides, visible, documentVisible, reducedMotion, paused]);
 
   const showSlide = (index: number) => {

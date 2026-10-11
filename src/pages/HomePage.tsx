@@ -26,7 +26,7 @@ export function HomePage() {
 
       <section id="plan-your-journey" aria-labelledby="home-plan-title" className="te-home-plan">
         <div className="te-container">
-          <div className="glass glass--strong glass--3d te-home-plan-panel">
+          <div className="te-home-plan-panel">
             <div className="te-reading-column">
               <span className="te-eyebrow">Made personal. Designed locally.</span>
               <h2 id="home-plan-title" className="font-heading text-[var(--brand-primary)]">

@@ -21,8 +21,8 @@ interface PageHeroProps {
 }
 
 /**
- * The header of every page but the home page: a full-bleed photo under the
- * fixed Navbar, a breadcrumb, and the page's one `<h1>`. Text sits directly
+ * The header of every page but the home page: a full-bleed photo below the
+ * solid fixed Navbar, a breadcrumb, and the page's one `<h1>`. Text sits directly
  * over a directional gradient; badges are plain text without glass.
  */
 export const PageHero: React.FC<PageHeroProps> = ({ image, crumbs, eyebrow, title, subtitle, chips, compact }) => (

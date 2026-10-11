@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "./styles/tokens.css";
 @import "./styles/glass.css" layer(components);
+@import "./styles/cards.css";
+@import "./styles/home-destinations.css";
 
 @layer base {
   :root {
@@ -56,8 +58,8 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 /* Type (#12): balanced headings, one scale for every section heading. */
 .site h1, .site h2 { text-wrap: balance; }
 .site p { text-wrap: pretty; }
-.site main section h2 { font-size: clamp(1.9rem, 3.6vw, 3.1rem); line-height: 1.16; }
-.site main > section:not(.te-hero):not(.te-page-hero), .site main > article { padding-block: clamp(3.5rem, 7vw, 6rem); }
+.site main section h2 { font-size: var(--heading-section); line-height: 1.2; }
+.site main > section:not(.te-hero):not(.te-page-hero), .site main > article { padding-block: var(--section-space); }
 
 /*
  * Keyboard focus, everywhere on the public site (`.site`, PublicLayout): a
@@ -91,11 +93,11 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   .te-container :where(.grid) > * { min-width: 0; }
 
   /*
-   * Buttons (#12's): pills that take their colours from where they sit.
-   * Primary is the deep emerald on the page (lagoon in the dark theme), and
-   * pearl with emerald text on photos and dark sections; secondary is a tint
-   * with an edge. Every filled button has a faint reflection and a sheen on
-   * its top edge, and lifts a little under a pointer.
+   * Buttons (the friend import): flat, softly rounded, and taking their
+   * colours from where they sit. Primary is the green with white text (mint
+   * with dark text in the dark theme), on photos too; secondary is a sky tint
+   * on the page and a light edge on photos and dark sections. No reflection,
+   * sheen or shadow; a small lift under a pointer.
    */
   .te-button {
     position: relative;
@@ -104,11 +106,11 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
     align-items: center;
     justify-content: center;
     gap: .6rem;
-    min-height: 48px;
+    min-height: 44px;
     max-width: 100%;
-    padding: .8rem 1.5rem;
+    padding: .65rem 1.1rem;
     border: 1px solid var(--button-border, transparent);
-    border-radius: 999px;
+    border-radius: var(--radius-md);
     background-color: var(--button-bg, transparent);
     color: var(--button-text, inherit);
     font-family: var(--font-sans);
@@ -121,34 +123,18 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
     /* Not box-shadow: the keyboard focus ring is a box-shadow, and appears at once. */
     transition: transform 220ms var(--ease-premium), border-color 220ms ease, background-color 220ms ease, color 220ms ease;
   }
-  .te-button--primary { --button-bg: var(--button-primary-bg); --button-text: var(--button-primary-text); --button-border: var(--button-primary-border); --button-hover-bg: var(--button-primary-hover); --button-reflection: var(--button-primary-reflection); --button-sheen: var(--button-primary-sheen); }
+  .te-button--primary { --button-bg: var(--button-primary-bg); --button-text: var(--button-primary-text); --button-border: var(--button-primary-border); --button-hover-bg: var(--button-primary-hover); }
   .te-button--secondary { --button-bg: var(--button-secondary-bg); --button-text: var(--button-secondary-text); --button-border: var(--button-edge); --button-hover-bg: var(--button-secondary-hover); }
   .te-button--outline { --button-text: var(--button-outline-text); --button-border: var(--button-edge); --button-hover-bg: var(--button-secondary-hover); }
   .te-button--icon { width: 44px; height: 44px; min-height: 44px; padding: 0; flex: none; border-radius: 50%; --button-bg: var(--button-secondary-bg); --button-text: var(--button-secondary-text); --button-border: var(--button-edge); --button-hover-bg: var(--button-secondary-hover); }
-  .te-button--lg { min-height: 56px; padding: 1rem 2rem; font-size: 1rem; }
+  .te-button--sm { min-height: 44px; padding: .6rem 1.2rem; font-size: .8rem; }
+  .te-button--lg { min-height: 48px; padding: .75rem 1.35rem; font-size: .9375rem; }
   .te-button--text-link { --button-text: var(--button-outline-text); padding-inline: .25rem; text-underline-offset: .3rem; }
-  .te-button:where(.te-button--primary, .te-button--secondary, .te-button--icon) {
-    background-image: var(--button-reflection, var(--glass-reflection));
-    box-shadow: inset 0 1px 0 var(--glass-highlight), 0 4px 12px rgb(var(--photo-channels) / .12);
-  }
-  /* The sheen: on text buttons (a 44 px circle is too small to show it). */
-  .te-button:where(.te-button--primary, .te-button--secondary):not(.te-button--icon)::before {
-    content: '';
-    position: absolute;
-    inset: 1px 1px auto;
-    height: 38%;
-    border-radius: inherit;
-    background: linear-gradient(110deg, var(--button-sheen), transparent 65%);
-    pointer-events: none;
-    opacity: .45;
-    transition: opacity 220ms ease;
-  }
   .te-button > svg { flex-shrink: 0; }
   .te-button:disabled, .te-button[aria-disabled="true"] { opacity: .6; cursor: not-allowed; box-shadow: none; transform: none; }
+  /* Photo controls (the hero's slide buttons, close buttons on photos): a light blur under the dark tint. */
   @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .te-button:where(.te-button--secondary, .te-button--icon) { -webkit-backdrop-filter: blur(8px) saturate(110%); backdrop-filter: blur(8px) saturate(110%); }
-    /* Not inside a dialog or the header (#12): they're already a surface of their own. */
-    :is(.te-modal-panel, [role="dialog"], .te-nav) .te-button { -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .te-button--icon.glass--inverse, .te-hero-controls .te-button--icon { -webkit-backdrop-filter: blur(8px) saturate(110%); backdrop-filter: blur(8px) saturate(110%); }
   }
   @media (hover: hover) and (pointer: fine) {
     .te-button:where(:not(:disabled):not([aria-disabled="true"]):not(.te-button--text-link)):hover {
@@ -156,11 +142,6 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
       border-color: var(--button-hover-edge);
       transform: translateY(-1px);
     }
-    .te-button:where(.te-button--primary, .te-button--secondary, .te-button--icon):where(:not(:disabled)):hover {
-      box-shadow: inset 0 1px 0 var(--glass-highlight), 0 6px 18px var(--button-hover-glow);
-    }
-    .te-button:where(:not(:disabled))::before { transition: opacity 220ms ease; }
-    .te-button:where(:not(:disabled)):hover::before { opacity: .8; }
     .te-button--text-link:hover { text-decoration: underline; }
   }
   .te-button:where(:not(:disabled)):active { transform: translateY(0); }
@@ -168,10 +149,6 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
     .te-button { transition: none; }
     .te-button:hover { transform: none !important; }
   }
-  /* On a photo header (#12): clean fills and outlines, without the reflection, sheen or blur. */
-  :is(.te-hero, .te-page-hero) .te-button,
-  :is(.te-hero, .te-page-hero) .te-button:hover { background-image: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
-  :is(.te-hero, .te-page-hero) .te-button::before { content: none; }
   /* The slide controls sit right of the copy, where the photo is clear: dark glass under their icons. */
   .te-hero-controls .te-button--icon { --button-bg: var(--glass-inverse-bg); --button-hover-bg: var(--glass-inverse-strong); }
   @media (prefers-reduced-transparency: reduce) {
@@ -179,21 +156,16 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   }
   @media (forced-colors: active) {
     .te-button { border-color: ButtonText; background: ButtonFace; color: ButtonText; box-shadow: none; }
-    .te-button::before { display: none; }
   }
 
   /*
-   * On photos and dark surfaces (white text says it's one): pearl primary
-   * buttons with emerald text, light secondary tints and edges, and the
-   * light gold for `--accent-text`.
+   * On photos and dark surfaces (white text says it's one): the primary
+   * button keeps its green, secondary buttons are light tints and edges, and
+   * `--accent-text` is the light gold.
    */
-  :where(.te-hero, .te-page-hero, .te-nav, footer, .glass--inverse, .text-white, [class*="bg-[var(--inverse-surface)]"], [class*="bg-[var(--inverse-deep)]"]) {
+  :where(.te-hero, .te-page-hero, footer, .glass--inverse, .text-white, [class*="bg-[var(--inverse-surface)]"], [class*="bg-[var(--inverse-deep)]"]) {
     /* The paler gold: AA on dark surfaces even under a light tint (browser-contrast). */
     --accent-text: var(--accent-on-photo);
-    --button-primary-bg: var(--photo-button-bg);
-    --button-primary-hover: var(--photo-button-hover);
-    --button-primary-text: var(--photo-button-text);
-    --button-primary-border: rgb(var(--pearl-channels) / .65);
     --button-secondary-bg: rgb(var(--pearl-channels) / .1);
     --button-secondary-hover: rgb(var(--pearl-channels) / .2);
     --button-secondary-text: var(--on-inverse);
@@ -201,18 +173,17 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
     --button-outline-text: var(--on-inverse);
     --button-edge: rgb(var(--pearl-channels) / .48);
     --button-hover-edge: rgb(var(--pearl-channels) / .75);
-    --button-hover-glow: rgb(var(--pearl-channels) / .14);
   }
 
   /* Close buttons on photos: dark glass. */
   .te-button--icon.glass--inverse { --button-bg: var(--glass-inverse-strong); --button-hover-bg: var(--inverse-deep); }
 
-  /* Cards: a soft shadow; with a pointer, a small lift, a gold edge and the photo easing in. */
+  /* Cards: a soft shadow; with a pointer, a small lift, a stronger edge and the photo easing in. */
   .te-card { box-shadow: var(--shadow-card); transition: transform 250ms var(--ease-premium), box-shadow 250ms ease, border-color 250ms ease; }
   .te-card img { transition: transform 600ms var(--ease-premium); }
   .te-card:focus-within { box-shadow: var(--shadow-card-hover); }
   @media (hover: hover) and (pointer: fine) {
-    .te-card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: var(--shadow-card-hover), 0 0 0 1px var(--glass-gold-glow); }
+    .te-card:hover { transform: translateY(-3px); border-color: var(--border-strong); box-shadow: var(--shadow-card-hover); }
     .te-card:hover img { transform: scale(1.035); }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -242,29 +213,21 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 
   /* A row of calls to action: full width on phones. */
   .te-cta-group { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: flex-start; gap: 1rem; }
-  .te-cta-group > :where(a, button) { min-height: 3.25rem; }
+  .te-cta-group > :where(a, button) { min-height: 44px; }
   @media (max-width: 639px) {
     .te-cta-group > :where(a, button) { width: 100%; }
   }
 
-  /* The home page: four places to begin, then planning. */
-  .te-home-discover { padding-block: clamp(3.5rem, 7vw, 6rem); }
-  .te-home-discover .te-card { height: 24rem; }
-  @media (max-width: 767px) {
-    .te-home-discover .te-card { height: 23rem; }
-  }
-  .te-home-plan { background: linear-gradient(140deg, var(--background-secondary), var(--background)); padding-block: clamp(3.5rem, 7vw, 6rem); }
-  .te-home-plan h2 { font-size: clamp(1.9rem, 3.6vw, 3.1rem); line-height: 1.16; font-weight: 700; }
-  .te-home-plan-panel { display: flex; align-items: center; justify-content: space-between; gap: 2rem; padding: clamp(1.25rem, 3vw, 3rem); }
+  /* The home page: four places to begin (home-destinations.css), then planning. */
+  .te-home-plan { background: linear-gradient(140deg, var(--background-secondary), var(--background)); padding-block: var(--section-space); }
+  .te-home-plan h2 { font-size: var(--heading-section); line-height: 1.2; font-weight: 700; }
+  .te-home-plan-panel { display: flex; align-items: center; justify-content: space-between; gap: 2rem; padding: clamp(1.25rem, 3vw, 3rem); border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--surface); }
   .te-home-plan-panel .te-reading-column { max-width: 38rem; }
   .te-home-plan-panel .te-cta-group { flex-shrink: 0; max-width: 21rem; }
   @media (max-width: 1023px) {
     .te-home-plan-panel { flex-direction: column; align-items: flex-start; }
     .te-home-plan-panel .te-cta-group { max-width: none; }
   }
-
-  /* A destination card's caption: dark glass inset from the photo's edges. */
-  .te-destination-caption { margin: .75rem; padding: 1.1rem; }
 
   /* A tour card's two badges, side by side and wrapping on narrow cards. */
   .te-tour-badges { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; position: absolute; top: 1rem; left: 1rem; right: 1rem; }
@@ -276,36 +239,73 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   /* The enquiry and search modals: scroll inside the panel on short screens. */
   .te-modal-panel { max-height: calc(100dvh - 2rem); overflow-y: auto; overscroll-behavior: contain; }
 
-  /* The header: clear at the top of a page (below), dark glass once scrolled. */
+  /*
+   * The header (the friend import): the page's own colours (pearl, or night
+   * in the dark theme) with a hairline under it, on every page and once the
+   * home page has scrolled. Only over the home page's photo, at the top, is it
+   * clear, with light text over the photo's dark top band (`--photo-top-shade`).
+   * The phone menu is the same colour, solid.
+   *
+   * Where the browser blurs, the header is a nearly opaque glass with a strong
+   * blur (#32), so what scrolls under it is a soft blur, never readable text
+   * (browser-glass); elsewhere, and with reduced transparency, it's solid.
+   */
+  .te-nav, .te-mobile-navigation {
+    --accent-text: var(--text-link);
+    --button-secondary-bg: var(--palette-sky-mist);
+    --button-secondary-hover: var(--palette-sky);
+    --button-secondary-text: var(--brand-primary);
+    --button-edge: var(--border-strong);
+    --button-hover-edge: var(--text-link);
+    /* The logo's gold and its small "Sri Lanka": darker on the pearl, for AA. */
+    --logo-accent: var(--palette-deep-gold);
+    --logo-tagline: var(--text-secondary);
+    background: var(--background);
+    color: var(--brand-primary);
+  }
+  :root[data-theme="dark"] :is(.te-nav, .te-mobile-navigation) {
+    --button-secondary-bg: var(--palette-night-sky);
+    --button-secondary-hover: var(--palette-night-sky-raised);
+    --button-secondary-text: var(--text-primary);
+    --logo-accent: var(--palette-soft-gold);
+  }
   .te-nav {
     height: var(--header-height);
     display: flex;
     align-items: center;
-    border-radius: 0;
-    border-width: 0 0 1px;
-    border-color: transparent;
-    box-shadow: none;
-    color: var(--on-inverse);
-    transition: background-color 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+    border-bottom: 1px solid var(--border);
+    transition: background-color 220ms ease, border-color 220ms ease;
   }
-  /*
-   * At the top: no surface of its own (#12). The page's photo carries a dark
-   * band along its top (`--photo-top-shade`, on the hero and page headers),
-   * which is what keeps the links readable. Scrolled: dark glass.
-   */
-  .te-nav { --glass-blur: var(--glass-nav-blur); --glass-inverse-strong: var(--glass-nav-scrolled); }
-  .te-nav[data-scrolled="false"] {
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .te-nav {
+      background: color-mix(in srgb, var(--background) 96%, transparent);
+      -webkit-backdrop-filter: blur(24px) saturate(112%);
+      backdrop-filter: blur(24px) saturate(112%);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .te-nav { background: var(--background); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  }
+  .te-nav[data-home="true"][data-scrolled="false"] {
+    --accent-text: var(--accent-on-photo);
+    --button-secondary-bg: rgb(var(--photo-channels) / .72);
+    --button-secondary-hover: var(--inverse-deep);
+    --button-secondary-text: var(--on-inverse);
+    --button-edge: rgb(var(--pearl-channels) / .48);
+    --button-hover-edge: rgb(var(--pearl-channels) / .75);
+    --logo-accent: var(--accent);
+    --logo-tagline: var(--photo-text-secondary);
     background: transparent;
     border-color: transparent;
-    box-shadow: none;
+    color: var(--on-inverse);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
-  .te-nav[data-scrolled="true"] { border-color: rgb(var(--pearl-channels) / .1); box-shadow: inset 0 -1px 0 rgb(var(--pearl-channels) / .08), 0 4px 24px rgb(var(--photo-channels) / .18); }
   @media (prefers-reduced-transparency: reduce), (forced-colors: active) {
-    .te-nav[data-scrolled="false"] { background: var(--inverse-deep); }
+    .te-nav[data-home="true"][data-scrolled="false"] { background: var(--inverse-deep); }
   }
   /* Phones: a slightly smaller logo, so theme, plan, search and menu fit beside it. */
+  .te-nav .te-logo { flex-shrink: 0; }
   @media (max-width: 639px) {
     .te-nav .te-logo { gap: .4rem; }
     .te-nav .te-logo svg { width: 24px; height: 24px; }
@@ -317,10 +317,12 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
     display: inline-flex;
     align-items: center;
     min-height: 44px;
-    color: var(--on-inverse);
+    white-space: nowrap;
+    color: inherit;
     transition: color 200ms ease;
   }
-  .te-nav-link:hover, .te-nav-link[data-active="true"] { color: var(--accent); }
+  .te-nav-link:hover, .te-nav-link[data-active="true"] { color: var(--text-link); }
+  .te-nav[data-home="true"][data-scrolled="false"] .te-nav-link:is(:hover, [data-active="true"]) { color: var(--on-inverse); }
   .te-nav-indicator {
     position: absolute;
     left: 0;
@@ -328,13 +330,14 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
     bottom: .4rem;
     height: 2px;
     border-radius: 999px;
-    background: var(--accent);
+    background: var(--text-link);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 200ms ease;
   }
   .te-nav-link:hover > .te-nav-indicator, .te-nav-link[data-active="true"] > .te-nav-indicator { transform: scaleX(1); }
-  .te-nav-link--mobile[data-active="true"] { border-bottom-color: var(--accent); }
+  .te-nav[data-home="true"][data-scrolled="false"] .te-nav-indicator { background: var(--accent); }
+  .te-nav-link--mobile[data-active="true"] { border-bottom-color: var(--text-link); }
   @media (prefers-reduced-motion: reduce) {
     .te-nav, .te-nav-link, .te-nav-indicator { transition: none; }
   }
@@ -377,7 +380,7 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   min-height: 100vh;
   min-height: 100dvh;
   isolation: isolate;
-  padding-block: calc(var(--header-height) + 2.5rem) 8rem;
+  padding-block: calc(var(--header-height) + 2rem) 6rem;
 }
 .te-hero-slide { position: absolute; inset: 0; opacity: 0; transform: scale(1.025); pointer-events: none; transition: opacity 700ms ease, transform 7s ease; }
 .te-hero-slide[data-active="true"] { opacity: 1; transform: scale(1); }
@@ -394,21 +397,20 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 .te-hero-title, .te-page-title { text-wrap: balance; }
 .te-hero-title {
   max-width: var(--hero-content-max);
-  font-size: clamp(2.65rem, 6.4vw, 5.8rem);
+  font-size: var(--heading-hero);
   line-height: 1.08;
   letter-spacing: -.035em;
   color: var(--on-inverse);
   text-shadow: 0 2px 16px rgb(var(--photo-channels) / .35);
 }
 .te-hero-emphasis { color: var(--inverse-accent); }
-.te-hero-copy .te-hero-subtitle { max-width: 34rem; margin-bottom: 2rem; font-size: clamp(1rem, 1.7vw, 1.3rem); text-shadow: 0 1px 8px rgb(var(--photo-channels) / .5); }
+.te-hero-copy .te-hero-subtitle { max-width: 34rem; margin-bottom: 2rem; font-size: clamp(1rem, 1.2vw, 1.125rem); text-shadow: 0 1px 8px rgb(var(--photo-channels) / .5); }
 .te-hero-caption { display: inline-flex; max-width: min(100%, 45rem); white-space: normal; text-shadow: 0 1px 5px rgb(var(--photo-channels) / .5); }
 .te-hero-controls { position: absolute; bottom: 2rem; right: max(1rem, calc((100vw - var(--container-max)) / 2)); z-index: 25; display: flex; gap: .5rem; }
 .te-hero-controls button { display: grid; place-items: center; }
 @media (max-width: 639px) {
   .te-hero-controls { bottom: 1.25rem; }
   .te-hero-caption { margin-top: 1.5rem; max-width: calc(100% - 3rem); font-size: .65rem; }
-  .te-hero-copy .te-hero-title { font-size: clamp(2.25rem, 10vw, 3.7rem); }
 }
 @media (max-height: 700px) {
   .te-hero { padding-block: calc(var(--header-height) + 1.5rem) 6rem; }
@@ -420,16 +422,18 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   .te-hero-slide { transition: none; transform: none; }
 }
 
+/* Below the header, which is solid on these pages: the photo starts under it. */
 .te-page-hero {
   isolation: isolate;
-  min-height: clamp(26rem, 56svh, 36rem);
+  margin-top: var(--header-height);
+  min-height: clamp(22rem, 48svh, 30rem);
   display: flex;
   align-items: flex-end;
-  padding-block: calc(var(--header-height) + var(--heading-space)) var(--heading-space);
+  padding-block: var(--heading-space);
   color: var(--on-inverse);
 }
-.te-page-hero--compact { min-height: clamp(22rem, 44svh, 28rem); }
-.te-page-hero-overlay { background: var(--photo-top-shade), var(--page-hero-overlay); pointer-events: none; }
+.te-page-hero--compact { min-height: clamp(20rem, 40svh, 25rem); }
+.te-page-hero-overlay { background: var(--page-hero-overlay); pointer-events: none; }
 @media (max-width: 767px) {
   .te-page-hero-overlay { background: var(--page-hero-overlay-narrow); }
 }
@@ -437,7 +441,7 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 .te-page-hero-copy { width: 100%; max-width: var(--content-reading-width); min-width: 0; }
 .te-page-title {
   max-width: var(--hero-content-max);
-  font-size: clamp(2.25rem, 4.5vw, 4.25rem);
+  font-size: var(--heading-page);
   line-height: 1.12;
   overflow-wrap: break-word;
   color: var(--on-inverse);

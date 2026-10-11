@@ -25,7 +25,7 @@ import { after, before, describe, test } from 'node:test';
 
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
-import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
+import { findChrome, launchChrome, type Chrome, type Page, saveTheme } from './chrome';
 import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
 
@@ -72,6 +72,7 @@ describe('the map\'s framing, in Chrome', { skip }, () => {
     await page.send('Page.enable');
     await page.send('Emulation.setDeviceMetricsOverride', { ...size, deviceScaleFactor: 1, mobile });
     await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }, { name: 'prefers-reduced-motion', value: 'reduce' }] });
+    await saveTheme(page, theme);
     if (mobile) await page.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
     await page.send('Page.navigate', { url: `${app.baseUrl}/explore` });
     await waitFor(page, `document.querySelector('#explore-map') && document.documentElement.dataset.theme === ${JSON.stringify(theme)}`, 'the page');

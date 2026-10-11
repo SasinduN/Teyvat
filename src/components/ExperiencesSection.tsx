@@ -20,7 +20,7 @@ export const ExperiencesSection: React.FC<ExperiencesSectionProps> = ({
   // Same card either way; only what it is (a link, or a filter) changes.
   const Card: React.ElementType = categoryHref ? MotionLink : motion.button;
   return (
-    <section id="experiences" className="py-24 bg-[var(--inverse-surface)] text-white relative overflow-hidden">
+    <section id="experiences" className="py-24 bg-[var(--background)] text-[var(--text-primary)] relative overflow-hidden">
       {/* Background Subtle Pattern */}
       <div className="absolute inset-0 opacity-5 bg-[radial-gradient(var(--accent)_1px,transparent_1px)] [background-size:24px_24px]" />
 
@@ -28,13 +28,13 @@ export const ExperiencesSection: React.FC<ExperiencesSectionProps> = ({
         
         {/* Header */}
         <div className="te-section-header te-section-header--stack">
-          <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--accent-text)] bg-white/10 px-4 py-1.5 rounded-full inline-block mb-3 border border-[var(--accent)]/30">
+          <span className="te-card-badge uppercase tracking-[0.2em] mb-3">
             Tailored Journeys
           </span>
-          <h2 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight mb-4">
+          <h2 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-[var(--brand-primary)] mb-4">
             What Kind of Journey Are You Looking For?
           </h2>
-          <p className="text-lg text-white/80 font-light leading-relaxed">
+          <p className="text-lg text-[var(--text-secondary)] leading-relaxed">
             Every traveler sees Sri Lanka differently. Select your preferred style of discovery below.
           </p>
         </div>
@@ -51,7 +51,7 @@ export const ExperiencesSection: React.FC<ExperiencesSectionProps> = ({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-50px' }}
               transition={{ duration: 0.6, delay: idx * 0.1 }}
-              className="te-card text-left group relative rounded-3xl overflow-hidden shadow-xl border border-white/10 h-[380px] flex flex-col justify-end p-6 sm:p-8 cursor-pointer transform hover:-translate-y-1.5 transition-all duration-500"
+              className="te-card te-content-card te-content-card--photo text-left group relative overflow-hidden min-h-[320px] flex flex-col justify-end p-5 sm:p-6 cursor-pointer"
             >
               {/* Background Image */}
               <div className="absolute inset-0 overflow-hidden">
@@ -67,23 +67,23 @@ export const ExperiencesSection: React.FC<ExperiencesSectionProps> = ({
 
               {/* Content */}
               <div className="relative z-10 space-y-3">
-                <div className="inline-flex items-center space-x-2 text-xs uppercase tracking-widest font-bold text-[var(--accent-text)] bg-black/30 backdrop-blur-md px-3 py-1 rounded-full border border-white/15">
+                <div className="te-card-badge te-card-badge--photo uppercase tracking-widest">
                   <span>{exp.category}</span>
                 </div>
 
-                <h3 className="font-heading text-2xl font-bold text-white group-hover:text-[var(--accent-text)] transition-colors">
+                <h3 className="te-card-title font-heading text-2xl font-bold">
                   {exp.title}
                 </h3>
 
-                <p className="text-xs text-[var(--accent-text)] font-medium font-serif italic">
+                <p className="te-card-accent text-xs font-medium font-serif italic">
                   {exp.subtitle}
                 </p>
 
-                <p className="text-xs text-white/80 line-clamp-2 font-light leading-relaxed">
+                <p className="te-card-description text-sm line-clamp-2">
                   {exp.description}
                 </p>
 
-                <div className="pt-2 flex items-center space-x-2 text-xs font-semibold text-[var(--accent-text)] group-hover:text-white transition-colors">
+                <div className="te-card-action pt-2 flex items-center space-x-2 text-xs font-semibold">
                   <span>Explore {exp.title}</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>

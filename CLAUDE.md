@@ -30,7 +30,8 @@ this file or anywhere else in git.
 | 8b | Server side of phase 8: head tags, 404 status, 301s, sitemap, robots | done (#8) |
 | R | Redesign: #12 redone in PRs 0–5 (`docs/plans/redesign-redo.md`) | done (#17, #19, #22, #23, #24, #26) |
 | R+ | #12 parity: glass, buttons, header, Explore and planner markup (`docs/reviews/pr12-parity.md`) | in review (#28) |
-| R++ | `llms.txt` (#29); dialogs keep the scrollbar's space (#30) | in review |
+| R++ | `llms.txt` (#29); dialogs keep the scrollbar's space (#30) | done |
+| F | The friend import (`docs/reviews/friend-import.md`): A design, B photos, C bookings behind a flag | A in review |
 
 Update the Status column when a phase lands.
 
@@ -65,11 +66,19 @@ Update the Status column when a phase lands.
     pair, and Chrome and Firefox ignore the prefixed one: in the other order
     no glass blurred outside Safari. `browser-glass` checks it.
   - Buttons are `.te-button` with `--primary`, `--secondary`, `--outline` or
-    `--icon`, and take their colours from where they sit (`index.css`):
-    emerald on the page, pearl on photos and dark sections, lagoon in the
-    dark theme. No gold Tailwind fills for buttons.
+    `--icon` (`index.css`): flat, softly rounded (icons round). Primary is
+    the green with white text everywhere, photos included (mint with dark
+    text in the dark theme); secondary is a sky tint on the page and a light
+    edge on photos and dark sections. No gold Tailwind fills for buttons.
+  - The header (`.te-nav`) is the page's own colour, 96% with a 24 px blur
+    (#32: what scrolls under it is never readable), solid with reduced
+    transparency. Only over the home photo at the top is it clear. Page
+    headers (`PageHero`) start below it.
+  - Cards: `src/styles/cards.css` (`.te-content-card`, badges, and the
+    photo-first `.destination-card` of `/destinations` and the home page)
+    and `home-destinations.css`. Tokens only, no hex.
   - Text on photos: the overlays are dark under the copy only
-    (`--copy-edge`, and `--photo-top-shade` under the clear header). When
+    (`--copy-edge`, and `--photo-top-shade` under the home page's clear header). When
     a light tint can't hold AA, darken the photo under the text, not the
     whole panel. `browser-contrast` measures it (sticky elements pinned).
 - **Dialogs** (enquiry, search, hidden gem, photo story, the phone menu)
@@ -80,7 +89,8 @@ Update the Status column when a phase lands.
   `src/styles/tokens.css`, with dark values under `:root[data-theme="dark"]`.
   `public/theme-init.js` (a classic script, above the stylesheets) sets the
   theme before the first paint: the saved choice (`site:theme`, from the
-  Navbar's toggle), else the system's. The maps swap to CARTO's `dark_all`
+  Navbar's toggle), else light (the system's setting doesn't count). Browser
+  tests that need dark save the choice (`saveTheme`, `server/test/chrome.ts`). The maps swap to CARTO's `dark_all`
   tiles in place (`src/lib/mapTiles.ts`). `browser-contrast` measures AA on
   every page type in both themes, photos painted white (the worst case);
   `browser-hero-contrast` the photo headers. Text on a gold fill is
