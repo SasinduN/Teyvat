@@ -62,7 +62,7 @@ export function securityHeaders(media: MediaConfig | null): RequestHandler {
       'Referrer-Policy': 'strict-origin-when-cross-origin',
       // For browsers too old for frame-ancestors.
       'X-Frame-Options': 'DENY',
-      'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+      'Permissions-Policy': `camera=(), microphone=(), geolocation=${req.path === '/booking' ? '(self)' : '()'}`,
       'Cross-Origin-Opener-Policy': 'same-origin'
     });
     // HSTS means nothing over plain HTTP (and must not be sent there).

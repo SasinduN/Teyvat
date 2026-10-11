@@ -42,6 +42,12 @@ after(async () => {
 /* ----------------------------------------------------------------- headers */
 
 describe('security headers', () => {
+  test('only the booking document permits user-triggered same-origin geolocation', async () => {
+    const ride = await fetch(`${app.baseUrl}/booking`);
+    assert.equal(ride.headers.get('permissions-policy'), 'camera=(), microphone=(), geolocation=(self)');
+    const home = await fetch(`${app.baseUrl}/`);
+    assert.equal(home.headers.get('permissions-policy'), 'camera=(), microphone=(), geolocation=()');
+  });
   const EXPECTED = {
     'x-content-type-options': 'nosniff',
     'referrer-policy': 'strict-origin-when-cross-origin',

@@ -7,13 +7,17 @@ export function LocationField({
   value,
   onChange,
   destinations,
-  required = true
+  required = true,
+  compact = false,
+  error
 }: {
   label: string;
   value: BookingLocation;
   onChange: (v: BookingLocation) => void;
   destinations: BookingDestination[];
   required?: boolean;
+  compact?: boolean;
+  error?: string;
 }) {
   const id = useId();
   return (
@@ -28,6 +32,7 @@ export function LocationField({
         placeholder="City, hotel, airport or landmark"
         autoComplete="off"
         aria-describedby={`${id}-help`}
+        aria-invalid={Boolean(error)}
         onChange={(e) => {
           const picked = destinations.find((d) => d.name.toLowerCase() === e.target.value.trim().toLowerCase());
           onChange(
@@ -42,12 +47,13 @@ export function LocationField({
           <option key={d.id} value={d.name} />
         ))}
       </datalist>
-      <small id={`${id}-help`}>Pick one of our destinations or type an address. Hotels and airports can be typed directly.</small>
+      <small id={`${id}-help`}>{error || (compact ? 'Type a city, hotel, airport or full address.' : 'Pick one of our destinations or type an address. Hotels and airports can be typed directly.')}</small>
       {value.source === 'gps' && (
         <p>
           Coordinates: {value.lat?.toFixed(5)}, {value.lng?.toFixed(5)} · accuracy ±{Math.round(value.accuracy ?? 0)} m
         </p>
       )}
+      {!compact && <>
       <label htmlFor={`${id}-address`}>Specific address or meeting point</label>
       <input
         id={`${id}-address`}
@@ -57,6 +63,7 @@ export function LocationField({
         placeholder="Hotel entrance, street or meeting instructions"
         onChange={(e) => onChange({ ...value, address: e.target.value })}
       />
+      </>}
     </div>
   );
 }

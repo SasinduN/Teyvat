@@ -1,5 +1,9 @@
 # Booking API
 
+## Ride requests (2026-10-12)
+
+`POST /api/bookings/rides` accepts strict `{details, callbackPhone?}` and the existing UUID `Idempotency-Key`. Details contain pickup/dropoff location objects, tripType, departureDate/departureTime, passengers, vehicleId and nullable returnDate/returnTime. Round-trip returns must follow pickup; one-way returns must be null. Manual drop-offs need no catalog ID or tour. Guests must supply the separate callback phone; authenticated identity comes exclusively from the server session. `GET /api/bookings/rides/account` returns `{signedIn,email}`. Stored requests start pending and remain available to the existing admin and guest ownership endpoints. See `RIDE_BOOKING_REDESIGN.md` for limitations. The original tour request contract below is preserved; the shared booking navigation label is now Book Your Ride.
+
 Booking requests, from the friend import (`docs/reviews/friend-import.md`).
 Requests, not reservations: each one starts `pending` and staff confirm it by
 hand. Code: `server/src/routes/bookings.ts`, shapes and rules in

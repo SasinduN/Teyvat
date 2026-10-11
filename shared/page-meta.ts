@@ -25,7 +25,7 @@ export const PAGE_TITLES = {
   journal: pageTitle('Journal'),
   photoCredits: pageTitle('Photo Credits'),
   unsubscribe: pageTitle('Unsubscribe'),
-  booking: pageTitle('Book your journey'),
+  booking: pageTitle('Book Your Ride'),
   notFound: pageTitle('Page not found')
 } as const;
 
@@ -43,6 +43,6 @@ export const PAGE_DESCRIPTIONS = {
   journal: 'Local travel stories, practical guides and photographic moments from across Sri Lanka.',
   photoCredits: 'The photographers behind the pictures on this site, and the licences their work is shared under.',
   unsubscribe: 'Stop receiving our newsletter.',
-  booking: 'Request a Sri Lanka tour or transfer, reviewed by our team before anything is confirmed.',
+  booking: 'Choose your pickup, destination, and travel details for a comfortable journey across Sri Lanka.',
   notFound: 'The page may have moved, or the link may be mistyped.'
 } as const;

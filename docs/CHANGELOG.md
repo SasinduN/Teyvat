@@ -1,3 +1,9 @@
+# 2026-10-12 — Simple point-to-point ride requests
+
+Authorized public booking redesign: `/booking` becomes Book Your Ride with seven essential inputs, conditional return fields, manual pickup/drop-off, existing destination suggestions, click-only GPS, compact live summary and scoped Green & Pearl/Sky Blue dark/light styles. Guests provide their callback number in a separate native dialog; authenticated identity is resolved by the server. Added strict ride API/validation, safe retries, pending receipts and admin ride labels. Existing tour CTAs use the preserved tour form and contact/itinerary schema. Migration 0015 supports manual ride destinations without deleting legacy fields. Navigation/footer labels updated.
+
+Build/typecheck and initial focused API/schema/browser checks passed; final evidence and limitations are recorded in FINAL_QA.md. Only configured vehicles/capacities are offered; no pricing, fleet availability, reverse geocoding or production email delivery is claimed. Historical entries follow.
+
 ## 2026-10-11 — PR #37 credit filtering and regression alignment
 
 Exclude superseded photo credits from the corrected public payload. Update existing map-provider, used-photo-credit and share-image tests for the authorized restored behavior. Initial CI: 35/39 files passed; follow-up acceptance pending. Local database tests blocked by guarded test-database authentication (28P01). Existing checks and visual baselines retained.

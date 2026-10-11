@@ -32,14 +32,17 @@ import {
   vehicleSchema,
   type BookingCatalog,
   type BookingInput,
+  type BookingDetails,
   type BookingLocation,
   type BookingRecord,
   type BookingStatus,
   type BookingVehicle
 } from '../../../shared/booking';
+import { rideSchema, rideRequestDataSchema } from '../../../shared/ride';
 import type { BookingRow } from '../../../shared/database.types';
 import { z } from '../../../shared/zod';
-import { readCookie } from '../auth/cookies';
+import { readCookie, SESSION_COOKIE } from '../auth/cookies';
+import { findSession } from '../auth/sessions';
 import { requireAdmin, sessionOf } from '../auth/middleware';
 import { dispatchBookingNotifications } from '../bookings/notifications';
 import { pool } from '../db';
@@ -112,10 +115,17 @@ const TOUR_STOPS_SQL = `select coalesce(d.name, s.name) as label, coalesce(d.lat
  * category that takes requests and has room. A catalogue point's name and
  * place come from the database; a typed one keeps no coordinates.
  */
-async function validated(client: PoolClient, raw: BookingInput): Promise<BookingInput> {
-  const input = parse(bookingSchema, raw);
-  const dest = await client.query('select id from public.destinations where id = $1 and published for share', [input.destinationId]);
-  if (!dest.rowCount) throw new ApiError('bad_request', 'Select a published destination.', { destinationId: 'Invalid destination.' });
+async function validated(client: PoolClient, raw: BookingDetails): Promise<BookingDetails> {
+  const input = raw.kind === 'ride' ? raw : parse(bookingSchema, raw);
+  if (raw.kind === 'ride') parse(rideSchema, {
+    pickup: raw.pickup, dropoff: raw.dropoff, tripType: raw.tripType,
+    departureDate: raw.departureDate, departureTime: raw.departureTime,
+    returnDate: raw.returnDate, returnTime: raw.returnTime, passengers: raw.passengers, vehicleId: raw.vehicleId
+  });
+  if (input.destinationId || raw.kind !== 'ride') {
+    const dest = await client.query('select id from public.destinations where id = $1 and published for share', [input.destinationId]);
+    if (!dest.rowCount) throw new ApiError('bad_request', 'Select a published destination.', { destinationId: 'Invalid destination.' });
+  }
   if (input.tourId) {
     const tour = await client.query('select id from public.tours where id = $1 and published for share', [input.tourId]);
     if (!tour.rowCount) throw new ApiError('bad_request', 'The selected tour is unavailable.');
@@ -133,7 +143,7 @@ async function validated(client: PoolClient, raw: BookingInput): Promise<Booking
   const capacity = checkCapacity(vehicle.rows[0], input.passengers);
   if (capacity) throw new ApiError('bad_request', capacity, { passengers: capacity });
 
-  for (const point of [input.pickup, ...input.stops, input.returnPickup, input.returnDropoff]) {
+  for (const point of [input.pickup, raw.dropoff, ...input.stops, input.returnPickup, input.returnDropoff]) {
     if (!point) continue;
     if (point.source === 'destination' && point.destinationId) {
       const d = await client.query<{ name: string; latitude: number; longitude: number }>(
@@ -146,16 +156,21 @@ async function validated(client: PoolClient, raw: BookingInput): Promise<Booking
       Object.assign(point, { lat: null, lng: null, accuracy: null });
     }
   }
+  if (raw.kind === 'ride') parse(rideSchema, {
+    pickup: raw.pickup, dropoff: raw.dropoff, tripType: raw.tripType,
+    departureDate: raw.departureDate, departureTime: raw.departureTime,
+    returnDate: raw.returnDate, returnTime: raw.returnTime, passengers: raw.passengers, vehicleId: raw.vehicleId
+  });
   return input;
 }
 
 /** One request with its names, vehicle, route, history and notifications; a guest's only if it is theirs. */
 async function record(client: PoolClient, id: string, guestHash?: string, lock = false): Promise<BookingRecord> {
   const result = await client.query<BookingRow & { tour_name: string | null; destination_name: string }>(
-    `select b.*, t.title as tour_name, d.name as destination_name
+    `select b.*, t.title as tour_name, coalesce(d.name, b.details->'dropoff'->>'label') as destination_name
        from public.bookings b
        left join public.tours t on t.id = b.tour_id
-       join public.destinations d on d.id = b.destination_id
+       left join public.destinations d on d.id = b.destination_id
       where b.id = $1 ${guestHash ? 'and b.guest_hash = $2 and b.guest_expires_at > now()' : ''}
       ${lock ? 'for update of b' : ''}`,
     guestHash ? [id, guestHash] : [id]
@@ -224,6 +239,15 @@ bookingsRouter.post(
 );
 
 bookingsRouter.get(
+  '/bookings/rides/account',
+  asyncRoute(async (req, res) => {
+    const token = readCookie(req, SESSION_COOKIE);
+    const account = token ? await findSession(token) : null;
+    res.json({ signedIn: Boolean(account), email: account?.user.email ?? null });
+  })
+);
+
+bookingsRouter.get(
   '/bookings/catalog',
   asyncRoute(async (_req, res) => {
     const destinations = (await pool.query('select id, name, latitude, longitude from public.destinations where published order by name')).rows;
@@ -237,11 +261,24 @@ bookingsRouter.get(
 );
 
 bookingsRouter.post(
-  '/bookings',
+  ['/bookings', '/bookings/rides'],
   asyncRoute(async (req, res) => {
     const guestHash = guest(req);
     const key = parse(uuid, req.get('Idempotency-Key'));
-    const input = parse(bookingDataSchema, req.body);
+    let input: BookingDetails;
+    if (req.path === '/bookings/rides') {
+      const body = parse(rideRequestDataSchema, req.body);
+      const token = readCookie(req, SESSION_COOKIE);
+      const account = token ? await findSession(token) : null;
+      if (!account && !body.callbackPhone) throw new ApiError('bad_request', 'Add a callback number so our team can respond.', { callbackPhone: 'Enter a callback phone number.' });
+      input = {
+        ...body.details, kind: 'ride', destinationId: body.details.dropoff.destinationId ?? '',
+        tourId: null, stops: [], returnPickup: null, returnDropoff: null,
+        contactName: account ? account.user.fullName?.trim() || account.user.email : 'Guest rider',
+        contactEmail: account?.user.email ?? '', contactPhone: account ? '' : body.callbackPhone!,
+        ...(account ? { customerUserId: account.user.id } : {}), notes: '', termsAccepted: true
+      };
+    } else input = parse(bookingDataSchema, req.body);
     const requestHash = sha256(JSON.stringify(input));
     const client = await pool.connect();
     let open = false;
@@ -280,10 +317,10 @@ bookingsRouter.post(
         `insert into public.bookings (id, reference, guest_hash, guest_expires_at, idempotency_key, request_hash,
            tour_id, destination_id, vehicle_id, passengers, departure_at, return_at, details)
          values ($1, $2, $3, now() + interval '30 days', $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-        [id, reference, guestHash, key, requestHash, details.tourId, details.destinationId, details.vehicleId,
+        [id, reference, guestHash, key, requestHash, details.tourId, details.destinationId || null, details.vehicleId,
           details.passengers, departure, back, JSON.stringify(details)]
       );
-      await event(client, id, 'pending', 'created', 'guest', 1);
+      await event(client, id, 'pending', 'created', details.customerUserId ?? 'guest', 1);
       const created = await record(client, id, guestHash);
       await client.query('commit');
       open = false;

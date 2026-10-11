@@ -1,0 +1,15 @@
+# Ride booking QA — 2026-10-12
+
+Status: focused checks PASS. No full-suite or production acceptance claim.
+
+The authorized implementation is described in `RIDE_BOOKING_REDESIGN.md`. Tests use an isolated loopback PostgreSQL 18 database named `teyvat_rides_test`; database safety guards remain enabled. Development migration 0015 ran on the existing local development database. No production database or email provider was used.
+
+VERIFIED: final production client/server build and TypeScript checks. All 107 tests across booking-validation, booking-client, ride-validation, bookings, pages and security pass (zero skipped). This includes 26 booking API tests with six new ride cases and 17 ride schema tests. Coverage includes manual locations, persisted one-way/round-trip requests, missing/invalid/past dates, passenger/capacity validation, canonical catalog places, server session identity, guest callback requirements, injection rejection, idempotency, cookie isolation, pending persistence, original tour requests, page responses/share metadata and production security headers.
+
+VERIFIED in Chrome: all seven focused booking tests pass (zero skipped). Tested 320, 375, 768, 1024 and 1440px: no horizontal overflow, summary below the form under 768px and beside it at larger widths. Saved screenshots and visually reviewed 320/1440px; dark summary uses its dark token. Native radio arrow navigation, dialog initial focus, Escape dismissal and focus return pass. Seven essential inputs, live route summary, conditional/cleared returns, identical-location and capacity errors, separate callback validation and actual pending submission pass. A simulated lost response after a real successful POST is recovered using the same idempotency key; rapid duplicate submissions plus retry leave exactly one database row. GPS is never called on load; click success and permission-denial manual fallback pass. Existing feature-flag navigation, tour preselection, authentication and admin booking/vehicle rendering pass.
+
+Evidence (local, ignored artifacts): `docs/qa-results/rides/build-final.log`, `regression-final.log`, `browser-final.log` and five `ride-<width>.png` screenshots. Test vehicle capacity is enabled only in the isolated test database. Live development vehicles are unchanged.
+
+Build warnings: existing dependency annotation and chunk-size warnings. No lint script exists in package.json. An initial new browser test type error was corrected and the build rerun successfully. The first sandbox browser run stalled and was canceled; the permitted outside-sandbox retry passed. Those attempts are not reported as passes.
+
+NOT TESTED: production migration/deployment, real GPS permissions on a physical mobile device, keyed map provider requests, actual email delivery, actual customer callbacks, fleet availability, a screen reader session and exhaustive Tab traversal of every site element. Keyboard radio/modal behavior and programmatic labels/errors/status/focus indicators were checked; this is not an accessibility certification. No full-suite pass is claimed.

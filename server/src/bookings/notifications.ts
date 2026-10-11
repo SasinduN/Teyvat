@@ -43,7 +43,7 @@ export async function dispatchBookingNotifications(
           headers: { Authorization: `Bearer ${config.resendApiKey}`, 'Content-Type': 'application/json', 'Idempotency-Key': n.id },
           body: JSON.stringify({
             from: config.from,
-            to: [n.email, config.to],
+            to: [...new Set([n.email, config.to].filter(Boolean))],
             subject: `${BRAND_NAME} booking ${status}`,
             text:
               `Booking reference: ${n.reference}\nStatus: ${status}\n` +
