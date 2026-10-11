@@ -74,9 +74,9 @@ export const NAV_LINKS: ReadonlyArray<{ label: string; to: string }> = [
   { label: 'Contact', to: paths.contact }
 ];
 
-/** The navigation as shown: with "Book a Trip" after Tours while bookings are on. */
+/** The ride request link after Tours while bookings are on. */
 export function navLinks(features: { bookings: boolean }): ReadonlyArray<{ label: string; to: string }> {
   if (!features.bookings) return NAV_LINKS;
   const at = NAV_LINKS.findIndex((link) => link.to === paths.tours) + 1;
-  return [...NAV_LINKS.slice(0, at), { label: 'Book a Trip', to: paths.booking }, ...NAV_LINKS.slice(at)];
+  return [...NAV_LINKS.slice(0, at), { label: 'Book Your Ride', to: paths.booking }, ...NAV_LINKS.slice(at)];
 }

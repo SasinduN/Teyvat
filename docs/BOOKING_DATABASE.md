@@ -1,5 +1,9 @@
 # Booking database
 
+## Manual ride extension (2026-10-12)
+
+Migration `0015_manual_rides.sql` makes `bookings.destination_id` nullable with a check requiring `details.kind='ride'` and a labeled drop-off for null IDs. Existing destination foreign keys remain. Rides reuse the pending status, guest ownership, contact storage and history; server-resolved authenticated IDs are stored in details. No tour/contact fields are deleted. Local development and isolated test migrations ran; production migration is not verified. Apply migrations before deploying the new request endpoint.
+
 Migration `db/migrations/0014_bookings.sql` (his `0011_bookings.sql`,
 renumbered: `0011` is `image_credits` here). Additive: it creates five tables
 and changes nothing else. It runs with the other migrations on deploy, so

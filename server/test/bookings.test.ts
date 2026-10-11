@@ -75,6 +75,66 @@ function submit(input: unknown = valid(), key = randomUUID(), cookie = guestCook
   });
 }
 
+const rideDetails = () => ({ pickup: blankLocation('Matara'), dropoff: blankLocation('Galle'), tripType: 'one_way', departureDate: '2099-10-20', departureTime: '09:00', returnDate: null, returnTime: null, passengers: 2, vehicleId: 'test-car' });
+function submitRide(body: unknown = { details: rideDetails(), callbackPhone: '+94 771234567' }, key = randomUUID(), cookie = guestCookie) {
+  return fetch(`${app.baseUrl}/api/bookings/rides`, { method: 'POST', headers: { ...browserHeaders(app, ip), Cookie: cookie, 'Idempotency-Key': key }, body: JSON.stringify(body) });
+}
+
+describe('point-to-point rides', () => {
+  test('round-trip requests persist return dates and reject missing return details', async () => {
+    const details = { ...rideDetails(), tripType: 'round_trip', returnDate: '2099-10-21', returnTime: '10:30' };
+    const response = await submitRide({ details, callbackPhone: '+94 771234567' });
+    assert.equal(response.status, 201);
+    const ride: BookingRecord = await response.json();
+    assert.equal(ride.details.returnDate, '2099-10-21'); assert.equal(ride.details.returnTime, '10:30');
+    assert.ok((await pool.query('select return_at from public.bookings where id=$1', [ride.id])).rows[0].return_at);
+    assert.equal((await submitRide({ details: { ...details, returnDate: null }, callbackPhone: '+94 771234567' })).status, 400);
+  });
+  test('manual drop-off creates a pending ride and preserves admin contact/follow-up', async () => {
+    const response = await submitRide(); assert.equal(response.status, 201);
+    const ride: BookingRecord = await response.json();
+    assert.equal(ride.status, 'pending'); assert.equal(ride.destinationName, 'Galle'); assert.equal(ride.details.kind, 'ride');
+    assert.equal(ride.details.contactPhone, '+94 771234567'); assert.equal(ride.details.contactEmail, '');
+    assert.equal((await pool.query('select destination_id from public.bookings where id = $1', [ride.id])).rows[0].destination_id, null);
+    const admin = await fetch(`${app.baseUrl}/api/admin/bookings/${ride.id}`, { headers: withSession(adminToken) });
+    assert.equal(admin.status, 200); assert.equal((await admin.json()).destinationName, 'Galle');
+  });
+  test('guests cannot submit without a reachable callback mechanism or spoof account identity', async () => {
+    assert.equal((await submitRide({ details: rideDetails() })).status, 400);
+    assert.equal((await submitRide({ details: rideDetails(), callbackPhone: '.....' })).status, 400);
+    assert.equal((await submitRide({ details: rideDetails(), customerUserId: randomUUID(), callbackPhone: '+94 771234567' })).status, 400);
+    assert.equal(await count('bookings'), 0);
+  });
+  test('authenticated identity comes from the server session, not ride inputs', async () => {
+    const cookie = `${guestCookie}; ${withSession(adminToken).Cookie}`;
+    const account = await fetch(`${app.baseUrl}/api/bookings/rides/account`, { headers: { Cookie: cookie } });
+    assert.equal((await account.json()).signedIn, true);
+    const response = await submitRide({ details: rideDetails() }, randomUUID(), cookie); assert.equal(response.status, 201);
+    const ride: BookingRecord = await response.json();
+    assert.equal(ride.details.contactEmail, 'admin@example.test'); assert.ok(ride.details.customerUserId);
+    assert.equal(ride.details.contactPhone, '');
+  });
+  test('rides retain idempotency, reject changed retries, and remain private to their browser', async () => {
+    const key = randomUUID(); const body = { details: rideDetails(), callbackPhone: '+94 771234567' };
+    const first: BookingRecord = await (await submitRide(body, key)).json();
+    const replay = await submitRide(body, key); assert.equal(replay.status, 200); assert.equal((await replay.json()).id, first.id);
+    assert.equal((await submitRide({ ...body, details: { ...body.details, passengers: 3 } }, key)).status, 409);
+    const otherCookie = cookieOf(await newGuest());
+    assert.equal((await fetch(`${app.baseUrl}/api/bookings/${first.id}`, { headers: { Cookie: otherCookie } })).status, 404);
+    assert.equal(await count('bookings'), 1);
+  });
+  test('capacity and canonical catalogue location checks apply to rides too', async () => {
+    assert.equal((await submitRide({ details: { ...rideDetails(), passengers: 4 }, callbackPhone: '+94 771234567' })).status, 400);
+    const { rows } = await pool.query('select id, name, latitude, longitude from public.destinations where id = $1', ['galle']);
+    const d = rows[0];
+    const dropoff = { ...blankLocation('Fake catalogue label'), source: 'destination', destinationId: d.id, lat: 0, lng: 0 };
+    const result = await submitRide({ details: { ...rideDetails(), dropoff }, callbackPhone: '+94 771234567' });
+    assert.equal(result.status, 201); const record: BookingRecord = await result.json();
+    assert.equal(record.details.dropoff?.label, d.name); assert.equal(record.details.dropoff?.lat, d.latitude);
+    assert.equal((await submitRide({ details: { ...rideDetails(), pickup: blankLocation(d.name), dropoff }, callbackPhone: '+94 771234567' })).status, 400);
+  });
+});
+
 before(async () => {
   migrateTestDatabase();
   await assertConnectedToTestDatabase();

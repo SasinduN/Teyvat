@@ -43,12 +43,12 @@ export interface BookingRow {
   idempotency_key: string;
   request_hash: string;
   tour_id: string | null;
-  destination_id: string;
+  destination_id: string | null;
   vehicle_id: string;
   passengers: number;
   departure_at: string;
   return_at: string | null;
-  details: import('./booking').BookingInput;
+  details: import('./booking').BookingDetails;
   status: import('./booking').BookingStatus;
   version: number;
   created_at: string;

@@ -182,7 +182,7 @@ const Bookings: React.FC = () => {
                   <Badge tone={b.status === 'pending' ? 'gold' : b.status === 'confirmed' ? 'success' : 'muted'}>{b.status}</Badge>
                 </div>
                 <p className="text-xs text-[var(--text-primary)]">
-                  {b.tourName ?? 'Custom transfer'} → {b.destinationName} · {b.details.departureDate} {b.details.departureTime} (Sri Lanka) ·{' '}
+                  {b.details.kind === 'ride' ? `Ride: ${b.details.pickup.label}` : b.tourName ?? 'Custom transfer'} → {b.destinationName} · {b.details.departureDate} {b.details.departureTime} (Sri Lanka) ·{' '}
                   {b.vehicle.name} · {b.details.passengers} passengers
                 </p>
                 <details className="text-xs text-[var(--text-primary)]">
@@ -196,7 +196,7 @@ const Bookings: React.FC = () => {
                     </dd>
                     <dt className="text-[var(--text-secondary)]">Contact</dt>
                     <dd>
-                      {b.details.contactName} · {b.details.contactEmail} · {b.details.contactPhone}
+                      {[b.details.contactName, b.details.contactEmail, b.details.contactPhone].filter(Boolean).join(' · ')}
                     </dd>
                     <dt className="text-[var(--text-secondary)]">Trip</dt>
                     <dd>

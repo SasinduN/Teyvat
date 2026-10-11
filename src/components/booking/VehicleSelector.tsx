@@ -6,18 +6,22 @@ export function VehicleSelector({
   vehicles,
   value,
   passengers,
-  onChange
+  onChange,
+  compact = false,
+  error
 }: {
   vehicles: BookingVehicle[];
   value: string;
   passengers: number;
   onChange: (id: string) => void;
+  compact?: boolean;
+  error?: string;
 }) {
   const id = useId();
   return (
     <div>
       <label htmlFor={id}>Vehicle category</label>
-      <select id={id} required value={value} onChange={(e) => onChange(e.target.value)}>
+      <select id={id} required value={value} aria-invalid={Boolean(error)} aria-describedby={`${id}-help`} onChange={(e) => onChange(e.target.value)}>
         <option value="">Select a vehicle</option>
         {vehicles.map((v) => (
           <option key={v.id} value={v.id} disabled={!v.acceptingRequests || v.passengerCapacity === null || passengers > v.passengerCapacity}>
@@ -28,7 +32,7 @@ export function VehicleSelector({
           </option>
         ))}
       </select>
-      <small>Staff review each request; a category doesn't guarantee a particular vehicle is free.</small>
+      <small id={`${id}-help`}>{error || (compact ? 'Subject to staff review.' : "Staff review each request; a category doesn't guarantee a particular vehicle is free.")}</small>
     </div>
   );
 }

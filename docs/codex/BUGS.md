@@ -1,3 +1,7 @@
+# BUG-057 — Production policy blocks the booking GPS button
+
+Status: RESOLVED in local production checks, 2026-10-12. Static inspection found global `Permissions-Policy: geolocation=()` prevented the user-triggered booking GPS flow in the production document. Permit `geolocation=(self)` for /booking only; retain denied permissions elsewhere, click-only acquisition and manual fallback. Rendered GPS success/denial and production header regression checks passed; evidence is recorded in ../FINAL_QA.md. Physical device permissions NOT TESTED. Historical bug IDs/resolutions retained below.
+
 # BUG-056 PR #37 follow-up — 2026-10-11
 
 Initial GitHub CI passed 35/39 files; stock-photo/CARTO-only expectations failed in browser-csp, browser-theme, image-credits and pages tests. An actual defect also retained superseded stock-photo credits in the corrected public payload. Filter by final used photos and add a database regression. Existing tests updated for authorized provider/photo behavior; no checks skipped or visual baselines replaced. Follow-up implementation complete; GitHub acceptance pending. Local database test connection BLOCKED by 28P01.

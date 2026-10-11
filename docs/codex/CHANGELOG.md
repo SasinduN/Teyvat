@@ -1,3 +1,9 @@
+## 2026-10-12 — Authorized ride booking redesign
+
+Replaced the default oversized booking form with seven ride inputs, conditional returns, live summary and separate guest callback dialog. Preserved existing tour booking through its tour query route, authentication and admin review. Added server-only account association, strict manual drop-off contract, pending status/retries and migration 0015 retaining legacy tour/contact storage. Scoped public structure changes explicitly authorized by the user. Production geolocation policy now permits same-origin access on /booking only, still requiring a user click.
+
+Evidence and backend limitations: ../FINAL_QA.md and ../RIDE_BOOKING_REDESIGN.md. No production deployment or email delivery claim. Historical entries retained.
+
 ## 2026-10-11 — PR #37 CI follow-up
 
 Initial GitHub run 38150556135 passed build/typecheck/fixture round-trip and 35/39 test files. Four failed files retained stock-image/CARTO-only expectations. Update browser CSP/theme checks for the selected provider, compare share metadata with the public content photo, and verify curated credits alongside restored licensed photos. Fix an actual public-credit defect: exclude credits for superseded photos absent from the final public payload. Add a database regression for used-photo-only credits. Local guarded test database rejects credentials (28P01); no guard bypass or production fallback. Follow-up GitHub acceptance pending. Initial failure evidence is retained.

@@ -104,6 +104,14 @@ export const bookingSchema = bookingDataSchema.superRefine((v, ctx) => {
   }
 });
 export type BookingInput = z.infer<typeof bookingSchema>;
+export { date as bookingDateSchema, time as bookingTimeSchema };
+
+/** Ride requests retain the legacy details fields for admin/history compatibility. */
+export type BookingDetails = BookingInput & {
+  kind?: 'ride';
+  dropoff?: BookingLocation;
+  customerUserId?: string;
+};
 
 export const vehicleSchema = z
   .object({
@@ -139,7 +147,7 @@ export interface BookingRecord {
   id: string;
   reference: string;
   status: BookingStatus;
-  details: BookingInput;
+  details: BookingDetails;
   tourName: string | null;
   destinationName: string;
   vehicle: BookingVehicle;

@@ -1,3 +1,9 @@
+# Ride booking redesign — 2026-10-12
+
+Default /booking is a compact point-to-point ride request; tour query links retain the full existing tour form. Guest callback dialog explicitly approved by the user. Ride backend shares safe pending transaction/ownership/admin flow; identity comes from server sessions, manual destinations supported by migration 0015. Local development migration ran. Public UI structural changes authorized; original parent checkout untouched.
+
+Executed QA: final build/typecheck, 107 focused schema/API/page/security tests and seven Chrome booking tests PASS, including all five requested widths and safe lost-response recovery. Details/limitations: ../FINAL_QA.md. New isolated PostgreSQL 18 loopback test cluster removes the prior test authentication blocker for this task without changing guards or using production. Seeded live vehicle categories remain disabled until real capacity is configured. No production rollout, pricing, fleet availability or live email claim. GitHub read confirms prior map/photo PR #37 is merged. Historical status below remains scoped to its original evidence.
+
 # PR #37 review — 2026-10-11
 
 Uploaded local map/photo fixes in PR #37. Initial GitHub run 38150556135: build/typecheck/fixture round-trip PASS, 35/39 test files PASS, four old-behavior assertion files FAIL. Follow-up fixes superseded-credit filtering and aligns CSP/theme/credit/share-image assertions with authorized behavior. Follow-up GitHub acceptance pending; guarded local test DB authentication BLOCKED (28P01). Historical local/browser evidence below remains scoped to its executed checks.
