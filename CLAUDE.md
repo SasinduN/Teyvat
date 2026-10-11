@@ -31,7 +31,7 @@ this file or anywhere else in git.
 | R | Redesign: #12 redone in PRs 0–5 (`docs/plans/redesign-redo.md`) | done (#17, #19, #22, #23, #24, #26) |
 | R+ | #12 parity: glass, buttons, header, Explore and planner markup (`docs/reviews/pr12-parity.md`) | in review (#28) |
 | R++ | `llms.txt` (#29); dialogs keep the scrollbar's space (#30) | done |
-| F | The friend import (`docs/reviews/friend-import.md`): A design, B photos, C bookings behind a flag | A done (#33); B in review |
+| F | The friend import (`docs/reviews/friend-import.md`): A design, B photos, C bookings behind a flag | A done (#33); B done (#34); C in review (#35), merged only after a production backup (it runs 0014) |
 
 Update the Status column when a phase lands.
 
