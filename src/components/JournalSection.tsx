@@ -14,15 +14,12 @@ export const JournalSection: React.FC = () => {
         {/* Header */}
         <div className="te-section-header">
           <div>
-            <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--brand-primary)] bg-[var(--brand-secondary)]/10 px-4 py-1.5 rounded-full inline-block mb-3">
-              Stories & Insights
-            </span>
             <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[var(--brand-primary)] tracking-tight">
               Travel Eye Journal
             </h2>
           </div>
           <p className="text-[var(--text-primary)]/70 font-light max-w-md mt-4 md:mt-0 text-sm sm:text-base">
-            Expert travel guides, cultural deep-dives, sunrise viewpoints, and culinary discoveries written by island explorers.
+            Local travel guides, culture, viewpoints and food discoveries.
           </p>
         </div>
 

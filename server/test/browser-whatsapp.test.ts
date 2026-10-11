@@ -364,9 +364,17 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     assert.equal(await coveredBy(page, '#explore-map .leaflet-control-zoom-in'), null, 'zoom in takes the tap');
     assert.equal(await coveredBy(page, '#explore-map .leaflet-control-zoom-out'), null, 'zoom out takes the tap');
 
-    // Away from the map, it's back.
-    await page.evaluate(`window.scrollTo(0, 0), true`);
-    await expectShown(page, true, 'back once clear of the map');
+    // Return to a clear area. The QuickSearch submit button is now protected
+    // too, so top=0 alone is not necessarily clear on a short phone viewport.
+    let restored = false;
+    for (const top of [0, 120, 240, 360, 480]) {
+      await page.evaluate(`window.scrollTo(0, ${top}), true`);
+      await frames(page);
+      await expectClearOf(page, '#explore-map .leaflet-control-zoom', 'clear of map zoom');
+      await expectClearOf(page, 'form button[type="submit"]', 'clear of search submit');
+      if (await shown(page)) { restored = true; break; }
+    }
+    assert.ok(restored, 'back once clear of all protected controls');
   });
 
   test("phone: the home page's slide controls each take the tap", async () => {

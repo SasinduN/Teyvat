@@ -8,7 +8,7 @@ import { focusPageHeading } from '@/lib/routeFocus';
  * Jump bar, the main buttons at the foot of the modals, the slideshow's
  * controls once they carry the mark).
  */
-const KEEP_CLEAR = '.leaflet-control-zoom, [data-keep-clear], [data-whatsapp-button]';
+const KEEP_CLEAR = '.leaflet-control-zoom, [data-keep-clear], [data-whatsapp-button], [data-floating-booking]';
 
 /** Breathing room around the button, in px. */
 const MARGIN = 8;

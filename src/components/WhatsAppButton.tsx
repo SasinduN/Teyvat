@@ -13,7 +13,7 @@ interface WhatsAppButtonProps {
  * Quick Jump bar, and the main button at the foot of the destination and
  * tour modals).
  */
-const KEEP_CLEAR = '.leaflet-control-zoom, [data-keep-clear]';
+const KEEP_CLEAR = '.leaflet-control-zoom, [data-keep-clear], #mobile-navigation, [data-cookie-banner], [data-sticky-navigation], form button[type="submit"], form input[type="submit"]';
 
 /** Breathing room around the button, in px. */
 const MARGIN = 8;
@@ -104,7 +104,7 @@ export const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({ href, hidden = f
       title="Chat with us on WhatsApp"
       data-whatsapp-button
       data-state={visible ? 'shown' : 'hidden'}
-      className={`fixed z-[60] right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] sm:right-6 sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom))] w-14 h-14 rounded-full bg-[#1C4737] hover:bg-[#0F2E23] text-[#F5EFEB] ring-1 ring-[#D4AF37]/40 shadow-lg hover:shadow-xl flex items-center justify-center transition-[opacity,visibility,background-color,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 ${
+      className={`fixed z-[60] right-[calc(1rem+env(safe-area-inset-right))] bottom-[calc(1rem+env(safe-area-inset-bottom))] sm:right-[calc(1.5rem+env(safe-area-inset-right))] sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom))] w-14 h-14 rounded-full bg-[var(--palette-deep-emerald)] hover:bg-[var(--palette-forest-night)] text-[var(--palette-white)] ring-1 ring-[var(--palette-champagne-gold)] shadow-lg hover:shadow-xl flex items-center justify-center transition-[opacity,visibility,background-color,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--palette-sky)] focus-visible:ring-offset-2 ${
         visible ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
       }`}
     >

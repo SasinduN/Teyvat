@@ -1,3 +1,15 @@
+# Content cleanup and floating ride CTA QA — 2026-10-12
+
+Saved locally. Final floating booking CTA and WhatsApp Chrome run: 12/12 tests PASS, zero skipped or cancelled. Verified hero controls, all eight requested viewport widths, route visibility, light/dark contrast, keyboard navigation, reduced motion, scrolling and collision handling. The earlier combined run also passed seven booking, ten hero-contrast and five scroll-to-top checks; its three failures were subsequently resolved and checked in the focused final run. Baseline before changes: TypeScript check and all eight existing WhatsApp Chrome tests PASS, zero skipped. Final production client/server build and TypeScript check PASS, with existing dependency annotation/>500kB chunk warnings. Existing database safety guards remain enabled; only the isolated local test database is used. No lint script is available. Evidence is under ignored `docs/qa-results/content-cleanup/`.
+
+Initial new browser run: 2/4 tests passed; Previous timed out and a booking-form assertion ran before asynchronous catalog loading. The latter test now waits for the form. Second run: 3/4 passed; Previous still failed. Focused diagnostic confirmed a real pre-existing readiness reset race: first image decoded at naturalWidth 1280 while the hero remained busy waiting for its already-fired load event. Fix retains matching decoded readiness during source resets (BUG-058). The 320px screenshot also showed clipped header controls (BUG-059); compact unlayered spacing preserves their 44px targets. Failed attempt/diagnostic evidence is retained locally and is not counted as acceptance.
+
+A browser startup retry encountered an existing Windows DevToolsActivePort file-lock error (BUG-061); the successful final run supersedes that cancelled attempt. Production deployment and a full-suite run remain outside this save checkpoint.
+
+Performance evidence: the combined cleanup/CTA changes take main JavaScript gzip from 161.89 to 162.90kB and CSS gzip from 19.35 to 19.65kB, measured in the prior ride and current build logs. No new dependency, external script or repeating attention timer. This is bundle evidence, not a Lighthouse/Core Web Vitals assessment.
+
+NOT TESTED: real customer WhatsApp messaging, production deployment, physical-device safe-area/notch behavior, a screen-reader session and production business-claim accuracy. Desktop/mobile Chrome emulation, computed safe-area rules, contrast and keyboard checks are used; exhaustive accessibility certification is not claimed. Previous ride/backend limitations below remain applicable.
+
 # Ride booking QA — 2026-10-12
 
 Status: focused checks PASS. No full-suite or production acceptance claim.

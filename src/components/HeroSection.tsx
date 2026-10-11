@@ -4,7 +4,6 @@ import { Compass, MapPin, Pause, Play, ChevronLeft, ChevronRight } from 'lucide-
 import { useHeroSlides } from '@/hooks/useSiteContent';
 import { SiteLink } from './SiteLink';
 import { paths } from '@shared/site-paths';
-import { HeroSlide } from '../types';
 
 export const HeroSection: React.FC = () => {
   const HERO_IMAGES = useHeroSlides();
@@ -28,9 +27,6 @@ export const HeroSection: React.FC = () => {
     if (heroRef.current) observer.observe(heroRef.current);
     return () => { observer.disconnect(); document.removeEventListener('visibilitychange', update); };
   }, []);
-  // Undefined only when no slide is published: the section then keeps its
-  // background colour and copy, and drops the caption instead of crashing.
-  const current: HeroSlide | undefined = HERO_IMAGES[currentBg];
 
   useEffect(() => {
     // The slide count comes from the database, so restart from the first
@@ -45,7 +41,18 @@ export const HeroSection: React.FC = () => {
     return () => clearInterval(timer);
   }, [HERO_IMAGES.length, paused, hovered, focused, reducedMotion, visible, documentVisible, readySlides]);
 
-  useEffect(() => { setCurrentBg(0); setSeenSlides(new Set([0])); setReadySlides(new Set()); setRequestedSlide(null); }, [slideSources]);
+  useEffect(() => {
+    setCurrentBg(0); setSeenSlides(new Set([0])); setRequestedSlide(null);
+    // A cached photo can load before this reset effect. Its load event will
+    // not fire again when Previous returns to it, so retain verified readiness.
+    const sources = slideSources.split('\n');
+    const ready = new Set<number>();
+    heroRef.current?.querySelectorAll('.te-hero-slide').forEach((slide, index) => {
+      const image = slide.querySelector('img');
+      if (image?.complete && image.naturalWidth > 0 && image.getAttribute('src') === sources[index]) ready.add(index);
+    });
+    setReadySlides(ready);
+  }, [slideSources]);
   useEffect(() => { setSeenSlides(previous => new Set([...previous, currentBg])); }, [currentBg]);
   useEffect(() => {
     if (HERO_IMAGES.length < 2 || !visible || !documentVisible || reducedMotion || paused || !readySlides.has(currentBg)) return;
@@ -93,14 +100,6 @@ export const HeroSection: React.FC = () => {
       {/* Hero Content */}
       <div className="te-hero-content te-container relative z-20 text-white">
         <div className="te-hero-copy">
-          {/* Subtle Badge */}
-          <div
-            className="te-hero-badge inline-flex items-center mb-6 text-xs font-semibold uppercase tracking-widest text-[var(--accent-text)]"
-          >
-            <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
-            <span>The Premium Sri Lanka Experience</span>
-          </div>
-
           {/* Main Title */}
           <h1
             className="te-hero-title font-heading text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.1] mb-6 drop-shadow-md"
@@ -138,15 +137,6 @@ export const HeroSection: React.FC = () => {
           </div>
 
         </div>
-        {/* Location Indicator Caption */}
-        {current && (
-          <div
-            className="te-hero-caption mt-8 inline-flex items-center space-x-2 text-xs text-white/90"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
-            <span>Currently featured: {current.title} ({current.caption})</span>
-          </div>
-        )}
       </div>
 
       {HERO_IMAGES.length > 1 && <div className="te-hero-controls" role="group" aria-label="Featured destinations" data-keep-clear>

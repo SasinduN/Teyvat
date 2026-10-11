@@ -40,9 +40,6 @@ export const IntroSection: React.FC = () => {
         
         {/* Top Header */}
         <div className="te-section-header te-section-header--stack">
-          <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--brand-primary)] bg-[var(--brand-secondary)]/10 px-4 py-1.5 rounded-full inline-block mb-3">
-            Welcome to Travel Eye
-          </span>
           <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[var(--brand-primary)] tracking-tight mb-6">
             One Island. <span className="italic font-serif text-[var(--brand-primary)]">A Thousand Stories.</span>
           </h2>

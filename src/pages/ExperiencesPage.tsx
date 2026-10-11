@@ -21,7 +21,6 @@ export function ExperiencesPage() {
         compact
         image={featured[0]?.image}
         crumbs={[{ label: 'Home', to: paths.home }, { label: 'Experiences' }]}
-        eyebrow="Unforgettable Moments"
         title="Experiences"
         subtitle={PAGE_DESCRIPTIONS.experiences}
       />

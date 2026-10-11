@@ -57,7 +57,6 @@ export function ExplorePage() {
       <PageHero
         image={destinations.find((d) => d.featured)?.image ?? destinations[0]?.image}
         crumbs={[{ label: 'Home', to: paths.home }, { label: 'Explore' }]}
-        eyebrow="Find Your Way Around the Island"
         title="Explore Sri Lanka"
         subtitle={PAGE_DESCRIPTIONS.explore}
       />

@@ -42,7 +42,6 @@ export function DestinationsPage() {
         compact
         image={all.find((d) => d.featured)?.image ?? all[0]?.image}
         crumbs={[{ label: 'Home', to: paths.home }, { label: 'Destinations' }]}
-        eyebrow="Places Worth Getting Lost In"
         title="Destinations"
         subtitle={PAGE_DESCRIPTIONS.destinations}
       />

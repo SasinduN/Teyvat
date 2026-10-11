@@ -18,7 +18,6 @@ export function JournalPage() {
         compact
         image={articles[0]?.image}
         crumbs={[{ label: 'Home', to: paths.home }, { label: 'Journal' }]}
-        eyebrow="Stories From the Island"
         title="Journal"
         subtitle={PAGE_DESCRIPTIONS.journal}
       />

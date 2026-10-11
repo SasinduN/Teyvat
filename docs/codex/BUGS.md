@@ -1,3 +1,19 @@
+# BUG-060 — WhatsApp floats over the open mobile navigation
+
+Status: RESOLVED in Chrome, 2026-10-12. Static inspection found the shared z-index and later floating-button DOM could place WhatsApp above the mobile navigation, with no menu keep-clear target. Added #mobile-navigation to its overlap protection. Rendered tests verify both floating links hide while the actual menu is open; independent messages, links and settings remain. Source/QA: ../FLOATING_BOOKING_CTA.md and ../FINAL_QA.md.
+
+# BUG-061 — Windows Chrome startup port-file lock
+
+Status: OPEN test-harness limitation, 2026-10-12. A browser run failed in its before hook with EBUSY reading DevToolsActivePort while Chrome was starting. Existing launch helper checks existence then reads without retrying transient file locks. The subsequent standalone WhatsApp rerun passed all eight tests. Application behavior is not implicated; startup-driver hardening is outside this public UI task. Failed attempt evidence retained in ../FINAL_QA.md.
+
+# BUG-058 — Cached hero photograph never becomes ready again
+
+Status: RESOLVED in Chrome, 2026-10-12. QA reproduced Previous stuck busy although the first image was decoded (naturalWidth 1280). Static comparison confirms the unchanged pre-existing source-reset effect could clear readySlides after onLoad, with no second event for a cached DOM image. Preserve verified matching-image readiness during reset; retain image-load gating. Previous, Next, pause holding the frame and automatic resume all passed after the fix. Initial browser failures and diagnostic evidence are in ../FINAL_QA.md.
+
+# BUG-059 — Header controls clipped at 320px
+
+Status: RESOLVED in Chrome, 2026-10-12. The 320px screenshot showed the last mobile header control clipped. Compact container/logo/gap spacing below 376px retains all controls and 44px touch targets. Rules are unlayered so utility gap does not override them; the container uses full width with 8px insets to avoid adding padding to an already inset column. Verified all four controls fit at 320px and the eight-width suite passes. No navigation action removed.
+
 # BUG-057 — Production policy blocks the booking GPS button
 
 Status: RESOLVED in local production checks, 2026-10-12. Static inspection found global `Permissions-Policy: geolocation=()` prevented the user-triggered booking GPS flow in the production document. Permit `geolocation=(self)` for /booking only; retain denied permissions elsewhere, click-only acquisition and manual fallback. Rendered GPS success/denial and production header regression checks passed; evidence is recorded in ../FINAL_QA.md. Physical device permissions NOT TESTED. Historical bug IDs/resolutions retained below.

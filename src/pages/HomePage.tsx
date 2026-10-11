@@ -28,7 +28,6 @@ export function HomePage() {
         <div className="te-container">
           <div className="te-home-plan-panel">
             <div className="te-reading-column">
-              <span className="te-eyebrow">Made personal. Designed locally.</span>
               <h2 id="home-plan-title" className="font-heading text-[var(--brand-primary)]">
                 Plan Your Journey
               </h2>

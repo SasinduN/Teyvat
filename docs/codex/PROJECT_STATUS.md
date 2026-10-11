@@ -1,3 +1,7 @@
+# Content cleanup and floating booking CTA — 2026-10-12
+
+Implementation uses the existing Vite/React Router public shell and theme. Hero badge/caption removed; safe decorative text cleanup across major routes documented in ../CONTENT_CLEANUP_AUDIT.md. One ride link points to existing /booking, above WhatsApp and hidden on booking/disabled-feature/admin/modal/obstructed screens. Booking backend/form unchanged. Baseline typecheck and eight WhatsApp browser tests passed; final build/typecheck and all 12 focused CTA/WhatsApp Chrome checks passed. Work saved locally on feature/content-cleanup-floating-ride-20261012; evidence and remaining limitations are recorded in ../FINAL_QA.md. Original parent checkout untouched; historical entries retained.
+
 # Ride booking redesign — 2026-10-12
 
 Default /booking is a compact point-to-point ride request; tour query links retain the full existing tour form. Guest callback dialog explicitly approved by the user. Ride backend shares safe pending transaction/ownership/admin flow; identity comes from server sessions, manual destinations supported by migration 0015. Local development migration ran. Public UI structural changes authorized; original parent checkout untouched.

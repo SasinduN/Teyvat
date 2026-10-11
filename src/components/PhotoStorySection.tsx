@@ -17,9 +17,6 @@ export const PhotoStorySection: React.FC = () => {
         
         {/* Header */}
         <div className="te-section-header te-section-header--stack">
-          <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--accent-text)] bg-white/10 px-4 py-1.5 rounded-full inline-block mb-3 border border-[var(--accent)]/30">
-            Visual Storytelling
-          </span>
           <h2 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight mb-4">
             Stories From The Island
           </h2>

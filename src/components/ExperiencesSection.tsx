@@ -28,9 +28,6 @@ export const ExperiencesSection: React.FC<ExperiencesSectionProps> = ({
         
         {/* Header */}
         <div className="te-section-header te-section-header--stack">
-          <span className="te-card-badge uppercase tracking-[0.2em] mb-3">
-            Tailored Journeys
-          </span>
           <h2 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-[var(--brand-primary)] mb-4">
             What Kind of Journey Are You Looking For?
           </h2>

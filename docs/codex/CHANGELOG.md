@@ -1,3 +1,7 @@
+## 2026-10-12 — Authorized content cleanup and floating ride CTA
+
+Removed exactly the two requested homepage text elements and their unused styles, preserving cinematic layout/slideshow. Audited nine major public destinations (Contact is /about#contact), removed redundant decorative labels and simplified three sentences; ambiguous business claims documented for review. Added single feature-gated accessible /booking link above independent WhatsApp with palette/safe-area alignment, one-time CSS attention and reduced-motion/collision handling. Public markup changes explicitly authorized. No new backend or data deletions. Baseline typecheck and eight WhatsApp browser checks passed; final evidence in ../FINAL_QA.md.
+
 ## 2026-10-12 — Authorized ride booking redesign
 
 Replaced the default oversized booking form with seven ride inputs, conditional returns, live summary and separate guest callback dialog. Preserved existing tour booking through its tour query route, authentication and admin review. Added server-only account association, strict manual drop-off contract, pending status/retries and migration 0015 retaining legacy tour/contact storage. Scoped public structure changes explicitly authorized by the user. Production geolocation policy now permits same-origin access on /booking only, still requiring a user click.
