@@ -8,12 +8,13 @@ import './test-db';
  *   - before the first paint, with no inline script: on every page type,
  *     `<html data-theme>` is already right when the document is parsed
  *     (readyState "interactive", before any deferred script or React), for
- *     each saved choice and each system setting;
+ *     each saved choice and each system setting: the saved choice, else
+ *     light (the friend import's default);
  *   - the toggle: labelled "Switch to dark/light theme", saves the choice
  *     (`site:theme`), which a reload keeps;
- *   - with nothing saved the theme follows the system, live; a saved choice
- *     doesn't;
- *   - with storage blocked, the system's theme, and no errors;
+ *   - with nothing saved the theme stays light as the system changes, and
+ *     neither follows it;
+ *   - with storage blocked, light, and no errors;
  *   - the map: CARTO's dark basemap in the dark theme, swapped in place
  *     (same map) when the theme changes.
  *
@@ -114,7 +115,7 @@ describe('the light and dark themes, in Chrome', { skip, timeout: 8 * 60_000 }, 
 
   for (const choice of [null, 'light', 'dark'] as const) {
     for (const system of ['light', 'dark'] as const) {
-      const want = choice ?? system;
+      const want = choice ?? 'light';
       test(`saved ${choice ?? 'nothing'}, system ${system}: every page parses already ${want}`, async () => {
         const page = await newTab(system);
         await save(page, choice);
@@ -152,31 +153,31 @@ describe('the light and dark themes, in Chrome', { skip, timeout: 8 * 60_000 }, 
     assert.equal(await page.evaluate<string>('document.documentElement.dataset.theme'), 'dark');
   });
 
-  test('with nothing saved, the theme follows the system as it changes', async () => {
-    const page = await newTab('light');
+  test('with nothing saved, the theme stays light while the system changes', async () => {
+    const page = await newTab('dark');
     await save(page, null);
     await open(page, '/about');
-    assert.equal(await page.evaluate<string>('document.documentElement.dataset.theme'), 'light');
-    await setSystem(page, 'dark');
-    await poll(page, `document.documentElement.dataset.theme === 'dark'`, 'dark, following the system', 5_000);
+    assert.equal(await page.evaluate<string>('document.documentElement.dataset.theme'), 'light', 'light, though the system is dark');
     await setSystem(page, 'light');
-    await poll(page, `document.documentElement.dataset.theme === 'light'`, 'light again', 5_000);
+    await setSystem(page, 'dark');
+    await sleep(300);
+    assert.equal(await page.evaluate<string>('document.documentElement.dataset.theme'), 'light', 'still light');
   });
 
-  test('with storage blocked: the system theme, a working toggle, and no errors', async () => {
+  test('with storage blocked: light, a working toggle, and no errors', async () => {
     const page = await newTab('dark', { blockStorage: true });
     await open(page, '/');
-    assert.equal(await page.evaluate<string>('window.__parsedTheme'), 'dark', "the system's theme");
+    assert.equal(await page.evaluate<string>('window.__parsedTheme'), 'light', 'light, as with nothing saved');
     const toggle = `document.querySelector('header .sm\\\\:flex [data-theme-toggle]')`;
     await poll(page, toggle, 'the toggle');
     await page.evaluate(`${toggle}.click(), true`);
-    await poll(page, `document.documentElement.dataset.theme === 'light'`, 'light for this page');
+    await poll(page, `document.documentElement.dataset.theme === 'dark'`, 'dark for this page');
     assert.deepEqual(await page.evaluate<string[]>('window.__errors'), [], 'no errors');
   });
 
   test('the map: dark tiles in the dark theme, swapped in place when the theme changes', async () => {
     const page = await newTab('dark');
-    await save(page, null);
+    await save(page, 'dark');
     await open(page, '/explore');
     await poll(page, `document.querySelector('#explore-map')`, 'the map section');
     await page.evaluate(`document.querySelector('#explore-map').scrollIntoView(), true`);

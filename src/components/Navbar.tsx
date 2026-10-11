@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import { Search, Menu, X, Compass, ArrowRight } from 'lucide-react';
 import { useModalFocus } from '@/hooks/useModalFocus';
 import { activeNavigationTarget } from '@/lib/activeNavigation';
-import { BRAND_NAME } from '@shared/brand';
 import { NAV_LINKS, paths } from '@shared/site-paths';
 import { Logo } from './Logo';
 import { SiteLink } from './SiteLink';
@@ -14,9 +13,9 @@ interface NavbarProps {
 }
 
 /**
- * The header: dark glass once the page has scrolled; before that it's clear,
- * over the dark band along the page photo's top (index.css, `.te-nav`). The current page's
- * link is marked (`aria-current`, a gold underline). On phones the links
+ * The header: a solid surface in the page's colours, except over the home
+ * page's photo before it scrolls, where it's clear (index.css, `.te-nav`).
+ * The current page's link is marked (`aria-current`, an underline). On phones the links
  * open in a solid full-screen menu that holds focus until it closes (Escape,
  * the close button, or a link). No animation library: CSS transitions only.
  */
@@ -53,8 +52,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
   return (
     <>
       <header
+        data-home={location.pathname === paths.home}
         data-scrolled={isScrolled}
-        className="te-nav glass glass--inverse glass--strong fixed top-0 left-0 right-0 z-50"
+        className="te-nav fixed top-0 left-0 right-0 z-50"
       >
         <div className="te-container">
           <div className="flex items-center justify-between gap-2">
@@ -62,10 +62,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
             <SiteLink
               to="/"
               onClick={handleLinkClick}
-              className="text-left rounded-lg p-1 transition-opacity hover:opacity-90"
-              aria-label={`${BRAND_NAME} Homepage`}
+              className="te-home-link text-left rounded-lg p-1 transition-opacity hover:opacity-90"
             >
-              <Logo variant="light" size="md" />
+              <Logo size="md" />
+              <span className="sr-only"> homepage</span>
             </SiteLink>
 
             {/* Desktop Navigation Links */}
@@ -147,11 +147,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
           aria-modal="true"
           aria-label="Site navigation"
           tabIndex={-1}
-          className="fixed inset-0 z-[60] bg-[var(--inverse-deep)] text-[var(--on-inverse)] pt-24 px-6 pb-8 flex flex-col justify-between overflow-y-auto lg:hidden"
+          className="te-mobile-navigation fixed inset-0 z-[60] pt-24 px-6 pb-8 flex flex-col justify-between overflow-y-auto lg:hidden"
         >
           {/* Solid, not glass: a full-screen menu over moving page content must stay readable. */}
-          <SiteLink to="/" onClick={handleLinkClick} className="absolute top-5 left-5 rounded-lg p-1" aria-label={`${BRAND_NAME} Homepage`}>
-            <Logo variant="light" size="md" />
+          <SiteLink to="/" onClick={handleLinkClick} className="te-home-link absolute top-5 left-5 rounded-lg p-1">
+            <Logo size="md" />
+            <span className="sr-only"> homepage</span>
           </SiteLink>
           <button
             type="button"
@@ -162,19 +163,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
             <X className="w-6 h-6" aria-hidden="true" />
           </button>
           <nav aria-label="Mobile navigation" className="space-y-6">
-            <div className="border-b border-[rgb(var(--pearl-channels)/.12)] pb-4">
-              <p className="text-xs uppercase tracking-widest text-[var(--accent)] font-semibold mb-2">Navigation</p>
+            <div className="border-b border-[var(--border)] pb-4">
+              <p className="text-xs uppercase tracking-widest text-[var(--accent-text)] font-semibold mb-2">Navigation</p>
               <div className="grid grid-cols-1 gap-2">
                 {NAV_LINKS.map((link) => (
                   <SiteLink
                     key={link.to}
                     to={link.to}
                     onClick={handleLinkClick}
-                    className="te-nav-link te-nav-link--mobile flex items-center justify-between text-left py-3 text-lg font-heading font-medium border-b border-[rgb(var(--pearl-channels)/.08)]"
+                    className="te-nav-link te-nav-link--mobile flex items-center justify-between text-left py-3 text-lg font-heading font-medium border-b border-[var(--border)]"
                     {...current(link.to)}
                   >
                     <span>{link.label}</span>
-                    <ArrowRight className="w-4 h-4 opacity-60" aria-hidden="true" />
+                    <ArrowRight className="w-4 h-4" aria-hidden="true" />
                   </SiteLink>
                 ))}
               </div>
@@ -186,8 +187,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
             </SiteLink>
           </nav>
 
-          <div className="pt-8 border-t border-[rgb(var(--pearl-channels)/.12)] text-center text-xs text-[var(--palette-muted-text)] space-y-1">
-            <p className="font-heading italic text-sm text-[var(--accent)]">“See Sri Lanka Through a Different Eye.”</p>
+          <div className="pt-8 border-t border-[var(--border)] text-center text-xs text-[var(--text-secondary)] space-y-1">
+            <p className="font-heading italic text-sm text-[var(--accent-text)]">“See Sri Lanka Through a Different Eye.”</p>
             <p>© 2026 Travel Eye Sri Lanka</p>
           </div>
         </div>

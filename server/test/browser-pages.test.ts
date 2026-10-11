@@ -142,7 +142,9 @@ describe('pages and links, in Chrome', { skip }, () => {
       NAV_LINKS.map((l) => l.label),
       "the footer uses the Navbar's labels"
     );
-    assert.equal(await page.evaluate<string>(`document.querySelector('header a[aria-label="Travel Eye Homepage"]').getAttribute('href')`), '/');
+    assert.equal(await page.evaluate<string>(`document.querySelector('header .te-home-link').getAttribute('href')`), '/');
+    // Its name is the logo's text plus "homepage" (the visible label leads the accessible name).
+    assert.match(await page.evaluate<string>(`document.querySelector('header .te-home-link').textContent`), /TRAVEL.*EYE.*SRI LANKA.*homepage/s);
 
     page = await openPage('/destinations', { mobile: true });
     await page.evaluate(`document.querySelector('[aria-label="Open menu"]').click(), true`);
@@ -158,8 +160,10 @@ describe('pages and links, in Chrome', { skip }, () => {
   });
 
   test('cards, journal cards and search results land on their pages', async () => {
-    // The home page's destination cards (redesign PR 4).
+    // The home page's destination cards (the friend import): the info button shows the link.
     const home = await openPage('/');
+    await home.evaluate(`document.querySelector('#discover button[aria-label="Show information about Ella"]').click(), true`);
+    await waitFor(home, `!document.querySelector('#discover a[href="/destinations/ella"]').closest('[inert]')`, 'the revealed link');
     await home.evaluate(`document.querySelector('#discover a[href="/destinations/ella"]').click(), true`);
     await at(home, '/destinations/ella');
 

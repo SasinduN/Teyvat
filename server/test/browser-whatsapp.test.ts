@@ -278,10 +278,12 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
       'noopener noreferrer'
     );
 
-    // A home destination card goes to the destination's page.
+    // A home destination card goes to the destination's page (its info button shows the link).
+    await page.evaluate(`document.querySelector('#discover .destination-card__toggle').click(), true`);
+    await waitFor(page, `!document.querySelector('#discover a[href^="/destinations/"]').closest('[inert]')`, 'the revealed link');
     const name = await page.evaluate<string>(`(() => {
-      const card = document.querySelector('#discover a[href^="/destinations/"]');
-      card.click();
+      const card = document.querySelector('#discover .destination-card');
+      card.querySelector('a[href^="/destinations/"]').click();
       return card.querySelector('img').alt;
     })()`);
     const id = await page.evaluate<string>(`fetch('/api/content').then((r) => r.json()).then((c) => c.destinations.find((d) => d.name === ${JSON.stringify(name)}).id)`);

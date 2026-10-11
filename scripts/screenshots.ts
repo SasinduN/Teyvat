@@ -44,7 +44,7 @@ import { Client } from 'pg';
 import { randomBytes } from 'node:crypto';
 
 import { passwords } from '../server/src/auth/passwords';
-import { findChrome, launchChrome, type Chrome, type Page } from '../server/test/chrome';
+import { findChrome, launchChrome, saveTheme, type Chrome, type Page } from '../server/test/chrome';
 
 const ROOT = resolve(import.meta.dirname, '..');
 
@@ -186,6 +186,8 @@ async function open(chrome: Chrome, url: string, viewport: (typeof VIEWPORTS)[ke
       { name: 'prefers-reduced-motion', value: 'reduce' }
     ]
   });
+  // The saved choice decides (with nothing saved the site is light, whatever the system).
+  await saveTheme(page, dark ? 'dark' : 'light');
   if (viewport.mobile) await page.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
   await page.send('Page.navigate', { url });
   await waitFor(page, `document.readyState === 'complete' && document.body.dataset.route`);
@@ -203,6 +205,8 @@ async function openAdmin(chrome: Chrome, url: string, viewport: (typeof VIEWPORT
       { name: 'prefers-reduced-motion', value: 'reduce' }
     ]
   });
+  // The saved choice decides (with nothing saved the site is light, whatever the system).
+  await saveTheme(page, dark ? 'dark' : 'light');
   await page.send('Page.navigate', { url });
   await waitFor(page, `document.readyState === 'complete' && document.querySelector('main, form')`);
   await page.evaluate(LOADED);

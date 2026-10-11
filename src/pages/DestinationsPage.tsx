@@ -50,7 +50,7 @@ export function DestinationsPage() {
       <Section name="DestinationsList">
         <section className="py-16 sm:py-20">
           <div className="te-container">
-            <div className="mb-8 flex items-center gap-2 overflow-x-auto pb-2" role="group" aria-label="Filter by category">
+            <div className="mb-8 flex flex-wrap items-center gap-2" role="group" aria-label="Filter by category">
               {(['All', ...CATEGORIES] as CategoryType[]).map((c) => {
                 const selected = c === category;
                 return (
@@ -59,15 +59,11 @@ export function DestinationsPage() {
                     type="button"
                     onClick={() => choose(c)}
                     aria-pressed={selected}
-                    className={`flex shrink-0 items-center space-x-1.5 whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition-colors duration-200 sm:text-sm ${
-                      selected
-                        ? 'border border-[var(--emerald-edge)] bg-[var(--inverse-surface)] text-[var(--accent-text)]'
-                        : 'border border-[var(--border-strong)]/50 bg-[var(--surface)] text-[var(--text-primary)]/80 hover:bg-[var(--background-secondary)] hover:text-[var(--text-primary)]'
-                    }`}
+                    className={`te-button te-button--sm gap-1.5 text-xs sm:text-sm ${selected ? 'te-button--primary' : 'te-button--secondary'}`}
                   >
                     <span>{c}</span>
                     {c !== 'All' && (
-                      <span className={`rounded-full px-1.5 font-sans text-[10px] ${selected ? 'bg-[var(--emerald-edge)] text-[var(--on-secondary)]' : 'bg-[var(--background-secondary)] text-[var(--text-primary)]'}`}>
+                      <span className="rounded-full px-1.5 font-sans text-[10px]">
                         {all.filter((d) => d.category.includes(c)).length}
                       </span>
                     )}
@@ -84,7 +80,7 @@ export function DestinationsPage() {
 
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
               {shown.map((d) => (
-                <DestinationCard key={d.id} dest={d} />
+                <DestinationCard key={d.id} dest={d} variant="gallery" />
               ))}
             </div>
           </div>

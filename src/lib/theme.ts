@@ -2,8 +2,8 @@ import { useSyncExternalStore } from 'react';
 
 /**
  * The light and dark themes (redesign PR 5). `public/theme-init.js` sets
- * `<html data-theme>` before the first paint and follows the system while
- * the visitor hasn't chosen; this module reads it, and saves a choice.
+ * `<html data-theme>` before the first paint (light until the visitor
+ * chooses); this module reads it, and saves a choice.
  */
 export type Theme = 'light' | 'dark';
 
@@ -25,7 +25,7 @@ export function chooseTheme(theme: Theme): void {
   }
 }
 
-/** Calls `listener` whenever the theme changes (a choice, the system, another tab). */
+/** Calls `listener` whenever the theme changes (a choice here or in another tab). */
 export function onThemeChange(listener: (theme: Theme) => void): () => void {
   const observer = new MutationObserver(() => listener(currentTheme()));
   observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });

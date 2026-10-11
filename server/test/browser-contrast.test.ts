@@ -22,7 +22,7 @@ import { after, before, describe, test } from 'node:test';
 
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
-import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
+import { findChrome, launchChrome, type Chrome, type Page, saveTheme } from './chrome';
 import { newDecoder, shortfalls } from './contrast-capture';
 import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
@@ -80,13 +80,14 @@ describe('contrast on every page type, light and dark, in Chrome', { skip, timeo
     const height = mobile ? 844 : 900;
     await page.send('Page.navigate', { url: 'about:blank' });
     await page.send('Emulation.setDeviceMetricsOverride', { width: mobile ? 390 : 1280, height, deviceScaleFactor: 1, mobile });
-    // The system's preference picks the theme (no choice saved); no animations mid-way.
+    // The saved choice picks the theme (the system's agrees); no animations mid-way.
     await page.send('Emulation.setEmulatedMedia', {
       features: [
         { name: 'prefers-color-scheme', value: theme },
         { name: 'prefers-reduced-motion', value: 'reduce' }
       ]
     });
+    await saveTheme(page, theme);
     await page.send('Page.navigate', { url: `${app.baseUrl}${path}` });
     await poll(page, `document.querySelector('main h1') && document.querySelector('footer')`, `${path}`);
     assert.equal(await page.evaluate<string>('document.documentElement.dataset.theme'), theme, 'precondition: the theme');

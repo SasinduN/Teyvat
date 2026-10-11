@@ -13,14 +13,14 @@ export const FeaturedExperiences: React.FC = () => {
         {/* Header */}
         <div className="te-section-header">
           <div>
-            <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--brand-primary)] bg-[var(--brand-secondary)]/10 px-4 py-1.5 rounded-full inline-block mb-3">
+            <span className="te-card-badge uppercase tracking-[0.2em] mb-3">
               Unforgettable Moments
             </span>
             <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[var(--brand-primary)] tracking-tight">
               Experiences You’ll Remember
             </h2>
           </div>
-          <p className="text-[var(--text-primary)]/70 font-light max-w-md mt-4 md:mt-0 text-sm sm:text-base">
+          <p className="text-[var(--text-secondary)] max-w-md mt-4 md:mt-0 text-sm sm:text-base">
             Signature Sri Lankan activities crafted to stir emotions, capture breathtaking vistas, and forge lifelong memories.
           </p>
         </div>
@@ -35,42 +35,42 @@ export const FeaturedExperiences: React.FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-50px' }}
               transition={{ duration: 0.6, delay: idx * 0.15 }}
-              className="bg-[var(--surface)] rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-[var(--border-strong)]/50 flex flex-col sm:flex-row group cursor-pointer"
+              className="te-card te-content-card overflow-hidden flex flex-col sm:flex-row group cursor-pointer"
             >
               {/* Image Column */}
-              <div className="sm:w-1/2 relative min-h-[260px] sm:min-h-full overflow-hidden">
+              <div className="sm:w-1/2 relative min-h-[220px] sm:min-h-full overflow-hidden">
                 <img
                   src={item.image}
                   alt={item.title}
                   className="w-full h-full object-cover group-hover:scale-[1.035] transition-transform duration-700"
                 />
-                <div className="glass glass--inverse glass--subtle absolute top-4 left-4 text-[var(--accent-text)] px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1">
-                  <Star className="w-3.5 h-3.5 fill-[var(--accent)] text-[var(--accent-text)]" />
+                <div className="te-card-badge te-card-badge--photo absolute top-4 left-4">
+                  <Star className="w-3.5 h-3.5 fill-[var(--accent)]" aria-hidden="true" />
                   <span>{item.rating}</span>
                 </div>
               </div>
 
               {/* Text Details Column */}
-              <div className="sm:w-1/2 p-6 sm:p-8 flex flex-col justify-between space-y-4">
+              <div className="sm:w-1/2 min-w-0 p-5 sm:p-6 flex flex-col justify-between space-y-4">
                 <div>
-                  <div className="flex items-center space-x-2 text-xs font-semibold text-[var(--brand-primary)] mb-2">
+                  <div className="te-card-meta flex items-center gap-2 mb-2">
                     <MapPin className="w-3.5 h-3.5 text-[var(--accent-text)]" />
                     <span>{item.location}</span>
                   </div>
 
-                  <h3 className="font-heading text-2xl font-bold text-[var(--brand-primary)] group-hover:text-[var(--brand-primary)] transition-colors mb-1">
+                  <h3 className="te-card-title font-heading text-2xl font-bold mb-1">
                     {item.title}
                   </h3>
 
-                  <p className="text-xs text-[var(--brand-primary)] font-serif italic mb-3">
+                  <p className="te-card-accent text-xs font-serif italic mb-3">
                     “{item.subtitle}”
                   </p>
 
-                  <p className="text-xs text-[var(--text-primary)]/75 line-clamp-3 font-light leading-relaxed mb-4">
+                  <p className="te-card-description text-xs line-clamp-3 mb-6">
                     {item.description}
                   </p>
 
-                  <div className="flex items-center space-x-4 text-xs text-[var(--text-secondary)] pt-2 border-t border-[var(--border-strong)]/30">
+                  <div className="te-card-meta te-card-divider flex flex-wrap items-center gap-x-4 gap-y-2 pt-2">
                     <span className="flex items-center space-x-1">
                       <Clock className="w-3.5 h-3.5 text-[var(--brand-primary)]" />
                       <span>{item.duration}</span>
@@ -84,7 +84,7 @@ export const FeaturedExperiences: React.FC = () => {
 
                 {/* Inside the card's link, so not a button of its own. */}
                 <span
-                  className="w-full py-3 bg-[var(--brand-secondary)] hover:bg-[var(--inverse-surface)] text-white rounded-2xl text-xs font-bold flex items-center justify-center space-x-2 shadow-md hover:shadow-lg transition-all"
+                  className="te-button te-button--primary te-button--sm te-card-cta"
                 >
                   <span>Discover Experience</span>
                   <ArrowRight className="w-4 h-4" />

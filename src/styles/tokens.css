@@ -7,26 +7,43 @@
  * Semantic names first (`--background`, `--brand-primary`, `--on-inverse`…);
  * the `--palette-*` swatches are what they point at.
  */
+/*
+ * The palette: Green, Pearl and Sky (the friend import, docs/reviews/friend-import.md;
+ * it replaced #12's emerald and teal). The swatch names are kept, so every
+ * component that points at one follows.
+ */
 :root {
-  --palette-deep-emerald: #103D38;
-  --palette-tropical-teal: #187A70;
-  --palette-champagne-gold: #D6B46E;
-  --palette-frosted-pearl: #F5F7F3;
-  --palette-mist-green: #DDEAE5;
-  --palette-charcoal-ink: #1D2927;
-  --palette-forest-night: #0B1918;
-  --palette-glass-surface: #17332F;
-  --palette-lagoon-glow: #3AB5A3;
-  --palette-soft-gold: #E2BF79;
-  --palette-ivory-text: #F0F5EF;
-  --palette-muted-text: #AEC2BA;
-  --palette-secondary-text: #526B64;
-  --palette-lagoon-soft: #63C9B8;
-  --brand-channels: 16 61 56;
-  --teal-channels: 24 122 112;
-  --gold-channels: 214 180 110;
-  --surface-channels: 245 247 243;
-  --inverse-channels: 11 25 24;
+  --palette-deep-emerald: #194D3B;
+  --palette-tropical-teal: #237A57;
+  --palette-champagne-gold: #D5B67B;
+  --palette-frosted-pearl: #FAFBF8;
+  --palette-mist-green: #E5F3EA;
+  --palette-charcoal-ink: #25352E;
+  --palette-forest-night: #12382D;
+  --palette-glass-surface: #20382F;
+  --palette-lagoon-glow: #74D2A8;
+  --palette-soft-gold: #D5B67B;
+  --palette-ivory-text: #F1F7F2;
+  --palette-muted-text: #B7CEC3;
+  /* #60766B in the import; a shade darker, for AA on the mist green too. */
+  --palette-secondary-text: #5A6F64;
+  --palette-sage-ink: #52675B;
+  --palette-lagoon-soft: #98E2BF;
+  --palette-white: #FFFFFF;
+  --palette-sky: #B9E3F4;
+  --palette-sky-mist: #EAF7FC;
+  --palette-border: #DCE7DF;
+  --palette-border-strong: #849B8E;
+  --palette-deep-gold: #80683B;
+  --palette-night: #101F1B;
+  --palette-night-raised: #172D26;
+  --palette-night-sky: #193441;
+  --palette-night-sky-raised: #284E60;
+  --brand-channels: 25 77 59;
+  --teal-channels: 35 122 87;
+  --gold-channels: 213 182 123;
+  --surface-channels: 255 255 255;
+  --inverse-channels: 18 56 45;
   --photo-channels: 24 30 32;
   /*
    * Photo overlays (#12's, lighter on the right): dark under the copy, which
@@ -43,17 +60,22 @@
   color-scheme: light;
   --background: var(--palette-frosted-pearl);
   --background-secondary: var(--palette-mist-green);
-  --surface: var(--palette-frosted-pearl);
+  --surface: var(--palette-white);
   --surface-glass: rgb(var(--surface-channels) / .88);
   --brand-primary: var(--palette-deep-emerald);
   --brand-secondary: var(--palette-tropical-teal);
   --accent: var(--palette-champagne-gold);
   --accent-hover: var(--palette-soft-gold);
-  --accent-text: color-mix(in srgb, var(--palette-champagne-gold) 45%, var(--palette-charcoal-ink));
+  --accent-text: var(--palette-deep-gold);
   --text-primary: var(--palette-charcoal-ink);
   --text-secondary: var(--palette-secondary-text);
-  --text-muted: color-mix(in srgb, var(--palette-charcoal-ink) 65%, var(--palette-frosted-pearl));
-  --inverse-surface: var(--palette-deep-emerald);
+  --text-muted: var(--palette-secondary-text);
+  /* Links and text-coloured actions on the page: the green (the mint in the dark theme). */
+  --text-link: var(--palette-tropical-teal);
+  /* Small text on a tint (badges on the mist green). */
+  --text-on-tint: var(--palette-sage-ink);
+  /* Under photo gradients: the forest night, deep enough for AA over a white photo (browser-contrast). */
+  --inverse-surface: var(--palette-forest-night);
   --inverse-deep: var(--palette-forest-night);
   --inverse-raised: var(--palette-glass-surface);
   --inverse-accent: var(--palette-champagne-gold);
@@ -62,8 +84,8 @@
   --on-inverse: var(--palette-ivory-text);
   --on-accent: var(--palette-charcoal-ink);
   --on-secondary: var(--white);
-  --border: var(--palette-mist-green);
-  --border-strong: color-mix(in srgb, var(--palette-deep-emerald) 30%, var(--palette-mist-green));
+  --border: var(--palette-border);
+  --border-strong: var(--palette-border-strong);
   --emerald-edge: var(--palette-tropical-teal);
   --sand: var(--palette-frosted-pearl);
   --sand-highlight: var(--palette-soft-gold);
@@ -103,42 +125,36 @@
   --glass-highlight: rgb(var(--pearl-channels) / .65);
   --glass-reflection: linear-gradient(135deg, rgb(var(--pearl-channels) / .12), transparent 42%, rgb(var(--pearl-channels) / .025));
   --glass-shadow: 0 12px 32px rgb(var(--photo-channels) / .1);
-  --glass-gold-glow: rgb(var(--gold-channels) / .16);
   --glass-emerald-glow: rgb(var(--teal-channels) / .18);
   --glass-inverse-bg: rgb(var(--photo-channels) / .58);
   --glass-inverse-strong: rgb(var(--photo-channels) / .9);
   /* Chips on photos (rating, days, price): AA for small gold text on a white photo (browser-contrast). */
   --glass-inverse-subtle: rgb(var(--photo-channels) / .78);
   --glass-photo-reflection: linear-gradient(135deg, rgb(var(--pearl-channels) / .07), transparent 48%, rgb(var(--pearl-channels) / .02));
-  --glass-nav-bg: rgb(var(--photo-channels) / .76);
-  --glass-nav-scrolled: rgb(var(--photo-channels) / .93);
-  --glass-nav-blur: 16px;
   --glass-scroll-thumb: rgb(var(--teal-channels) / .62);
   --glass-scroll-edge: rgb(var(--pearl-channels) / .38);
   --glass-scroll-hover: var(--brand-secondary);
   --page-hero-overlay: linear-gradient(90deg, rgb(var(--photo-channels) / .8), rgb(var(--photo-channels) / .74) calc(var(--copy-edge) + 10rem), rgb(var(--photo-channels) / .35) calc(var(--copy-edge) + 20rem), rgb(var(--photo-channels) / .08) calc(var(--copy-edge) + 32rem), transparent calc(var(--copy-edge) + 42rem));
   --page-hero-overlay-narrow: linear-gradient(180deg, rgb(var(--photo-channels) / .72), rgb(var(--photo-channels) / .8) 30%, rgb(var(--photo-channels) / .82));
-  --button-primary-bg: var(--brand-primary);
-  --button-primary-hover: var(--palette-tropical-teal);
+  --button-primary-bg: var(--brand-secondary);
+  --button-primary-hover: var(--brand-primary);
   --button-primary-text: var(--white);
-  --button-primary-border: rgb(var(--pearl-channels) / .24);
-  --button-primary-reflection: linear-gradient(135deg, rgb(var(--pearl-channels) / .025), transparent 60%);
-  --button-primary-sheen: rgb(var(--pearl-channels) / .025);
-  --button-sheen: rgb(var(--pearl-channels) / .16);
-  --button-secondary-bg: var(--glass-subtle-bg);
-  --button-secondary-hover: var(--glass-strong-bg);
-  --button-secondary-text: var(--text-primary);
+  --button-primary-border: var(--brand-secondary);
+  --button-secondary-bg: var(--palette-sky-mist);
+  --button-secondary-hover: var(--palette-sky);
+  --button-secondary-text: var(--brand-primary);
   --button-secondary-solid: var(--surface);
-  --button-outline-text: var(--text-primary);
+  --button-outline-text: var(--text-link);
   --button-edge: var(--border-strong);
-  --button-hover-edge: var(--brand-secondary);
-  --button-hover-glow: var(--glass-emerald-glow);
-  --photo-button-bg: rgb(240 245 239 / .96);
-  --photo-button-hover: var(--palette-frosted-pearl);
-  --photo-button-text: var(--palette-deep-emerald);
+  --button-hover-edge: var(--text-link);
   --glass-saturation: 118%;
   --glass-brightness: 1;
-  --glass-noise-opacity: .02;
+  --glass-noise-opacity: 0;
+  /* Text and links on photos (cards, captions): the same in both themes. */
+  --photo-text-secondary: #DDE7E1;
+  --photo-link: var(--palette-sky);
+  --photo-badge-bg: rgb(var(--photo-channels) / .72);
+  --photo-border: rgb(var(--pearl-channels) / .22);
 }
 
 /*
@@ -150,27 +166,29 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
   --brand-channels: 23 51 47;
-  --teal-channels: 58 181 163;
-  --gold-channels: 226 191 121;
-  --surface-channels: 23 51 47;
+  --teal-channels: 116 210 168;
+  --gold-channels: 213 182 123;
+  --surface-channels: 32 56 47;
   --inverse-channels: 0 0 0;
-  --background: var(--palette-forest-night);
-  --background-secondary: var(--palette-glass-surface);
+  --background: var(--palette-night);
+  --background-secondary: var(--palette-night-raised);
   --surface: var(--palette-glass-surface);
   --surface-glass: rgb(var(--surface-channels) / .9);
-  --brand-primary: var(--palette-lagoon-glow);
-  /* A fill (buttons, chosen chips) under white text, never a text colour: deep enough for white. */
-  --brand-secondary: #1F7F72;
+  /* Headings are ivory, like the body text; the mint is for buttons and links. */
+  --brand-primary: var(--palette-ivory-text);
+  /* A fill (chosen chips, icons' discs) under white text, never a text colour: the light theme's green holds white. */
+  --brand-secondary: var(--palette-tropical-teal);
   --accent: var(--palette-soft-gold);
   --accent-hover: var(--palette-champagne-gold);
   --accent-text: var(--palette-soft-gold);
   --text-primary: var(--palette-ivory-text);
   --text-secondary: var(--palette-muted-text);
   --text-muted: var(--palette-muted-text);
-  --inverse-surface: #0E2B27;
-  --inverse-raised: #1B3D38;
-  --border: color-mix(in srgb, var(--palette-muted-text) 20%, var(--palette-glass-surface));
-  --border-strong: color-mix(in srgb, var(--palette-muted-text) 35%, var(--palette-glass-surface));
+  --text-link: var(--palette-lagoon-glow);
+  --text-on-tint: var(--palette-muted-text);
+  --inverse-surface: var(--palette-forest-night);
+  --border: rgb(240 245 239 / .13);
+  --border-strong: rgb(240 245 239 / .25);
   --emerald-edge: var(--palette-lagoon-glow);
   --sand: var(--palette-ivory-text);
   --danger: #ffb4ab;
@@ -190,29 +208,36 @@
   /* A fainter reflection: over the dark tint a bright one lifts the backdrop under lagoon text below AA. */
   --glass-reflection: linear-gradient(135deg, rgb(var(--pearl-channels) / .04), transparent 42%, rgb(var(--pearl-channels) / .01));
   --glass-shadow: 0 12px 36px rgb(0 0 0 / .3);
-  /* Buttons (#12): lagoon fills with dark text; secondary on the green tint. */
+  /* Buttons: mint fills with dark text; secondary on a night-sky tint. */
+  --button-primary-bg: var(--palette-lagoon-glow);
   --button-primary-hover: var(--palette-lagoon-soft);
   --button-primary-text: var(--palette-forest-night);
-  --button-secondary-bg: var(--glass-tint);
-  --button-secondary-hover: var(--glass-strong-bg);
+  --button-primary-border: var(--palette-lagoon-glow);
+  --button-secondary-bg: var(--palette-night-sky);
+  --button-secondary-hover: var(--palette-night-sky-raised);
+  --button-secondary-text: var(--palette-ivory-text);
   --glass-saturation: 112%;
-  --glass-noise-opacity: .025;
-  /* The scrolled header over a dark page, whose text is light: a deeper tint (with a stronger blur,
-     index.css), so what scrolls under it is a soft blur, never readable text (browser-glass). */
-  --glass-nav-scrolled: rgb(var(--photo-channels) / .96);
-  --glass-nav-blur: 24px;
+  --glass-noise-opacity: 0;
 }
 
-/* Layout tokens shared by the header, footer and floating controls. */
+/* Layout and type tokens: one scale for the header, sections, headings and cards. */
 :root {
-  --container-max: 80rem;
-  --page-gutter: clamp(1rem, 3vw, 2.5rem);
-  --header-height: 5.5rem;
+  --container-max: 77.5rem;
+  --page-gutter: clamp(1rem, 4vw, 3rem);
+  --header-height: 5rem;
   --ease-premium: cubic-bezier(.22, 1, .36, 1);
-  --hero-content-max: 55rem;
-  --content-reading-width: 46rem;
-  --heading-space: clamp(2rem, 4vw, 3rem);
-}
-@media (max-width: 639px) {
-  :root { --header-height: 5rem; }
+  --hero-content-max: 44rem;
+  --content-reading-width: 42rem;
+  --heading-space: clamp(1.5rem, 3vw, 2.5rem);
+  --section-space: clamp(2rem, 5vw, 4rem);
+  --grid-gap: clamp(1rem, 2vw, 1.5rem);
+  --heading-hero: clamp(2.25rem, 4.5vw, 4rem);
+  --heading-page: clamp(2rem, 4vw, 3.25rem);
+  --heading-section: clamp(1.75rem, 3.4vw, 2.75rem);
+  --heading-card: clamp(1.125rem, 1.8vw, 1.5rem);
+  --radius-sm: .5rem;
+  --radius-md: .75rem;
+  --radius-lg: 1.125rem;
+  --radius-xl: 1.5rem;
+  --radius-card: var(--radius-lg);
 }

@@ -1,0 +1,140 @@
+/*
+ * Cards (the friend import, docs/reviews/friend-import.md): one look for the
+ * content cards (tours, experiences, journal), plus the photo-first
+ * destination card. Unlayered, like the hero styles in index.css, so the
+ * card type scale wins over the Tailwind sizes in the markup.
+ */
+
+/* Content cards: a surface, a hairline edge and a soft shadow; each card type keeps its own layout. */
+.te-content-card {
+  --card-text: var(--text-primary);
+  --card-secondary: var(--text-secondary);
+  --card-interactive: var(--text-link);
+  --card-accent: var(--accent-text);
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--card-text);
+  box-shadow: var(--shadow-card);
+}
+/* A card, or the part of one, whose text sits on its photo. */
+.te-content-card--photo, .te-card-photo {
+  --card-text: var(--on-inverse);
+  --card-secondary: var(--photo-text-secondary);
+  --card-interactive: var(--photo-link);
+  --card-accent: var(--accent-on-photo);
+  color: var(--card-text);
+}
+.te-card-title { color: var(--card-text, var(--text-primary)); font-size: var(--heading-card); line-height: 1.25; }
+.te-card-description, .te-card-meta { color: var(--card-secondary, var(--text-secondary)); line-height: 1.65; }
+.te-card-description { font-weight: 400; }
+.te-card-meta { font-size: .75rem; font-weight: 500; }
+.te-card-meta svg { flex-shrink: 0; color: var(--card-interactive); }
+.te-card-accent { color: var(--card-accent, var(--accent-text)); }
+.te-card-action { color: var(--card-interactive, var(--text-link)); }
+.te-card-divider { border-top: 1px solid var(--border); }
+.te-card-cta { width: 100%; }
+.te-card-actions { align-items: stretch; flex-wrap: wrap; }
+.te-card-actions > * { min-width: 0; }
+
+/* Badges: a soft tint on the page; a dark one on photos. */
+.te-card-badge {
+  display: inline-flex; align-items: center; gap: .35rem;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: .3rem .65rem;
+  background: var(--background-secondary);
+  color: var(--text-on-tint);
+  font-size: .75rem; font-weight: 600; line-height: 1.5;
+}
+.te-card-badge svg { flex-shrink: 0; color: var(--text-link); }
+.te-card-badge--photo { background: var(--photo-badge-bg); border-color: var(--photo-border); color: var(--on-inverse); }
+.te-card-badge--photo svg { color: var(--accent); }
+
+.te-content-card:focus-within { box-shadow: var(--shadow-card-hover); }
+@media (hover: hover) and (pointer: fine) {
+  .te-content-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-card-hover); }
+}
+@media (forced-colors: active) {
+  .te-content-card, .te-card-photo {
+    --card-text: CanvasText; --card-secondary: CanvasText; --card-interactive: LinkText; --card-accent: CanvasText;
+    background: Canvas; color: CanvasText; border-color: CanvasText; box-shadow: none;
+  }
+  .te-card-badge { background: Canvas; color: CanvasText; border-color: CanvasText; }
+}
+
+/*
+ * The destination card, photo first (DestinationRevealCard in PageCards.tsx):
+ * the photo, its rating, region and name; the description and the link to
+ * the page slide up on hover (with a pointer), on keyboard focus, or with
+ * the info button (touch). Hidden, they're inert.
+ */
+.destination-card {
+  position: relative; overflow: hidden; isolation: isolate; min-width: 0;
+  height: 420px; border-radius: 1.375rem;
+  background: var(--inverse-surface); color: var(--on-inverse);
+  border: 1px solid var(--border); box-shadow: var(--shadow-card);
+}
+.destination-card__image {
+  position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover;
+  transition: transform 500ms var(--ease-premium);
+}
+/* Dark under the copy only; deeper once the description shows. */
+.destination-card::before, .destination-card::after {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(to top, rgb(var(--photo-channels) / .88), rgb(var(--photo-channels) / .74) 30%, rgb(var(--photo-channels) / .2) 50%, transparent 62%);
+}
+.destination-card::after {
+  background: linear-gradient(to top, rgb(var(--photo-channels) / .92), rgb(var(--photo-channels) / .82) 55%, rgb(var(--photo-channels) / .3) 80%, transparent 92%);
+  opacity: 0; transition: opacity 350ms var(--ease-premium);
+}
+.destination-card__content {
+  position: absolute; z-index: 2; inset-inline: clamp(1.25rem, 2vw, 1.5rem); bottom: 1.5rem;
+  text-shadow: 0 1px 3px rgb(0 0 0 / .6);
+}
+.destination-card__region { margin: 0 0 .5rem; color: var(--on-inverse); font-size: .6875rem; font-weight: 600; line-height: 1.4; letter-spacing: .08em; text-transform: uppercase; }
+.destination-card__title { margin: 0; color: var(--white); font-size: clamp(1.5rem, 2vw, 1.75rem); font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+.destination-card__reveal {
+  display: grid; grid-template-rows: 0fr; opacity: 0; transform: translateY(.75rem); visibility: hidden;
+  transition: grid-template-rows 350ms var(--ease-premium), opacity 300ms var(--ease-premium), transform 350ms var(--ease-premium), visibility 0s 350ms;
+}
+.destination-card__reveal-inner { min-height: 0; overflow: hidden; }
+.destination-card__details {
+  max-height: 13rem; overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: thin; scrollbar-color: var(--photo-link) transparent;
+  padding: .75rem .25rem .25rem; margin-inline: -.25rem;
+}
+.destination-card__description { margin: 0; color: var(--on-inverse); font-size: .875rem; line-height: 1.55; }
+.destination-card__explore {
+  display: flex; align-items: center; gap: .375rem; width: fit-content; max-width: 100%; min-height: 44px; margin-top: .25rem;
+  color: var(--photo-link); font-size: .875rem; font-weight: 650; overflow-wrap: anywhere;
+}
+.destination-card__explore svg { flex-shrink: 0; }
+.destination-card__rating, .destination-card__toggle {
+  position: absolute; z-index: 3; top: 1rem; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--photo-border); border-radius: 999px;
+  background: var(--photo-badge-bg); color: var(--on-inverse);
+}
+.destination-card__rating { left: 1rem; gap: .375rem; padding: .375rem .625rem; font-size: .75rem; line-height: 1.5; font-weight: 600; }
+.destination-card__rating svg { color: var(--accent); fill: var(--accent); }
+.destination-card__toggle { right: 1rem; width: 44px; height: 44px; cursor: pointer; }
+.destination-card[data-revealed="true"] .destination-card__reveal { grid-template-rows: 1fr; opacity: 1; transform: none; visibility: visible; transition-delay: 0s; }
+.destination-card[data-revealed="true"]::after { opacity: 1; }
+@media (hover: hover) and (pointer: fine) {
+  .destination-card[data-revealed="true"] .destination-card__image { transform: scale(1.035); }
+}
+/* Focus inside the card: a sky ring over a dark one, clear on any photo. */
+.site .destination-card :focus-visible { outline: 3px solid var(--photo-link); outline-offset: 2px; box-shadow: 0 0 0 4px var(--inverse-surface); border-radius: .25rem; }
+@media (prefers-reduced-motion: reduce) {
+  .destination-card *, .destination-card::before, .destination-card::after { transition: none !important; animation: none !important; }
+  .destination-card[data-revealed="true"] .destination-card__image, .destination-card__reveal { transform: none; }
+}
+@media (forced-colors: active) {
+  .destination-card::before, .destination-card::after { display: none; }
+  .destination-card__content { background: Canvas; color: CanvasText; text-shadow: none; }
+  .destination-card__region, .destination-card__title, .destination-card__description { color: CanvasText; }
+  .destination-card__explore { color: LinkText; }
+  .destination-card__rating, .destination-card__toggle { background: Canvas; color: CanvasText; border-color: ButtonText; }
+}
