@@ -31,7 +31,7 @@ this file or anywhere else in git.
 | R | Redesign: #12 redone in PRs 0–5 (`docs/plans/redesign-redo.md`) | done (#17, #19, #22, #23, #24, #26) |
 | R+ | #12 parity: glass, buttons, header, Explore and planner markup (`docs/reviews/pr12-parity.md`) | in review (#28) |
 | R++ | `llms.txt` (#29); dialogs keep the scrollbar's space (#30) | done |
-| F | The friend import (`docs/reviews/friend-import.md`): A design, B photos, C bookings behind a flag | A in review |
+| F | The friend import (`docs/reviews/friend-import.md`): A design, B photos, C bookings behind a flag | A done (#33); B in review |
 
 Update the Status column when a phase lands.
 
@@ -179,6 +179,15 @@ Update the Status column when a phase lands.
 - Seed content: `scripts/fixtures/*.ts`. It feeds `npm run seed:generate` and
   `npm run verify:roundtrip`. Nothing under `src/` may import it; the app reads
   everything from `GET /api/content`.
+
+## Backlog
+
+Agreed, not started. Each one gets its own plan first.
+
+- **Responsive images:** `srcset` for the R2 photos, with 1920 px versions
+  only for full-width heroes. Skip Jaffna and Udawalawe (the friend import's
+  1920 px files are upscaled). Until then R2 keeps its 1280 px copies
+  (`docs/reviews/friend-import.md`, section 5).
 
 ## Standing rules
 
