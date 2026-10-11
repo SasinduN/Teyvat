@@ -85,6 +85,12 @@ export interface SiteContentPayload {
   siteSettings: PublicSiteSettings;
   /** Credits for the photos the published rows above use (`/photo-credits`). */
   imageCredits: PublicImageCredit[];
+  /** What the server has switched on (`BOOKINGS_ENABLED`). */
+  features: SiteFeatures;
+}
+
+export interface SiteFeatures {
+  bookings: boolean;
 }
 
 /**

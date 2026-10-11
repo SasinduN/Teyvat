@@ -99,7 +99,9 @@ let seedSnapshot = false;
 export async function resetContent(): Promise<void> {
   await assertConnectedToTestDatabase();
   const tables = [...CONTENT_TABLES, 'tour_stops'];
-  await pool.query(`truncate ${tables.map((t) => `public.${t}`).join(', ')}`);
+  // Booking requests reference tours and destinations, so they go too (0014).
+  const bookings = ['booking_notifications', 'booking_history', 'bookings'];
+  await pool.query(`truncate ${[...bookings, ...tables].map((t) => `public.${t}`).join(', ')}`);
   if (seedSnapshot) {
     // Parents first: tour_stops references tours and destinations.
     for (const t of tables) {

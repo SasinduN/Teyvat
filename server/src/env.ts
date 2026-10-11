@@ -146,6 +146,20 @@ export function readSiteConfig(source: NodeJS.ProcessEnv): SiteConfig {
 
 export const siteConfig = readSiteConfig(process.env);
 
+/* --------------------------------------------------------------- bookings */
+
+/**
+ * `BOOKINGS_ENABLED=true` turns booking requests on: /booking, its API, the
+ * "Book a Trip" link and "Book This Tour". Anything else (the default) keeps
+ * them off: those pages and routes are 404s and the admin page says so.
+ * Migration 0014 creates the tables either way.
+ */
+export function readBookingsEnabled(source: NodeJS.ProcessEnv): boolean {
+  return source.BOOKINGS_ENABLED?.trim().toLowerCase() === 'true';
+}
+
+export const bookingsEnabled = readBookingsEnabled(process.env);
+
 /* ------------------------------------------------------------ notifications */
 
 export interface NotifyConfig {

@@ -14,12 +14,13 @@ import express, { type Express } from 'express';
 
 import { API_ROUTES } from '../../shared/api';
 import { sameOrigin } from './auth/middleware';
-import { isProduction, notifyConfig, siteConfig, type SiteConfig } from './env';
+import { bookingsEnabled, isProduction, notifyConfig, siteConfig, type SiteConfig } from './env';
 import { createNotifier, OFF, resendSender, type Notifier } from './inquiries/notify';
 import { errorHandler, sendError } from './http';
 import { mediaFromEnv, type MediaConfig } from './media/media';
 import { adminRouter } from './routes/admin';
 import { authRouter } from './routes/auth';
+import { bookingsRouter } from './routes/bookings';
 import { contentRouter } from './routes/content';
 import { healthRouter } from './routes/health';
 import { imageCreditsRouter } from './routes/image-credits';
@@ -56,12 +57,15 @@ export interface AppOptions {
    * Defaults to `PUBLIC_SITE_URL` and `SITE_INDEXABLE`; tests pass their own.
    */
   site?: SiteConfig;
+  /** Booking requests on or off. Defaults to `BOOKINGS_ENABLED`; tests pass their own. */
+  bookings?: boolean;
 }
 
 export function createApp(options: AppOptions = {}): Express {
   const app = express();
 
   app.locals.media = options.media === undefined ? mediaFromEnv() : options.media;
+  app.locals.bookings = options.bookings ?? bookingsEnabled;
   app.locals.notifier =
     options.notifier ??
     (notifyConfig
@@ -97,6 +101,7 @@ export function createApp(options: AppOptions = {}): Express {
   // Before the admin router, which would otherwise run requireAdmin a second
   // time for every /api/admin/media and /api/admin/inquiries request.
   app.use('/api', inquiriesRouter);
+  app.use('/api', bookingsRouter);
   app.use('/api', mediaRouter);
   app.use('/api', imageCreditsRouter);
   app.use('/api', adminRouter);
@@ -151,7 +156,8 @@ export function createApp(options: AppOptions = {}): Express {
     app.use(
       pagesRouter({
         template: readFileSync(CLIENT_INDEX, 'utf8'),
-        site: options.site ?? siteConfig
+        site: options.site ?? siteConfig,
+        bookings: app.locals.bookings as boolean
       })
     );
   } else if (isProduction) {

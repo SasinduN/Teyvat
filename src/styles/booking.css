@@ -1,0 +1,56 @@
+/*
+ * The booking form (/booking) and the admin's Bookings page: plain form
+ * controls on the theme's surfaces. Buttons are `.te-button`; colours are
+ * tokens only.
+ */
+.booking-page { background: var(--background); color: var(--text-primary); padding: calc(var(--header-height) + 2rem) 0 var(--section-space); min-height: 100vh; }
+.booking-intro { max-width: var(--content-reading-width); margin-bottom: 2rem; }
+.booking-page h1 { font-size: var(--heading-page); line-height: 1.12; margin: 0 0 1rem; color: var(--brand-primary); }
+.booking-page :is(h2, legend) { font-size: 1.4rem; font-weight: 650; margin-bottom: 1rem; color: var(--brand-primary); }
+.booking-page legend h2 { margin: 0; font-size: inherit; }
+.booking-page h3 { font-size: 1.1rem; font-weight: 650; margin: 1.5rem 0 .6rem; }
+.booking-page :is(p, small) { color: var(--text-secondary); line-height: 1.6; margin: .7rem 0; }
+.booking-page small { display: block; font-size: .85rem; }
+.booking-page a:not(.te-button) { color: var(--text-link); text-decoration: underline; text-underline-offset: 3px; }
+
+.booking-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; margin: 1.5rem 0; }
+.booking-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: clamp(1rem, 2vw, 1.5rem); min-width: 0; margin-bottom: 1.5rem; overflow-wrap: anywhere; }
+.booking-aside { position: sticky; top: calc(var(--header-height) + 1.5rem); }
+.booking-page fieldset { min-width: 0; border: 0; padding: 0; margin: 0; }
+
+.booking-page label { display: block; margin: 1rem 0 .4rem; font-weight: 550; }
+.booking-page :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  display: block; width: 100%; min-width: 0; min-height: 44px;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-md);
+  background: var(--background); color: var(--text-primary);
+  padding: .65rem .85rem; font-size: 1rem;
+}
+.booking-page :is(input, textarea)::placeholder { color: var(--text-secondary); opacity: 1; }
+.booking-page :is(input[type="checkbox"], input[type="radio"]) { width: 20px; height: 20px; accent-color: var(--brand-secondary); margin-right: .65rem; flex-shrink: 0; vertical-align: middle; }
+.booking-page textarea { min-height: 100px; resize: vertical; }
+.booking-page .te-button { margin: .5rem 0; }
+
+.booking-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.booking-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+.booking-trip { margin-top: 1.5rem; }
+.booking-trip label { display: inline-flex; align-items: center; min-height: 44px; margin-right: 1.5rem; }
+.booking-page .booking-check { display: flex; align-items: flex-start; line-height: 1.6; font-weight: 400; }
+.booking-notice, .booking-error { border: 1px solid var(--border-strong); padding: 1rem; border-radius: var(--radius-md); margin: 1rem 0; }
+.booking-notice { background: var(--background-secondary); color: var(--text-on-tint); }
+.booking-notice :is(p, small) { color: var(--text-on-tint); }
+.booking-error { background: var(--surface); border-color: var(--danger); }
+.booking-stop, .booking-request { border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem; }
+.booking-page :is(ol, ul) { padding-left: 1.3rem; list-style: decimal; line-height: 1.8; }
+.booking-page ul { list-style: disc; }
+.booking-summary { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: .75rem; }
+.booking-summary dt { color: var(--text-secondary); }
+.booking-page .booking-price { color: var(--brand-primary); font-weight: 600; }
+.booking-page summary { padding: .7rem 0; cursor: pointer; }
+.booking-map { height: 280px; border-radius: var(--radius-md); overflow: hidden; }
+
+@media (max-width: 767px) {
+  .booking-grid, .booking-pair { grid-template-columns: minmax(0, 1fr); }
+  .booking-aside { position: static; }
+  .booking-summary { grid-template-columns: minmax(0, 1fr); gap: .2rem; }
+  .booking-summary dd { margin-bottom: .6rem; }
+}

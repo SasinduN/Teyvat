@@ -1,4 +1,7 @@
-import { NAV_LINKS } from '@shared/site-paths';
+import { navLinks } from '@shared/site-paths';
+
+/** Every link the navigation can show; a hidden one just never matches. */
+const NAV_LINKS = navLinks({ bookings: true });
 
 /**
  * Which Navbar link is the current page: a section link (`/#explore-map`,

@@ -88,7 +88,7 @@ export const contentRouter = Router();
 
 contentRouter.get(
   '/content',
-  asyncRoute(async (_req, res) => {
+  asyncRoute(async (req, res) => {
     // One round trip per table, all in flight together. Ten small reads in
     // parallel beat one join that would have to be unpicked client-side.
     const [
@@ -131,7 +131,8 @@ contentRouter.get(
       heroSlides,
       pillars,
       siteSettings,
-      imageCredits
+      imageCredits,
+      features: { bookings: req.app.locals.bookings === true }
     };
 
     // An admin save must show on the next page load. `no-cache` lets the

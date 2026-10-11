@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Search, Menu, X, Compass, ArrowRight } from 'lucide-react';
 import { useModalFocus } from '@/hooks/useModalFocus';
+import { useFeatures } from '@/hooks/useSiteContent';
 import { activeNavigationTarget } from '@/lib/activeNavigation';
-import { NAV_LINKS, paths } from '@shared/site-paths';
+import { navLinks, paths } from '@shared/site-paths';
 import { Logo } from './Logo';
 import { SiteLink } from './SiteLink';
 import { ThemeToggle } from './ThemeToggle';
@@ -26,6 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
 
   const menuRef = useModalFocus(mobileMenuOpen, () => setMobileMenuOpen(false));
   const activeTarget = activeNavigationTarget(location.pathname, location.hash);
+  const links = navLinks(useFeatures());
 
   // A navigation closes the menu, and so does widening past the phone layout.
   useEffect(() => setMobileMenuOpen(false), [location.key]);
@@ -70,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
 
             {/* Desktop Navigation Links */}
             <nav className="hidden lg:flex items-center gap-6" aria-label="Main Navigation">
-              {NAV_LINKS.map((link) => (
+              {links.map((link) => (
                 <SiteLink
                   key={link.to}
                   to={link.to}
@@ -166,7 +168,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
             <div className="border-b border-[var(--border)] pb-4">
               <p className="text-xs uppercase tracking-widest text-[var(--accent-text)] font-semibold mb-2">Navigation</p>
               <div className="grid grid-cols-1 gap-2">
-                {NAV_LINKS.map((link) => (
+                {links.map((link) => (
                   <SiteLink
                     key={link.to}
                     to={link.to}

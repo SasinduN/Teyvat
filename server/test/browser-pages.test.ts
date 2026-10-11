@@ -51,7 +51,9 @@ const skip = !executable ? 'no Chrome found; set CHROME_PATH to run these' : !bu
 
 const NAV_HREFS = NAV_LINKS.map((l) => l.to);
 
-describe('pages and links, in Chrome', { skip }, () => {
+// `--test-timeout` (60 s) applies to a suite as a whole too, and these 14 tests
+// together take about that long (50 s in CI); each test keeps the 60 s limit.
+describe('pages and links, in Chrome', { skip, timeout: 4 * 60_000 }, () => {
   let app: RunningApp;
   let chrome: Chrome;
 

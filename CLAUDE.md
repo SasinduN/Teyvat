@@ -31,7 +31,7 @@ this file or anywhere else in git.
 | R | Redesign: #12 redone in PRs 0–5 (`docs/plans/redesign-redo.md`) | done (#17, #19, #22, #23, #24, #26) |
 | R+ | #12 parity: glass, buttons, header, Explore and planner markup (`docs/reviews/pr12-parity.md`) | in review (#28) |
 | R++ | `llms.txt` (#29); dialogs keep the scrollbar's space (#30) | done |
-| F | The friend import (`docs/reviews/friend-import.md`): A design, B photos, C bookings behind a flag | A done (#33); B in review |
+| F | The friend import (`docs/reviews/friend-import.md`): A design, B photos, C bookings behind a flag | A done (#33); B done (#34); C in review (#35), merged only after a production backup (it runs 0014) |
 
 Update the Status column when a phase lands.
 
@@ -125,6 +125,14 @@ Update the Status column when a phase lands.
   Postgres's 1600-column limit, so a long-used local test database
   eventually fails with "tables can have at most 1600 columns": recreate it.
   `scripts/route-stops.ts` mirrors its conversion for `verify:roundtrip`.
+
+- **Bookings** (`server/src/routes/bookings.ts`, `shared/booking.ts`,
+  `docs/BOOKING_*.md`): requests, not reservations; behind
+  `BOOKINGS_ENABLED`. Off, every booking route is a JSON 404, `/booking` a
+  404 page, and nothing links there (`navLinks(features)`, `useFeatures()`
+  from `/api/content`). Migration 0014 runs either way. The guest cookie is
+  `__Host-`, the database keeps its SHA-256 only; never log a request. GPS
+  only on the button press; no geocoding service.
 
 - **WhatsApp button** (`src/components/WhatsAppButton.tsx`,
   `shared/whatsapp.ts`):
@@ -236,6 +244,8 @@ Agreed, not started. Each one gets its own plan first.
   - `SITE_INDEXABLE`: `true` opens the site to search engines. Unset or
     anything else keeps them out (robots.txt `Disallow: /`, `noindex` on
     every page, no sitemap, no `llms.txt`). Launch checklist item 21.
+  - `BOOKINGS_ENABLED`: `true` turns booking requests on. Unset or anything
+    else keeps them off (the page and API are 404s). Launch checklist item 24.
 - **Never log request data.** `errorHandler` logs errors through
   `describeForLog` (no Postgres `detail`, no request bodies). Enquiry names,
   emails and messages must never reach the logs.

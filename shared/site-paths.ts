@@ -11,6 +11,9 @@ export const paths = {
   tourOnMap: (id: string) => `/explore?mapTour=${encodeURIComponent(id)}#explore-map`,
   /** The journey builder. */
   plan: '/plan',
+  /** Booking requests, only while BOOKINGS_ENABLED (server/src/routes/bookings.ts). */
+  booking: '/booking',
+  bookTour: (id: string) => `/booking?tour=${encodeURIComponent(id)}`,
   /** Every article and the photo stories. */
   journal: '/journal',
   destinations: '/destinations',
@@ -70,3 +73,10 @@ export const NAV_LINKS: ReadonlyArray<{ label: string; to: string }> = [
   { label: 'About', to: paths.about },
   { label: 'Contact', to: paths.contact }
 ];
+
+/** The navigation as shown: with "Book a Trip" after Tours while bookings are on. */
+export function navLinks(features: { bookings: boolean }): ReadonlyArray<{ label: string; to: string }> {
+  if (!features.bookings) return NAV_LINKS;
+  const at = NAV_LINKS.findIndex((link) => link.to === paths.tours) + 1;
+  return [...NAV_LINKS.slice(0, at), { label: 'Book a Trip', to: paths.booking }, ...NAV_LINKS.slice(at)];
+}

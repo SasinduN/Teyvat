@@ -150,7 +150,12 @@ async function prepare(site: Site): Promise<void> {
 
   const port = await freePort();
   const env: NodeJS.ProcessEnv = { ...process.env, DATABASE_URL: db, PORT: String(port), NODE_ENV: 'development' };
-  for (const key of Object.keys(env)) if (/^(R2_|RESEND_|NOTIFY_)/.test(key)) delete env[key];
+  // Blank, not deleted: the server loads .env (the head's working tree has one) and dotenv fills in
+  // any variable that isn't set, so a deleted R2 key came back and only the base ran without R2.
+  for (const key of ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET', 'R2_PUBLIC_BASE_URL', 'RESEND_API_KEY', 'NOTIFY_EMAIL_TO', 'NOTIFY_EMAIL_FROM']) env[key] = '';
+  // The same for the switches: as the base would have them.
+  env.BOOKINGS_ENABLED = '';
+  env.SITE_INDEXABLE = '';
   site.server = spawn(process.execPath, ['server/dist/index.js'], { cwd: site.dir, env, stdio: 'ignore' });
   site.url = `http://127.0.0.1:${port}`;
   for (let i = 0; i < 100; i += 1) {
