@@ -12,6 +12,14 @@ that runs it.
 One Express service serves both, plus the API (`/api/*`), from a single
 origin, backed by PostgreSQL on Railway.
 
+**Booking requests** (off unless `BOOKINGS_ENABLED=true`): `/booking` takes a
+pickup (typed, a destination, or the device's GPS when asked), stops, the
+trip, a vehicle category and contact details, and stores a pending request
+with a reference; staff review it in *Admin → Bookings*. No prices, payments
+or live availability. See [`BOOKING_API`](docs/BOOKING_API.md),
+[`BOOKING_DATABASE`](docs/BOOKING_DATABASE.md) and
+[`BOOKING_SECURITY`](docs/BOOKING_SECURITY.md).
+
 **Stack:** Vite 7 · React 19 · TypeScript 5.9 (strict) · Tailwind CSS v4 ·
 Framer Motion · Leaflet · React Router 7 · TanStack Query · React Hook Form +
 Zod · Express 5 · PostgreSQL · Cloudflare R2 · Resend.
@@ -298,6 +306,13 @@ the CSP below).
 - **Logs:** they never contain names, emails or messages. Errors are logged
   by code only.
 
+**Booking requests** (when `BOOKINGS_ENABLED`; `docs/BOOKING_DATABASE.md`):
+contact details and the places sent (GPS coordinates only if the traveller
+pressed the button), seen by admins and, for 30 days, by the browser that
+sent them. Requests that ended (completed, declined, cancelled) are deleted
+12 months after their last change; open ones stay until staff close them. The
+rate limits keep IP addresses for 24 hours. Status emails go through Resend.
+
 ---
 
 ## Security
@@ -439,6 +454,7 @@ point-in-time recovery).
 | `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` (+ optional `NOTIFY_EMAIL_FROM`) | new-enquiry emails |
 | `PUBLIC_SITE_URL` | the public `https://` origin, for canonical links, share previews, the sitemap, `llms.txt` and the email's link (unset: each request's host) |
 | `SITE_INDEXABLE` | `true` opens the site to search engines (and serves `/sitemap.xml` and `/llms.txt`); anything else keeps them out (launch checklist item 21) |
+| `BOOKINGS_ENABLED` | `true` turns booking requests on (`/booking`, its API, the links, *Admin → Bookings*); anything else keeps them off (launch checklist item 24) |
 | `VITE_CARTO_KEY` | the map's tile key. Read when the client is **built**, so a change needs a redeploy |
 
 Don't set `PORT`; Railway injects it.

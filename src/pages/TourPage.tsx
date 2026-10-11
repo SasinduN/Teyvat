@@ -1,11 +1,11 @@
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { CheckCircle2, MapPin } from 'lucide-react';
 import { HeroChip, PageHero } from '@/components/PageHero';
 import { SectionHead, TourCard } from '@/components/PageCards';
 import { PlanCard } from '@/components/PlanCard';
 import { RouteMap } from '@/components/RouteMap';
 import { usePageSubject, usePageTitle } from '@/context/PublicSiteContext';
-import { useTours } from '@/hooks/useSiteContent';
+import { useFeatures, useTours } from '@/hooks/useSiteContent';
 import { pageTitle } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import type { TourPackage } from '@/types';
@@ -24,6 +24,7 @@ function TourView({ t }: { t: TourPackage }) {
   usePageTitle(pageTitle(t.title));
   usePageSubject({ inquiry: t.title, whatsapp: { kind: 'tour', id: t.id, title: t.title } });
   const tours = useTours();
+  const { bookings } = useFeatures();
 
   return (
     <>
@@ -120,11 +121,16 @@ function TourView({ t }: { t: TourPackage }) {
 
           <aside className="lg:col-span-4">
             <div className="lg:sticky lg:top-28">
+              {bookings && (
+                <Link to={paths.bookTour(t.id)} className="te-button te-button--primary mb-4 w-full">
+                  Book This Tour
+                </Link>
+              )}
               <PlanCard
                 priceFrom={t.priceFrom}
                 title={`${t.days} days, your way`}
                 text="Every itinerary is a starting point: dates, hotels and pace are tailored to you."
-                cta="Book / Inquire This Tour"
+                cta={bookings ? 'Inquire About This Tour' : 'Book / Inquire This Tour'}
               />
             </div>
           </aside>

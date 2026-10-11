@@ -28,25 +28,35 @@ or **skipped**, with the reason, and which PR carries it.
 
 ## 1. Public booking workflow (PR C)
 
+All of it behind `BOOKINGS_ENABLED`, off by default: off, `/booking` and
+every booking API route are 404s, no link points there, and Admin → Bookings
+says "Bookings are switched off". Tested in both states, over HTTP and in
+Chrome.
+
 | Item | Outcome |
 |---|---|
-| `/booking` page, location fields, vehicle selector, GPS pickup, stops, trip type, contact details, review step | Brought in behind `BOOKINGS_ENABLED` (PR C) |
-| Shared validation (`shared/booking.ts`): Asia/Colombo dates, published catalogue, vehicle capacity | Brought in |
-| Guest access: private cookie, 30 days per record, reference alone grants nothing | Brought in; cookie checked in the security review below |
-| Idempotency keys, atomic rate limit, version checks | Brought in; rate limits extended (see PR C) |
-| **Book a Trip** in the navigation | Brought in, shown only when bookings are on |
-| **Book This Tour** on tour pages (and "Inquire About This Tour" for the enquiry button) | Brought in, shown only when bookings are on |
-| Booking metadata in `server/src/pages/pages.ts`, `noindex` | Brought in; `/booking` is a 404 when bookings are off |
+| `/booking` page: pickup (typed, a destination, GPS), stops, trip type, dates, passengers, vehicle, contact, review step, My requests | Fixed: reformatted onto `main`'s buttons and tokens (`booking.css` had `--travel-*` aliases `main` doesn't have); the GPS button now says what it does before it's pressed |
+| `LocationField`, `VehicleSelector`, `booking-client.ts` | Brought in, reformatted |
+| `booking-geolocation.ts` | Fixed: the unused reverse-geocoding hook (`resolvePickup`) removed; no service was ever wired to it |
+| Shared validation (`shared/booking.ts`): Sri Lanka dates and times, published catalogue, capacity | Brought in, reformatted; the always-false `geocodingConfigured`/`routingConfigured` flags dropped |
+| Guest access: private cookie, 30 days per record, a reference alone grants nothing | Fixed: always `__Host-teyvat_booking` with `Secure` (his had another name and no `Secure` outside production) |
+| Idempotency keys, rate limit, version checks | Fixed: rate limits added for sessions (20) and edits or cancellations (20), beside his 5 new requests, per IP per 15 min |
+| **Book a Trip** in the navigation | Brought in, only when on (`navLinks(features)`) |
+| **Book This Tour** on tour pages, "Inquire About This Tour" | Brought in, only when on; off, the enquiry button keeps "Book / Inquire This Tour" |
+| Booking page head in `server/src/pages/pages.ts`, `noindex` | Fixed: a 404 when off; title and description in `shared/page-meta.ts` |
+| The CARTO key gate on the booking map | Fixed: removed; the map works keyless (OpenStreetMap), as elsewhere |
 
 ## 2. Admin bookings and database (PR C)
 
 | Item | Outcome |
 |---|---|
-| `/admin/bookings`: list, filter, details, history, status changes | Brought in; shows "Bookings are switched off" when off |
+| `/admin/bookings`: list, filter, details, history, status changes | Fixed: rebuilt with the admin's own components (his was raw elements with `booking.css`); "Bookings are switched off" when off |
 | Vehicle categories with real capacities | Brought in |
-| `db/migrations/0011_bookings.sql` | Fixed: renumbered (0011 is `image_credits` on `main`); undo documented |
-| Sweep: old rate-limit rows, terminal bookings after 12 months, notification dispatch | Brought in |
-| Notification outbox with retries | Brought in |
+| `db/migrations/0011_bookings.sql` | Fixed: renumbered `0014_bookings.sql` (0011 is `image_credits`); `booking_attempts` keyed by IP and action; an index on history; undo written in the migration and `docs/BOOKING_DATABASE.md`. Not run against production |
+| Sweep: rate-limit rows, ended bookings after 12 months, email retries | Brought in, with counts in the sweep's result; in the README's privacy facts and launch checklist item 24 |
+| Notification outbox and retries | Brought in, reformatted |
+| `shared/database.types.ts` rows | Brought in |
+| `server/src/app.ts` wiring | Fixed: `createApp({ bookings })`, defaulting to `BOOKINGS_ENABLED` |
 
 ## 3. Shared design and theme (PR A)
 
@@ -62,7 +72,7 @@ or **skipped**, with the reason, and which PR carries it.
 | Footer: `h4` → `h2`, less padding, legal text brighter, unset social links labelled | Brought in |
 | Page headers below the header, smaller | Brought in |
 | Hero: next slide fetched 4.5 s after the first is ready | Brought in |
-| Booking surfaces on the shared theme | PR C |
+| Booking surfaces on the shared theme | Brought in (PR C) |
 | `src/lib/theme.ts`, `src/main.tsx` changes | Skipped: `main` replaced both (`public/theme-init.js`; styles imported from `index.css`) |
 | `glass3d.css` changes | Skipped: `main` folded glass3d into `glass.css` (`.glass--3d`); his only changes there were header and card rules, re-made in `index.css` and `cards.css` |
 
@@ -134,9 +144,10 @@ checklist item 16) checks the live rows.
 
 | Item | Outcome |
 |---|---|
-| `.env.example`, `.gitignore` | PR C: his additions merged, every `main` variable kept, no values |
-| Booking docs (`BOOKING_API`, `BOOKING_DATABASE`, `BOOKING_SECURITY`, `BOOKING_IMPLEMENTATION_PLAN`) | PR C |
-| `BOOKING_TEST_REPORT.md`, `GEOLOCATION_SETUP.md` | PR C: folded into the four above |
+| `.env.example` | Brought in (PR C): `NODE_ENV` and `PORT` (commented, with their defaults), the note that Resend also sends booking emails, `BOOKINGS_ENABLED`, `CHROME_PATH`. Every `main` variable and comment kept; no values. His reference to a local credentials file left out |
+| `.gitignore` | Brought in (PR C): `*.env` and `*.env.*` too, `/.env.example` still tracked |
+| Booking docs (`BOOKING_API`, `BOOKING_DATABASE`, `BOOKING_SECURITY`, `BOOKING_IMPLEMENTATION_PLAN`) | Fixed (PR C): rewritten for the flag, the renumbering and the security changes |
+| `BOOKING_TEST_REPORT.md`, `GEOLOCATION_SETUP.md` | Skipped: their facts are in the four above (GPS in `BOOKING_SECURITY`); the test report described his machine's runs |
 | `docs/codex/`, audit and QA docs (`*_AUDIT.md`, `FINAL_QA.md`, `BUG_REPORT.md`, `CHANGELOG.md`, `DESIGN_SYSTEM.md`, redesign notes…) | Skipped, as asked |
 | `README.md` booking paragraph | PR C, with the flag |
 | `docs/CI_PR11.md` deletion | Skipped, as asked |
@@ -145,14 +156,14 @@ checklist item 16) checks the live rows.
 
 | Item | Outcome |
 |---|---|
-| Booking validation, client and API tests | PR C |
+| Booking validation, client and API tests | Brought in (PR C), reformatted; plus the flag off, the cookie's attributes, the new rate limits, logs, the sweep, and Chrome in both states (`browser-bookings`) |
 | `browser-pages`: home link by class and name | Brought in (PR A) |
 | `browser-pages`: `#contact` scroll margin, `/explore` map | Skipped: `main` already has these as they should be |
-| `browser-pages`: "Inquire About This Tour" | PR C |
+| `browser-pages`: "Inquire About This Tour" | Fixed (PR C): unchanged with bookings off (the default); `browser-bookings` checks the label with them on |
 | `browser-whatsapp`: `#discover` selector | Fixed (PR A): `main` already used `#discover`; the card now needs its info button first |
 | `browser-csp`: keyless OSM tiles | Skipped: `main` already tests both |
 | `security.test.ts`, `browser-csp` `data:` | Skipped with the CSP change |
 | `quality-pass.test.ts` | Skipped: not on `main` (the theme default is tested in `browser-theme`) |
-| `pages.test.ts`: `/booking` 200, sitemap count | PR C, both flag states |
-| `helpers.ts`: truncate booking tables | PR C |
+| `pages.test.ts`: `/booking` 200, sitemap count | Fixed (PR C): 404 off, 200 `noindex` on, never in the sitemap; the sitemap count was already right on `main` |
+| `helpers.ts`: truncate booking tables | Brought in (PR C); `test-db.ts` also clears `BOOKINGS_ENABLED` so a local `.env` can't change the tests |
 | `scripts/audit-*.py` | Skipped: local audit scripts, not part of the checks |

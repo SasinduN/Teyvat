@@ -5,7 +5,7 @@
  * `server/src/routes/content.ts`). This side only maps rows to the shapes the
  * approved components expect.
  */
-import { API_ROUTES, type SiteContentPayload } from '@shared/api';
+import { API_ROUTES, type SiteContentPayload, type SiteFeatures } from '@shared/api';
 import {
   toArticle,
   toDestination,
@@ -47,6 +47,7 @@ export interface SiteContent {
   pillars: Pillar[];
   siteSettings: SiteSettings;
   imageCredits: ImageCredit[];
+  features: SiteFeatures;
 }
 
 /**
@@ -77,7 +78,8 @@ export const EMPTY_CONTENT: SiteContent = {
     sustainabilityUrl: ''
     // No whatsappNumber: the button stays hidden until content has loaded.
   },
-  imageCredits: []
+  imageCredits: [],
+  features: { bookings: false }
 };
 
 export async function fetchSiteContent(): Promise<SiteContent> {
@@ -94,6 +96,7 @@ export async function fetchSiteContent(): Promise<SiteContent> {
     heroSlides: payload.heroSlides.map(toHeroSlide),
     pillars: payload.pillars.map(toPillar),
     siteSettings: toSiteSettings(payload.siteSettings),
-    imageCredits: payload.imageCredits.map(toImageCredit)
+    imageCredits: payload.imageCredits.map(toImageCredit),
+    features: payload.features
   };
 }

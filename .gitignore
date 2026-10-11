@@ -8,7 +8,9 @@ server/dist
 # Broad on purpose: DATABASE_URL and the R2 credentials live in these.
 .env
 .env.*
-!.env.example
+*.env
+*.env.*
+!/.env.example
 
 # Editor / OS
 .vscode/*

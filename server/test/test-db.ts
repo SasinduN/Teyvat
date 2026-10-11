@@ -80,6 +80,8 @@ process.env.NODE_ENV = 'test';
 // createApp, so a local .env can't change what they see.
 delete process.env.PUBLIC_SITE_URL;
 delete process.env.SITE_INDEXABLE;
+// Bookings are off unless a test turns them on (`createApp({ bookings: true })`).
+delete process.env.BOOKINGS_ENABLED;
 
 for (const name of Object.keys(process.env)) {
   if (name.startsWith('R2_')) delete process.env[name];

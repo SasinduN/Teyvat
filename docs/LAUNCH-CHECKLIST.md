@@ -148,6 +148,21 @@ off in a pull request, so the history shows when each was done.
       (docs/plans/fix-pr11.md, PR B.)
       **Blocks:** the CSP's last third-party image host going. **Who:**
       Developer, with the Railway and Cloudflare values.
+- [ ] **24. Bookings (off until this is done).** The bookings PR adds
+      migration 0014 (five tables; undo in `docs/BOOKING_DATABASE.md`), which
+      the deploy runs: **confirm a fresh backup before merging it.** Then,
+      before setting `BOOKINGS_ENABLED=true` in Railway:
+      - enter each vehicle category's real passenger capacity in *Admin →
+        Bookings* (the seeded "Car" takes no requests until then);
+      - the privacy policy (item 12) covers booking requests: contact details
+        and the places sent (GPS coordinates only if the traveller chose
+        them), kept 12 months after a request ends (completed, declined or
+        cancelled), open ones until staff close them; rate limits keep IP
+        addresses for 24 hours; status emails go through Resend;
+      - booking terms (a request, not a reservation; price agreed after);
+      - a verified Resend sender, or travellers get no status emails.
+
+      **Blocks:** turning bookings on. **Who:** Owner, then Developer.
 
 ## Accounts and clean-up
 

@@ -32,6 +32,7 @@ const ArticlePage = lazy(() => import('@/pages/ArticlePage').then((m) => ({ defa
 const AboutPage = lazy(() => import('@/pages/AboutPage').then((m) => ({ default: m.AboutPage })));
 const ExplorePage = lazy(() => import('@/pages/ExplorePage').then((m) => ({ default: m.ExplorePage })));
 const PlanPage = lazy(() => import('@/pages/PlanPage').then((m) => ({ default: m.PlanPage })));
+const BookingPage = lazy(() => import('@/pages/BookingPage').then((m) => ({ default: m.BookingPage })));
 const JournalPage = lazy(() => import('@/pages/JournalPage').then((m) => ({ default: m.JournalPage })));
 const PhotoCreditsPage = lazy(() => import('@/pages/PhotoCreditsPage').then((m) => ({ default: m.PhotoCreditsPage })));
 const UnsubscribePage = lazy(() => import('@/pages/UnsubscribePage').then((m) => ({ default: m.UnsubscribePage })));
@@ -76,6 +77,8 @@ export function App() {
             <Route index element={<HomeRoute />} />
             <Route path="explore" element={<ExplorePage />} />
             <Route path="plan" element={<PlanPage />} />
+            {/* A 404 unless bookings are on (BookingPage, and the server). */}
+            <Route path="booking" element={<BookingPage />} />
             <Route path="destinations" element={<DestinationsPage />} />
             <Route path="destinations/:slug" element={<DestinationPage />} />
             <Route path="experiences" element={<ExperiencesPage />} />

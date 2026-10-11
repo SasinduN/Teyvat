@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from './Logo';
-import { useSiteSettings } from '@/hooks/useSiteContent';
+import { useFeatures, useSiteSettings } from '@/hooks/useSiteContent';
 import { MapPin, Phone, Mail, CheckCircle2, ArrowRight } from 'lucide-react';
 import { API_ROUTES } from '@shared/api';
-import { NAV_LINKS, paths } from '@shared/site-paths';
+import { navLinks, paths } from '@shared/site-paths';
 import { postJson } from '@/lib/api/http';
 import { describeError } from '@/lib/errors';
 import { SiteLink } from './SiteLink';
@@ -25,6 +25,7 @@ const Social: React.FC<{ href: string | null | undefined; label: string; classNa
 
 export const Footer: React.FC = () => {
   const settings = useSiteSettings();
+  const links = navLinks(useFeatures());
   const [email, setEmail] = useState('');
   /** The spam trap: a person never sees it, so it stays empty. */
   const [website, setWebsite] = useState('');
@@ -88,7 +89,7 @@ export const Footer: React.FC = () => {
               Navigation
             </h2>
             <ul className="space-y-2.5 text-xs text-white/80 font-medium">
-              {NAV_LINKS.map((link) => (
+              {links.map((link) => (
                 <li key={link.to}>
                   <SiteLink
                     to={link.to}

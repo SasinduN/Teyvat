@@ -9,6 +9,7 @@ import { AdminLayout } from '@/admin/components/AdminLayout';
 import { LoginPage } from '@/admin/pages/LoginPage';
 import { DashboardPage } from '@/admin/pages/DashboardPage';
 import { InquiriesPage } from '@/admin/pages/InquiriesPage';
+import { BookingsPage } from '@/admin/pages/BookingsPage';
 import { CollectionPage } from '@/admin/pages/CollectionPage';
 import { RecordEditorPage } from '@/admin/pages/RecordEditorPage';
 import { MediaPage } from '@/admin/pages/MediaPage';
@@ -67,10 +68,11 @@ const AdminApp: React.FC = () => (
         >
           <Route index element={<DashboardPage />} />
           <Route path="inquiries" element={<InquiriesPage />} />
+          <Route path="bookings" element={<BookingsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="media" element={<MediaPage />} />
           <Route path="credits" element={<ImageCreditsPage />} />
-          {/* Static `inquiries`, `settings` and `media` above outrank this dynamic segment. */}
+          {/* Static `inquiries`, `bookings`, `settings` and `media` above outrank this dynamic segment. */}
           <Route path=":collection" element={<CollectionPage />} />
           <Route path=":collection/new" element={<RecordEditorPage />} />
           <Route path=":collection/:id" element={<RecordEditorPage />} />

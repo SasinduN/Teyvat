@@ -96,7 +96,7 @@ const FIXED_PAGES: Record<string, () => Promise<[string, string, string | null]>
 };
 
 /** What a path is: a page (with its status and tags), or a redirect. */
-export async function resolvePage(path: string, query: URLSearchParams): Promise<Resolved> {
+export async function resolvePage(path: string, query: URLSearchParams, features = { bookings: false }): Promise<Resolved> {
   // Old links, already in WhatsApp chats: /?tour=<id> and /?destination=<id>.
   if (path === paths.home) {
     const tour = query.get('tour');
@@ -129,6 +129,16 @@ export async function resolvePage(path: string, query: URLSearchParams): Promise
         imageAlt: row.title,
         type: page.type
       }
+    };
+  }
+
+  // Booking requests (BOOKINGS_ENABLED): a private form, never indexed or in the sitemap; off, a 404.
+  if (path === paths.booking) {
+    if (!features.bookings) return notFound();
+    return {
+      status: 200,
+      noindexHeader: true,
+      meta: { title: PAGE_TITLES.booking, description: PAGE_DESCRIPTIONS.booking, path: null, image: null, type: 'website', noindex: true }
     };
   }
 
@@ -270,8 +280,9 @@ export async function llmsTxt(origin: string): Promise<string> {
  * `robots.txt`, `sitemap.xml`, `llms.txt`, and every other GET that reaches it (after the
  * API and the static files): the page shell with that page's status and head.
  */
-export function pagesRouter(options: { template: string; site: SiteConfig }): Router {
+export function pagesRouter(options: { template: string; site: SiteConfig; bookings?: boolean }): Router {
   const { template, site } = options;
+  const features = { bookings: options.bookings === true };
   const router = Router();
 
   router.get('/robots.txt', (req, res) => {
@@ -320,7 +331,7 @@ export function pagesRouter(options: { template: string; site: SiteConfig }): Ro
     const origin = originOf(req, site);
     let resolved: Resolved;
     try {
-      resolved = await resolvePage(path, new URLSearchParams(search));
+      resolved = await resolvePage(path, new URLSearchParams(search), features);
     } catch (error) {
       // The database is down: still send the shell (it shows its own error),
       // with the default head, and a status that says try again.

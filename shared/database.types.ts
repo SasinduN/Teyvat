@@ -26,6 +26,58 @@ export type StoredCategory =
 
 export type PhotoAspect = 'square' | 'portrait' | 'landscape';
 
+/** Since 0014_bookings; the request's own shape is `BookingInput` (shared/booking.ts). */
+export interface BookingVehicleRow {
+  id: string;
+  name: string;
+  type: 'Car' | 'SUV' | 'Van' | 'Minibus';
+  passenger_capacity: number | null;
+  luggage_capacity: number | null;
+  accepting_requests: boolean;
+}
+export interface BookingRow {
+  id: string;
+  reference: string;
+  guest_hash: string;
+  guest_expires_at: string;
+  idempotency_key: string;
+  request_hash: string;
+  tour_id: string | null;
+  destination_id: string;
+  vehicle_id: string;
+  passengers: number;
+  departure_at: string;
+  return_at: string | null;
+  details: import('./booking').BookingInput;
+  status: import('./booking').BookingStatus;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+export interface BookingHistoryRow {
+  id: number;
+  booking_id: string;
+  status: import('./booking').BookingStatus;
+  action: 'created' | 'edited' | 'status_changed';
+  actor: string;
+  created_at: string;
+}
+export interface BookingAttemptRow {
+  ip: string;
+  action: 'session' | 'create' | 'change';
+  attempts: number;
+  window_started: string;
+}
+export interface BookingNotificationRow {
+  id: string;
+  booking_id: string;
+  event: string;
+  status: 'queued' | 'sent' | 'failed';
+  attempts: number;
+  next_attempt_at: string;
+  created_at: string;
+}
+
 /** Since 0006_inquiries. `closed_at` is set exactly when the status is `closed`. */
 export const INQUIRY_STATUSES = ['new', 'contacted', 'closed'] as const;
 export type InquiryStatus = (typeof INQUIRY_STATUSES)[number];

@@ -148,6 +148,7 @@ describe('the head builder', () => {
 describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run build` first' }, () => {
   let closed: RunningApp; // SITE_INDEXABLE false (the default)
   let open: RunningApp; // SITE_INDEXABLE true
+  let booking: RunningApp; // SITE_INDEXABLE true, BOOKINGS_ENABLED true
   let local: RunningApp; // no PUBLIC_SITE_URL
 
   const site = (indexable: boolean): SiteConfig => ({ url: SITE, indexable });
@@ -166,6 +167,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     closed = await listen(createApp({ media: null, site: site(false) }));
     open = await listen(createApp({ media: null, site: site(true) }));
     local = await listen(createApp({ media: null, site: { url: null, indexable: false } }));
+    booking = await listen(createApp({ media: null, site: site(true), bookings: true }));
   }, HOOK_TIMEOUT);
 
   beforeEach(async () => {
@@ -173,7 +175,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
   }, HOOK_TIMEOUT);
 
   after(async () => {
-    await Promise.all([closed?.close(), open?.close(), local?.close()]);
+    await Promise.all([closed?.close(), open?.close(), local?.close(), booking?.close()]);
     await pool.end();
   }, HOOK_TIMEOUT);
 
@@ -309,6 +311,18 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     assert.equal(metaContent(unsubscribe.head, 'robots'), 'noindex');
     assert.equal(unsubscribe.res.headers.get('x-robots-tag'), 'noindex');
     assert.equal(canonicalOf(unsubscribe.head), null);
+
+    // /booking: a 404 while bookings are off (the default); on, a page that's never indexed.
+    for (const app of [closed, open]) assert.equal((await get(app, '/booking')).status, 404, '/booking, bookings off');
+    assert.equal((await get(open, '/booking?tour=island-in-7-days')).status, 404);
+    const booking1 = await head(booking, '/booking?tour=island-in-7-days');
+    assert.equal(booking1.status, 200);
+    assert.equal(titleOf(booking1.head), PAGE_TITLES.booking);
+    assert.equal(metaContent(booking1.head, 'robots'), 'noindex');
+    assert.equal(booking1.res.headers.get('x-robots-tag'), 'noindex');
+    assert.equal(canonicalOf(booking1.head), null);
+    const sitemap = await (await get(booking, '/sitemap.xml')).text();
+    assert.ok(!sitemap.includes('/booking'), 'not in the sitemap');
 
     const admin = await head(open, '/admin/login');
     assert.equal(admin.status, 200);

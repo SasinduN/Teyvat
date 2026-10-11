@@ -9,14 +9,21 @@
  * - Retention, which the privacy policy promises:
  *     closed enquiries    12 months after they were closed
  *     spam enquiries      30 days after they arrived
- *   `new` and `contacted` enquiries are never deleted automatically.
+ *     ended bookings      12 months after their last change (completed,
+ *                         declined, cancelled), with their history and emails
+ *   `new` and `contacted` enquiries, and pending or confirmed bookings, are
+ *   never deleted automatically.
+ *
+ * Then any booking emails waiting for a retry are sent.
  */
+import { dispatchBookingNotifications } from '../bookings/notifications';
 import { pool } from '../db';
 
 const HOUR_MS = 60 * 60 * 1000;
 
 export const CLOSED_INQUIRY_RETENTION = '12 months';
 export const SPAM_INQUIRY_RETENTION = '30 days';
+export const ENDED_BOOKING_RETENTION = '12 months';
 
 export interface SweepResult {
   sessions: number;
@@ -25,13 +32,15 @@ export interface SweepResult {
   newsletterAttempts: number;
   closedInquiries: number;
   spamInquiries: number;
+  bookingAttempts: number;
+  endedBookings: number;
 }
 
 /** One pass. Exported for the tests; the timer below runs it in production. */
 export async function runSweep(): Promise<SweepResult> {
   const count = async (sql: string) => (await pool.query(sql)).rowCount ?? 0;
 
-  return {
+  const result = {
     sessions: await count('delete from public.sessions where expires_at <= now()'),
     loginAttempts: await count(
       "delete from public.login_attempts where attempted_at < now() - interval '24 hours'"
@@ -49,8 +58,18 @@ export async function runSweep(): Promise<SweepResult> {
     spamInquiries: await count(
       `delete from public.inquiries
         where spam and created_at < now() - interval '${SPAM_INQUIRY_RETENTION}'`
+    ),
+    bookingAttempts: await count(
+      "delete from public.booking_attempts where window_started < now() - interval '24 hours'"
+    ),
+    endedBookings: await count(
+      `delete from public.bookings
+        where status in ('completed', 'declined', 'cancelled')
+          and updated_at < now() - interval '${ENDED_BOOKING_RETENTION}'`
     )
   };
+  await dispatchBookingNotifications();
+  return result;
 }
 
 async function sweep(): Promise<void> {
