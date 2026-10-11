@@ -252,7 +252,10 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
       assert.equal(metaContent(h, 'og:url'), `${SITE}${path}`, path);
       assert.equal(metaContent(h, 'og:type'), table === 'articles' ? 'article' : 'website', path);
       assert.equal(metaContent(h, 'og:site_name'), 'Travel Eye', path);
-      assert.equal(metaContent(h, 'og:image'), shareImage(row.image, SITE)!.url, path);
+      const payload = await (await fetch(`${open.baseUrl}/api/content`)).json();
+      const collection = { destinations: 'destinations', tours: 'tours', featured_experiences: 'featuredExperiences', articles: 'articles' }[table];
+      const publicRow = payload[collection].find((item: { id: string }) => item.id === id);
+      assert.equal(metaContent(h, 'og:image'), shareImage(publicRow.image, SITE)!.url, `${path}: share image matches the public photo`);
       assert.match(metaContent(h, 'og:image') ?? '', /^https:\/\//, path);
       assert.equal(metaContent(h, 'twitter:card'), 'summary_large_image', path);
       assert.equal(metaContent(h, 'twitter:image'), metaContent(h, 'og:image'), path);

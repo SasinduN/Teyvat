@@ -1,3 +1,15 @@
+# BUG-056 PR #37 follow-up — 2026-10-11
+
+Initial GitHub CI passed 35/39 files; stock-photo/CARTO-only expectations failed in browser-csp, browser-theme, image-credits and pages tests. An actual defect also retained superseded stock-photo credits in the corrected public payload. Filter by final used photos and add a database regression. Existing tests updated for authorized provider/photo behavior; no checks skipped or visual baselines replaced. Follow-up implementation complete; GitHub acceptance pending. Local database test connection BLOCKED by 28P01.
+
+# BUG-055 — Local map displays watermark tiles without a CARTO key
+
+Status: RESOLVED for the local runtime, 2026-10-11. The cloned environment has no VITE_CARTO_KEY; CARTO requires one. Added an attributed OpenStreetMap fallback for missing/blank keys, preserving keyed light/dark CARTO styles. Production CSP allows the exact fallback host. VERIFIED: three tile-selection/CSP tests, five marker tests, build, and Chrome map rendering with 20 markers and nine loaded tiles. Keyed CARTO live requests NOT TESTED.
+
+# BUG-056 — Cloned site shows older stock photos instead of local corrections
+
+Status: RESOLVED for checked local pages, 2026-10-11. GitHub migration 0013 reverted named Wikimedia photos to stock seeds; the original folder's exact-record corrections and WebP assets were absent from the clone. Restored corrections at the public API boundary, copied 40 existing assets, preferred local variants, supplied source/licence credits, and aligned share metadata. Exact admin replacements remain intact; no database photo writes. VERIFIED: three photo tests and browser image decoding across Home, Explore, Destinations, Ella detail, Experiences, Tours, Journal and Photo Credits. Authenticated admin actions and other detail pages NOT TESTED.
+
 # BUG-054 — Backend/frontend route split breaks CI and navigation
 
 Status: FIX IMPLEMENTED; GitHub acceptance pending. PR #11 advertised routes absent from its frontend and changed frozen Navbar links. Restored step-1 route contracts and deferred new routes to step 2; kept visual baselines and all checks. Local build/typecheck/round-trip PASS; local test DB authentication BLOCKED. Exact failure evidence and root cause: ../CI_PR11.md.

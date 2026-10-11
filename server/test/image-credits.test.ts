@@ -85,21 +85,41 @@ const adminFetch = (path: string, init: RequestInit = {}) =>
 
 describe('GET /api/content: imageCredits', () => {
   test('only credits for photos a published row uses, plain and gallery columns alike', async () => {
+    // Curated replacements must retain their own credits alongside restored seed photos.
+    ellaImage = `${BASE}/ella.jpg`;
+    galleryImage = `${BASE}/ella-gallery.jpg`;
+    await pool.query('update public.destinations set image = $1, gallery = $2 where id = $3', [ellaImage, [galleryImage], 'ella']);
     await credit(ellaImage, 'Ella Photographer');
     await credit(galleryImage, 'Gallery Photographer');
     await credit('https://images.unsplash.com/not-used-anywhere.jpg', 'Nobody');
 
     const credits = await content();
-    assert.deepEqual(credits.map((c) => c.author).sort(), ['Ella Photographer', 'Gallery Photographer']);
+    assert.deepEqual(credits.filter(c => [ellaImage, galleryImage].includes(c.url)).map((c) => c.author).sort(), ['Ella Photographer', 'Gallery Photographer']);
+    assert.ok(!credits.some(c => c.author === 'Nobody'));
     assert.deepEqual(Object.keys(credits[0]).sort(), ['author', 'license', 'license_url', 'source_url', 'url']);
   });
 
   test('a photo only an unpublished row uses drops out', async () => {
     await pool.query(`update public.destinations set image = 'https://images.unsplash.com/only-galle.jpg' where id = 'galle'`);
     await credit('https://images.unsplash.com/only-galle.jpg');
-    assert.equal((await content()).length, 1);
+    assert.equal((await content()).filter(c => c.url === 'https://images.unsplash.com/only-galle.jpg').length, 1);
     await pool.query(`update public.destinations set published = false where id = 'galle'`);
-    assert.equal((await content()).length, 0);
+    assert.equal((await content()).filter(c => c.url === 'https://images.unsplash.com/only-galle.jpg').length, 0);
+  });
+
+  test('restored photos have their true credits and exclude superseded seed credits', async () => {
+    await credit(ellaImage, 'Superseded stock photographer');
+    const payload = await (await fetch(`${app.baseUrl}/api/content`)).json() as SiteContentPayload;
+    const ella = payload.destinations.find(row => row.id === 'ella')!;
+    assert.match(ella.image, /^\/assets\/ella-1280-/);
+    assert.ok(!payload.imageCredits.some(c => c.url === ellaImage));
+    assert.equal(payload.imageCredits.find(c => c.url === ella.image)?.author, 'MichaelJames2468');
+    const used = new Set([
+      ...payload.destinations.flatMap(row => [row.image, ...row.gallery]),
+      ...[payload.experienceCategories, payload.featuredExperiences, payload.tours, payload.articles,
+        payload.hiddenGems, payload.photoStories, payload.heroSlides].flatMap(rows => rows.map(row => row.image))
+    ]);
+    for (const c of payload.imageCredits) assert.ok(used.has(c.url), `unused credit: ${c.url}`);
   });
 });
 

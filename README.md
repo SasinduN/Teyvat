@@ -67,7 +67,7 @@ optional, and the site runs without them.
 | `DATABASE_URL` | your **local** development database: `postgresql://postgres:<pw>@localhost:5433/teyvat_dev` |
 | `TEST_DATABASE_URL` | your local **test** database: `postgresql://postgres:<pw>@localhost:5433/teyvat_test` |
 | `PROD_DATABASE_URL` | optional, only for the scripts that reach production with `--prod` (below) |
-| `VITE_CARTO_KEY` | optional: the map's tile key. Without it the map shows "API key required" tiles |
+| `VITE_CARTO_KEY` | optional: CARTO's tile key. Without it the map uses attributed OpenStreetMap tiles in both themes |
 
 `DATABASE_URL` is always the local database, and that's enforced: the server
 and `npm run migrate` refuse to start with a host that isn't this machine
