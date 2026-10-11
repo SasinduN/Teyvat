@@ -28,6 +28,7 @@
  */
 import '../shared/load-env';
 
+import { databaseRefusal } from '../shared/database-target';
 import { connectionTargetFor, privateHostHint } from '../shared/pg-connection';
 
 import { readdirSync, readFileSync } from 'node:fs';
@@ -62,11 +63,16 @@ function requireDatabaseUrl(): string {
       'DATABASE_URL is not set.\n\n' +
         '  Railway:  it is injected automatically once the Postgres service is\n' +
         '            attached — use the internal `*.railway.internal` URL.\n' +
-        '  Local:    put it in .env (or .env.local) in the project root:\n' +
-        '              DATABASE_URL=postgresql://user:pass@host:5432/railway\n' +
-        '            or pass it inline:\n' +
-        '              DATABASE_URL=postgresql://... npm run migrate'
+        '  Local:    the local database, in .env in the project root:\n' +
+        '              DATABASE_URL=postgresql://postgres:<password>@localhost:5433/teyvat_dev\n' +
+        '            (README, "Local database").'
     );
+    process.exit(1);
+  }
+  // Production is migrated only by Railway's start command (NODE_ENV=production).
+  const refusal = databaseRefusal(url, process.env.NODE_ENV);
+  if (refusal) {
+    console.error(refusal);
     process.exit(1);
   }
 

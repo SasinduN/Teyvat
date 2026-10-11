@@ -5,9 +5,10 @@
  *
  *   npm run images:import -- --dry-run    # lists the photos and where each is used
  *   npm run images:import
+ *   npm run images:import -- --prod       # production (PROD_DATABASE_URL), after confirming
  *
- * Runs against DATABASE_URL (in the local .env, production through Railway's
- * public proxy, `?sslmode=require`) and needs the five R2_* variables, the
+ * Runs against the local DATABASE_URL, or with --prod PROD_DATABASE_URL
+ * (Railway's public proxy, `?sslmode=require`; shared/database-target.ts), and needs the five R2_* variables, the
  * same values as the Railway service. Prints the target first. Re-runnable:
  * a photo already copied is no longer found. Run it when nobody is editing.
  *
@@ -21,19 +22,19 @@ import { parseArgs } from 'node:util';
 
 import { Client } from 'pg';
 
+import { scriptDatabaseUrl } from '../shared/database-target';
 import { connectionTargetFor, privateHostHint } from '../shared/pg-connection';
 import { importWikimediaImages, wikimediaImagesInUse } from '../server/src/media/import';
 import { mediaFromEnv } from '../server/src/media/media';
 
 async function main(): Promise<void> {
   const { values } = parseArgs({
-    options: { 'dry-run': { type: 'boolean', default: false } },
+    options: { 'dry-run': { type: 'boolean', default: false }, prod: { type: 'boolean', default: false } },
     strict: true
   });
   const dryRun = values['dry-run'];
 
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error('DATABASE_URL is not set.');
+  const url = await scriptDatabaseUrl({ prod: values.prod, script: 'images:import' });
   const media = mediaFromEnv();
   if (!media && !dryRun) {
     throw new Error('R2 is not configured: set all five R2_* variables, as on the Railway service.');

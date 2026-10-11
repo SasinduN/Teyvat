@@ -56,12 +56,16 @@ optional, and the site runs without them.
 
 | Variable | Locally |
 | --- | --- |
-| `DATABASE_URL` | your **local** development database, e.g. `postgresql://postgres:<pw>@localhost:5432/teyvat_dev` |
-| `TEST_DATABASE_URL` | your local **test** database, e.g. `postgresql://postgres:<pw>@localhost:5432/teyvat_test` |
+| `DATABASE_URL` | your **local** development database: `postgresql://postgres:<pw>@localhost:5433/teyvat_dev` |
+| `TEST_DATABASE_URL` | your local **test** database: `postgresql://postgres:<pw>@localhost:5433/teyvat_test` |
+| `PROD_DATABASE_URL` | optional, only for the scripts that reach production with `--prod` (below) |
 | `VITE_CARTO_KEY` | optional: the map's tile key. Without it the map shows "API key required" tiles |
 
-Never point `DATABASE_URL` at production for everyday work. Everything you
-run (the dev server, migrations, scripts) acts on whatever it names.
+`DATABASE_URL` is always the local database, and that's enforced: the server
+and `npm run migrate` refuse to start with a host that isn't this machine
+(`localhost`, `127.0.0.1`, `::1`) unless `NODE_ENV=production`, which only
+Railway sets. Production is reached from a laptop only through
+`PROD_DATABASE_URL`, by the scripts that need it, with `--prod` (below).
 
 `TEST_DATABASE_URL` is guarded, because the tests empty tables. The tests
 refuse to start unless it:
@@ -72,16 +76,36 @@ refuse to start unless it:
 
 There's no fallback to a default host or port.
 
-### 4. Databases
+### 4. Local database
 
-```bash
-createdb -p 5432 teyvat_dev
-createdb -p 5432 teyvat_test
-npm run migrate        # applies db/migrations/*, including the seed content
-```
+The app needs PostgreSQL (18, as in CI and production) on this machine. This
+guide uses port **5433**, so it can't collide with another PostgreSQL on the
+default 5432.
 
-Use the port your PostgreSQL listens on. The test database is migrated by the
-tests themselves.
+1. Install PostgreSQL 18 and set its port to 5433 (the installer asks, or
+   `port = 5433` in `postgresql.conf`, then restart the service).
+2. Create the two databases:
+
+   ```bash
+   createdb -h localhost -p 5433 -U postgres teyvat_dev
+   createdb -h localhost -p 5433 -U postgres teyvat_test
+   ```
+
+3. In `.env`:
+
+   ```
+   DATABASE_URL=postgresql://postgres:<password>@localhost:5433/teyvat_dev
+   TEST_DATABASE_URL=postgresql://postgres:<password>@localhost:5433/teyvat_test
+   ```
+
+4. Apply the migrations, which include the seed content:
+
+   ```bash
+   npm run migrate
+   ```
+
+The test database is migrated by the tests themselves. `npm run dev:server`
+and `npm run dev` then run the site on this data.
 
 ### 5. An admin login
 
@@ -129,10 +153,17 @@ npm run build && npm start     # everything on http://localhost:8081
 | `npm run screenshots` | Before/after screenshots of a design change at 1280 px and 375 px (`-- --base origin/main`, `--pages /,/about`, `--dark`), into `docs/screenshots/<branch>/` (git-ignored), with a `summary.md` of which pairs differ. Every page type, the phone menu, the enquiry form and the map with a place picked. `--base b46de13` compares against #12's design. In Git Bash, prefix it with `MSYS_NO_PATHCONV=1` when passing `--pages` |
 | `npm run migrate` | Apply pending migrations (`-- --dry-run` to list them) |
 | `npm run seed:generate` | Regenerate `0002_seed.sql` from `scripts/fixtures/*.ts` |
-| `npm run admin:create` | Create an admin, or `--reset-password` for an existing one |
-| `npm run images:audit` | Read-only: stored image URLs the CSP would block |
-| `npm run media:rebase` | Move stored image URLs to a new R2 base (`--from`, `--to`, `--dry-run`) |
-| `npm run images:import` | Copy the Wikimedia photos the content uses into R2 and repoint rows and credits (`--dry-run`) |
+| `npm run admin:create` | Create an admin, or `--reset-password` for an existing one (`--prod`) |
+| `npm run images:audit` | Read-only: stored image URLs the CSP would block (`--prod`) |
+| `npm run media:rebase` | Move stored image URLs to a new R2 base (`--from`, `--to`, `--dry-run`, `--prod`) |
+| `npm run images:import` | Copy the Wikimedia photos the content uses into R2 and repoint rows and credits (`--dry-run`, `--prod`) |
+
+These four use the local database. **`--prod`** runs one against production
+instead: it reads `PROD_DATABASE_URL` (the Postgres service's
+`DATABASE_PUBLIC_URL` with `?sslmode=require`), prints the host and
+database, and goes on only once you type the host back. It runs only in an
+interactive terminal. Nothing else reaches production from a laptop;
+production is migrated by its own deploy.
 
 ---
 
@@ -400,10 +431,11 @@ point-in-time recovery).
 - The deployed service uses the internal `${{Postgres.DATABASE_URL}}`, with
   no `sslmode`: its traffic never leaves Railway's private network. It logs a
   warning at start-up if given anything else.
-- Scripts run from a laptop against production (`migrate`, `admin:create`,
-  `images:audit`, `images:import`, `media:rebase`) use the Postgres service's
-  `DATABASE_PUBLIC_URL` with `?sslmode=require`. That is encrypted but not
-  authenticated, because Railway's proxy certificate is self-signed.
+- The scripts that reach production from a laptop with `--prod`
+  (`admin:create`, `images:audit`, `images:import`, `media:rebase`) read
+  `PROD_DATABASE_URL`: the Postgres service's `DATABASE_PUBLIC_URL` with
+  `?sslmode=require`. That is encrypted but not authenticated, because
+  Railway's proxy certificate is self-signed.
 
 ---
 
