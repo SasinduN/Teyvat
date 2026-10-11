@@ -81,11 +81,52 @@ or **skipped**, with the reason, and which PR carries it.
 
 | Item | Outcome |
 |---|---|
-| `public/assets/*.webp` | Skipped (PR B): not committed. See PR B for each photo |
-| `public/assets/PHOTO_CREDITS.md` | PR B |
-| `shared/optimized-photos.json`, `scripts/optimize-photos.py` | PR B |
+| `public/assets/*.webp` (39 files, 10 photos) | Skipped (PR B): not committed. Every one is a resized copy of a photo `main` already has in R2; see below |
+| `public/assets/PHOTO_CREDITS.md` | Skipped (PR B): all ten credits are already in `image_credits` (migration 0011, moved to the R2 URLs by `images:import`), word for word: author, licence, licence link and source page |
+| `shared/optimized-photos.json` | Skipped (PR B): it maps the Wikimedia URLs to his local files for `TravelImage`'s `srcset`. `main` reads each photo's one URL from its row; nothing would read the map |
+| `scripts/optimize-photos.py` | Skipped (PR B): it writes those local files and the map. The R2 flow is upload (media library, or `images:import`), then the row's URL; it needs neither |
 | `public/favicon.svg` and its `<link>` | Brought in (PR A) |
 | CSP `img-src data:` (Leaflet's blank tile) | Skipped, as asked |
+
+### The ten photos (PR B)
+
+His `optimized-photos.json` names, for each file, the Wikimedia URL it was
+made from. Each is one of the photos migration 0010 put on the site, which
+`npm run images:import` copied into R2 (1280 px, as Wikimedia served them)
+and repointed the rows at, and which 0011 credits. So **none is new**, and
+nothing was uploaded.
+
+| Photo | His files | On `main` | Licence |
+|---|---|---|---|
+| Ella: Nine Arches Bridge (MichaelJames2468) | 480–1920 | R2 copy, credited | CC BY-SA 4.0 |
+| Sigiriya Rock fortress (Chamixth) | 480–1920 | R2 copy, credited | CC BY-SA 4.0 |
+| Galle Fort Lighthouse (Rovin Shanila) | 480–1920 | R2 copy, credited | CC BY-SA 4.0 |
+| Yala: Sri Lankan leopard (Sathsara Panchali) | 480–1920 | R2 copy, credited | CC BY-SA 4.0 |
+| Anuradhapura: Ruwanwelisaya (Philip Nalangan) | 480–1920 | R2 copy, credited | CC BY-SA 4.0 |
+| Polonnaruwa: Gal Viharaya (Dumidu Madhushan Senanayake) | 480–1920 | R2 copy, credited | CC BY-SA 4.0 |
+| Udawalawe elephants (Sanduweragoda) | 480–1920 | R2 copy, credited | CC BY-SA 4.0 |
+| Weligama beach (PIERRE ANDRE LECLERCQ) | 480–1920 | R2 copy, credited | CC BY-SA 4.0 |
+| Rice and curry (Lankan Foodie) | 480–1280 | R2 copy, credited | CC BY-SA 4.0 |
+| Jaffna: Nallur, front (Aathavan jaffna) | 480–1920 | R2 copy, credited | CC BY-SA 3.0 |
+
+**Licences:** all ten are CC BY-SA, so reusable on the site with the credit
+(`/photo-credits` shows it) and share-alike for any adaptation; none is
+unclear. The share-alike part matters only if a cropped or edited version
+is published separately: it must carry the same licence.
+
+**Better?** Only in size. His 1920 px files are larger than R2's 1280 px
+copies, which would be sharper on a wide screen where a photo fills the
+width (the home hero's Ella slide). But two are upscaled rather than
+sharper (Jaffna's 1920 is 82 KB, Udawalawe's 180 KB; his own notes call
+Udawalawe and Weligama soft), the rest are 0.5–1.5 MB each, and the site
+loads one URL per photo, so cards would download the big file too. Not
+uploaded; a decision for the owner (see PR B). His 1280 px files are the
+same pictures as R2's, re-encoded as WebP: smaller, not better.
+
+**Not checked from here:** that production's rows still point at the R2
+copies. Reading the production database, even through the public site, was
+outside this session's permissions; `npm run images:audit` (launch
+checklist item 16) checks the live rows.
 
 ## 6. Environment and documentation
 
