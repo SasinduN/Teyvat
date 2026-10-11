@@ -1,3 +1,7 @@
+## 2026-10-11 — PR #37 CI follow-up
+
+Initial GitHub run 38150556135 passed build/typecheck/fixture round-trip and 35/39 test files. Four failed files retained stock-image/CARTO-only expectations. Update browser CSP/theme checks for the selected provider, compare share metadata with the public content photo, and verify curated credits alongside restored licensed photos. Fix an actual public-credit defect: exclude credits for superseded photos absent from the final public payload. Add a database regression for used-photo-only credits. Local guarded test database rejects credentials (28P01); no guard bypass or production fallback. Follow-up GitHub acceptance pending. Initial failure evidence is retained.
+
 ## 2026-10-11 — Local map and photo restoration (BUG-055/056)
 
 Fixed missing-key map geography with an attributed OpenStreetMap fallback; configured CARTO keys retain themed basemaps. Restored the original local folder's named photo corrections and 40 WebP assets at the public API boundary, with source/licence credits and matching share metadata. Preserved exact admin photo replacements and existing public markup. Added only the required tile/photo origins to img-src. Updated environment/setup documentation and added focused regression tests and a local browser diagnostic.

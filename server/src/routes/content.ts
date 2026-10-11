@@ -155,7 +155,9 @@ contentRouter.get(
     for (const row of payload.destinations) row.gallery = publicGallery(row.id, row.gallery).map(localPhoto);
     const used = new Set(photoCollections.flatMap(([, rows]) => rows.map(row => row.image)));
     for (const row of payload.destinations) for (const image of row.gallery) used.add(image);
-    payload.imageCredits = payload.imageCredits.map(credit => ({ ...credit, url: localPhoto(credit.url) }));
+    payload.imageCredits = payload.imageCredits
+      .map(credit => ({ ...credit, url: localPhoto(credit.url) }))
+      .filter(credit => used.has(credit.url));
     for (const photo of photographs) {
       for (const url of new Set([localPhoto(photo.image), localPhoto(photo.original)])) {
         if (used.has(url) && !payload.imageCredits.some(credit => credit.url === url)) {

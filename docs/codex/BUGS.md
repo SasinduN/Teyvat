@@ -1,3 +1,7 @@
+# BUG-056 PR #37 follow-up — 2026-10-11
+
+Initial GitHub CI passed 35/39 files; stock-photo/CARTO-only expectations failed in browser-csp, browser-theme, image-credits and pages tests. An actual defect also retained superseded stock-photo credits in the corrected public payload. Filter by final used photos and add a database regression. Existing tests updated for authorized provider/photo behavior; no checks skipped or visual baselines replaced. Follow-up implementation complete; GitHub acceptance pending. Local database test connection BLOCKED by 28P01.
+
 # BUG-055 — Local map displays watermark tiles without a CARTO key
 
 Status: RESOLVED for the local runtime, 2026-10-11. The cloned environment has no VITE_CARTO_KEY; CARTO requires one. Added an attributed OpenStreetMap fallback for missing/blank keys, preserving keyed light/dark CARTO styles. Production CSP allows the exact fallback host. VERIFIED: three tile-selection/CSP tests, five marker tests, build, and Chrome map rendering with 20 markers and nine loaded tiles. Keyed CARTO live requests NOT TESTED.

@@ -1,3 +1,7 @@
+## 2026-10-11 — PR #37 credit filtering and regression alignment
+
+Exclude superseded photo credits from the corrected public payload. Update existing map-provider, used-photo-credit and share-image tests for the authorized restored behavior. Initial CI: 35/39 files passed; follow-up acceptance pending. Local database tests blocked by guarded test-database authentication (28P01). Existing checks and visual baselines retained.
+
 ## 2026-10-11 — Fix local map and restore expected photos
 
 Missing/blank CARTO keys now select attributed OpenStreetMap tiles. Restored the original local folder's exact-record Sri Lanka photo corrections, 40 existing WebP assets and photography credits without overwriting admin selections or changing public markup. Share metadata uses the same corrected images. Build and 11 focused tests pass; Chrome verified loaded map tiles/markers and sampled public images. Full database/booking/authenticated-admin checks not run. Details: docs/codex/CHANGELOG.md, BUG-055/056. Build annotation/chunk warnings remain.

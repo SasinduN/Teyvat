@@ -115,7 +115,7 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     await pool.end();
   }, HOOK_TIMEOUT);
 
-  test('the home page, and the Explore map with keyed CARTO tiles and its credit', async () => {
+  test('restored home photos and the Explore map provider load with their credit under CSP', async () => {
     // Scroll the whole page so lazy images (and on /explore, the map's tiles) load.
     const scrollThrough = async () => {
       const height = await page.evaluate<number>('document.body.scrollHeight');
@@ -131,8 +131,8 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     await sleep(800);
     await collect('/ (scrolled)');
     assert.ok(
-      await page.evaluate<boolean>(`[...document.querySelectorAll('img')].some((i) => i.src.startsWith('https://images.unsplash.com'))`),
-      'Unsplash images are on the page'
+      await page.evaluate<boolean>(`[...document.querySelectorAll('img')].some((i) => new URL(i.src).pathname.startsWith('/assets/ella-1280-') && i.complete && i.naturalWidth > 0)`),
+      'the restored local Ella photograph loads under CSP'
     );
 
     // The map lives on /explore.
@@ -156,8 +156,8 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
       })`);
     const expectKey = Boolean(process.env.VITE_CARTO_KEY?.trim());
     for (const t of tiles) {
-      assert.equal(t.origin, 'https://basemaps.cartocdn.com', t.path);
-      assert.match(t.path, /^\/rastertiles\/voyager\/\d+\/\d+\/\d+(@2x)?\.png$/);
+      assert.equal(t.origin, expectKey ? 'https://basemaps.cartocdn.com' : 'https://tile.openstreetmap.org', t.path);
+      assert.match(t.path, expectKey ? /^\/rastertiles\/voyager\/\d+\/\d+\/\d+(@2x)?\.png$/ : /^\/\d+\/\d+\/\d+\.png$/);
       assert.equal(t.keyed, expectKey, `${t.path}: key ${expectKey ? 'missing' : 'unexpected'}`);
     }
     assert.ok(tiles.filter((t) => t.loaded).length >= 4, `only ${tiles.filter((t) => t.loaded).length} tiles loaded`);
@@ -169,8 +169,8 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
       const r = el.getBoundingClientRect();
       return { text: el.textContent.trim(), links: [...el.querySelectorAll('a')].map((a) => a.href), visible: r.width > 0 && r.height > 0 };
     })()`);
-    assert.equal(credit.text, '© OpenStreetMap contributors © CARTO');
-    assert.deepEqual(credit.links, ['https://www.openstreetmap.org/copyright', 'https://carto.com/attributions']);
+    assert.equal(credit.text, expectKey ? '© OpenStreetMap contributors © CARTO' : '© OpenStreetMap contributors');
+    assert.deepEqual(credit.links, expectKey ? ['https://www.openstreetmap.org/copyright', 'https://carto.com/attributions'] : ['https://www.openstreetmap.org/copyright']);
     assert.ok(credit.visible, 'the credit is visible');
 
     // Zooming removes tiles, and a quick second zoom aborts half-loaded ones.

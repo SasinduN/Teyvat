@@ -182,12 +182,17 @@ describe('the light and dark themes, in Chrome', { skip, timeout: 8 * 60_000 }, 
     await poll(page, `document.querySelector('#explore-map')`, 'the map section');
     await page.evaluate(`document.querySelector('#explore-map').scrollIntoView(), true`);
     await poll(page, `document.querySelectorAll('#explore-map img.leaflet-tile').length > 0`, 'tiles');
-    const paths = () => page.evaluate<string[]>(`[...new Set([...document.querySelectorAll('#explore-map img.leaflet-tile')].map((t) => new URL(t.src).pathname.split('/')[2]))]`);
-    assert.deepEqual(await paths(), ['dark_all'], 'CARTO dark_all');
+    const keyed = Boolean(process.env.VITE_CARTO_KEY?.trim());
+    const tilesMatch = (theme: 'light' | 'dark') => `[...document.querySelectorAll('#explore-map img.leaflet-tile')].every((t) => {
+      const url = new URL(t.src);
+      return ${keyed} ? url.origin === 'https://basemaps.cartocdn.com' && url.pathname.includes('/${theme === 'dark' ? 'dark_all' : 'voyager'}/')
+        : url.origin === 'https://tile.openstreetmap.org' && /^\\/\\d+\\/\\d+\\/\\d+\\.png$/.test(url.pathname);
+    })`;
+    assert.equal(await page.evaluate<boolean>(tilesMatch('dark')), true, 'dark theme uses the configured provider');
 
     await page.evaluate(`document.querySelector('#explore-map .leaflet-container').__sameMap = true, true`);
     await page.evaluate(`document.querySelector('header .sm\\\\:flex [data-theme-toggle]').click(), true`);
-    await poll(page, `[...document.querySelectorAll('#explore-map img.leaflet-tile')].every((t) => t.src.includes('/voyager/'))`, 'Voyager tiles');
+    await poll(page, `document.documentElement.dataset.theme === 'light' && (${tilesMatch('light')})`, 'light theme tiles');
     assert.equal(await page.evaluate<boolean>(`document.querySelector('#explore-map .leaflet-container').__sameMap === true`), true, 'the same map, not a new one');
   });
 });
