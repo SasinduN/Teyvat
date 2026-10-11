@@ -7,6 +7,10 @@
  * translucent surface is composited over both a white and a black backdrop
  * (the extremes a photo can put behind glass) and the worse of the two
  * counts: 4.5:1 for text, 3:1 for large text and for icons.
+ *
+ * In the dark theme the scrolled header is also measured on what Chrome
+ * paints with light text scrolled under it: what shows through must be a
+ * soft blur, and its own text must keep AA over it.
  */
 // Must be first: points the server at the test database and removes every
 // R2_* and Resend variable, or refuses to run.
@@ -134,4 +138,140 @@ describe('glass surfaces: contrast and focus, in Chrome', { skip }, () => {
       }
     });
   }
+
+  /**
+   * In the decoder page (the site's CSP rightly refuses data: images), from
+   * a viewport PNG: in the header's band (rows `top`..`bottom`, columns up to
+   * `right`, clear of the page's scrollbar), the sharpest edge (`edge`: the
+   * strongest contrast between pixels 2 px apart; sharp edges are what make
+   * text readable, and a blur takes them away); and the worst ratio of each
+   * text target against the pixels behind it.
+   */
+  const MEASURE_BAND = `(async (png, top, bottom, right, targets) => {
+    const img = new Image();
+    img.src = 'data:image/png;base64,' + png;
+    await img.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width; canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const px = ctx.getImageData(0, 0, img.width, img.height).data;
+    const lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+    const lum = (r, g, b) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    const ratio = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    let edge = 1;
+    const at = (x, y) => { const i = (y * img.width + x) * 4; return lum(px[i], px[i + 1], px[i + 2]); };
+    for (let y = top; y < bottom - 2; y += 1) for (let x = 0; x < right - 2; x += 1) {
+      const here = at(x, y);
+      edge = Math.max(edge, ratio(here, at(x + 2, y)), ratio(here, at(x, y + 2)));
+    }
+    const worst = targets.map((t) => {
+      let w = Infinity;
+      const [fr, fg, fb, fa] = t.colour;
+      for (const r of t.rects) for (let y = Math.max(0, r.y); y < Math.min(img.height, r.y + r.h); y += 1) for (let x = Math.max(0, r.x); x < Math.min(img.width, r.x + r.w); x += 1) {
+        const i = (y * img.width + x) * 4;
+        const br = px[i], bg = px[i + 1], bb = px[i + 2];
+        w = Math.min(w, ratio(lum(fr * fa + br * (1 - fa), fg * fa + bg * (1 - fa), fb * fa + bb * (1 - fa)), lum(br, bg, bb)));
+      }
+      return { what: t.what, need: t.need, ratio: Math.round(w * 100) / 100 };
+    });
+    return { edge: Math.round(edge * 1000) / 1000, worst };
+  })`;
+
+  for (const size of [{ width: 1920, height: 870 }, { width: 1280, height: 800 }, { width: 390, height: 844 }]) {
+    test(`dark, ${size.width}×${size.height}: text scrolled under the header is only a soft blur, and the header's own text keeps AA over it`, async () => {
+      const mobile = size.width < 640;
+      // The decoder first: the page opened last is the one in front, where scrolling and painting run.
+      const decoder = await chrome.newPage();
+      const page = await chrome.newPage();
+      await page.send('Page.bringToFront');
+      await page.send('Emulation.setDeviceMetricsOverride', { ...size, deviceScaleFactor: 1, mobile });
+      await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'dark' }, { name: 'prefers-reduced-motion', value: 'reduce' }] });
+      await page.send('Page.navigate', { url: `${app.baseUrl}/explore` });
+      await poll(page, `document.body?.dataset.route && document.readyState === 'complete' && document.querySelector('#explore-map [aria-pressed]') && document.documentElement.dataset.theme === 'dark'`, 'the page, dark', 20_000);
+      await page.evaluate(`document.documentElement.style.scrollBehavior = 'auto', true`);
+
+      // The category chips' text (sharp, light, on a dark page) runs through
+      // the middle of the header. Scrolled until it holds (the route's own
+      // scroll restoring may run after the first try).
+      await poll(page, `(() => {
+        const header = document.querySelector('header').getBoundingClientRect();
+        const chip = document.querySelector('#explore-map [aria-pressed]').getBoundingClientRect();
+        const target = chip.top + scrollY - (header.height - chip.height) / 2;
+        if (Math.abs(scrollY - target) > 1) { window.scrollTo(0, target); return false; }
+        return document.querySelector('header').dataset.scrolled === 'true';
+      })()`, 'the chips under the scrolled header');
+      await poll(page, settled('header'), 'the header to settle');
+      await sleep(200);
+
+      const band = await page.evaluate<{ top: number; bottom: number; right: number }>(`(() => {
+        const r = document.querySelector('header').getBoundingClientRect();
+        // Inside the header, clear of its bottom edge line.
+        return { top: Math.ceil(r.top) + 2, bottom: Math.floor(r.bottom) - 3, right: Math.floor(r.right) };
+      })()`);
+      const style = (css: string) => page.evaluate(`(() => {
+        let s = document.getElementById('test-style');
+        if (!s) { s = document.createElement('style'); s.id = 'test-style'; document.head.append(s); }
+        s.textContent = ${JSON.stringify(css)};
+        return true;
+      })()`);
+      const shoot = async () => ((await page.send('Page.captureScreenshot', { format: 'png' })) as { data: string }).data;
+      const measure = async (targets: unknown[] = []) =>
+        decoder.evaluate<{ edge: number; worst: Array<{ what: string; need: number; ratio: number }> }>(
+          `${MEASURE_BAND}(${JSON.stringify(await shoot())}, ${band.top}, ${band.bottom}, ${band.right}, ${JSON.stringify(targets)})`
+        );
+      const OUT_OF_THE_WAY = '[data-whatsapp-button], [data-scroll-top] { visibility: hidden !important; }';
+
+      // Precondition: with the header gone, the band holds readable text.
+      await style(`header { visibility: hidden !important; } ${OUT_OF_THE_WAY}`);
+      const bare = await measure();
+      assert.ok(bare.edge >= 4.5, `precondition: readable text under the header (edges at ${bare.edge}:1)`);
+
+      // The header's surface alone (its links and buttons hidden): what shows
+      // through is a soft blur, with no edges left to read. The same tint
+      // without its blur keeps the text's edges (about 1.1:1, and readable:
+      // the bug this replaced), so the measure tells the two apart.
+      await style(`header * { visibility: hidden !important; } header { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; } ${OUT_OF_THE_WAY}`);
+      const unblurred = await measure();
+      assert.ok(unblurred.edge >= 1.08, `precondition: without the blur, the text's edges show (${unblurred.edge}:1)`);
+      await style(`header * { visibility: hidden !important; } ${OUT_OF_THE_WAY}`);
+      const through = await measure();
+      assert.ok(through.edge <= 1.04, `text behind the header shows edges at ${through.edge}:1 (at most 1.04:1)`);
+
+      // The header's own text and icons, against what is really behind them now.
+      await style(OUT_OF_THE_WAY);
+      const targets = await page.evaluate<unknown[]>(`(() => {
+        const probe = document.createElement('canvas').getContext('2d');
+        const rgba = (css) => { probe.clearRect(0, 0, 1, 1); probe.fillStyle = '#000'; probe.fillStyle = css; probe.fillRect(0, 0, 1, 1); const d = probe.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255]; };
+        const out = [];
+        for (const el of document.querySelectorAll('header *')) {
+          const s = getComputedStyle(el);
+          if (s.visibility === 'hidden' || s.display === 'none' || el.closest('.sr-only')) continue;
+          const isIcon = el.tagName === 'svg';
+          const texts = isIcon ? [] : [...el.childNodes].filter((n) => n.nodeType === 3 && n.textContent.trim());
+          if (!isIcon && texts.length === 0) continue;
+          if (isIcon && el.closest('a, button')?.textContent.trim()) continue;
+          const rects = (isIcon ? [el.getBoundingClientRect()] : texts.flatMap((n) => { const r = document.createRange(); r.selectNodeContents(n); return [...r.getClientRects()]; }))
+            .filter((r) => r.width > 0 && r.height > 0)
+            .map((r) => ({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) }));
+          if (rects.length === 0) continue;
+          const size = parseFloat(s.fontSize), bold = parseInt(s.fontWeight, 10) >= 700;
+          out.push({ what: isIcon ? 'icon: ' + (el.closest('a, button')?.getAttribute('aria-label') || 'svg') : el.textContent.trim().slice(0, 30), colour: rgba(s.color), need: isIcon || size >= 24 || (bold && size >= 18.66) ? 3 : 4.5, rects });
+        }
+        return out;
+      })()`);
+      assert.ok(targets.length >= (mobile ? 3 : 8), `precondition: the header's text found (${targets.length})`);
+      await style(`header * { color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important; } header svg { visibility: hidden !important; } ${OUT_OF_THE_WAY}`);
+      const { worst } = await measure(targets);
+      assert.deepEqual(worst.filter((t) => t.ratio < t.need).map((t) => `${t.what}: ${t.ratio} < ${t.need}`), []);
+    });
+  }
+
+  test('the built CSS keeps the standard backdrop-filter: glass blurs in Chrome, not only in Safari', async () => {
+    const page = await openPage('/tours', false);
+    await page.evaluate(`window.scrollTo(0, 600), true`);
+    await poll(page, `document.querySelector('header').dataset.scrolled === 'true'`, 'the scrolled header');
+    const filter = await page.evaluate<string>(`getComputedStyle(document.querySelector('header')).backdropFilter`);
+    assert.match(filter, /blur\(/, `the scrolled header's backdrop-filter is "${filter}"`);
+  });
 });
