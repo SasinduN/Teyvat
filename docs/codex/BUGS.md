@@ -1,3 +1,7 @@
+# BUG-068 - Floating booking CTA obscures card content - RESOLVED 2026-10-12
+
+Owner reported Discover Experience and destination-card overlap. Separate fixed controls plus incomplete keep-clear selectors left card photos/text/actions unprotected. A shared FloatingActions stack now owns spacing and visibility, protects complete cards and important controls and safely transfers focus before hiding a focused link. Booking/chat destinations, feature flag and other current-main safeguards preserved. Exact PR-branch verification: ../FINAL_QA.md; full mechanics: ../FLOATING_CTA_ALIGNMENT_FIX.md. Prior records/resolutions retained below.
+
 # BUG-060 — WhatsApp floats over the open mobile navigation
 
 Status: RESOLVED in Chrome, 2026-10-12. Static inspection found the shared z-index and later floating-button DOM could place WhatsApp above the mobile navigation, with no menu keep-clear target. Added #mobile-navigation to its overlap protection. Rendered tests verify both floating links hide while the actual menu is open; independent messages, links and settings remain. Source/QA: ../FLOATING_BOOKING_CTA.md and ../FINAL_QA.md.

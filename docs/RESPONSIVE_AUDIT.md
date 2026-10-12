@@ -1,0 +1,3 @@
+# Shared floating actions - PR integration, 2026-10-12
+
+48px booking icon below 640px; car/Book Now from 640px; full label/arrow from 1280px; compact near catalogue cards. WhatsApp 56px, stable 12px gap, one viewport anchor and common right edge. Hidden slots reserve only floating-stack space, with no page padding/layout shift. Visibility/inert/tab order and focus transfer prevent obstructing active controls. Current PR tests cover nine widths, short screens, catalogue scrolling, feature off, no WhatsApp, modal/menu/form/cookie collisions, keyboard and reduced motion. Executed outcomes and limitations: FINAL_QA.md. Source/root cause: FLOATING_CTA_ALIGNMENT_FIX.md. Historical audits follow.

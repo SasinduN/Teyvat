@@ -5,8 +5,7 @@ import { MotionConfig } from 'framer-motion';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ScrollToTop } from '@/components/ScrollToTop';
-import { WhatsAppButton } from '@/components/WhatsAppButton';
-import { FloatingBookingCTA } from '@/components/FloatingBookingCTA';
+import { FloatingActions } from '@/components/FloatingActions';
 import { SiteError, SiteLoading } from '@/components/SiteStatus';
 import { PublicSiteContext, type PageSubject, type PublicSiteApi } from '@/context/PublicSiteContext';
 import { useSiteContent } from '@/hooks/useSiteContent';
@@ -15,7 +14,6 @@ import { queryClient, queryKeys } from '@/lib/queryClient';
 import { focusPageHeading, goToSection } from '@/lib/routeFocus';
 import { keepsScroll } from '@/lib/ScrollRestorer';
 import { whatsappMessage, whatsappUrl } from '@shared/whatsapp';
-import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
 /**
@@ -172,16 +170,10 @@ export function PublicLayout() {
           <ScrollToTop hidden={inquiryOpen || searchOpen} />
         </Section>
 
-        {content.features.bookings && location.pathname.replace(/\/+$/, '') !== paths.booking && (
-          <Section name="FloatingBookingCTA"><FloatingBookingCTA hidden={inquiryOpen || searchOpen} aboveWhatsApp={Boolean(whatsappHref)} /></Section>
-        )}
-
-        {/* WhatsApp chat: only once a number is set in Admin → Settings. */}
-        {whatsappHref && (
-          <Section name="WhatsAppButton">
-            <WhatsAppButton href={whatsappHref} hidden={inquiryOpen || searchOpen} />
-          </Section>
-        )}
+        <Section name="FloatingActions">
+          <FloatingActions whatsappHref={whatsappHref} bookingAllowed={content.features.bookings}
+            hidden={inquiryOpen || searchOpen} />
+        </Section>
       </div>
       </MotionConfig>
     </PublicSiteContext.Provider>

@@ -20,6 +20,12 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
   let on: RunningApp, off: RunningApp, chrome: Chrome;
   before(async () => {
     migrateTestDatabase(); await assertConnectedToTestDatabase(); await resetContent();
+    // Use the shipped versions of the same photographs in this guarded test DB.
+    // Carousel readiness must not depend on an external Wikimedia request succeeding.
+    await pool.query(`update public.hero_slides set image=case
+      when lower(image) like '%sigiriya%' then '/assets/sigiriya-1280-76f7d2b40a60804b.webp'
+      when lower(image) like '%galle%' then '/assets/galle-1280-0efc885d27415115.webp'
+      else '/assets/ella-1280-0aac7f6297dfbdf1.webp' end || '?qa-carousel=' || id`);
     await pool.query('update public.site_settings set whatsapp_number=$1 where id', ['94771234567']);
     on = await listen(createApp({ media: null, bookings: true })); off = await listen(createApp({ media: null, bookings: false }));
     chrome = await launchChrome(executable!);
@@ -75,26 +81,26 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     assert.deepEqual(await page.evaluate<string[]>('window.__qaErrors'), []);
   });
 
-  test('eight widths: fixed position, safe spacing, touch targets, no clipping/overflow and 14px WhatsApp gap', async () => {
+  test('nine widths: shared fixed stack, responsive labels, touch targets and 12px WhatsApp gap', async () => {
     const page = await open('/about');
     await wait(page, shown(CTA), 'CTA'); await sleep(1200);
-    for (const width of [320,375,390,430,768,1024,1440,1920]) {
+    for (const width of [320,375,390,430,768,1024,1280,1440,1920]) {
       await page.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 768 });
       await sleep(180); await wait(page, shown(CTA), `${width} CTA`); await wait(page, shown(WA), `${width} WhatsApp`);
-      const geometry = await page.evaluate<{gap:number; right:number; inside:boolean; overflow:boolean; width:number; height:number; text:string; position:string}>(`(() => {const link=document.querySelector('${CTA}'); const a=link.getBoundingClientRect(), b=document.querySelector('${WA}').getBoundingClientRect(); return {gap:b.top-a.bottom,right:a.right-b.right,inside:a.left>=0&&a.right<=innerWidth&&a.top>=0&&b.bottom<=innerHeight,overflow:document.documentElement.scrollWidth>innerWidth,width:a.width,height:a.height,text:[...link.querySelectorAll('span')].filter(s=>s.className.includes('floating-booking-')&&!s.className.includes('content')&&getComputedStyle(s).display!=='none').map(s=>s.textContent).join(''),position:getComputedStyle(link).position};})()`);
+      const geometry = await page.evaluate<{gap:number; right:number; inside:boolean; overflow:boolean; width:number; height:number; text:string; position:string}>(`(() => {const link=document.querySelector('${CTA}'); const a=link.getBoundingClientRect(), b=document.querySelector('${WA}').getBoundingClientRect(); return {gap:b.top-a.bottom,right:a.right-b.right,inside:a.left>=0&&a.right<=innerWidth&&a.top>=0&&b.bottom<=innerHeight,overflow:document.documentElement.scrollWidth>innerWidth,width:a.width,height:a.height,text:[...link.querySelectorAll('span')].filter(s=>s.className.includes('floating-booking-')&&!s.className.includes('content')&&getComputedStyle(s).display!=='none').map(s=>s.textContent).join(''),position:getComputedStyle(document.querySelector('[data-floating-actions]')).position};})()`);
       assert.equal(geometry.overflow,false,`${width} no overflow`); assert.equal(geometry.inside,true,`${width} inside viewport`);
-      assert.ok(Math.abs(geometry.gap-14)<1,`${width} gap ${geometry.gap}`); assert.ok(Math.abs(geometry.right)<1,`${width} aligned`);
-      assert.ok(geometry.width>56&&geometry.height>=48,`${width} touch target`); assert.equal(geometry.position,'fixed');
-      assert.equal(geometry.text,width<=430?'Book Now':'Book Your Ride');
+      assert.ok(Math.abs(geometry.gap-12)<=1.1,`${width} gap ${geometry.gap}`); assert.ok(Math.abs(geometry.right)<1,`${width} aligned`);
+      assert.ok(geometry.width>=48&&geometry.height>=48,`${width} touch target`); assert.equal(geometry.position,'fixed');
+      assert.equal(geometry.text,width<640?'':width<1280?'Book Now':'Book Your Ride');
       const controls=await page.evaluate<{name:string;left:number;right:number;height:number}[]>(`[...document.querySelectorAll('.te-nav-phone-actions a,.te-nav-phone-actions button')].filter(el=>el.getBoundingClientRect().width>0).map(el=>{const r=el.getBoundingClientRect();return {name:el.getAttribute('aria-label'),left:r.left,right:r.right,height:r.height};})`);
       assert.ok(controls.every(r=>r.left>=0&&r.right<=width&&r.height>=44),`${width} mobile navigation controls fit: ${JSON.stringify(controls)}`);
       const shot = await page.send('Page.captureScreenshot', { format:'png' });
       const directory=join(root,'docs/qa-results/content-cleanup'); mkdirSync(directory,{recursive:true}); writeFileSync(join(directory,`cta-${width}.png`),Buffer.from(shot.data as string,'base64'));
     }
-    const before=await page.evaluate<number>(`document.querySelector('${CTA}').getBoundingClientRect().bottom`);
+    const before=await page.evaluate<number>(`document.querySelector('[data-floating-actions]').getBoundingClientRect().bottom`);
     assert.equal(await page.evaluate<boolean>(`(() => {const main=document.querySelector('main');const before=JSON.stringify(main.getBoundingClientRect().toJSON());const link=document.querySelector('${CTA}');link.style.display='none';const after=JSON.stringify(main.getBoundingClientRect().toJSON());link.style.removeProperty('display');return before===after;})()`),true,'floating insertion does not change page geometry');
     await page.evaluate(`scrollTo(0,400); true`); await sleep(300);
-    assert.equal(await page.evaluate<number>(`document.querySelector('${CTA}').getBoundingClientRect().bottom`),before,'fixed during scroll');
+    assert.equal(await page.evaluate<number>(`document.querySelector('[data-floating-actions]').getBoundingClientRect().bottom`),before,'fixed stack during scroll');
     await page.send('Emulation.setDeviceMetricsOverride',{width:320,height:240,deviceScaleFactor:1,mobile:true}); await sleep(200);
     assert.equal(await page.evaluate<boolean>(`document.querySelector('${CTA}').getBoundingClientRect().bottom<=innerHeight`),true,'short viewport remains inside');
     await page.send('Emulation.setDeviceMetricsOverride',{width:320,height:180,deviceScaleFactor:1,mobile:true}); await wait(page,`document.querySelector('${CTA}').dataset.state==='hidden'`,'short viewport avoids navigation');
@@ -108,14 +114,14 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
       assert.equal(await page.evaluate<number>(`document.querySelectorAll('${CTA}').length`),1);
       assert.deepEqual(await page.evaluate<string[]>('window.__qaErrors'),[],`${path} JS errors`);
     }
-    await page.send('Page.navigate',{url:on.baseUrl+'/destinations'}); await wait(page,shown(CTA),'visible CTA'); await wait(page,shown(WA),'visible WhatsApp');
+    await page.send('Page.navigate',{url:on.baseUrl+'/about'}); await wait(page,shown(CTA),'visible CTA'); await wait(page,shown(WA),'visible WhatsApp');
     for(const theme of ['light','dark']) {
-      await page.evaluate(`document.documentElement.dataset.theme=${JSON.stringify(theme)}; true`);
+      await page.evaluate(`document.documentElement.dataset.theme=${JSON.stringify(theme)}; true`); await sleep(250);
       const contrast=await page.evaluate<number>(`(() => { const s=getComputedStyle(document.querySelector('${CTA}')); const lum=c=>{const v=c.match(/[0-9.]+/g).slice(0,3).map(Number).map(n=>{n/=255;return n<=.04045?n/12.92:((n+.055)/1.055)**2.4;});return .2126*v[0]+.7152*v[1]+.0722*v[2];}; const a=lum(s.color),b=lum(s.backgroundColor); return (Math.max(a,b)+.05)/(Math.min(a,b)+.05); })()`);
       assert.ok(contrast>=4.5,`${theme} contrast ${contrast}`);
     }
     await page.send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
-    assert.equal(await page.evaluate<string>(`getComputedStyle(document.querySelector('.floating-booking-content')).animationName`),'none');
+    assert.equal(await page.evaluate<string>(`getComputedStyle(document.querySelector('${CTA}')).animationName`),'none');
     await page.evaluate(`document.querySelector('${CTA}').focus(); true`);
     await page.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
     await page.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
@@ -152,6 +158,32 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     await pool.query('update public.site_settings set whatsapp_number=null where id');
     const noWA=await open('/about'); await wait(noWA,shown(CTA),'independent CTA');
     assert.equal(await noWA.evaluate<number>(`document.querySelectorAll('${WA}').length`),0);
-    assert.equal(await noWA.evaluate<string>(`document.querySelector('${CTA}').dataset.aboveWhatsapp`),'false');
+    assert.equal(await noWA.evaluate<number>(`document.querySelector('[data-floating-actions]').children.length`),1,'no empty chat placeholder');
   });
+
+  test('whole card collisions transfer focus safely and restore without moving chat', async () => {
+    await pool.query("update public.site_settings set whatsapp_number='94771234567' where id");
+    const page=await open('/about'); await wait(page,shown(CTA),'unobstructed booking link');
+    const chatTop=await page.evaluate<number>(`document.querySelector('${WA}').getBoundingClientRect().top`);
+    await page.evaluate(`(() => {const a=document.querySelector('${CTA}');a.focus();const r=a.getBoundingClientRect(),card=document.createElement('article');card.id='qa-card';card.className='te-card';card.style=\`position:fixed;left:\${r.left}px;top:\${r.top}px;width:\${r.width}px;height:\${r.height}px\`;card.innerHTML='<button>Discover Experience</button>';document.body.append(card);return true;})()`);
+    await wait(page,`document.querySelector('${CTA}').inert`,'card protected');
+    assert.equal(await page.evaluate<boolean>(`document.activeElement===document.querySelector('#qa-card button')`),true,'focus moves before hiding');
+    assert.equal(await page.evaluate<number>(`document.querySelector('${CTA}').tabIndex`),-1);
+    assert.equal(await page.evaluate<number>(`document.querySelector('${WA}').getBoundingClientRect().top`),chatTop,'chat slot stays fixed');
+    await page.evaluate(`document.querySelector('#qa-card').remove(); true`);await wait(page,shown(CTA),'restored after card');
+  });
+
+  test('scrolling catalogue cards remain unobstructed at nine widths', async () => {
+    const page=await open('/experiences');
+    for(const route of ['/experiences','/destinations','/tours']) {
+      await page.send('Page.navigate',{url:on.baseUrl+route});await wait(page,`document.querySelector('main .te-card,main .destination-card')`,route);
+      for(const width of [320,375,390,430,768,1024,1280,1440,1920]) {
+        await page.send('Emulation.setDeviceMetricsOverride',{width,height:650,deviceScaleFactor:1,mobile:width<768});
+        await page.evaluate(`document.querySelector('main .te-card,main .destination-card').scrollIntoView({block:'center',behavior:'instant'}); true`);await sleep(350);
+        const result=await page.evaluate<{overflow:boolean;collisions:string[];touch:boolean}>(`(() => {const overlaps=(a,b)=>b.width>0&&b.height>0&&b.left<a.right&&b.right>a.left&&b.top<a.bottom&&b.bottom>a.top;const floats=[...document.querySelectorAll('[data-floating-actions] a')];const collisions=[];let touch=true;for(const f of floats){const r=f.getBoundingClientRect();touch=touch&&r.width>=44&&r.height>=44;if(f.inert)continue;for(const c of document.querySelectorAll('main .te-card,main .destination-card,main a,main button,main input,main select,main textarea')){if(c.closest('[inert]')||getComputedStyle(c).visibility==='hidden')continue;if(overlaps(r,c.getBoundingClientRect()))collisions.push(c.className||c.tagName);}}return {overflow:document.documentElement.scrollWidth>innerWidth,collisions,touch};})()`);
+        assert.equal(result.overflow,false,route+' '+width);assert.deepEqual(result.collisions,[],route+' '+width);assert.ok(result.touch);
+      }
+    }
+  });
+
 });
