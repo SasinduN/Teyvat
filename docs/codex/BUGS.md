@@ -1,3 +1,7 @@
+# BUG-071 — Map becomes dark with the website theme — RESOLVED IN LOCAL CHROME 2026-10-13
+
+Owner requested the basemap remain light. FOUND BY STATIC ANALYSIS: keyed provider selected dark_all in dark mode, and Explore applied a different dark-only tile filter. Shared selection now retains Voyager/OSM light tiles and the existing light tint; theme toggles no longer reset tile URLs. Site theme, controls and marker behavior preserved. VERIFIED: production build/typecheck and 15 focused tests PASS, including Chrome map/theme toggle regression. Detailed limits: ../FINAL_QA.md. No production deployment yet.
+
 # BUG-070 - WhatsApp decorative shadow and inherited focus glow - RESOLVED 2026-10-12
 
 User requested official green/white flat styling. Static inspection found a gold border and decorative shadow; rendered testing additionally found the shared public focus rule restored a 6px shadow. Scoped WhatsApp CSS now removes both while preserving a visible 3px theme-aware outline, 56px touch target and all shared collisions. Final 16 focused tests PASS across three files, including 18 width/theme appearance checks. Evidence: ../FINAL_QA.md. No unrelated shadows removed.

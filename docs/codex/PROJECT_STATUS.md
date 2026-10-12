@@ -1,3 +1,7 @@
+# 2026-10-13 — Light map retained in dark mode
+
+Owner-requested basemap behavior implemented in shared tile selection and Explore tile CSS; site theme, markers, controls, map position and zoom preserved. Production build/typecheck and 15 focused tests PASS, including actual Chrome theme toggles with unchanged light map tiles and tint. No credentials, production database, map provider, attribution or security headers changed. Evidence and untested scopes: ../FINAL_QA.md. Prepared as a separate current-main PR.
+
 # Local runtime switched to current GitHub main — 2026-10-12
 
 The parent workspace was still serving its older source on ports 5173/8081 after a fresh clone. Configured this clone at e041064 using the existing local Teyvat-current settings (ignored .env), installed locked dependencies and replaced the identified older frontend/API processes. No application markup or behavior edits, database migrations, credential changes or GitHub writes. Original parent working changes preserved.
