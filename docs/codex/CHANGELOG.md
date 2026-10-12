@@ -1,3 +1,8 @@
+## 2026-10-12 - Flat WhatsApp floating button
+
+Reused WhatsAppButton in the shared FloatingActions stack. The existing 56px circular link now uses official #25D366 with a white glyph, no border, shadow, filter, text shadow, pseudo-element glow or animation, and a minimal 180ms background hover transition. A scoped override removes the inherited public-shell focus shadow while retaining a 3px theme-aware keyboard outline; reduced motion disables transitions. Existing configured phone/message, semantic accessible link, secure new-tab attributes, booking navigation, safe-area positioning and collision protections are preserved. No duplicate button or custom cursor added.
+
+Verification: final production build/typecheck PASS; existing nonfatal Zod annotation and bundle-size warnings remain. Initial browser run caught the inherited focus shadow, which was corrected. Final browser verification is recorded in FINAL_QA.md. No configured lint script. Historical entries retained.
 # PR #39 CI repair - 2026-10-12
 
 Failed run 38206020761 passed 38/41 files. Three harness defects: the first floating-CTA screenshot wrote into an absent git-ignored directory; four intentionally cleaned sections retained pre-cleanup visual baselines; the WhatsApp hex-colour exception remained after its colours moved to tokens. Create the screenshot directory before writing, pin only the four changed sections to approved cleanup commit 4129cd4, and remove the obsolete exception. Preserve strict pixel tolerance, self-comparison controls, both widths and unchanged-section baselines. Hide blinking input carets only in the screenshot harness to avoid timing noise.

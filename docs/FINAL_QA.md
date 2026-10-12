@@ -1,3 +1,18 @@
+## 2026-10-12 — Fresh PR upload validation
+
+Exact new branch fix/flat-whatsapp-button-20261012: production build/typecheck PASS; colour-tokens 2/2 PASS; git diff --check PASS. Existing nonfatal Zod annotation and large-chunk warnings remain. Browser checks below are prior recorded Teyvat-current verification, not freshly executed in this clone. Isolated test database on port 55459 is not running; the default configured test database previously rejected authentication. No database guards or credentials changed. Live local WhatsApp number remains unset, so the button stays hidden until an owner supplies it. Vehicle requests remain disabled until real capacity is configured; these database settings are not part of this PR. No deployment or real message delivery verified.
+
+## 2026-10-12 - Flat WhatsApp final verification
+
+VERIFIED: final npm.cmd run build PASS (includes typecheck, client and server bundles); standalone typecheck PASS; git diff --check PASS. Existing nonfatal Zod annotation and large-chunk warnings remain. No lint script is configured.
+
+Final guarded local PostgreSQL / Chrome run: 3/3 files PASS, 16 tests, zero skipped/cancelled: browser-floating-booking 6/6, browser-whatsapp 8/8, colour-tokens 2/2. Checked 320, 375, 390, 430, 768, 1024, 1280, 1440, 1920px, both light/dark themes. All 18 appearance observations verify exact green/white, circular 56px target, zero border/shadow/filter/text-shadow/animation, absent pseudo effects and shadow-free parent; independent chat hit target and keyboard outline verified. Shared edges, 12px booking/chat separation, viewport containment and no horizontal overflow pass. Hover has no shadow or scale; reduced motion disables chat transitions. Public routes, actual mobile menu, forms, footer/modal fixtures, destination/experience/tour card sweeps, map controls and slideshow controls pass existing protection tests. Booking navigation and secure configured WhatsApp URL/message contracts pass. Test fixture number exists only in the disposable test database; no app configuration or real number changed.
+
+18 screenshots saved under docs/qa-results/whatsapp-flat/ (ignored artifacts). light-320.png and dark-1440.png visually inspected: flat white-icon green circles with booking above and consistent right edge, no glow/clipping. Native cursor code retained; no custom cursor or cursor hiding exists in the scoped component.
+
+Initial run: 5/6 floating tests passed; focus appearance failed because public-shell focus CSS restored a 6px shadow. Added scoped chat focus override, rebuilt and reran all three files successfully; this failure is not hidden.
+
+NOT TESTED: live WhatsApp conversation delivery/account status, physical devices, Safari/Firefox, full application suite and remote CI for this uncommitted change. Browser tests verify the semantic link destination and page-aware message without contacting WhatsApp. Existing unrelated shadows and booking behavior preserved.
 # PR integration verification - 2026-10-12
 
 This is the exact upload branch based on GitHub main, with the prepared content-cleanup commit and the shared floating-stack follow-up. Parent-workspace 600 rendered observations remain scoped to that workspace and are not presented as fresh PR-branch verification. Current-main feature flag, theme tokens, modal focus and booking/backend/security changes are retained.

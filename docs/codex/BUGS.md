@@ -1,3 +1,6 @@
+# BUG-070 - WhatsApp decorative shadow and inherited focus glow - RESOLVED 2026-10-12
+
+User requested official green/white flat styling. Static inspection found a gold border and decorative shadow; rendered testing additionally found the shared public focus rule restored a 6px shadow. Scoped WhatsApp CSS now removes both while preserving a visible 3px theme-aware outline, 56px touch target and all shared collisions. Final 16 focused tests PASS across three files, including 18 width/theme appearance checks. Evidence: ../FINAL_QA.md. No unrelated shadows removed.
 # BUG-069 - PR #39 CI harness expectations and screenshot setup - FIXED 2026-10-12
 
 FOUND BY CI run 38206020761: missing screenshot directory (ENOENT), obsolete baselines for four owner-authorized cleanup sections, and stale WhatsApp colour exception. Fixes create the output directory, pin changed sections to 4129cd4 and remove the exception without relaxing comparisons. Local run also revealed a blinking-caret difference in unchanged SearchModal; screenshot-only caret normalization added. Original application behavior preserved. Verification and explicit Windows cleanup limitation: PROJECT_STATUS.md. Remote rerun pending.

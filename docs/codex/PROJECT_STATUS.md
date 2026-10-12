@@ -1,3 +1,14 @@
+# Local runtime switched to current GitHub main — 2026-10-12
+
+The parent workspace was still serving its older source on ports 5173/8081 after a fresh clone. Configured this clone at e041064 using the existing local Teyvat-current settings (ignored .env), installed locked dependencies and replaced the identified older frontend/API processes. No application markup or behavior edits, database migrations, credential changes or GitHub writes. Original parent working changes preserved.
+
+VERIFIED: npm.cmd ci; production build/typecheck; latest theme and ride modules served over HTTP; API health/database up; /api/content reports bookings=true; booking catalogue and ride account endpoints return HTTP 200. Existing local migration dry-run reports no pending migrations. npm audit --omit=dev reports zero vulnerabilities; install reports three development-inclusive vulnerabilities (one low, two high), not remediated here. Existing Zod annotation and chunk-size build warnings retained. Browser automation unavailable: actual theme-toggle/rendered form/physical-device acceptance NOT TESTED in this turn.
+
+Active project folder: Teyvat-latest-20261012. Start npm.cmd run dev:server and npm.cmd run dev from this folder for subsequent sessions.
+
+# 2026-10-12 - Flat WhatsApp button verified locally
+
+User-authorized WhatsApp-only styling implemented in existing shared stack: official green/white, 56px circle, no border/glow/shadow including inherited focus ring, minimal hover, accessible theme-aware outline and reduced motion. Configured link/message, safe areas, booking navigation and content protections preserved. Final production build/typecheck and 16 focused tests PASS; 18 width/theme appearance observations and responsive/collision/link/keyboard checks PASS. Two screenshots inspected. No lint configured; full suite, remote CI, physical devices and live WhatsApp delivery not tested for this change. Detailed evidence: ../FINAL_QA.md. Historical entries retained.
 # PR #39 CI repair - 2026-10-12
 
 Failed run 38206020761 passed 38/41 files. Three harness defects: the first floating-CTA screenshot wrote into an absent git-ignored directory; four intentionally cleaned sections retained pre-cleanup visual baselines; the WhatsApp hex-colour exception remained after its colours moved to tokens. Create the screenshot directory before writing, pin only the four changed sections to approved cleanup commit 4129cd4, and remove the obsolete exception. Preserve strict pixel tolerance, self-comparison controls, both widths and unchanged-section baselines. Hide blinking input carets only in the screenshot harness to avoid timing noise.
