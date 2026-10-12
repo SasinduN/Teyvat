@@ -21,14 +21,11 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
         
         {/* Header */}
         <div className="te-section-header te-section-header--stack">
-          <span className="te-card-badge uppercase tracking-[0.2em] mb-3">
-            Signature Itineraries
-          </span>
           <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[var(--brand-primary)] tracking-tight mb-4">
             Your Journey. Your Way.
           </h2>
           <p className="text-lg text-[var(--text-secondary)] leading-relaxed">
-            Thoughtfully planned multi-day expeditions crafted by local experts to seamlessly weave Sri Lanka’s best highlights.
+            Explore Sri Lanka’s highlights on multi-day journeys planned by local experts.
           </p>
         </div>
 

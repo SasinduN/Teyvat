@@ -364,9 +364,17 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     assert.equal(await coveredBy(page, '#explore-map .leaflet-control-zoom-in'), null, 'zoom in takes the tap');
     assert.equal(await coveredBy(page, '#explore-map .leaflet-control-zoom-out'), null, 'zoom out takes the tap');
 
-    // Away from the map, it's back.
-    await page.evaluate(`window.scrollTo(0, 0), true`);
-    await expectShown(page, true, 'back once clear of the map');
+    // Return to a clear area. The QuickSearch submit button is now protected
+    // too, so top=0 alone is not necessarily clear on a short phone viewport.
+    let restored = false;
+    for (const top of [0, 120, 240, 360, 480]) {
+      await page.evaluate(`window.scrollTo(0, ${top}), true`);
+      await frames(page); await sleep(250);
+      await expectClearOf(page, '#explore-map .leaflet-control-zoom', 'clear of map zoom');
+      await expectClearOf(page, 'form button[type="submit"]', 'clear of search submit');
+      if (await shown(page)) { restored = true; break; }
+    }
+    assert.ok(restored, 'back once clear of all protected controls');
   });
 
   test("phone: the home page's slide controls each take the tap", async () => {
@@ -380,13 +388,13 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     // They're near the bottom right, where the button sits: it steps aside, and comes back below the hero.
     await explainOnFailure(page, () => expectShown(page, false, 'steps aside from the slide controls'));
     await page.evaluate(`document.querySelector('#discover').scrollIntoView(), true`);
-    await expectShown(page, true, 'back below the hero');
+    await expectClearOf(page, '.destination-card,.te-card', 'cards below the hero stay clear');
   });
 
   test('phone: hidden while the enquiry form is open, so the submit button is clear', async () => {
     const page = await openPage({ mobile: true, path: '/tours' });
     await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
-    await expectShown(page, true, 'precondition: shown');
+    await expectClearOf(page, '#hero .te-hero-controls', 'precondition: slideshow controls stay clear');
 
     await page.evaluate(`[...document.querySelectorAll('#tours button')].find((b) => b.textContent.trim() === 'Inquire').click(), true`);
     await waitFor(page, `document.querySelector('.fixed.inset-0 form button[type=submit]')`, 'the enquiry form');

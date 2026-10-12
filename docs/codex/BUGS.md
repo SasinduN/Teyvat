@@ -1,3 +1,26 @@
+# BUG-069 - PR #39 CI harness expectations and screenshot setup - FIXED 2026-10-12
+
+FOUND BY CI run 38206020761: missing screenshot directory (ENOENT), obsolete baselines for four owner-authorized cleanup sections, and stale WhatsApp colour exception. Fixes create the output directory, pin changed sections to 4129cd4 and remove the exception without relaxing comparisons. Local run also revealed a blinking-caret difference in unchanged SearchModal; screenshot-only caret normalization added. Original application behavior preserved. Verification and explicit Windows cleanup limitation: PROJECT_STATUS.md. Remote rerun pending.
+# BUG-068 - Floating booking CTA obscures card content - RESOLVED 2026-10-12
+
+Owner reported Discover Experience and destination-card overlap. Separate fixed controls plus incomplete keep-clear selectors left card photos/text/actions unprotected. A shared FloatingActions stack now owns spacing and visibility, protects complete cards and important controls and safely transfers focus before hiding a focused link. Booking/chat destinations, feature flag and other current-main safeguards preserved. Exact PR-branch verification: ../FINAL_QA.md; full mechanics: ../FLOATING_CTA_ALIGNMENT_FIX.md. Prior records/resolutions retained below.
+
+# BUG-060 — WhatsApp floats over the open mobile navigation
+
+Status: RESOLVED in Chrome, 2026-10-12. Static inspection found the shared z-index and later floating-button DOM could place WhatsApp above the mobile navigation, with no menu keep-clear target. Added #mobile-navigation to its overlap protection. Rendered tests verify both floating links hide while the actual menu is open; independent messages, links and settings remain. Source/QA: ../FLOATING_BOOKING_CTA.md and ../FINAL_QA.md.
+
+# BUG-061 — Windows Chrome startup port-file lock
+
+Status: OPEN test-harness limitation, 2026-10-12. A browser run failed in its before hook with EBUSY reading DevToolsActivePort while Chrome was starting. Existing launch helper checks existence then reads without retrying transient file locks. The subsequent standalone WhatsApp rerun passed all eight tests. Application behavior is not implicated; startup-driver hardening is outside this public UI task. Failed attempt evidence retained in ../FINAL_QA.md.
+
+# BUG-058 — Cached hero photograph never becomes ready again
+
+Status: RESOLVED in Chrome, 2026-10-12. QA reproduced Previous stuck busy although the first image was decoded (naturalWidth 1280). Static comparison confirms the unchanged pre-existing source-reset effect could clear readySlides after onLoad, with no second event for a cached DOM image. Preserve verified matching-image readiness during reset; retain image-load gating. Previous, Next, pause holding the frame and automatic resume all passed after the fix. Initial browser failures and diagnostic evidence are in ../FINAL_QA.md.
+
+# BUG-059 — Header controls clipped at 320px
+
+Status: RESOLVED in Chrome, 2026-10-12. The 320px screenshot showed the last mobile header control clipped. Compact container/logo/gap spacing below 376px retains all controls and 44px touch targets. Rules are unlayered so utility gap does not override them; the container uses full width with 8px insets to avoid adding padding to an already inset column. Verified all four controls fit at 320px and the eight-width suite passes. No navigation action removed.
+
 # BUG-057 — Production policy blocks the booking GPS button
 
 Status: RESOLVED in local production checks, 2026-10-12. Static inspection found global `Permissions-Policy: geolocation=()` prevented the user-triggered booking GPS flow in the production document. Permit `geolocation=(self)` for /booking only; retain denied permissions elsewhere, click-only acquisition and manual fallback. Rendered GPS success/denial and production header regression checks passed; evidence is recorded in ../FINAL_QA.md. Physical device permissions NOT TESTED. Historical bug IDs/resolutions retained below.

@@ -1,0 +1,13 @@
+# Floating ride link — 2026-10-12
+
+`FloatingBookingCTA.tsx` is mounted once by `PublicLayout` when the existing booking feature is enabled. It is a `SiteLink` (React Router semantic anchor) to the existing `/booking` path. It is absent on that pathname, including tour query variants, and from the separate admin layout. It neither opens WhatsApp nor creates a second booking form/API.
+
+Desktop label: **Book Your Ride**, with hidden-from-assistive-technology Car/ArrowRight icons from the existing Lucide dependency. At widths up to 430px the label is **Book Now**; its accessible name still identifies the ride request page. It has a 48px minimum height, pill shape, Emerald background and white text; Forest hover, Sky focus ring and dark-mode border use existing palette tokens.
+
+The fixed link aligns with WhatsApp's right edge, 14px above its 56px circle, respecting bottom/right safe-area insets. Below 640px the viewport edge is 16px, otherwise 24px. When no WhatsApp number exists, the ride link independently uses the bottom corner. Space is reserved for WhatsApp while its existing overlap logic temporarily hides it, avoiding jumps. `z-index:55` keeps the link below site modal layers and WhatsApp.
+
+A single 1.1-second CSS animation fades/slides its contents 4px, adds one 2px nudge and settles. Hover lifts the link 2px. There is no repeat, interval, attention timer, external widget or animation dependency. Reduced-motion CSS disables animation/transitions and hover movement; navigation still works.
+
+Visibility uses frame-coalesced scroll/resize checks and DOM/size/corner observers, following the existing floating control architecture. It hides rather than moving over protected content: map controls, data-keep-clear targets, main page buttons/inputs/selects/textareas, form buttons, marked cookie/sticky panels, modal dialogs/navigation and header overlap in very short viewports. Contact details are marked keep-clear. Hidden links have visibility:hidden, pointer-events:none, aria-hidden and tabIndex=-1. They return when clear. ScrollToTop includes the ride link in its keep-clear targets; WhatsApp retains its message, new-tab link and existing feature/settings behavior, with added submit/menu/banner protection and palette/safe-area alignment. On a narrow destination list, a visible info button can temporarily hide the ride link; this is intentional obstruction protection, not a missing CTA.
+
+Future cookie or sticky UI should mark its obstruction `data-cookie-banner`, `data-sticky-navigation` or `data-keep-clear`. No cookie banner exists in the current project. Server-disabled bookings produce no ride CTA; there is no link to a disabled booking page. Evidence and limitations: `FINAL_QA.md`.

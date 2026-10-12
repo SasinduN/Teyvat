@@ -1,0 +1,7 @@
+# Homepage hero cleanup — 2026-10-12
+
+Removed the complete “The Premium Sri Lanka Experience” badge and “Currently featured: …” caption from `HeroSection.tsx`, including their dots, wrappers and margin utility classes. Removed unused badge/caption CSS, the current-slide variable used only by the caption, and its type import. Slide titles/captions remain in the content model; slide image alt text still uses the title.
+
+The remaining copy stays centered within the existing full-viewport flex layout, so removing those blocks also removes their spacing without spacer elements. Heading size/text, description, two hero links, image overlay and navbar-over-photo behavior are unchanged. No panel, larger heading, replacement badge or new photo was introduced. During QA a pre-existing cached-image race prevented Previous from returning to the loaded first photo: the source-reset effect cleared its ready flag after its load event had already fired. The reset now preserves readiness for matching decoded images; it still waits for new images to load. Prefetching, arrows, pause/resume, hover/focus suspension and reduced-motion behavior remain. Compact header spacing below 376px also keeps all navigation controls in view without reducing their touch targets.
+
+Browser verification and limits are recorded in `FINAL_QA.md`; screenshots stay in ignored local QA artifacts. This public structural change is explicitly authorized by the user.

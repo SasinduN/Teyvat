@@ -59,9 +59,6 @@ export const WhyTravelEye: React.FC = () => {
         
         {/* Header */}
         <div className="te-section-header te-section-header--stack">
-          <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--brand-primary)] bg-[var(--brand-secondary)]/10 px-4 py-1.5 rounded-full inline-block mb-3">
-            The Travel Eye Difference
-          </span>
           <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[var(--brand-primary)] tracking-tight">
             Travel With A Clearer View.
           </h2>

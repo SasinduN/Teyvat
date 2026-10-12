@@ -29,7 +29,6 @@ export function AboutPage() {
         compact
         image={slides[1]?.url ?? slides[0]?.url}
         crumbs={[{ label: 'Home', to: paths.home }, { label: 'About' }]}
-        eyebrow="Who We Are"
         title="About Us"
         subtitle={PAGE_DESCRIPTIONS.about}
       />
@@ -45,16 +44,13 @@ export function AboutPage() {
       <section id="contact" className="relative overflow-hidden bg-[var(--background-secondary)] py-20 sm:py-24">
         <div className="te-container grid gap-10 lg:grid-cols-12 lg:gap-14">
           <div className="space-y-6 lg:col-span-5">
-            <span className="inline-block rounded-full bg-[var(--brand-secondary)]/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-[var(--brand-primary)]">
-              Get in Touch
-            </span>
             <h2 className="font-heading text-3xl font-bold tracking-tight text-[var(--brand-primary)] sm:text-5xl">
               Contact <span className="font-serif italic text-[var(--brand-primary)]">Us</span>
             </h2>
             <p className="font-light leading-relaxed text-[var(--text-primary)]/75">
               Tell us what you want to experience, and a travel designer will reply within 12 hours.
             </p>
-            <ul className="space-y-4 rounded-3xl bg-[var(--inverse-surface)] p-7 text-sm text-white/85 shadow-xl">
+            <ul data-keep-clear className="space-y-4 rounded-3xl bg-[var(--inverse-surface)] p-7 text-sm text-white/85 shadow-xl">
               <li className="flex items-start space-x-3">
                 <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent-text)]" aria-hidden="true" />
                 <span>{settings.postalAddress}</span>

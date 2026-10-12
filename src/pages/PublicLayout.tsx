@@ -5,7 +5,7 @@ import { MotionConfig } from 'framer-motion';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ScrollToTop } from '@/components/ScrollToTop';
-import { WhatsAppButton } from '@/components/WhatsAppButton';
+import { FloatingActions } from '@/components/FloatingActions';
 import { SiteError, SiteLoading } from '@/components/SiteStatus';
 import { PublicSiteContext, type PageSubject, type PublicSiteApi } from '@/context/PublicSiteContext';
 import { useSiteContent } from '@/hooks/useSiteContent';
@@ -170,12 +170,10 @@ export function PublicLayout() {
           <ScrollToTop hidden={inquiryOpen || searchOpen} />
         </Section>
 
-        {/* WhatsApp chat: only once a number is set in Admin → Settings. */}
-        {whatsappHref && (
-          <Section name="WhatsAppButton">
-            <WhatsAppButton href={whatsappHref} hidden={inquiryOpen || searchOpen} />
-          </Section>
-        )}
+        <Section name="FloatingActions">
+          <FloatingActions whatsappHref={whatsappHref} bookingAllowed={content.features.bookings}
+            hidden={inquiryOpen || searchOpen} />
+        </Section>
       </div>
       </MotionConfig>
     </PublicSiteContext.Provider>

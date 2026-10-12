@@ -21,10 +21,7 @@ const ROOTS = ['src/components', 'src/pages', 'src/admin', 'src/App.tsx'];
 const HEX = /#(?:[0-9a-f]{6}|[0-9a-f]{3})\b/gi;
 
 /** Hex colours each not-yet-restyled file may still have (after redesign PR 5). */
-const ALLOWED: Record<string, number> = {
-  // Untouched by decision in PRs 2 to 5; its own PR switches it to tokens.
-  'src/components/WhatsAppButton.tsx': 5
-};
+const ALLOWED: Record<string, number> = {};
 
 function files(path: string): string[] {
   const full = join(REPO_ROOT, path);

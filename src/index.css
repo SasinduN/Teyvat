@@ -376,6 +376,15 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
  * directly on the photo, over a dark gradient; only the slide controls are
  * glass.
  */
+/* Keep all four 44px navigation controls reachable at 320px. Unlayered so
+   the compact spacing overrides the markup's utility gap. */
+@media (max-width: 375px) {
+  .te-nav .te-container { width: 100%; padding-inline: .5rem; }
+  .te-nav .te-logo { gap: .25rem; }
+  .te-nav .te-logo svg { width: 20px; height: 20px; }
+  .te-nav .te-logo > div:last-child > div:first-child { font-size: .75rem; }
+  .te-nav-phone-actions { gap: .125rem; }
+}
 .te-hero {
   min-height: 100vh;
   min-height: 100dvh;
@@ -390,10 +399,8 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 }
 .te-hero-content { text-align: left; }
 /* Text straight on the photo: the paler gold (server/test/browser-hero-contrast.test.ts). */
-:is(.te-hero-copy, .te-hero-caption, .te-page-hero-copy) { --accent-text: var(--accent-on-photo); }
+:is(.te-hero-copy, .te-page-hero-copy) { --accent-text: var(--accent-on-photo); }
 .te-hero-copy { max-width: 52rem; min-width: 0; }
-.te-hero-badge { max-width: 100%; gap: .5rem; line-height: 1.6; font-size: clamp(.6rem, 1vw, .75rem); letter-spacing: .12em; }
-.te-hero-badge > :first-child { flex-shrink: 0; }
 .te-hero-title, .te-page-title { text-wrap: balance; }
 .te-hero-title {
   max-width: var(--hero-content-max);
@@ -405,17 +412,14 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 }
 .te-hero-emphasis { color: var(--inverse-accent); }
 .te-hero-copy .te-hero-subtitle { max-width: 34rem; margin-bottom: 2rem; font-size: clamp(1rem, 1.2vw, 1.125rem); text-shadow: 0 1px 8px rgb(var(--photo-channels) / .5); }
-.te-hero-caption { display: inline-flex; max-width: min(100%, 45rem); white-space: normal; text-shadow: 0 1px 5px rgb(var(--photo-channels) / .5); }
 .te-hero-controls { position: absolute; bottom: 2rem; right: max(1rem, calc((100vw - var(--container-max)) / 2)); z-index: 25; display: flex; gap: .5rem; }
 .te-hero-controls button { display: grid; place-items: center; }
 @media (max-width: 639px) {
   .te-hero-controls { bottom: 1.25rem; }
-  .te-hero-caption { margin-top: 1.5rem; max-width: calc(100% - 3rem); font-size: .65rem; }
 }
 @media (max-height: 700px) {
   .te-hero { padding-block: calc(var(--header-height) + 1.5rem) 6rem; }
   .te-hero-title { font-size: clamp(2.25rem, 5vw, 4rem); margin-bottom: 1rem; }
-  .te-hero-badge { margin-bottom: 1rem; }
   .te-hero-copy .te-hero-subtitle { margin-bottom: 1.25rem; }
 }
 @media (prefers-reduced-motion: reduce) {

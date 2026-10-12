@@ -13,15 +13,12 @@ export const FeaturedExperiences: React.FC = () => {
         {/* Header */}
         <div className="te-section-header">
           <div>
-            <span className="te-card-badge uppercase tracking-[0.2em] mb-3">
-              Unforgettable Moments
-            </span>
             <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[var(--brand-primary)] tracking-tight">
               Experiences You’ll Remember
             </h2>
           </div>
           <p className="text-[var(--text-secondary)] max-w-md mt-4 md:mt-0 text-sm sm:text-base">
-            Signature Sri Lankan activities crafted to stir emotions, capture breathtaking vistas, and forge lifelong memories.
+            Discover Sri Lankan activities, memorable views and local experiences.
           </p>
         </div>
 

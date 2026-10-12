@@ -22,7 +22,6 @@ export function ToursPage() {
         compact
         image={tours[0]?.image}
         crumbs={[{ label: 'Home', to: paths.home }, { label: 'Tours' }]}
-        eyebrow="Signature Itineraries"
         title="Tours"
         subtitle={PAGE_DESCRIPTIONS.tours}
       />
