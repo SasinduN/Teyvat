@@ -68,12 +68,12 @@ const SECTIONS: { name: string; baseline: string; props: string; height?: number
   { name: 'Navbar', baseline: 'aee696e', props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
   // The friend import (aee696e): photo-first destination cards (was 4e9942d).
   { name: 'DestinationSpotlight', baseline: 'aee696e', props: '{ onSelectDestination() {} }' },
-  // The friend import (aee696e): content cards and badges (were e6cdc02, #12 parity).
-  { name: 'FeaturedExperiences', baseline: 'aee696e', props: '{ onSelectExperience() {} }' },
-  { name: 'ToursSection', baseline: 'aee696e', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
-  { name: 'ExperiencesSection', baseline: 'aee696e', props: '{ onSelectCategory() {} }' },
-  // #12 parity (e6cdc02): #12's glass chips, lighter photo gradients, te-container headers (were 194fa9d).
-  { name: 'JournalSection', baseline: 'e6cdc02', props: '{}' },
+  // Owner-authorized PR #39 cleanup: removed promotional badges and simplified copy.
+  // Pin the approved source commit; retain exact pixels, controls and both widths.
+  { name: 'FeaturedExperiences', baseline: '4129cd4', props: '{ onSelectExperience() {} }' },
+  { name: 'ToursSection', baseline: '4129cd4', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
+  { name: 'ExperiencesSection', baseline: '4129cd4', props: '{ onSelectCategory() {} }' },
+  { name: 'JournalSection', baseline: '4129cd4', props: '{}' },
   // #12 parity (e6cdc02): every match listed, as in #12 (was 4e9942d).
   { name: 'SearchModal', baseline: 'e6cdc02', props: '{ isOpen: true, onClose() {}, onSelectDestination() {} }', height: 900 }
 ];
@@ -172,7 +172,10 @@ async function screenshot(
   await page.evaluate(`(() => {
     document.open();
     document.write(${JSON.stringify(`<!doctype html><html><head><meta charset="utf-8">
-      <style>${css}</style></head><body><div id="root"></div></body></html>`)});
+      <style>${css}
+      /* A focused search field's blinking caret is timing noise, not design. */
+      input, textarea { caret-color: transparent; }
+      </style></head><body><div id="root"></div></body></html>`)});
     document.close();
     return true;
   })()`);

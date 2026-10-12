@@ -1,3 +1,6 @@
+# BUG-069 - PR #39 CI harness expectations and screenshot setup - FIXED 2026-10-12
+
+FOUND BY CI run 38206020761: missing screenshot directory (ENOENT), obsolete baselines for four owner-authorized cleanup sections, and stale WhatsApp colour exception. Fixes create the output directory, pin changed sections to 4129cd4 and remove the exception without relaxing comparisons. Local run also revealed a blinking-caret difference in unchanged SearchModal; screenshot-only caret normalization added. Original application behavior preserved. Verification and explicit Windows cleanup limitation: PROJECT_STATUS.md. Remote rerun pending.
 # BUG-068 - Floating booking CTA obscures card content - RESOLVED 2026-10-12
 
 Owner reported Discover Experience and destination-card overlap. Separate fixed controls plus incomplete keep-clear selectors left card photos/text/actions unprotected. A shared FloatingActions stack now owns spacing and visibility, protects complete cards and important controls and safely transfers focus before hiding a focused link. Booking/chat destinations, feature flag and other current-main safeguards preserved. Exact PR-branch verification: ../FINAL_QA.md; full mechanics: ../FLOATING_CTA_ALIGNMENT_FIX.md. Prior records/resolutions retained below.

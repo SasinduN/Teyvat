@@ -72,7 +72,9 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     await page.evaluate(`document.querySelector('header a').focus(); true`);
     assert.equal(await page.evaluate<string>(`document.querySelector('[aria-label="Pause slideshow"]').getAttribute('aria-pressed')`), 'false');
     await wait(page, `document.querySelector('.te-hero-slide[data-active=true] img')?.naturalWidth > 0 && document.querySelector('.te-hero-slide[data-active=true] img')?.getAttribute('src') !== ${JSON.stringify(first)}`, 'automatic resumed slide');
-    const shot=await page.send('Page.captureScreenshot',{format:'png'});writeFileSync(join(root,'docs/qa-results/content-cleanup/home-clean.png'),Buffer.from(shot.data as string,'base64'));
+    const directory=join(root,'docs/qa-results/content-cleanup');
+    mkdirSync(directory,{recursive:true});
+    const shot=await page.send('Page.captureScreenshot',{format:'png'});writeFileSync(join(directory,'home-clean.png'),Buffer.from(shot.data as string,'base64'));
     await page.evaluate(`document.querySelector('.te-hero-actions a[href="/explore"]').click(); true`);
     await wait(page,`location.pathname==='/explore' && document.querySelector('main h1')?.textContent==='Explore Sri Lanka'`,'hero Explore CTA');
     await page.send('Page.navigate',{url:on.baseUrl+'/'}); await wait(page,`document.querySelector('.te-hero-actions')`,'home again');
