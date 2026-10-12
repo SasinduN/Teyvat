@@ -94,6 +94,18 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
       assert.ok(Math.abs(geometry.gap-12)<=1.1,`${width} gap ${geometry.gap}`); assert.ok(Math.abs(geometry.right)<1,`${width} aligned`);
       assert.ok(geometry.width>=48&&geometry.height>=48,`${width} touch target`); assert.equal(geometry.position,'fixed');
       assert.equal(geometry.text,width<640?'':width<1280?'Book Now':'Book Your Ride');
+      for (const theme of ['light','dark']) {
+        await page.evaluate(`document.documentElement.dataset.theme=${JSON.stringify(theme)}; true`);
+        const appearance=await page.evaluate(`(() => {const link=document.querySelector('${WA}'),s=getComputedStyle(link),r=link.getBoundingClientRect(),parent=getComputedStyle(link.parentElement);return {background:s.backgroundColor,color:s.color,shadow:s.boxShadow,filter:s.filter,textShadow:s.textShadow,border:s.borderTopWidth,radius:s.borderTopLeftRadius,animation:s.animationName,icon:getComputedStyle(link.querySelector('svg')).fill,before:getComputedStyle(link,'::before').content,after:getComputedStyle(link,'::after').content,parentShadow:parent.boxShadow,parentFilter:parent.filter,takesTap:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('a')===link};})()`);
+        assert.deepEqual(appearance,{background:'rgb(37, 211, 102)',color:'rgb(255, 255, 255)',shadow:'none',filter:'none',textShadow:'none',border:'0px',radius:'999px',animation:'none',icon:'rgb(255, 255, 255)',before:'none',after:'none',parentShadow:'none',parentFilter:'none',takesTap:true},`${width} ${theme} flat WhatsApp appearance and independent tap`);
+        await page.evaluate(`document.querySelector('${WA}').focus(); true`);
+        assert.equal(await page.evaluate<string>(`getComputedStyle(document.querySelector('${WA}')).boxShadow`),'none','focus has no glow');
+        assert.ok(await page.evaluate<number>(`parseFloat(getComputedStyle(document.querySelector('${WA}')).outlineWidth)`)>=3,'visible focus outline');
+        await page.evaluate(`document.querySelector('${WA}').blur(); true`);
+        const directory=join(root,'docs/qa-results/whatsapp-flat');mkdirSync(directory,{recursive:true});
+        const screenshot=await page.send('Page.captureScreenshot',{format:'png'});
+        writeFileSync(join(directory,`${theme}-${width}.png`),Buffer.from(screenshot.data as string,'base64'));
+      }
       const controls=await page.evaluate<{name:string;left:number;right:number;height:number}[]>(`[...document.querySelectorAll('.te-nav-phone-actions a,.te-nav-phone-actions button')].filter(el=>el.getBoundingClientRect().width>0).map(el=>{const r=el.getBoundingClientRect();return {name:el.getAttribute('aria-label'),left:r.left,right:r.right,height:r.height};})`);
       assert.ok(controls.every(r=>r.left>=0&&r.right<=width&&r.height>=44),`${width} mobile navigation controls fit: ${JSON.stringify(controls)}`);
       const shot = await page.send('Page.captureScreenshot', { format:'png' });
@@ -124,6 +136,12 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     }
     await page.send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
     assert.equal(await page.evaluate<string>(`getComputedStyle(document.querySelector('${CTA}')).animationName`),'none');
+    assert.equal(await page.evaluate<string>(`getComputedStyle(document.querySelector('${WA}')).transitionDuration`),'0s','chat respects reduced motion');
+    const chatRect=await page.evaluate<{x:number;y:number}>(`(() => {const r=document.querySelector('${WA}').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+    await page.send('Input.dispatchMouseEvent',{type:'mouseMoved',...chatRect});await sleep(200);
+    assert.equal(await page.evaluate<string>(`getComputedStyle(document.querySelector('${WA}')).boxShadow`),'none','hover has no glow');
+    assert.equal(await page.evaluate<string>(`getComputedStyle(document.querySelector('${WA}')).transform`),'none','hover does not scale');
+    await page.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});
     await page.evaluate(`document.querySelector('${CTA}').focus(); true`);
     await page.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
     await page.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});

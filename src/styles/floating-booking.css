@@ -42,12 +42,35 @@
   transition: background-color 180ms ease, transform 180ms ease, padding 180ms ease;
   animation: te-booking-welcome 600ms ease-out 1;
 }
-.te-floating-chat { width: 56px; height: 56px; color: var(--palette-white); background: var(--palette-deep-emerald); border: 1px solid var(--palette-champagne-gold); box-shadow: 0 4px 14px rgb(18 56 45 / .16); }
-.te-floating-chat:hover { background: var(--palette-forest-night); }
+.te-floating-chat {
+  width: 56px;
+  height: 56px;
+  padding: 14px;
+  color: #FFFFFF;
+  background: #25D366;
+  border: 0;
+  box-shadow: none;
+  filter: none;
+  text-shadow: none;
+  animation: none;
+  transition: background-color 180ms ease;
+}
+.te-floating-chat:hover { background: #20BD5A; }
+.te-floating-chat::before, .te-floating-chat::after { content: none; }
+.te-floating-chat svg { flex: none; filter: none; box-shadow: none; }
 .te-floating-booking[data-visible="true"], .te-floating-chat[data-state="shown"] { opacity: 1; visibility: visible; }
 .te-floating-booking:focus-visible, .te-floating-chat:focus-visible {
   outline: 3px solid var(--palette-sky); outline-offset: 3px;
+}
+.te-floating-booking:focus-visible {
   box-shadow: 0 0 0 6px var(--palette-deep-emerald);
+}
+/* Override the public shell's focus shadow only for this chat link. */
+.site .te-floating-chat[data-whatsapp-button]:focus-visible {
+  outline: 3px solid var(--brand-primary);
+  outline-offset: 3px;
+  box-shadow: none;
+  filter: none;
 }
 .te-floating-booking-label, .te-floating-booking-compact, .te-floating-booking-arrow { display: none; }
 @media (min-width: 640px) {
@@ -71,10 +94,12 @@
   to { transform: translateY(0); }
 }
 @media (prefers-reduced-motion: reduce) {
+  .te-floating-chat { transition: none; }
   .te-floating-booking { animation: none; transition: none; }
   .te-floating-booking:hover { transform: none; }
 }
 @media (forced-colors: active) {
   .te-floating-booking, .te-floating-chat { border: 1px solid ButtonText; background: ButtonFace; color: ButtonText; }
   .te-floating-booking:focus-visible, .te-floating-chat:focus-visible { outline-color: Highlight; }
+  .site .te-floating-chat[data-whatsapp-button]:focus-visible { outline-color: Highlight; }
 }
