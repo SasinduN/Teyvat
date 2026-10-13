@@ -14,6 +14,14 @@ export function localPhoto(image: string): string {
 
 /** The same named corrections as migration 0010, for older content payloads. */
 export function publicPhoto(table: string, id: string, image: string): string {
+  // Ella's primary image is a protected geographic invariant. Older DB rows
+  // and admin-edited URLs have repeatedly restored a coastal photo here;
+  // resolve by stable destination ID before considering any stored URL.
+  if (table === 'destinations' && id === 'ella') {
+    const photoKey = PHOTO_CORRECTIONS.destinations.ella;
+    const photo = photographs.find(row => row.key === photoKey);
+    return photo ? localPhoto(photo.image) : '/images/photo-unavailable.svg';
+  }
   if (table === 'hidden_gems' && id === 'gal-oya') {
     const previous = photographs.find(photo => photo.key === 'gal-oya')!;
     const replacement = photographs.find(photo => photo.key === 'gal-oya-park')!;

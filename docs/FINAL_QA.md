@@ -1,3 +1,11 @@
+## Ella image regression follow-up — 2026-10-13
+
+FOUND BY STATIC ANALYSIS: `publicPhoto` previously corrected Ella only when its stored primary URL matched the known legacy seed. Any non-seed/admin URL passed through, so an unrelated coastal image could return. Both the homepage Discover card and Explore map details read the same API destination record. The exact production row was not inspected.
+
+IMPLEMENTED: `shared/public-photos.ts` now canonicalizes stable destination ID `ella` to the existing locally optimized, source-identified Nine Arch Bridge WebP for every stored URL. Missing mapping yields the neutral placeholder. `TravelImage` retains identity-safe retry/fallback and logs terminal errors in development. `server/test/public-photos.test.ts` covers stale/coastal/admin URLs, asset existence and alt, Ella/Mirissa separation, and the two components' shared data source. Other destination assets unchanged.
+
+VERIFIED: `npm.cmd test public-photos` passes 11/11, including new ID/mapping uniqueness, mismatch override, local asset/alt and shared-component-source assertions. `npm.cmd run build` and `git diff --check` pass. The full suite was started and safely stopped after multiple DB-guarded files refused to run because TEST_DATABASE_URL is unset; the guard was not bypassed. A rendered browser check was not rerun for this follow-up, so the unit source/data assertions should not be mistaken for a new screenshot verification.
+
 
 ## 2026-10-13 — PR #42 browser CI follow-up
 

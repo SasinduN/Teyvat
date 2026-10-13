@@ -1,3 +1,9 @@
+# 2026-10-13 — Pin Ella photo against custom database overrides
+
+BUG-076: `publicPhoto` only corrected the known Ella seed URL, so arbitrary non-seed CMS/admin values bypassed correction and could resurface a beach photo in both Discover and map details. The exact live database value was not inspected. Ella now resolves by stable ID to the existing locally hosted, verified Nine Arch Bridge WebP regardless of stored URL; absent mapping uses neutral placeholder. Both components read the same API record. Added development logging after identity-preserving retries fail and regression coverage for stale/coastal/admin URLs, distinct Mirissa mapping, asset existence/alt and UI data-source consistency. Other destinations left unchanged.
+
+Focused test/build/browser verification pending because the shell helper failed to start commands in the nested PR checkout; no passing result is claimed.
+
 ## 2026-10-13 — Repair local ride initialization
 PR preparation: migration 0018 carries the owner-confirmed Car/SUV limits (5 passengers, 3 bags, accepting requests) into deployment; it updates only these category capacities/availability, preserving booking records. Production deployment remains pending PR merge.
 

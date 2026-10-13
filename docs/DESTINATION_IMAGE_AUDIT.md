@@ -4,7 +4,7 @@ Active application: Teyvat-latest-20261012, confirmed by its PROJECT_STATUS.md. 
 
 ## Findings and evidence
 
-The reported Ella → Mirissa mismatch was NOT REPRODUCED in the active local API or Chrome. Ella already resolved to the existing Nine Arch Bridge WebP. Actual 480/1280 pixel Ella assets were inspected; the Commons source describes the bridge in Ella and credits MichaelJames2468 under CC BY-SA 4.0. The actual Explore sequence included all 20 destinations and Ella → Mirissa → Ella. Production CMS replacements and deployment have not been inspected.
+The reported Ella → Mirissa mismatch was NOT REPRODUCED in the active local API or Chrome during the first audit: the seeded Ella row resolved to the existing Nine Arch Bridge WebP. A follow-up code trace found why the error could return: `publicPhoto` preserved any non-seed/admin-edited database URL, so an incorrect custom Ella URL bypassed the seed correction. The production CMS row was not inspected, so that is a confirmed regression path and the likely root cause, not proof of the exact live row. The correction now pins Ella by stable ID to its licensed local Nine Arch Bridge WebP regardless of the stored URL. Actual bridge pixels and Commons source were inspected; the source identifies Nine Arch Bridge in Ella and credits MichaelJames2468 under CC BY-SA 4.0. Homepage Discover and map panel both read the same API destination record.
 
 FOUND BY STATIC ANALYSIS: migration 0013 restores generic stock URLs if photos were not imported into R2. The API correction matched complete URL strings; changed width/query order could bypass it. The seed reused stock photographs across distinct places. IntroSection independently hardcoded two stock URLs. The optimized registry omitted Sigiriya despite existing correct local assets. Unlocalized Wikimedia images were not allowed by the production CSP. These are separate causes, not proof that every current image is wrong.
 
@@ -117,3 +117,14 @@ Fresh results: FINAL_QA.md. Evidence directory: docs/qa-results/image-typography
 No production deployment, physical-device/cross-browser acceptance or full WCAG certification is claimed. Belilena remains unresolved.
 
 Final built-site verification PASS: 22 desktop/20 measured visible mobile selections; all 33 published image URLs decode; 108 responsive WebP URLs return 200. Filter/marker/theme/refresh/route and injected-error-reset assertions passed. Exact booking-fixture and broader test limits are in FINAL_QA.md.
+
+
+## Ella regression follow-up — 2026-10-13
+
+**Root cause (code path confirmed; live database row not inspected):** the correction layer only replaced the known legacy seed URL. A non-seed CMS/admin replacement on the Ella row was passed through unchanged, so a coastal photo could reappear after an unrelated edit or deployment. The homepage Discover preview and Explore map panel both consume the API destination record; correcting that record centrally fixes both.
+
+**Fix:** `publicPhoto("destinations", "ella", ...)` now ignores the stored primary image and resolves the stable `ella` ID through `PHOTO_CORRECTIONS.destinations` to the locally optimized, verified Nine Arch Bridge image. If that mapping is absent it returns the neutral unavailable illustration. `TravelImage` already retries the same photo identity and then uses the neutral placeholder; terminal failures are now reported in development. No Mirissa or unrelated image is used as fallback. Other destination mappings and stored images are unchanged.
+
+**Cache review:** asset variants are content-hashed and local; the public API uses `Cache-Control: no-cache`, and client content is in-memory only. No evidence indicates that broad cache disabling or a service-worker change is needed.
+
+**Automated coverage:** `server/test/public-photos.test.ts` verifies legacy, resized/coastal, arbitrary admin URL, local asset existence, distinct Ella/Mirissa mapping, descriptive alt text, and that homepage/map components read the shared destination record. Targeted verification for this follow-up: `npm.cmd test public-photos` (11/11 pass) and `npm.cmd run build` (pass). A rendered browser test was not rerun for this follow-up; prior screenshots verified the card/map rendering with the seeded URL, and the new regression test verifies both consume the shared destination record.
