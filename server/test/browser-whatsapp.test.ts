@@ -284,7 +284,7 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     const name = await page.evaluate<string>(`(() => {
       const card = document.querySelector('#discover .destination-card');
       card.querySelector('a[href^="/destinations/"]').click();
-      return card.querySelector('img').alt;
+      return card.querySelector('h3').textContent.trim();
     })()`);
     const id = await page.evaluate<string>(`fetch('/api/content').then((r) => r.json()).then((c) => c.destinations.find((d) => d.name === ${JSON.stringify(name)}).id)`);
     await waitFor(page, `document.body.dataset.route === '/destinations/${id}'`, `${name}'s page`);

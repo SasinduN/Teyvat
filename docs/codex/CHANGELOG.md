@@ -1,3 +1,9 @@
+
+## 2026-10-13 — PR #42 browser CI follow-up
+
+Fixed two stale browser-test assumptions exposed by CI: the frozen homepage screenshot fixture now replaces first-party `/assets/` image paths as well as external URLs, keeping the baseline comparison independent of the intentional photo-source corrections; the WhatsApp navigation test now reads the destination card heading rather than assuming the photo alt equals the destination name. No application behavior changed.
+
+VERIFIED: source-level root causes confirmed from failed GitHub Actions log. Targeted changes pass `git diff --check`; fresh guarded DB browser run is delegated to GitHub CI because this workspace has no configured `TEST_DATABASE_URL`.
 ## 2026-10-13 — Repair local ride initialization
 PR preparation: migration 0018 carries the owner-confirmed Car/SUV limits (5 passengers, 3 bags, accepting requests) into deployment; it updates only these category capacities/availability, preserving booking records. Production deployment remains pending PR merge.
 
