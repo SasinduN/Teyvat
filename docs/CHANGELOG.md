@@ -1,3 +1,7 @@
+## 2026-10-13 — Pin Ella image against database overrides
+
+Fixed recurring coastal images under the Ella label. The public API previously corrected only the exact legacy seed URL; a changed CMS/admin URL for destination ID `ella` bypassed that correction and was returned to both the homepage Discover card and Explore map details. Ella now resolves by stable ID to its verified local Nine Arch Bridge WebP, regardless of stored primary URL. If missing, it uses the neutral placeholder. The identity-safe image retry logs terminal failures in development. Added regression checks for mismatched stored URLs, local asset and alt metadata, Ella/Mirissa separation, and the shared card/map data source. Other destination mappings are unchanged. Exact live database row was not inspected.
+
 
 ## 2026-10-13 — PR #42 browser CI follow-up
 

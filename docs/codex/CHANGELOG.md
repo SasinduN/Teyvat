@@ -1,3 +1,9 @@
+## 2026-10-13 — Pin Ella image against database overrides
+
+Fixed the recurring Ella beach-image path: publicPhoto previously replaced only the exact legacy seed URL, allowing a non-seed admin/database image to bypass correction. Destination ID `ella` now always maps to the same-origin optimized Nine Arch Bridge image via the central ID mapping; if the mapping is unavailable the API returns the neutral placeholder. Homepage Discover and Explore map panel already share this API record. TravelImage now logs terminal failures in development and retains its identity-safe retry/neutral fallback. Other destination mappings and images are unchanged.
+
+Regression tests cover arbitrary/coastal stored URLs, distinct Ella/Mirissa images, local asset existence, alt text, and both components reading the shared record. Live production CMS row was not inspected; root cause is the confirmed code path, with exact production source unverified.
+
 
 ## 2026-10-13 — PR #42 browser CI follow-up
 
