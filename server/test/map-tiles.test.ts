@@ -8,10 +8,11 @@ test('missing and whitespace keys use real OSM tiles in both themes', () => {
     assert.deepEqual(mapTileConfig(theme, key), { url: OSM_TILE_URL, attribution: OSM_ATTRIBUTION });
   }
 });
-test('configured CARTO key preserves theme styles and encodes the key', () => {
+test('configured CARTO key keeps light Voyager tiles in both themes and encodes the key', () => {
   for (const theme of ['light', 'dark'] as const) {
     const config = mapTileConfig(theme, ' a+b/c ');
-    assert.ok(config.url.includes(theme === 'dark' ? '/dark_all/' : '/voyager/'));
+    assert.ok(config.url.includes('/voyager/'));
+    assert.deepEqual(config, mapTileConfig('light', ' a+b/c '));
     assert.ok(config.url.endsWith('?key=a%2Bb%2Fc'));
     assert.equal(config.attribution, CARTO_ATTRIBUTION);
   }

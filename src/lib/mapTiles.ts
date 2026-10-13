@@ -18,10 +18,9 @@ export function onThemeChangeWhileMapped(map: Leaflet.Map, listener: (theme: The
 }
 
 /**
- * Adds the CARTO tiles for the current theme to `map`, and swaps them in
- * place when the theme changes: same map, same view.
+ * Adds a light basemap in either site theme. Theme changes leave the tile
+ * layer and view intact; marker and route colours may still follow the site.
  */
 export function addThemedTiles(L: typeof Leaflet, map: Leaflet.Map, options: Leaflet.TileLayerOptions = {}): void {
-  const layer = L.tileLayer(mapTiles.url(currentTheme()), { ...options, attribution: mapTiles.attribution }).addTo(map);
-  onThemeChangeWhileMapped(map, (theme) => layer.setUrl(mapTiles.url(theme)));
+  L.tileLayer(mapTiles.url(currentTheme()), { ...options, attribution: mapTiles.attribution }).addTo(map);
 }

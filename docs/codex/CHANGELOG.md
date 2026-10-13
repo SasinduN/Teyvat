@@ -1,3 +1,7 @@
+## 2026-10-13 — Keep the map light in dark site mode
+
+Owner requested a light basemap while switching the rest of the website to dark mode. Shared mapTileConfig now selects CARTO Voyager in both themes (existing attributed OpenStreetMap fallback retained). Tile layers no longer reload on theme changes; removed the Explore map dark-only hue/tint override. Marker, route and control theme handling remains unchanged. Updated provider and rendered theme regressions to check light tiles, matching tint and unchanged tile sources across toggles. Validation results are recorded in FINAL_QA.md. Historical entries retained.
+
 ## 2026-10-12 - Flat WhatsApp floating button
 
 Reused WhatsAppButton in the shared FloatingActions stack. The existing 56px circular link now uses official #25D366 with a white glyph, no border, shadow, filter, text shadow, pseudo-element glow or animation, and a minimal 180ms background hover transition. A scoped override removes the inherited public-shell focus shadow while retaining a 3px theme-aware keyboard outline; reduced motion disables transitions. Existing configured phone/message, semantic accessible link, secure new-tab attributes, booking navigation, safe-area positioning and collision protections are preserved. No duplicate button or custom cursor added.

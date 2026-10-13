@@ -689,10 +689,7 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 #explore-map .leaflet-tile-pane {
   filter: sepia(0.14) saturate(0.88) brightness(1.01);
 }
-/* Dark: CARTO's dark basemap (src/lib/mapTiles.ts), with a little of the same green. */
-:root[data-theme="dark"] #explore-map .leaflet-tile-pane {
-  filter: sepia(0.18) hue-rotate(110deg) saturate(1.1) brightness(1.08);
-}
+/* The light basemap keeps this same subtle tint in both site themes. */
 
 /* Hide horizontal scrollbars for clean galleries */
 .no-scrollbar::-webkit-scrollbar {

@@ -15,8 +15,8 @@ import './test-db';
  *   - with nothing saved the theme stays light as the system changes, and
  *     neither follows it;
  *   - with storage blocked, light, and no errors;
- *   - the map: CARTO's dark basemap in the dark theme, swapped in place
- *     (same map) when the theme changes.
+ *   - the map: light tiles and the same tile tint in both themes, without
+ *     replacing the map or reloading its tiles when the theme changes.
  *
  * Needs `npm run build` and Chrome; skipped with a message otherwise.
  */
@@ -175,7 +175,7 @@ describe('the light and dark themes, in Chrome', { skip, timeout: 8 * 60_000 }, 
     assert.deepEqual(await page.evaluate<string[]>('window.__errors'), [], 'no errors');
   });
 
-  test('the map: dark tiles in the dark theme, swapped in place when the theme changes', async () => {
+  test('the map stays light and retains its tiles when the site theme changes', async () => {
     const page = await newTab('dark');
     await save(page, 'dark');
     await open(page, '/explore');
@@ -183,16 +183,22 @@ describe('the light and dark themes, in Chrome', { skip, timeout: 8 * 60_000 }, 
     await page.evaluate(`document.querySelector('#explore-map').scrollIntoView(), true`);
     await poll(page, `document.querySelectorAll('#explore-map img.leaflet-tile').length > 0`, 'tiles');
     const keyed = Boolean(process.env.VITE_CARTO_KEY?.trim());
-    const tilesMatch = (theme: 'light' | 'dark') => `[...document.querySelectorAll('#explore-map img.leaflet-tile')].every((t) => {
+    const tilesMatch = () => `[...document.querySelectorAll('#explore-map img.leaflet-tile')].every((t) => {
       const url = new URL(t.src);
-      return ${keyed} ? url.origin === 'https://basemaps.cartocdn.com' && url.pathname.includes('/${theme === 'dark' ? 'dark_all' : 'voyager'}/')
+      return ${keyed} ? url.origin === 'https://basemaps.cartocdn.com' && url.pathname.includes('/voyager/')
         : url.origin === 'https://tile.openstreetmap.org' && /^\\/\\d+\\/\\d+\\/\\d+\\.png$/.test(url.pathname);
     })`;
-    assert.equal(await page.evaluate<boolean>(tilesMatch('dark')), true, 'dark theme uses the configured provider');
+    assert.equal(await page.evaluate<boolean>(tilesMatch()), true, 'dark site theme still uses the light basemap');
+    const tileState = () => page.evaluate<{ sources: string[]; filter: string }>(`({sources: [...document.querySelectorAll('#explore-map img.leaflet-tile')].map(t => t.src).sort(), filter: getComputedStyle(document.querySelector('#explore-map .leaflet-tile-pane')).filter})`);
+    const initialTiles = await tileState();
 
     await page.evaluate(`document.querySelector('#explore-map .leaflet-container').__sameMap = true, true`);
     await page.evaluate(`document.querySelector('header .sm\\\\:flex [data-theme-toggle]').click(), true`);
-    await poll(page, `document.documentElement.dataset.theme === 'light' && (${tilesMatch('light')})`, 'light theme tiles');
+    await poll(page, `document.documentElement.dataset.theme === 'light' && (${tilesMatch()})`, 'light theme tiles');
     assert.equal(await page.evaluate<boolean>(`document.querySelector('#explore-map .leaflet-container').__sameMap === true`), true, 'the same map, not a new one');
+    assert.deepEqual(await tileState(), initialTiles, 'light site theme preserves tile sources and tint');
+    await page.evaluate(`document.querySelector('header .sm\\\\:flex [data-theme-toggle]').click(), true`);
+    await poll(page, `document.documentElement.dataset.theme === 'dark' && (${tilesMatch()})`, 'dark site theme with light tiles');
+    assert.deepEqual(await tileState(), initialTiles, 'switching back to dark preserves the light map');
   });
 });

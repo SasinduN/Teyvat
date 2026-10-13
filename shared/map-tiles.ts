@@ -18,11 +18,11 @@ export const OSM_TILE_URL = `${OSM_TILES_ORIGIN}/{z}/{x}/{y}.png`;
 export const OSM_ATTRIBUTION =
   '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors';
 
-/** Use real, attributed map tiles even when a local CARTO key is absent. */
-export function mapTileConfig(theme: 'light' | 'dark', key?: string | null) {
+/** Keep the basemap light in either site theme, with attributed OSM when no CARTO key is configured. */
+export function mapTileConfig(_theme: 'light' | 'dark', key?: string | null) {
   if (!key?.trim()) return { url: OSM_TILE_URL, attribution: OSM_ATTRIBUTION };
   return {
-    url: (theme === 'dark' ? cartoDarkUrl : cartoVoyagerUrl)(key),
+    url: cartoVoyagerUrl(key),
     attribution: CARTO_ATTRIBUTION
   };
 }
