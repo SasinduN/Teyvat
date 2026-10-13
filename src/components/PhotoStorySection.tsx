@@ -1,3 +1,4 @@
+import { TravelImage } from '@/components/TravelImage';
 import { useModalFocus } from '@/hooks/useModalFocus';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -46,7 +47,7 @@ export const PhotoStorySection: React.FC = () => {
               onClick={() => setSelectedPhoto(photo)}
               className="te-card te-photo-card group relative rounded-2xl overflow-hidden shadow-lg border border-white/10 aspect-[3/4] cursor-pointer bg-black"
             >
-              <img
+              <TravelImage
                 src={photo.image}
                 alt={photo.title}
                 className="w-full h-full object-cover group-hover:scale-[1.035] transition-transform duration-700 ease-out"
@@ -103,7 +104,7 @@ export const PhotoStorySection: React.FC = () => {
               </button>
 
               <div className="md:w-2/3 bg-black flex items-center justify-center max-h-[60vh] md:max-h-[80vh]">
-                <img
+                <TravelImage
                   src={selectedPhoto.image}
                   alt={selectedPhoto.title}
                   className="w-full h-full object-contain"

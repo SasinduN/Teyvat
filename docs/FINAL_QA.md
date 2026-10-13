@@ -1,3 +1,49 @@
+
+## 2026-10-13 — PR #42 browser CI follow-up
+
+Fixed two stale browser-test assumptions exposed by CI: the frozen homepage screenshot fixture now replaces first-party `/assets/` image paths as well as external URLs, keeping the baseline comparison independent of the intentional photo-source corrections; the WhatsApp navigation test now reads the destination card heading rather than assuming the photo alt equals the destination name. No application behavior changed.
+
+VERIFIED: source-level root causes confirmed from failed GitHub Actions log. Targeted changes pass `git diff --check`; fresh guarded DB browser run is delegated to GitHub CI because this workspace has no configured `TEST_DATABASE_URL`.
+## 2026-10-13 — Repair local ride initialization
+PR preparation: migration 0018 carries the owner-confirmed Car/SUV limits (5 passengers, 3 bags, accepting requests) into deployment; it updates only these category capacities/availability, preserving booking records. Production deployment remains pending PR merge.
+
+BUG-075: legacy imported booking_attempts had an IP-only key and no action column; migration 0014 used CREATE TABLE IF NOT EXISTS and could not upgrade it. Added transactional, idempotent migration 0016 to preserve counters/windows across all three actions and restore the composite key/check. Applied only to guarded localhost development DB. Owner requested Car and SUV; migration 0017 adds SUV disabled until genuine capacities are provided. No existing ride requests, contact fields, routes or notification behavior changed.
+
+VERIFIED: real Chrome on 5173 loads all ride fields without the loading/error screen; actual guest-session and request-history endpoints both HTTP 200 (no fixtures). 18 focused booking-client/ride-validation tests pass. Owner confirmed both Car and SUV: maximum 5 passengers and 3 bags. Applied via explicitly local-only configuration script; both accept requests. Real Chrome confirms capacities and enabled Request Ride button. Build/typecheck PASS (existing nonfatal dependency/chunk warnings); migration rerun preserves counters and all three action upserts pass with test writes rolled back. No ride submitted or production migration performed.
+
+# 2026-10-13 — Destination accuracy and typography verification
+
+Active application: Teyvat-latest-20261012. Built Express preview: http://127.0.0.1:8103/. These results supersede earlier claims for this change; historical QA remains below.
+
+## VERIFIED
+
+- Final production client/server build and typecheck exited 0. Existing nonfatal Zod annotation and large-chunk warnings remain. Final audit-tool typecheck exited 0.
+- Focused regressions: 36 tests / 6 files PASS (public-photos, colour-tokens, map-tiles, map-markers, booking-client, ride-validation). No tests skipped in that run. No lint script configured.
+- Actual pixels inspected for existing and downloaded credited photographs; Commons source descriptions/coordinates and licenses read. All 20 main destination subjects are correct. Gal Oya’s different-reservoir image corrected to identified park imagery. Existing valid assets preserved; 108 responsive WebP candidate URLs return HTTP 200 with image/webp. Asset fingerprints match actual bytes.
+- Chrome built-site audit: 126 heading observations across 9 route targets, 7 widths (320/375/390/768/1024/1440/1920), and light/dark. No observed page overflow or clipped H1. Actual loaded Playfair Display faces verified; inner H1 weight 700. Ride H1 scales 32–52px, tracking -0.025em, leading 1.12.
+- Actual Explore selection: 22 desktop observations (all 20 plus Mirissa → Ella) and 20 measured visible mobile thumbnails at 375px. Source assignment, descriptive alt and visible-image decoding PASS. CSS-hidden lazy counterparts are not falsely treated as failed visible photos. All 33 distinct published image URLs, including the labeled unavailable illustration, return 200 and decode under the built server image policy.
+- Actual beach category membership, Mirissa Leaflet marker selection, source-keyed reset after injected image failure, refresh returning Ella, destination route switches, and unchanged light tile style through actual theme toggle PASS. Final assertion run exited 0. Captured map screenshot shows light tiles in the dark site and Nine Arch Bridge in Ella.
+- Four ride layout checks at 200% ROOT TEXT enlargement (375/1440px, light/dark) show no page overflow or clipped heading. This is not browser-toolbar 200% zoom.
+- Ride form screenshots inspected at light mobile/dark desktop/dark mobile; actual Ella/map screenshot and the asset contact sheet inspected. Clear heading hierarchy, shared container alignment, readable themes and unchanged compact ride fields observed. Form screenshots use the fixture described below.
+- Additional real Chrome regressions PASS: hero next/previous returning to a cached photo; Home and Destinations hover reveal with stable 420px card height and decoded photos; emulated mobile touch reveal; destination-card navigation; navbar Book Your Ride navigation. Evidence: card-hero-regressions.json.
+- Git diff --check exits 0; only normal CRLF-to-LF notices for two existing files.
+
+## BLOCKED / NOT TESTED
+
+- Full suite executed: 14/41 files PASS; remaining database-dependent files refuse execution because TEST_DATABASE_URL is unset. No guarded-test or production database substitution. No full-suite green claim.
+- Live ride initialization has a local schema blocker (BUG-075): booking_attempts contains ip, attempts, window_started but lacks action required by the unchanged rate limiter. PostgreSQL 42703 and real Something went wrong / Loading ride options screenshots observed. Catalogue and account GETs return 200. Backend, schema, credentials and migrations were not changed.
+- Form-layout QA uses browser-only successful guest session and empty history responses, with actual local catalogue/account reads. No request was submitted and no live persistence success is claimed. Actual catalogue has no enabled ride vehicle, so the form correctly reports requests unavailable and disables submission. Staff configuration is retained.
+- Belilena remains missing licensed, confidently identified photography; its unverified seed now uses the honest unavailable illustration. Owner verification/upload required.
+- Actual browser-toolbar 200% zoom, physical devices, Safari/Firefox, screen readers, complete photo-background contrast/WCAG acceptance, live WhatsApp messaging, provider guarantees, production CMS content and deployment NOT TESTED.
+
+## Evidence and audit corrections
+
+Evidence: docs/qa-results/image-typography/browser-audit.json, asset-http.json, test-summary.json, content-before.json/content-after.json, downloads.json, contact-sheet.jpg, explore-final.png, booking-*.png and live-error-booking-*.png. The browser report explicitly names its booking fixture; prior audit errors are retained.
+
+Preliminary harness problems were corrected without relaxing application requirements: filter labels include counts; category membership differs from a marker’s primary icon; coordinate changes during map animation are distinct from tile style; a hidden callback input is not proof that the main form loaded; hidden lazy thumbnails must be inspected at mobile width. A stale preview process held an old HTML template during rebuild; a fresh current-template preview was verified before final assertions. Interrupted/failed attempts are not represented as passes.
+
+Implementation/source inventory: DESTINATION_IMAGE_AUDIT.md and TYPOGRAPHY_AUDIT.md. Changelog and BUG-072–075 updated; existing BUG-033/034 continuity and Belilena history retained.
+
 ## 2026-10-13 — Light basemap in both website themes
 
 VERIFIED on fix/keep-map-light-20261013: production build/typecheck PASS; map-tiles 3/3 and colour-tokens 2/2 PASS; browser-theme 10/10 PASS in Chrome, zero skipped/cancelled; git diff --check PASS. Browser uses the existing guarded loopback-only PostgreSQL 18 test database, not the application database. Actual dark→light→dark site toggles preserve light tile sources, identical computed tile tint and the same map container. Existing page-theme persistence, first-paint and storage-blocked checks also pass. Unit provider checks cover both keyed CARTO Voyager and keyless OSM in both themes. Existing nonfatal Zod annotation and large-chunk build warnings remain. No lint script exists. Full suite, physical devices, Safari/Firefox and production rollout NOT TESTED. Map controls/markers retain site theme styling; only basemap/tile tint is fixed light.

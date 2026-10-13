@@ -1,3 +1,21 @@
+# BUG-072 — Book Your Ride H1 inherits regular weight — FIX IMPLEMENTED 2026-10-13
+
+Static source: ride H1 lacked font-bold/explicit weight and overrode shared heading-page sizing. Shared supported 700 display weight, leading/tracking and layout tokens now apply. Build and focused regressions pass; rendered measurements/screenshots and exact form-fixture limits: ../TYPOGRAPHY_AUDIT.md and ../FINAL_QA.md.
+
+# BUG-073 — Exact seed URL matching and external photo delivery — FIX IMPLEMENTED 2026-10-13
+
+Static source: complete-URL equality let sizing/query order bypass named seed correction; generic seed sources reused across places; independent IntroSection stock paths; local Sigiriya variants not registered; unmapped Commons URLs violate production image policy. Known host/path seed identity and shared same-photo local assets/metadata now cover all 20 main destinations. Unknown owner images preserved; no DB writes. The reported Ella beach mismatch was NOT REPRODUCED in active local API/Chrome; deployment-specific CMS content remains uninspected. Evidence: ../DESTINATION_IMAGE_AUDIT.md. Extends BUG-033 without erasing historical evidence.
+
+# BUG-074 — Photo subject/geography contradicts original labels — FIX IMPLEMENTED 2026-10-13
+
+Verified source/pixels: Gal Oya cover depicted Ekgal Oya reservoir. Guarded replacement now depicts identified Gal Oya National Park/Senanayake Samudraya. Original scene captions falsely described train/fog, dusk, resting leopard and evening rituals; corrections are guarded by photo identity and exact original copy. Extends BUG-034. Existing Belilena issue remains OPEN: no licensed identified photo; unverified seed now honest placeholder. Source/rights/manual gaps: ../DESTINATION_IMAGE_AUDIT.md.
+
+# BUG-075 — Local booking-attempt schema lacks action — RESOLVED LOCALLY 2026-10-13
+
+Follow-up owner-authorized repair: migration 0016 upgrades the legacy IP-only table, retaining counters/windows for session/create/change and restoring the composite primary key. Applied to guarded local DB. Real Chrome 5173 form initialization and actual session/history HTTP 200 verified without fixtures; 18 focused tests pass. Car and SUV now enabled locally with owner-confirmed 5 passengers/3 bags each; browser confirms enabled request button. Build/typecheck and migration idempotence pass. No live ride submission or production deployment verified. The original image-audit evidence below is historical.
+
+VERIFIED read-only: public.booking_attempts columns are ip, attempts, window_started; current guest-session limiter inserts/conflicts on ip/action. Local server logs PostgreSQL 42703 from overLimit; actual booking screenshots show Something went wrong / Loading ride options. Catalogue and ride-account GETs return 200. No schema, credentials, booking backend, migrations or test guards changed during this scoped image/type task. Form-layout QA uses browser-only successful session and empty history with real catalogue/account reads; not live persistence verification. Repair this local database compatibility issue in a separate authorized backend/environment task.
+
 # BUG-071 — Map becomes dark with the website theme — RESOLVED IN LOCAL CHROME 2026-10-13
 
 Owner requested the basemap remain light. FOUND BY STATIC ANALYSIS: keyed provider selected dark_all in dark mode, and Explore applied a different dark-only tile filter. Shared selection now retains Voyager/OSM light tiles and the existing light tint; theme toggles no longer reset tile URLs. Site theme, controls and marker behavior preserved. VERIFIED: production build/typecheck and 15 focused tests PASS, including Chrome map/theme toggle regression. Detailed limits: ../FINAL_QA.md. No production deployment yet.

@@ -8,7 +8,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:The_Nine_Arches_Bridge.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/f/f6/The_Nine_Arches_Bridge.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/The_Nine_Arches_Bridge.jpg/1280px-The_Nine_Arches_Bridge.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/The_Nine_Arches_Bridge.jpg/1280px-The_Nine_Arches_Bridge.jpg",
+    "alt": "Nine Arch Bridge surrounded by forest in Ella, Sri Lanka"
   },
   {
     "key": "sigiriya",
@@ -19,7 +20,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Sigiriya_Rock_fortress.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/5/51/Sigiriya_Rock_fortress.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Sigiriya_Rock_fortress.jpg/1280px-Sigiriya_Rock_fortress.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Sigiriya_Rock_fortress.jpg/1280px-Sigiriya_Rock_fortress.jpg",
+    "alt": "Sigiriya Rock Fortress above the surrounding forest, Sri Lanka"
   },
   {
     "key": "galle",
@@ -30,7 +32,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Galle_Fort_Lighthouse.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/b/b0/Galle_Fort_Lighthouse.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Galle_Fort_Lighthouse.jpg/1280px-Galle_Fort_Lighthouse.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Galle_Fort_Lighthouse.jpg/1280px-Galle_Fort_Lighthouse.jpg",
+    "alt": "Galle Fort lighthouse and coastal ramparts, Sri Lanka"
   },
   {
     "key": "mirissa",
@@ -41,7 +44,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Mirissa_beach%2C_Srilanka.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/6/6f/Mirissa_beach%2C_Srilanka.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Mirissa_beach%2C_Srilanka.jpg/1280px-Mirissa_beach%2C_Srilanka.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Mirissa_beach%2C_Srilanka.jpg/1280px-Mirissa_beach%2C_Srilanka.jpg",
+    "alt": "Rocky shoreline and beach in Mirissa, Sri Lanka"
   },
   {
     "key": "kandy",
@@ -52,7 +56,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Kandy_Lake_and_the_Temple_of_the_Sacred_Tooth_Relic%2C_Kandy.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/5/57/Kandy_Lake_and_the_Temple_of_the_Sacred_Tooth_Relic%2C_Kandy.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Kandy_Lake_and_the_Temple_of_the_Sacred_Tooth_Relic%2C_Kandy.jpg/1280px-Kandy_Lake_and_the_Temple_of_the_Sacred_Tooth_Relic%2C_Kandy.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Kandy_Lake_and_the_Temple_of_the_Sacred_Tooth_Relic%2C_Kandy.jpg/1280px-Kandy_Lake_and_the_Temple_of_the_Sacred_Tooth_Relic%2C_Kandy.jpg",
+    "alt": "Kandy Lake and the Temple of the Sacred Tooth Relic, Sri Lanka"
   },
   {
     "key": "yala",
@@ -63,7 +68,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Sri_Lankan_Leopard_yala.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Sri_Lankan_Leopard_yala.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Sri_Lankan_Leopard_yala.jpg/1280px-Sri_Lankan_Leopard_yala.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Sri_Lankan_Leopard_yala.jpg/1280px-Sri_Lankan_Leopard_yala.jpg",
+    "alt": "Sri Lankan leopard in Yala National Park"
   },
   {
     "key": "nuwara-eliya",
@@ -74,7 +80,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Tea-plantation_Nuwara_Eliya-2567.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/e/e5/Tea-plantation_Nuwara_Eliya-2567.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Tea-plantation_Nuwara_Eliya-2567.jpg/1280px-Tea-plantation_Nuwara_Eliya-2567.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Tea-plantation_Nuwara_Eliya-2567.jpg/1280px-Tea-plantation_Nuwara_Eliya-2567.jpg",
+    "alt": "Tea plantation in Nuwara Eliya, Sri Lanka"
   },
   {
     "key": "anuradhapura",
@@ -85,7 +92,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Ruwanwelisaya_Anuradhapura_Sri_Lanka_1.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/1/1c/Ruwanwelisaya_Anuradhapura_Sri_Lanka_1.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Ruwanwelisaya_Anuradhapura_Sri_Lanka_1.jpg/1280px-Ruwanwelisaya_Anuradhapura_Sri_Lanka_1.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Ruwanwelisaya_Anuradhapura_Sri_Lanka_1.jpg/1280px-Ruwanwelisaya_Anuradhapura_Sri_Lanka_1.jpg",
+    "alt": "Ruwanwelisaya stupa in Anuradhapura, Sri Lanka"
   },
   {
     "key": "polonnaruwa",
@@ -96,7 +104,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Gal_Viharaya.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/7/7b/Gal_Viharaya.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Gal_Viharaya.jpg/1280px-Gal_Viharaya.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Gal_Viharaya.jpg/1280px-Gal_Viharaya.jpg",
+    "alt": "Gal Vihara Buddha sculpture in Polonnaruwa, Sri Lanka"
   },
   {
     "key": "udawalawe",
@@ -107,7 +116,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Udawalawe_Elephants_Sri_Lanka.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/1/17/Udawalawe_Elephants_Sri_Lanka.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Udawalawe_Elephants_Sri_Lanka.jpg/1280px-Udawalawe_Elephants_Sri_Lanka.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Udawalawe_Elephants_Sri_Lanka.jpg/1280px-Udawalawe_Elephants_Sri_Lanka.jpg",
+    "alt": "Elephants beside the reservoir in Udawalawe National Park, Sri Lanka"
   },
   {
     "key": "horton-plains",
@@ -118,7 +128,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Horton_plains_landscape.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Horton_plains_landscape.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Horton_plains_landscape.jpg/1280px-Horton_plains_landscape.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Horton_plains_landscape.jpg/1280px-Horton_plains_landscape.jpg",
+    "alt": "Waterfall and grassland in Horton Plains National Park, Sri Lanka"
   },
   {
     "key": "weligama",
@@ -129,7 +140,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Weligama_beach_(4).jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/a/a7/Weligama_beach_(4).jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Weligama_beach_(4).jpg/1280px-Weligama_beach_(4).jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Weligama_beach_(4).jpg/1280px-Weligama_beach_(4).jpg",
+    "alt": "Weligama beach and coastal waters, Sri Lanka"
   },
   {
     "key": "dambulla",
@@ -140,7 +152,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Dambulla_Cave_temple.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/0/0b/Dambulla_Cave_temple.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Dambulla_Cave_temple.jpg/1280px-Dambulla_Cave_temple.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Dambulla_Cave_temple.jpg/1280px-Dambulla_Cave_temple.jpg",
+    "alt": "Rock face and buildings of Dambulla Cave Temple, Sri Lanka"
   },
   {
     "key": "knuckles",
@@ -151,7 +164,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Knuckles_Mountain_Range.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/1/11/Knuckles_Mountain_Range.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Knuckles_Mountain_Range.jpg/1280px-Knuckles_Mountain_Range.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Knuckles_Mountain_Range.jpg/1280px-Knuckles_Mountain_Range.jpg",
+    "alt": "Knuckles Mountain Range at dusk, Sri Lanka"
   },
   {
     "key": "bentota",
@@ -162,7 +176,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Bentota_beach_in_evening.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/1/1d/Bentota_beach_in_evening.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Bentota_beach_in_evening.jpg/1280px-Bentota_beach_in_evening.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Bentota_beach_in_evening.jpg/1280px-Bentota_beach_in_evening.jpg",
+    "alt": "Bentota beach in the evening, Sri Lanka"
   },
   {
     "key": "haputale",
@@ -173,7 +188,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Haputale.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/0/06/Haputale.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Haputale.jpg/1280px-Haputale.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Haputale.jpg/1280px-Haputale.jpg",
+    "alt": "Hill-country view from Lipton’s Seat near Haputale, Sri Lanka"
   },
   {
     "key": "riverston",
@@ -184,7 +200,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Riverston.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/b/b9/Riverston.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Riverston.jpg/1280px-Riverston.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Riverston.jpg/1280px-Riverston.jpg",
+    "alt": "Rural path in Pitawala Pathana near Riverston, Sri Lanka"
   },
   {
     "key": "gal-oya",
@@ -195,7 +212,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Lake_in_the_jungle.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/4/42/Lake_in_the_jungle.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/Lake_in_the_jungle.jpg/1280px-Lake_in_the_jungle.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/Lake_in_the_jungle.jpg/1280px-Lake_in_the_jungle.jpg",
+    "alt": "Ekgal Oya reservoir with the Gal Oya mountain range, Sri Lanka"
   },
   {
     "key": "delft-island",
@@ -206,7 +224,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Horses_of_Delft.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/2/2f/Horses_of_Delft.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Horses_of_Delft.jpg/1280px-Horses_of_Delft.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Horses_of_Delft.jpg/1280px-Horses_of_Delft.jpg",
+    "alt": "Wild horses on Delft Island, Sri Lanka"
   },
   {
     "key": "bambarakanda",
@@ -217,7 +236,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Bambarakanda_Waterfall.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Bambarakanda_Waterfall.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Bambarakanda_Waterfall.jpg/1280px-Bambarakanda_Waterfall.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Bambarakanda_Waterfall.jpg/1280px-Bambarakanda_Waterfall.jpg",
+    "alt": "Bambarakanda Waterfall, Sri Lanka"
   },
   {
     "key": "kudumbigala",
@@ -228,7 +248,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Kumana_National_Park_(Kudumbigala_Sanctuary).JPG",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/5/58/Kumana_National_Park_(Kudumbigala_Sanctuary).JPG",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Kumana_National_Park_(Kudumbigala_Sanctuary).JPG/1280px-Kumana_National_Park_(Kudumbigala_Sanctuary).JPG"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Kumana_National_Park_(Kudumbigala_Sanctuary).JPG/1280px-Kumana_National_Park_(Kudumbigala_Sanctuary).JPG",
+    "alt": "Kudumbigala Sanctuary near the monastery complex, Sri Lanka"
   },
   {
     "key": "kalpitiya",
@@ -239,7 +260,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Kalpitiya_Beach.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/4/46/Kalpitiya_Beach.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Kalpitiya_Beach.jpg/1280px-Kalpitiya_Beach.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Kalpitiya_Beach.jpg/1280px-Kalpitiya_Beach.jpg",
+    "alt": "Sunset over Kalpitiya beach, Sri Lanka"
   },
   {
     "key": "tea-workers",
@@ -250,7 +272,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Nuwara_Eliya_Tea.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/0/0c/Nuwara_Eliya_Tea.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Nuwara_Eliya_Tea.jpg/1280px-Nuwara_Eliya_Tea.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Nuwara_Eliya_Tea.jpg/1280px-Nuwara_Eliya_Tea.jpg",
+    "alt": "Tea gathering in Nuwara Eliya, Sri Lanka"
   },
   {
     "key": "fishermen",
@@ -261,7 +284,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Stilt_fishing_men_in_Sri_Lanka%2C_Ahangama_region.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/2/2d/Stilt_fishing_men_in_Sri_Lanka%2C_Ahangama_region.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Stilt_fishing_men_in_Sri_Lanka%2C_Ahangama_region.jpg/1280px-Stilt_fishing_men_in_Sri_Lanka%2C_Ahangama_region.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Stilt_fishing_men_in_Sri_Lanka%2C_Ahangama_region.jpg/1280px-Stilt_fishing_men_in_Sri_Lanka%2C_Ahangama_region.jpg",
+    "alt": "Stilt fishermen in the Ahangama region, Sri Lanka"
   },
   {
     "key": "food",
@@ -272,7 +296,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Sri_Lankan_Rice_and_Curry.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/6/6f/Sri_Lankan_Rice_and_Curry.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Sri_Lankan_Rice_and_Curry.jpg/1280px-Sri_Lankan_Rice_and_Curry.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Sri_Lankan_Rice_and_Curry.jpg/1280px-Sri_Lankan_Rice_and_Curry.jpg",
+    "alt": "Sri Lankan rice and curry"
   },
   {
     "key": "trincomalee",
@@ -283,7 +308,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Trincomalee_town_beach.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/e/ef/Trincomalee_town_beach.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Trincomalee_town_beach.jpg/1280px-Trincomalee_town_beach.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Trincomalee_town_beach.jpg/1280px-Trincomalee_town_beach.jpg",
+    "alt": "Trincomalee town beach, Sri Lanka"
   },
   {
     "key": "jaffna",
@@ -294,7 +320,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Full_view_of_nallur_front.JPG",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/e/e2/Full_view_of_nallur_front.JPG",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Full_view_of_nallur_front.JPG/1280px-Full_view_of_nallur_front.JPG"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Full_view_of_nallur_front.JPG/1280px-Full_view_of_nallur_front.JPG",
+    "alt": "Nallur temple frontage in Jaffna, Sri Lanka"
   },
   {
     "key": "arugam-bay",
@@ -305,7 +332,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Arugam_Bay.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/e/ed/Arugam_Bay.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ed/Arugam_Bay.jpg/1280px-Arugam_Bay.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ed/Arugam_Bay.jpg/1280px-Arugam_Bay.jpg",
+    "alt": "Beach and surf at Arugam Bay, Sri Lanka"
   },
   {
     "key": "train",
@@ -316,7 +344,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Nine-Arch_Bridge_in_Sri_Lanka.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/7/70/Nine-Arch_Bridge_in_Sri_Lanka.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Nine-Arch_Bridge_in_Sri_Lanka.jpg/1280px-Nine-Arch_Bridge_in_Sri_Lanka.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Nine-Arch_Bridge_in_Sri_Lanka.jpg/1280px-Nine-Arch_Bridge_in_Sri_Lanka.jpg",
+    "alt": "Nine Arch Bridge in Ella, Sri Lanka"
   },
   {
     "key": "mirissa-sunset",
@@ -327,7 +356,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:Sunset_in_Mirissa_5_March_2023%2C_Sri_Lanka.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/d/de/Sunset_in_Mirissa_5_March_2023%2C_Sri_Lanka.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Sunset_in_Mirissa_5_March_2023%2C_Sri_Lanka.jpg/1280px-Sunset_in_Mirissa_5_March_2023%2C_Sri_Lanka.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Sunset_in_Mirissa_5_March_2023%2C_Sri_Lanka.jpg/1280px-Sunset_in_Mirissa_5_March_2023%2C_Sri_Lanka.jpg",
+    "alt": "Sunset over the coast of Mirissa, Sri Lanka"
   },
   {
     "key": "colombo",
@@ -338,7 +368,8 @@
     "source": "https://commons.wikimedia.org/wiki/File:A_view_of_Colombo%27s_skyline_from_the_Lotus_Tower.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/7/73/A_view_of_Colombo's_skyline_from_the_Lotus_Tower.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/A_view_of_Colombo's_skyline_from_the_Lotus_Tower.jpg/1280px-A_view_of_Colombo's_skyline_from_the_Lotus_Tower.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/A_view_of_Colombo's_skyline_from_the_Lotus_Tower.jpg/1280px-A_view_of_Colombo's_skyline_from_the_Lotus_Tower.jpg",
+    "alt": "Colombo skyline viewed from the Lotus Tower, Sri Lanka"
   },
   {
     "key": "madulsima",
@@ -349,6 +380,19 @@
     "source": "https://commons.wikimedia.org/wiki/File:Mountain_Views_at_Madulsima.jpg",
     "position": "50% 50%",
     "original": "https://upload.wikimedia.org/wikipedia/commons/5/5e/Mountain_Views_at_Madulsima.jpg",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Mountain_Views_at_Madulsima.jpg/1280px-Mountain_Views_at_Madulsima.jpg"
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Mountain_Views_at_Madulsima.jpg/1280px-Mountain_Views_at_Madulsima.jpg",
+    "alt": "Mountain landscape at Madulsima, Sri Lanka"
+  },
+  {
+    "key": "gal-oya-park",
+    "file": "Gal Oya National Park (Senanayake Samudhraya).JPG",
+    "author": "AntanO",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Gal_Oya_National_Park_(Senanayake_Samudhraya).JPG",
+    "position": "50% 50%",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/f/f3/Gal_Oya_National_Park_%28Senanayake_Samudhraya%29.JPG",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Gal_Oya_National_Park_%28Senanayake_Samudhraya%29.JPG/1280px-Gal_Oya_National_Park_%28Senanayake_Samudhraya%29.JPG",
+    "alt": "Gal Oya National Park near Senanayake Samudraya, Sri Lanka"
   }
 ]

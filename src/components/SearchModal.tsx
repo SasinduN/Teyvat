@@ -1,3 +1,4 @@
+import { TravelImage } from '@/components/TravelImage';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ArrowRight } from 'lucide-react';
@@ -94,7 +95,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                   className="p-3.5 rounded-2xl bg-[var(--background)] hover:bg-[var(--background-secondary)] border border-[var(--border-strong)]/30 flex items-center justify-between cursor-pointer transition-colors group"
                 >
                   <div className="flex min-w-0 items-center space-x-3">
-                    <img
+                    <TravelImage
                       src={dest.image}
                       alt={dest.name}
                       className="w-12 h-12 rounded-xl object-cover shrink-0"

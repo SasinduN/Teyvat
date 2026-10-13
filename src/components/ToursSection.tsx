@@ -1,3 +1,4 @@
+import { TravelImage } from '@/components/TravelImage';
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -43,7 +44,7 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
               <div>
                 {/* Image & Days Banner */}
                 <div className="te-card-photo relative h-52 overflow-hidden">
-                  <img
+                  <TravelImage
                     src={tour.image}
                     alt={tour.title}
                     className="w-full h-full object-cover group-hover:scale-[1.035] transition-transform duration-700"

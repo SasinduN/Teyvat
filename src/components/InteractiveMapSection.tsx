@@ -1,3 +1,4 @@
+import { TravelImage } from '@/components/TravelImage';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDestinations } from '@/hooks/useSiteContent';
@@ -958,7 +959,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                   <div>
                     {/* Image Preview Header */}
                     <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-[16/9] mb-5 border border-white/10 group">
-                      <img
+                      <TravelImage
                         src={activeDest.image}
                         alt={activeDest.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -1056,7 +1057,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
           {activeDest && (
             <div className="space-y-4">
               <div className="flex items-start gap-4">
-                <img
+                <TravelImage
                   src={activeDest.image}
                   alt={activeDest.name}
                   className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-white/20 shrink-0"

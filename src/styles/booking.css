@@ -5,7 +5,7 @@
  */
 .booking-page { background: var(--background); color: var(--text-primary); padding: calc(var(--header-height) + 2rem) 0 var(--section-space); min-height: 100vh; }
 .booking-intro { max-width: var(--content-reading-width); margin-bottom: 2rem; }
-.booking-page h1 { font-size: var(--heading-page); line-height: 1.12; margin: 0 0 1rem; color: var(--brand-primary); }
+.booking-page h1 { font-family: var(--font-serif); font-size: var(--heading-page); font-weight: var(--heading-page-weight); line-height: var(--heading-page-leading); letter-spacing: var(--heading-page-tracking); text-wrap: balance; margin: 0 0 1rem; color: var(--brand-primary); }
 .booking-page :is(h2, legend) { font-size: 1.4rem; font-weight: 650; margin-bottom: 1rem; color: var(--brand-primary); }
 .booking-page legend h2 { margin: 0; font-size: inherit; }
 .booking-page h3 { font-size: 1.1rem; font-weight: 650; margin: 1.5rem 0 .6rem; }

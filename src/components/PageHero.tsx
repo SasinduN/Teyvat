@@ -1,3 +1,4 @@
+import { TravelImage } from '@/components/TravelImage';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
@@ -32,7 +33,7 @@ export const PageHero: React.FC<PageHeroProps> = ({ image, crumbs, eyebrow, titl
     }`}
   >
     {/* Decorative: the heading names the page. */}
-    {image && <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+    {image && <TravelImage loading="eager" fetchPriority="high" sizes="100vw" src={image} alt="" className="absolute inset-0 h-full w-full object-cover" />}
     <div className="te-page-hero-overlay absolute inset-0" />
 
     <div className="te-container te-page-hero-content relative z-10">

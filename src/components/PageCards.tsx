@@ -1,3 +1,4 @@
+import { TravelImage } from '@/components/TravelImage';
 import React, { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Calendar, Clock, Info, MapPin, Star, X } from 'lucide-react';
@@ -55,7 +56,7 @@ export function DestinationRevealCard({ dest, home, sizes }: { dest: Destination
         event.stopPropagation();
       }}
     >
-      <img src={dest.image} alt={dest.name} sizes={sizes} loading="lazy" decoding="async" className="destination-card__image" />
+      <TravelImage src={dest.image} alt={dest.name} sizes={sizes} loading="lazy" decoding="async" className="destination-card__image" />
       <span className="destination-card__rating" aria-label={`Rating ${dest.rating} out of 5`}>
         <Star size={14} aria-hidden="true" /> {dest.rating}
       </span>
@@ -92,7 +93,7 @@ const DestinationSpotlightCard: React.FC<{ dest: Destination }> = ({ dest }) => 
     to={paths.destination(dest.id)}
     className="te-card te-content-card te-content-card--photo group relative flex h-[360px] flex-col justify-end overflow-hidden bg-[var(--inverse-surface)]"
   >
-    <img
+    <TravelImage
       src={dest.image}
       alt={dest.name}
       className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]"
@@ -118,7 +119,7 @@ export const TourCard: React.FC<{ tour: TourPackage }> = ({ tour }) => (
     className="te-card te-content-card group flex flex-col overflow-hidden"
   >
     <div className="te-card-photo relative h-48 overflow-hidden">
-      <img src={tour.image} alt={tour.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]" />
+      <TravelImage src={tour.image} alt={tour.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/70 via-40% to-transparent to-75%" />
       <div className="te-card-badge te-card-badge--photo absolute left-4 top-4">
         <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
@@ -143,7 +144,7 @@ export const ExperienceCard: React.FC<{ item: ExperienceItem }> = ({ item }) => 
     className="te-card te-content-card group flex flex-col overflow-hidden"
   >
     <div className="relative h-48 overflow-hidden">
-      <img src={item.image} alt={item.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]" />
+      <TravelImage src={item.image} alt={item.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]" />
       <div className="te-card-badge te-card-badge--photo absolute left-4 top-4">
         <Star className="h-3.5 w-3.5 fill-[var(--accent)]" aria-hidden="true" />
         <span>{item.rating}</span>
@@ -168,7 +169,7 @@ export const ArticleCard: React.FC<{ art: Article }> = ({ art }) => (
     className="te-card group flex flex-col overflow-hidden rounded-3xl border border-[var(--border-strong)]/40 bg-[var(--surface)] shadow-md transition-shadow duration-300 hover:shadow-xl"
   >
     <div className="relative h-48 overflow-hidden">
-      <img src={art.image} alt={art.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]" />
+      <TravelImage src={art.image} alt={art.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]" />
       <div className="absolute left-4 top-4 rounded-full bg-[var(--inverse-surface)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--accent-text)] shadow-md">
         {art.category}
       </div>
