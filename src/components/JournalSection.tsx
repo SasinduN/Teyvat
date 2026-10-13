@@ -1,3 +1,4 @@
+import { TravelImage } from '@/components/TravelImage';
 import React from 'react';
 import { useArticles } from '@/hooks/useSiteContent';
 import { paths } from '@shared/site-paths';
@@ -38,7 +39,7 @@ export const JournalSection: React.FC = () => {
               <div>
                 {/* Image */}
                 <div className="relative h-56 overflow-hidden">
-                  <img
+                  <TravelImage
                     src={art.image}
                     alt={art.title}
                     className="w-full h-full object-cover group-hover:scale-[1.035] transition-transform duration-500"

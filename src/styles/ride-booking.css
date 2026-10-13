@@ -1,8 +1,8 @@
 /* Scoped to rides; tour and admin booking layouts stay intact. */
 .ride-page { padding-top: calc(var(--header-height) + 1.5rem); }
-.ride-container { max-width: 1100px; }
-.ride-page .booking-intro { max-width: 760px; margin-bottom: 1.25rem; }
-.ride-page h1 { font-size: clamp(2rem, 4vw, 3rem); margin-bottom: .65rem; }
+.ride-container { max-width: var(--container-max); }
+.ride-page .booking-intro { max-width: var(--content-reading-width); margin-bottom: 1.25rem; }
+.ride-page h1 { margin-bottom: .65rem; }
 .ride-page .booking-intro p { margin: .4rem 0; }
 .ride-grid { grid-template-columns: minmax(0, 1.65fr) minmax(260px, 1fr); gap: 1.25rem; margin: 1rem 0; }
 .ride-grid--empty { grid-template-columns: minmax(0, 720px); }

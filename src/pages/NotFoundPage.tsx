@@ -1,3 +1,4 @@
+import { TravelImage } from '@/components/TravelImage';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Compass, MapPin } from 'lucide-react';
 import { DestinationCard, SectionHead } from '@/components/PageCards';
@@ -17,7 +18,7 @@ export function NotFoundPage() {
   return (
     <>
       <section className="te-page-hero te-page-hero--detail relative overflow-hidden bg-[var(--inverse-surface)] text-white" data-not-found>
-        {featured[0] && <img src={featured[0].image} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+        {featured[0] && <TravelImage loading="eager" fetchPriority="high" sizes="100vw" src={featured[0].image} alt="" className="absolute inset-0 h-full w-full object-cover" />}
         <div className="te-page-hero-overlay absolute inset-0" />
         <div className="te-container te-page-hero-content relative z-10"
         ><div className="te-page-hero-copy space-y-6">

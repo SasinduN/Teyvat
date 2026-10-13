@@ -1,8 +1,11 @@
+import { TravelImage } from '@/components/TravelImage';
+import { useDestinations } from '@/hooks/useSiteContent';
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, useInView, useReducedMotion } from 'framer-motion';
 import { ShieldCheck, Compass, Sparkles, Heart } from 'lucide-react';
 
 export const IntroSection: React.FC = () => {
+  const destinations = useDestinations();
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: '-100px' });
 
@@ -130,9 +133,9 @@ export const IntroSection: React.FC = () => {
               transition={{ duration: 0.8 }}
               className="relative z-10 rounded-3xl overflow-hidden shadow-xl aspect-[4/3] group"
             >
-              <img
-                src="https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&q=80&w=1200"
-                alt="Ella misty mountain gap"
+              <TravelImage
+                src={destinations.find(destination => destination.id === 'ella')?.image ?? '/images/photo-unavailable.svg'}
+                alt="Ella"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent" />
@@ -150,9 +153,9 @@ export const IntroSection: React.FC = () => {
               transition={{ duration: 0.8, delay: 0.3 }}
               className="hidden sm:block absolute -bottom-10 -right-6 z-20 w-3/5 rounded-2xl overflow-hidden shadow-2xl border-4 border-white aspect-[3/2] group"
             >
-              <img
-                src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800"
-                alt="Mirissa tropical beach sunset"
+              <TravelImage
+                src={destinations.find(destination => destination.id === 'mirissa')?.image ?? '/images/photo-unavailable.svg'}
+                alt="Mirissa"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
             </motion.div>

@@ -1,3 +1,4 @@
+import { TravelImage } from '@/components/TravelImage';
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useExperienceCategories } from '@/hooks/useSiteContent';
@@ -52,7 +53,7 @@ export const ExperiencesSection: React.FC<ExperiencesSectionProps> = ({
             >
               {/* Background Image */}
               <div className="absolute inset-0 overflow-hidden">
-                <img
+                <TravelImage
                   src={exp.image}
                   alt={exp.title}
                   className="w-full h-full object-cover group-hover:scale-[1.035] transition-transform duration-700 ease-out"

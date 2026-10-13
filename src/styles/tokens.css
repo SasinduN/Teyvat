@@ -233,6 +233,9 @@
   --grid-gap: clamp(1rem, 2vw, 1.5rem);
   --heading-hero: clamp(2.25rem, 4.5vw, 4rem);
   --heading-page: clamp(2rem, 4vw, 3.25rem);
+  --heading-page-weight: 700;
+  --heading-page-leading: 1.12;
+  --heading-page-tracking: -.025em;
   --heading-section: clamp(1.75rem, 3.4vw, 2.75rem);
   --heading-card: clamp(1.125rem, 1.8vw, 1.5rem);
   --radius-sm: .5rem;

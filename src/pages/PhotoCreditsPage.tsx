@@ -1,3 +1,4 @@
+import { TravelImage } from '@/components/TravelImage';
 import { ExternalLink } from 'lucide-react';
 import { PageHero } from '@/components/PageHero';
 import { usePageTitle } from '@/context/PublicSiteContext';
@@ -37,7 +38,7 @@ export function PhotoCreditsPage() {
             <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {credits.map((credit) => (
                 <li key={credit.url} className="te-card min-w-0 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
-                  <img
+                  <TravelImage
                     src={credit.url}
                     alt={`Photo by ${credit.author}`}
                     loading="lazy"

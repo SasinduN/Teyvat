@@ -28,7 +28,7 @@ import { pool } from '../db';
 import { publicImageCredits } from '../media/credits';
 import { asyncRoute } from '../http';
 import { publicStopsByTour } from '../tour-stops';
-import { localPhoto, publicPhoto, publicGallery, photoStoryLocation } from '../../../shared/public-photos';
+import { localPhoto, publicPhoto, publicGallery, photoStoryLocation, photoStoryCopy } from '../../../shared/public-photos';
 import photographs from '../../../shared/travel-photos.json';
 
 /**
@@ -148,6 +148,7 @@ contentRouter.get(
       for (const row of rows) {
         if (table === 'photo_stories' && 'location' in row) {
           row.location = photoStoryLocation(row.id, row.image, row.location);
+          if ('caption' in row && 'title' in row) Object.assign(row, photoStoryCopy(row.id, row.image, row.title, row.caption));
         }
         row.image = publicPhoto(table, row.id, row.image);
       }

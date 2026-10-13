@@ -445,8 +445,11 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 .te-page-hero-copy { width: 100%; max-width: var(--content-reading-width); min-width: 0; }
 .te-page-title {
   max-width: var(--hero-content-max);
+  font-family: var(--font-serif);
   font-size: var(--heading-page);
-  line-height: 1.12;
+  font-weight: var(--heading-page-weight);
+  line-height: var(--heading-page-leading);
+  letter-spacing: var(--heading-page-tracking);
   overflow-wrap: break-word;
   color: var(--on-inverse);
   text-shadow: 0 2px 14px rgb(var(--photo-channels) / .3);

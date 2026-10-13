@@ -1,3 +1,4 @@
+import { TravelImage } from '@/components/TravelImage';
 import React, { useState, useEffect, useRef } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { Compass, MapPin, Pause, Play, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -85,7 +86,7 @@ export const HeroSection: React.FC = () => {
           key={bg.url} aria-hidden={idx !== currentBg} data-active={idx === currentBg}
           className="te-hero-slide"
         >
-          {seenSlides.has(idx) && <img
+          {seenSlides.has(idx) && <TravelImage loading="eager" fetchPriority={idx === currentBg ? 'high' : 'low'} sizes="100vw"
             onLoad={() => setReadySlides(previous => previous.has(idx) ? previous : new Set([...previous, idx]))}
             src={bg.url}
             alt={bg.title}

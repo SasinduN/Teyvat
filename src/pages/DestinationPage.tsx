@@ -1,3 +1,4 @@
+import { TravelImage } from '@/components/TravelImage';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { CheckCircle2, ExternalLink, Plane, Sparkles, Star } from 'lucide-react';
@@ -69,7 +70,7 @@ function DestinationView({ d }: { d: Destination }) {
                   photo === img ? 'border-[var(--inverse-surface)]' : 'border-transparent opacity-70 hover:opacity-100'
                 }`}
               >
-                <img src={img} alt="" className="h-full w-full object-cover" />
+                <TravelImage src={img} alt={d.name} className="h-full w-full object-cover" />
               </button>
             ))}
           </div>

@@ -2,6 +2,7 @@ import photographs from './travel-photos.json';
 import legacyReferences from './legacy-photo-references.json';
 import { PHOTO_CORRECTIONS } from './photo-corrections';
 import optimized from './optimized-photos.json';
+import { sameSeedPhoto } from './photo-assets';
 
 /** Prefer the existing same-origin photograph when a verified variant exists. */
 export function localPhoto(image: string): string {
@@ -13,8 +14,15 @@ export function localPhoto(image: string): string {
 
 /** The same named corrections as migration 0010, for older content payloads. */
 export function publicPhoto(table: string, id: string, image: string): string {
+  if (table === 'hidden_gems' && id === 'gal-oya') {
+    const previous = photographs.find(photo => photo.key === 'gal-oya')!;
+    const replacement = photographs.find(photo => photo.key === 'gal-oya-park')!;
+    if ([previous.image, previous.original, localPhoto(previous.image)].includes(image)) return localPhoto(replacement.image);
+  }
   const legacy = legacyReferences.find(row => row.table === table && row.id === id);
-  if (!legacy || legacy.image !== image) return localPhoto(image);
+  if (!legacy || !sameSeedPhoto(image, legacy.image)) return localPhoto(image);
+  // No licensed, identified Belilena photo is available: never show a stock landmark.
+  if (table === 'hidden_gems' && id === 'belilena') return '/images/photo-unavailable.svg';
   const photo = photographs.find(row => row.key === PHOTO_CORRECTIONS[table]?.[id]);
   if (!photo) return image;
   return localPhoto(id === 'jaffna' && table === 'destinations' ? photo.original : photo.image);
@@ -22,12 +30,13 @@ export function publicPhoto(table: string, id: string, image: string): string {
 
 /** Correct only the old geographic labels associated with our credited photographs. */
 export function photoStoryLocation(id: string, image: string, location: string): string {
-  const correction = id === 'p6' ? { before: 'Hatton Tea Valleys', after: 'Nuwara Eliya' }
+  const correction = id === 'p1' ? { before: 'Ella & Nuwara Eliya', after: 'Ella' }
+    : id === 'p6' ? { before: 'Hatton Tea Valleys', after: 'Nuwara Eliya' }
     : id === 'p7' ? { before: 'Koggala & Weligama', after: 'Ahangama' } : undefined;
   if (!correction || location !== correction.before) return location;
   const legacy = legacyReferences.find(row => row.table === 'photo_stories' && row.id === id);
   const credited = photographs.find(photo => photo.key === PHOTO_CORRECTIONS.photo_stories[id]);
-  return legacy?.image === image || credited?.image === image || credited?.original === image ? correction.after : location;
+  return (legacy && sameSeedPhoto(image, legacy.image)) || credited?.image === image || credited?.original === image ? correction.after : location;
 }
 
 /** Only replace the exact old seeded galleries; never overwrite curated admin galleries. */
@@ -44,6 +53,25 @@ export function publicGallery(id: string, gallery: string[]): string[] {
     ]
   };
   const before = legacy[id];
-  if (!before || before.length !== gallery.length || before.some((image, index) => image !== gallery[index])) return gallery;
+  if (!before || before.length !== gallery.length || before.some((image, index) => !sameSeedPhoto(gallery[index], image))) return gallery;
   return (id === 'ella' ? ['ella', 'train'] : ['sigiriya']).map(key => localPhoto(photographs.find(row => row.key === key)!.image));
+}
+
+/** Correct inaccurate scene captions only while the known photo and original copy match. */
+export function photoStoryCopy(id: string, image: string, title: string, caption: string): { title: string; caption: string } {
+  const legacy = legacyReferences.find(row => row.table === 'photo_stories' && row.id === id);
+  const photo = photographs.find(row => row.key === PHOTO_CORRECTIONS.photo_stories[id]);
+  if (!photo || !(legacy && sameSeedPhoto(image, legacy.image) || [photo.image, photo.original, localPhoto(photo.image)].includes(image))) return { title, caption };
+  const corrections: Record<string, { beforeTitle?: string; title?: string; beforeCaption?: string; caption?: string }> = {
+    p1: { beforeTitle: 'Highland Mist & Blue Trains', title: 'Nine Arch Bridge in Ella', beforeCaption: 'The legendary highland express winding across mountain viaducts through morning fog.', caption: 'Nine Arch Bridge framed by forested hills in Ella.' },
+    p2: { beforeCaption: 'An ancient granite palace fortress rising 200m above the jungle canopy at sunrise.', caption: 'Sigiriya Rock Fortress rising above the surrounding forest.' },
+    p3: { beforeCaption: 'Swaying coconut palms against fiery amber and magenta ocean skies.', caption: 'Sunset over the coastline of Mirissa.' },
+    p4: { beforeCaption: 'A Sri Lankan leopard resting upon a sun-warmed granite outcrop in Yala.', caption: 'A Sri Lankan leopard walking through the forest in Yala National Park.' },
+    p5: { beforeTitle: 'Colonial Ramparts at Dusk', title: 'Galle Fort Lighthouse', beforeCaption: 'Waves crashing against 17th-century Dutch stone bastions as dusk settles.', caption: 'An aerial view of Galle Fort lighthouse and the coastal ramparts.' },
+    p7: { beforeTitle: 'Stilt Fishermen at Dawn', title: 'Stilt Fishermen of Ahangama' },
+    p8: { beforeTitle: 'Northern Temple Glow', title: 'Nallur Kovil in Jaffna', beforeCaption: 'Golden gopurams of Nallur Kovil lit during evening incense rituals.', caption: 'Temple towers and courtyard at Nallur Kovil in Jaffna.' }
+  };
+  const correction = corrections[id];
+  return { title: correction?.beforeTitle === title ? correction.title! : title,
+    caption: correction?.beforeCaption === caption ? correction.caption! : caption };
 }

@@ -1,3 +1,18 @@
+## 2026-10-13 — Repair local ride initialization
+PR preparation: migration 0018 carries the owner-confirmed Car/SUV limits (5 passengers, 3 bags, accepting requests) into deployment; it updates only these category capacities/availability, preserving booking records. Production deployment remains pending PR merge.
+
+BUG-075: legacy imported booking_attempts had an IP-only key and no action column; migration 0014 used CREATE TABLE IF NOT EXISTS and could not upgrade it. Added transactional, idempotent migration 0016 to preserve counters/windows across all three actions and restore the composite key/check. Applied only to guarded localhost development DB. Owner requested Car and SUV; migration 0017 adds SUV disabled until genuine capacities are provided. No existing ride requests, contact fields, routes or notification behavior changed.
+
+VERIFIED: real Chrome on 5173 loads all ride fields without the loading/error screen; actual guest-session and request-history endpoints both HTTP 200 (no fixtures). 18 focused booking-client/ride-validation tests pass. Owner confirmed both Car and SUV: maximum 5 passengers and 3 bags. Applied via explicitly local-only configuration script; both accept requests. Real Chrome confirms capacities and enabled Request Ride button. Build/typecheck PASS (existing nonfatal dependency/chunk warnings); migration rerun preserves counters and all three action upserts pass with test writes rolled back. No ride submitted or production migration performed.
+
+## 2026-10-13 — Destination accuracy and shared premium headings
+
+Owner-authorized public presentation/content changes in active Teyvat-latest-20261012. Shared inner-page typography now uses supported Playfair Display 700 with existing responsive sizing, 1.12 leading and -0.025em tracking; ride container/intro reuse existing layout tokens. No new fonts, fields, routes, frameworks or booking backend changes.
+
+Added a shared TravelImage renderer with descriptive known-photo alt text, responsive same-origin WebP variants, lazy below-fold images, active-hero priority, source-keyed retry reset and an honest unavailable placeholder. Guarded seed identity matching tolerates resized/reordered Unsplash queries and preserves unknown CMS/R2 choices. Existing correct destination photos retained. Gal Oya’s identified Ekgal Oya reservoir photo replaced with inspected, licensed Gal Oya park imagery. Original inaccurate photo-story scene captions corrected only alongside known photographs. Unverified Belilena stock image replaced by a labeled placeholder; verified photography remains a manual task. Credits include adaptation details.
+
+Root causes/inventories: DESTINATION_IMAGE_AUDIT.md and TYPOGRAPHY_AUDIT.md. Tests and exact limits: FINAL_QA.md. Full-suite result 14/41 files; DB-dependent checks refused unset TEST_DATABASE_URL. Read-only schema inspection found local booking_attempts lacks action, causing existing guest-session initialization errors; backend/schema unchanged. Browser-only session/history fixture is explicitly distinguished from live booking proof. Historical changelog entries preserved.
+
 ## 2026-10-13 — Keep the map light in dark site mode
 
 Owner requested a light basemap while switching the rest of the website to dark mode. Shared mapTileConfig now selects CARTO Voyager in both themes (existing attributed OpenStreetMap fallback retained). Tile layers no longer reload on theme changes; removed the Explore map dark-only hue/tint override. Marker, route and control theme handling remains unchanged. Updated provider and rendered theme regressions to check light tiles, matching tint and unchanged tile sources across toggles. Validation results are recorded in FINAL_QA.md. Historical entries retained.

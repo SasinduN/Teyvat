@@ -1,3 +1,4 @@
+import { TravelImage } from '@/components/TravelImage';
 import { useModalFocus } from '@/hooks/useModalFocus';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -63,7 +64,7 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
               >
                 {/* Background Image */}
                 <div className="absolute inset-0 overflow-hidden">
-                  <img
+                  <TravelImage
                     src={gem.image}
                     alt={gem.name}
                     className="w-full h-full object-cover group-hover:scale-[1.035] transition-transform duration-700 ease-out"
@@ -139,7 +140,7 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
               </button>
 
               <div className="relative h-64 sm:h-72">
-                <img
+                <TravelImage
                   src={selectedGem.image}
                   alt={selectedGem.name}
                   className="w-full h-full object-cover"

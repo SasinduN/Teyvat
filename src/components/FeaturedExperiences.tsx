@@ -1,3 +1,4 @@
+import { TravelImage } from '@/components/TravelImage';
 import React from 'react';
 import { useFeaturedExperiences } from '@/hooks/useSiteContent';
 import { paths } from '@shared/site-paths';
@@ -36,7 +37,7 @@ export const FeaturedExperiences: React.FC = () => {
             >
               {/* Image Column */}
               <div className="sm:w-1/2 relative min-h-[220px] sm:min-h-full overflow-hidden">
-                <img
+                <TravelImage
                   src={item.image}
                   alt={item.title}
                   className="w-full h-full object-cover group-hover:scale-[1.035] transition-transform duration-700"
