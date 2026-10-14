@@ -46,8 +46,12 @@ Update the Status column when a phase lands.
     + the R2 origin). The same list builds the CSP's `img-src`. The
     Wikimedia photos from 0010 were copied into R2 (`npm run
     images:import`); 0013 puts any leftover back on its seed photo.
-  - Photos come from the rows, never from code: no per-row overrides in
-    `src/lib/mappers.ts` or the head tags. Credits are `image_credits`
+  - The owner-authorized exact-location rule (2026-10-14) pins the 20 known
+    destination covers through `shared/public-photos.ts` for both public
+    content and head tags. Saved primary-image choices for those IDs are
+    overridden on public reads; admin rows and curated galleries remain intact.
+    Other photos come from the rows with existing guarded seed corrections;
+    do not add independent overrides in mappers or head tags. Credits are `image_credits`
     (keyed by URL), shown on `/photo-credits`, edited in *Admin → Photo
     credits*.
 - **CSP** (`server/src/security-headers.ts`):

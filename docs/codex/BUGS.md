@@ -1,3 +1,7 @@
+# BUG-076 — Unknown saved URLs bypass named destination correction — FIX IMPLEMENTED 2026-10-14
+
+FOUND BY STATIC ANALYSIS: publicPhoto corrected only recognized seed URLs, leaving unrelated CMS primary images visible under existing destination names. The owner requested exact named-location imagery. All 20 mapped destination covers now resolve by stable ID to the existing credited local photograph regardless of stored URL. The same helper serves public content and share metadata. This intentionally supersedes unknown-primary-image preservation for these 20 IDs; galleries, new destination IDs and other collections retain their prior behavior. Admin rows are not rewritten. Not evidence that every deployed image was wrong. Verification recorded in PROJECT_STATUS.md; production content/rendering not inspected.
+
 # BUG-072 — Book Your Ride H1 inherits regular weight — FIX IMPLEMENTED 2026-10-13
 
 Static source: ride H1 lacked font-bold/explicit weight and overrode shared heading-page sizing. Shared supported 700 display weight, leading/tracking and layout tokens now apply. Build and focused regressions pass; rendered measurements/screenshots and exact form-fixture limits: ../TYPOGRAPHY_AUDIT.md and ../FINAL_QA.md.

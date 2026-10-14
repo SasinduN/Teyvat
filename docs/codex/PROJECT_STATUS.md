@@ -1,3 +1,9 @@
+## 2026-10-14 — Exact named destination covers (PR preparation)
+
+Owner requested a PR ensuring destination photos depict their named locations. BUG-076 fixes the remaining arbitrary-CMS-URL bypass for the 20 known destination IDs using the previously audited bundled photographs. Same public API/head-tag resolver; no production writes, public markup or gallery changes. This explicitly changes the old preserve-unknown-primary-image rule for existing destination covers; stored admin rows remain untouched. New IDs and other collections retain their existing behavior. Prior source/license/pixel evidence is in DESTINATION_IMAGE_AUDIT.md; it is historical, not a fresh rendered verification.
+
+VERIFIED: final production build/typecheck PASS; public-photos 9/9 PASS (all 20 IDs tested against empty, unrelated local/R2 and original source URLs, distinct Ella/Mirissa covers, asset existence/metadata, unknown-ID preservation and historical behavior); fixture-to-row-to-mapper roundtrip PASS for nine collections (no live DB/render proof); git diff --check PASS. Initial build failed because Object.hasOwn is outside the configured TypeScript library; fixed using hasOwnProperty.call, then reran successfully. Existing nonfatal Zod annotation warnings remain. BLOCKED: image-credits test explicitly refuses unset TEST_DATABASE_URL; guards preserved and production not substituted. Full suite and fresh browser/production rendering NOT TESTED locally; GitHub CI supplies guarded DB/browser coverage.
+
 ## 2026-10-13 — Repair local ride initialization
 PR preparation: migration 0018 carries the owner-confirmed Car/SUV limits (5 passengers, 3 bags, accepting requests) into deployment; it updates only these category capacities/availability, preserving booking records. Production deployment remains pending PR merge.
 

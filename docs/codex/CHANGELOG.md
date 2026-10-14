@@ -1,4 +1,8 @@
 
+## 2026-10-14 — Match existing destination covers to their named places
+
+Owner-authorized BUG-076 fix: resolve all 20 existing destination primary photos by stable ID to the audited local location photograph, including arbitrary or empty saved URLs. Public API consumers and share metadata use the same resolver. Existing source credits, responsive variants and alt text remain attached to the displayed photograph. No public component markup, CSS, database rows or gallery behavior changed. Saved primary-image choices for these 20 IDs are deliberately overridden on public reads; new destinations and other collections retain prior behavior. Tests cover mismatched CMS URLs, distinct Ella/Mirissa covers, bundled assets, unknown IDs and published image credits. Verification: PROJECT_STATUS.md. Historical entries retained.
+
 ## 2026-10-13 — PR #42 browser CI follow-up
 
 Fixed two stale browser-test assumptions exposed by CI: the frozen homepage screenshot fixture now replaces first-party `/assets/` image paths as well as external URLs, keeping the baseline comparison independent of the intentional photo-source corrections; the WhatsApp navigation test now reads the destination card heading rather than assuming the photo alt equals the destination name. No application behavior changed.

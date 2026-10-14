@@ -12,8 +12,15 @@ export function localPhoto(image: string): string {
   return (candidates.find(([, width]) => width === '1280w') ?? candidates[candidates.length - 1])[0];
 }
 
-/** The same named corrections as migration 0010, for older content payloads. */
+/** Verified destination covers, plus guarded corrections for older content payloads. */
 export function publicPhoto(table: string, id: string, image: string): string {
+  // The owner requires each existing destination cover to show its named place.
+  // Resolve by stable ID even when a CMS URL is not a recognizable seed photo.
+  // Newly added destinations and curated galleries retain their stored images.
+  if (table === 'destinations' && Object.prototype.hasOwnProperty.call(PHOTO_CORRECTIONS.destinations, id)) {
+    const photo = photographs.find(row => row.key === PHOTO_CORRECTIONS.destinations[id]);
+    return photo ? localPhoto(photo.image) : '/images/photo-unavailable.svg';
+  }
   if (table === 'hidden_gems' && id === 'gal-oya') {
     const previous = photographs.find(photo => photo.key === 'gal-oya')!;
     const replacement = photographs.find(photo => photo.key === 'gal-oya-park')!;
