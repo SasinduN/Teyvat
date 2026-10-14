@@ -394,7 +394,7 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
   test('phone: hidden while the enquiry form is open, so the submit button is clear', async () => {
     const page = await openPage({ mobile: true, path: '/tours' });
     await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
-    await expectClearOf(page, '#hero .te-hero-controls', 'precondition: slideshow controls stay clear');
+    await expectClearOf(page, '#tours .te-card', 'precondition: tour cards stay clear');
 
     await page.evaluate(`[...document.querySelectorAll('#tours button')].find((b) => b.textContent.trim() === 'Inquire').click(), true`);
     await waitFor(page, `document.querySelector('.fixed.inset-0 form button[type=submit]')`, 'the enquiry form');

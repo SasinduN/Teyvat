@@ -358,14 +358,28 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
   });
 
   test("a relative or http image: absolute https, or none", async () => {
-    await pool.query(`update public.destinations set image = '/images/ella.jpg' where id = 'ella'`);
-    let { head: h } = await head(open, '/destinations/ella');
-    assert.equal(metaContent(h, 'og:image'), `${SITE}/images/ella.jpg`);
+    // Tours retain editable images; named destination covers are pinned separately.
+    await pool.query(`update public.tours set image = '/images/tour.jpg' where id = 'island-in-7-days'`);
+    let { head: h } = await head(open, '/tours/island-in-7-days');
+    assert.equal(metaContent(h, 'og:image'), `${SITE}/images/tour.jpg`);
 
-    await pool.query(`update public.destinations set image = 'http://insecure.example/ella.jpg' where id = 'ella'`);
-    ({ head: h } = await head(open, '/destinations/ella'));
+    await pool.query(`update public.tours set image = 'http://insecure.example/tour.jpg' where id = 'island-in-7-days'`);
+    ({ head: h } = await head(open, '/tours/island-in-7-days'));
     assert.equal(metaContent(h, 'og:image'), null);
     assert.equal(metaContent(h, 'twitter:card'), 'summary');
+  });
+
+  test('destination share previews use the same verified cover as public content despite saved URLs', async () => {
+    for (const image of ['/images/unrelated.jpg', 'http://insecure.example/unrelated.jpg', 'https://media.example/beach.jpg']) {
+      await pool.query(`update public.destinations set image = $1 where id = 'ella'`, [image]);
+      const payload = await (await get(open, '/api/content')).json();
+      const cover = payload.destinations.find((row: { id: string }) => row.id === 'ella').image;
+      assert.match(cover, /^\/assets\/ella-1280-/);
+      const { head: h } = await head(open, '/destinations/ella');
+      assert.equal(metaContent(h, 'og:image'), `${SITE}${cover}`);
+      assert.equal(metaContent(h, 'twitter:image'), `${SITE}${cover}`);
+      assert.equal(metaContent(h, 'twitter:card'), 'summary_large_image');
+    }
   });
 
   test('an admin edit shows in the very next response', async () => {
