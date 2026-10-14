@@ -1,3 +1,15 @@
+## 2026-10-14 — PR #44 CI correction
+
+GitHub run 38584139151: build/typecheck/roundtrip PASS and 39/41 test files PASS, including public photos and real-database image credits. Failed pages.test.ts expected arbitrary Ella covers instead of the owner-authorized pinned photograph; failed browser-whatsapp.test.ts tried to measure nonexistent Home slideshow controls on /tours. BUG-077 updates these two test contracts, retains editable-image URL security and enquiry hit-target coverage, and adds an explicit API/OG/Twitter pinned-cover regression. No application changes in this follow-up.
+
+VERIFIED local follow-up: typecheck and whitespace PASS; isolated temporary localhost PostgreSQL 18 (explicit port, *_test DB, guards retained), pages 21/21 and image-credits 9/9 PASS. Actual corrected Chrome enquiry test PASS including hidden visibility and submit hit-target; WhatsApp 7/8 and browser-pages 13/14 pass. The two local failures are initial-page-load timeouts in different unchanged cases (no-number Home and Navbar /destinations), not the original CI assertions; no blanket local browser/full-suite PASS claimed. Remote full-suite rerun pending. No production writes or credentials changed.
+
+## 2026-10-14 — Exact named destination covers (PR preparation)
+
+Owner requested a PR ensuring destination photos depict their named locations. BUG-076 fixes the remaining arbitrary-CMS-URL bypass for the 20 known destination IDs using the previously audited bundled photographs. Same public API/head-tag resolver; no production writes, public markup or gallery changes. This explicitly changes the old preserve-unknown-primary-image rule for existing destination covers; stored admin rows remain untouched. New IDs and other collections retain their existing behavior. Prior source/license/pixel evidence is in DESTINATION_IMAGE_AUDIT.md; it is historical, not a fresh rendered verification.
+
+VERIFIED: final production build/typecheck PASS; public-photos 9/9 PASS (all 20 IDs tested against empty, unrelated local/R2 and original source URLs, distinct Ella/Mirissa covers, asset existence/metadata, unknown-ID preservation and historical behavior); fixture-to-row-to-mapper roundtrip PASS for nine collections (no live DB/render proof); git diff --check PASS. Initial build failed because Object.hasOwn is outside the configured TypeScript library; fixed using hasOwnProperty.call, then reran successfully. Existing nonfatal Zod annotation warnings remain. BLOCKED: image-credits test explicitly refuses unset TEST_DATABASE_URL; guards preserved and production not substituted. Full suite and fresh browser/production rendering NOT TESTED locally; GitHub CI supplies guarded DB/browser coverage.
+
 ## 2026-10-13 — Repair local ride initialization
 PR preparation: migration 0018 carries the owner-confirmed Car/SUV limits (5 passengers, 3 bags, accepting requests) into deployment; it updates only these category capacities/availability, preserving booking records. Production deployment remains pending PR merge.
 

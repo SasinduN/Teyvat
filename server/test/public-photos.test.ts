@@ -12,7 +12,8 @@ test('legacy Ella photo resolves to the existing Sri Lankan bridge asset', () =>
 });
 test('admin-selected photos and galleries remain intact', () => {
   const image = 'https://images.unsplash.com/custom-admin-photo';
-  assert.equal(publicPhoto('destinations', 'ella', image), image);
+  assert.equal(publicPhoto('destinations', 'owner-added-place', image), image);
+  assert.equal(publicPhoto('articles', 'ultimate-ella-guide', image), image);
   assert.deepEqual(publicGallery('ella', [image]), [image]);
   assert.equal(photoStoryLocation('p6', image, 'Hatton Tea Valleys'), 'Hatton Tea Valleys');
 });
@@ -27,8 +28,26 @@ test('every copied image variant exists and contains WebP bytes', () => {
 });
 
 import photographs from '../../shared/travel-photos.json';
+import { PHOTO_CORRECTIONS } from '../../shared/photo-corrections';
+import { localPhoto } from '../../shared/public-photos';
 import { photoAsset } from '../../shared/photo-assets';
 import { photoStoryCopy } from '../../shared/public-photos';
+
+test('every existing destination cover matches its place despite stale or unrelated CMS URLs', () => {
+  for (const [id, key] of Object.entries(PHOTO_CORRECTIONS.destinations)) {
+    const photo = photographs.find(row => row.key === key)!;
+    const expected = localPhoto(photo.image);
+    for (const image of ['', '/assets/mirissa-1280-unrelated.webp', 'https://bucket.r2.dev/unrelated-place.jpg', photo.original]) {
+      assert.equal(publicPhoto('destinations', id, image), expected, `${id}: ${image}`);
+    }
+    assert.ok(photoAsset(expected)?.alt, `${id} has descriptive metadata`);
+    assert.ok(existsSync(resolve('public', expected.slice(1))), `${id} has a bundled photograph`);
+  }
+  assert.notEqual(publicPhoto('destinations', 'ella', ''), publicPhoto('destinations', 'mirissa', ''));
+  for (const id of ['owner-added-place', 'constructor', 'toString', '__proto__']) {
+    assert.equal(publicPhoto('destinations', id, '/assets/owner-photo.webp'), '/assets/owner-photo.webp');
+  }
+});
 
 test('seed corrections use stable identity across URL sizing and query order', () => {
   const seed = legacy.find(row => row.table === 'destinations' && row.id === 'ella')!;

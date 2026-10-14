@@ -85,7 +85,7 @@ const adminFetch = (path: string, init: RequestInit = {}) =>
 
 describe('GET /api/content: imageCredits', () => {
   test('only credits for photos a published row uses, plain and gallery columns alike', async () => {
-    // Curated replacements must retain their own credits alongside restored seed photos.
+    // Curated galleries retain their credits; the pinned cover carries its true credit.
     ellaImage = `${BASE}/ella.jpg`;
     galleryImage = `${BASE}/ella-gallery.jpg`;
     await pool.query('update public.destinations set image = $1, gallery = $2 where id = $3', [ellaImage, [galleryImage], 'ella']);
@@ -94,13 +94,14 @@ describe('GET /api/content: imageCredits', () => {
     await credit('https://images.unsplash.com/not-used-anywhere.jpg', 'Nobody');
 
     const credits = await content();
-    assert.deepEqual(credits.filter(c => [ellaImage, galleryImage].includes(c.url)).map((c) => c.author).sort(), ['Ella Photographer', 'Gallery Photographer']);
+    assert.deepEqual(credits.filter(c => [ellaImage, galleryImage].includes(c.url)).map((c) => c.author), ['Gallery Photographer']);
+    assert.ok(credits.some(c => c.url.startsWith('/assets/ella-1280-') && c.author === 'MichaelJames2468'));
     assert.ok(!credits.some(c => c.author === 'Nobody'));
     assert.deepEqual(Object.keys(credits[0]).sort(), ['author', 'license', 'license_url', 'source_url', 'url']);
   });
 
   test('a photo only an unpublished row uses drops out', async () => {
-    await pool.query(`update public.destinations set image = 'https://images.unsplash.com/only-galle.jpg' where id = 'galle'`);
+    await pool.query(`update public.destinations set gallery = ARRAY['https://images.unsplash.com/only-galle.jpg'] where id = 'galle'`);
     await credit('https://images.unsplash.com/only-galle.jpg');
     assert.equal((await content()).filter(c => c.url === 'https://images.unsplash.com/only-galle.jpg').length, 1);
     await pool.query(`update public.destinations set published = false where id = 'galle'`);

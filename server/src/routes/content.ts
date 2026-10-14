@@ -137,7 +137,8 @@ contentRouter.get(
       features: { bookings: req.app.locals.bookings === true }
     };
 
-    // Restore exact legacy seed photos, preserving curated replacements and rows.
+    // Pin existing destination covers to their verified places; restore other
+    // exact legacy seed photos while preserving curated replacements and rows.
     const photoCollections = [
       ['destinations', payload.destinations], ['experience_categories', payload.experienceCategories],
       ['featured_experiences', payload.featuredExperiences], ['tours', payload.tours],
