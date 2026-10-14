@@ -73,6 +73,7 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     await page.send('Page.enable');
     await page.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
     await page.send('Page.addScriptToEvaluateOnNewDocument', { source: GEO_SPY });
+    await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__bookingRequests = []; const originalFetch = window.fetch.bind(window); window.fetch = (input, init) => { const url = new URL(input instanceof Request ? input.url : String(input), location.href); if (url.pathname.startsWith('/api/bookings')) window.__bookingRequests.push({ path: url.pathname, method: init?.method ?? (input instanceof Request ? input.method : 'GET') }); return originalFetch(input, init); };` });
     await page.send('Page.navigate', { url: `${app.baseUrl}${path}` });
     await waitFor(page, `document.querySelector('main h1') && document.querySelector('footer')`, path);
     return page;
@@ -185,48 +186,56 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     assert.notEqual(await page.evaluate<string>(`getComputedStyle(document.querySelector('.ride-summary')).backgroundColor`), 'rgb(234, 247, 252)', 'dark summary');
   });
 
-  test('ride: guest callback dialog, validation, keyboard focus and pending backend submission', async () => {
-    // Test-only capacity: never changes the development/production catalog.
-    await pool.query(`update public.booking_vehicles set passenger_capacity=4, accepting_requests=true where id='car'`);
+  test('ride: missing WhatsApp configuration disables handoff without an admin fallback', async () => {
+    await pool.query('update public.site_settings set whatsapp_number = null where id');
     const page = await openPage(on, '/booking');
-    await page.evaluate(`fetch('/api/auth/logout', { method: 'POST' }).then(() => true)`);
-    await page.send('Page.navigate', { url: `${on.baseUrl}/booking` });
-    await waitFor(page, `document.querySelector('.ride-form')`, 'guest ride form');
+    await waitFor(page, `document.querySelector('.ride-form')`, 'ride form');
+    assert.equal(await page.evaluate<boolean>(`document.querySelector('.ride-submit').disabled`), true);
+    assert.ok(await page.evaluate<boolean>(`document.body.textContent.includes('WhatsApp ride enquiries are currently unavailable')`));
+    const requests = await page.evaluate<{ path: string; method: string }[]>('window.__bookingRequests');
+    assert.ok(requests.length > 0); assert.ok(requests.every(r => r.method === 'GET' && r.path === '/api/bookings/catalog'));
+  });
+
+  test('ride: validated WhatsApp handoff uses configured number and never submits to admin', async () => {
+    await pool.query(`update public.booking_vehicles set passenger_capacity=4, accepting_requests=true where id='car'`);
+    await pool.query(`update public.site_settings set whatsapp_number='94771234567' where id`);
+    const before = Number((await pool.query('select count(*) from public.bookings')).rows[0].count);
+    const page = await openPage(on, '/booking');
+    await waitFor(page, `document.querySelector('.ride-form')`, 'ride form');
+    await page.evaluate(`window.__rideOpened = []; window.open = (url, target, features) => { window.__rideOpened.push({url, target, features}); return null; }; true`);
     await fill(page, 'Pickup location', 'Matara'); await fill(page, 'Drop-off location', 'Matara');
-    await page.evaluate(`document.querySelector('.ride-submit').click(), true`);
+    await page.evaluate(`document.querySelector('.ride-form').requestSubmit(), true`);
     await waitFor(page, `document.body.textContent.includes('must be different')`, 'invalid identical route');
-    assert.equal(await page.evaluate<boolean>(`document.querySelector('dialog').open`), false);
-    await fill(page, 'Drop-off location', 'Galle'); await fill(page, 'Pickup date', '2030-12-20');
+    assert.equal(await page.evaluate<number>('window.__rideOpened.length'), 0);
+    await fill(page, 'Drop-off location', 'Galle'); await fill(page, 'Pickup date', '2099-12-20');
     await fill(page, 'Pickup time', '09:00'); await fill(page, 'Number of passengers', '5'); await fill(page, 'Vehicle category', 'car');
-    await page.evaluate(`document.querySelector('.ride-submit').click(), true`);
+    await page.evaluate(`document.querySelector('.ride-form').requestSubmit(), true`);
     await waitFor(page, `document.querySelector('#ride-passengers').getAttribute('aria-invalid') === 'true'`, 'capacity validation');
+    assert.equal(await page.evaluate<number>('window.__rideOpened.length'), 0);
     await fill(page, 'Number of passengers', '2');
-    await page.evaluate(`document.querySelector('.ride-submit').click(), true`);
-    await waitFor(page, `document.querySelector('dialog').open`, 'callback dialog');
-    assert.equal(Number((await pool.query('select count(*) from public.bookings')).rows[0].count), 0, 'no anonymous request');
-    assert.equal(await page.evaluate<boolean>(`document.querySelector('dialog').contains(document.activeElement)`), true, 'modal focus');
-    await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
-    await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
-    await waitFor(page, `!document.querySelector('dialog').open`, 'escape closes');
-    assert.equal(await page.evaluate<boolean>(`document.activeElement === document.querySelector('.ride-submit')`), true, 'focus returned');
-    await page.evaluate(`document.querySelector('.ride-submit').click(), true`);
-    await waitFor(page, `document.querySelector('dialog').open`, 'dialog reopened');
-    await fill(page, 'Callback phone number', '123');
-    await page.evaluate(`document.querySelector('dialog form').requestSubmit(), true`);
-    await waitFor(page, `document.querySelector('#ride-callback-phone').getAttribute('aria-invalid') === 'true'`, 'callback validation');
-    await fill(page, 'Callback phone number', '+94771234567');
-    // Lose a real successful response: the retry must recover the same row.
-    await page.evaluate(`(() => { const original = window.fetch.bind(window); window.__rideKeys = []; window.fetch = async (url, options) => { if (String(url).endsWith('/bookings/rides') && options?.method === 'POST') { window.__rideKeys.push(new Headers(options.headers).get('Idempotency-Key')); const response = await original(url, options); if (window.__rideKeys.length === 1) throw new TypeError('Simulated lost response'); return response; } return original(url, options); }; return true; })()`);
-    await page.evaluate(`document.querySelector('dialog form').requestSubmit(); document.querySelector('dialog form').requestSubmit(); true`);
-    await waitFor(page, `document.querySelector('dialog').textContent.includes('Retry Ride Request')`, 'recoverable network failure');
-    assert.equal(await page.evaluate<boolean>(`document.querySelector('#ride-callback-phone').disabled`), true, 'ambiguous request cannot change');
-    await page.evaluate(`document.querySelector('dialog form').requestSubmit(), true`);
-    await waitFor(page, `document.body.textContent.includes('Ride request submitted. Confirmation is pending.')`, 'pending receipt');
-    const keys = await page.evaluate<string[]>('window.__rideKeys'); assert.equal(keys.length, 2); assert.equal(keys[0], keys[1], 'retry preserves idempotency key');
-    const rows = (await pool.query('select status, destination_id, details from public.bookings')).rows;
-    assert.equal(rows.length, 1, 'duplicate submit prevented'); assert.equal(rows[0].status, 'pending'); assert.equal(rows[0].destination_id, null);
-    assert.equal(rows[0].details.dropoff.label, 'Galle'); assert.equal(rows[0].details.contactPhone, '+94771234567');
-    await pool.query('delete from public.booking_history'); await pool.query('delete from public.bookings');
+    await page.evaluate(`document.querySelector('input[value=round_trip]').click(), true`);
+    await fill(page, 'Return date', '2099-12-21'); await fill(page, 'Return time', '17:30');
+    // Keyboard submits the actual form; mocked opening prevents contacting WhatsApp.
+    await page.send('Page.bringToFront');
+    assert.equal(await page.evaluate<boolean>(`document.querySelector('.ride-submit').disabled`), false, 'configured WhatsApp enables submission');
+    await page.evaluate(`document.querySelector('.ride-submit').focus(), true`);
+    assert.equal(await page.evaluate<boolean>(`document.activeElement === document.querySelector('.ride-submit')`), true, 'submit has keyboard focus');
+    await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', text: '\r', unmodifiedText: '\r', windowsVirtualKeyCode: 13 });
+    await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 });
+    await waitFor(page, `window.__rideOpened.length === 1`, 'WhatsApp draft');
+    const opened = await page.evaluate<{url:string;target:string;features:string}[]>('window.__rideOpened');
+    const url = new URL(opened[0].url); assert.equal(url.origin, 'https://wa.me'); assert.equal(url.pathname, '/94771234567');
+    assert.equal(opened[0].target, '_blank'); assert.equal(opened[0].features, 'noopener,noreferrer');
+    const message = url.searchParams.get('text')!;
+    for (const part of ['Pickup: Matara', 'Drop-off: Galle', '2099-12-20 09:00', '2099-12-21 17:30', 'Return route: Galle → Matara', 'Passengers: 2', 'Vehicle: Car', 'UTC+05:30']) assert.ok(message.includes(part), part);
+    assert.equal(await page.evaluate<string>(`document.querySelector('.ride-form a[href^="https://wa.me/"]').href`), url.href, 'popup fallback has the same draft after URL normalization');
+    assert.equal(await page.evaluate<boolean>(`Boolean(document.querySelector('dialog, .ride-success, .ride-requests'))`), false, 'no admin callback, receipt or request history');
+    const requests = await page.evaluate<{path:string;method:string}[]>('window.__bookingRequests');
+    assert.ok(requests.every(r => r.method === 'GET' && r.path === '/api/bookings/catalog'), 'no guest/account/history or booking writes');
+    assert.equal(Number((await pool.query('select count(*) from public.bookings')).rows[0].count), before, 'admin bookings unchanged');
+    await fill(page, 'Drop-off location', 'Colombo');
+    await waitFor(page, `!document.querySelector('.ride-form a[href^="https://wa.me/"]')`, 'old draft cleared after edits');
+    await pool.query('update public.site_settings set whatsapp_number = null where id');
   });
 
   test('on: GPS only when asked, with the explanation beside the button', async () => {
