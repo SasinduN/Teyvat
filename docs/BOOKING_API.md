@@ -1,5 +1,11 @@
 # Booking API
 
+## WhatsApp ride enquiries (2026-10-14)
+
+The owner changed the public `/booking` ride form to WhatsApp handoff. It reads only `GET /api/bookings/catalog`, validates the existing ride/capacity rules and opens `https://wa.me/<site_settings.whatsapp_number>?text=…`. The visitor must review the draft and tap Send in WhatsApp; opening a chat does not prove delivery. No guest session/account/history calls, booking POST, callback dialog or admin receipt are used by this form. Missing/invalid WhatsApp settings disable the handoff without an admin fallback. Deployment uses the existing configured settings row, not a locally hardcoded number or new API key. There is no automatic WhatsApp Business API sender in this repository.
+
+The ride endpoints described below remain for compatibility with existing records/clients. `/booking?tour=…`, tour submissions, admin bookings and existing request records remain unchanged. See [RIDE_WHATSAPP](RIDE_WHATSAPP.md) for scope and verification.
+
 ## Ride requests (2026-10-12)
 
 `POST /api/bookings/rides` accepts strict `{details, callbackPhone?}` and the existing UUID `Idempotency-Key`. Details contain pickup/dropoff location objects, tripType, departureDate/departureTime, passengers, vehicleId and nullable returnDate/returnTime. Round-trip returns must follow pickup; one-way returns must be null. Manual drop-offs need no catalog ID or tour. Guests must supply the separate callback phone; authenticated identity comes exclusively from the server session. `GET /api/bookings/rides/account` returns `{signedIn,email}`. Stored requests start pending and remain available to the existing admin and guest ownership endpoints. See `RIDE_BOOKING_REDESIGN.md` for limitations. The original tour request contract below is preserved; the shared booking navigation label is now Book Your Ride.

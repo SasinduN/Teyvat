@@ -12,11 +12,13 @@ that runs it.
 One Express service serves both, plus the API (`/api/*`), from a single
 origin, backed by PostgreSQL on Railway.
 
-**Booking requests** (off unless `BOOKINGS_ENABLED=true`): `/booking` takes a
-pickup (typed, a destination, or the device's GPS when asked), stops, the
-trip, a vehicle category and contact details, and stores a pending request
-with a reference; staff review it in *Admin → Bookings*. No prices, payments
-or live availability. See [`BOOKING_API`](docs/BOOKING_API.md),
+**Book Your Ride** (off unless `BOOKINGS_ENABLED=true`): `/booking` validates
+pickup/drop-off, travel times, passengers and vehicle capacity, then opens a
+prefilled WhatsApp chat using *Admin → Settings → WhatsApp number*. The visitor
+reviews the draft and taps Send in WhatsApp. No ride enquiry is posted to admin.
+Without a configured number, WhatsApp enquiries are unavailable; there is no
+admin fallback. `/booking?tour=…` retains the existing tour request and admin
+review flow. No prices, payments or live availability. See [`BOOKING_API`](docs/BOOKING_API.md),
 [`BOOKING_DATABASE`](docs/BOOKING_DATABASE.md) and
 [`BOOKING_SECURITY`](docs/BOOKING_SECURITY.md).
 
