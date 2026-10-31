@@ -70,6 +70,31 @@ export async function secondsUntilAllowed(hash: string, ip: string): Promise<num
   return Math.max(seconds, 1);
 }
 
+/**
+ * A failed sign-in's 401 says how many tries the (email, ip) pair has left,
+ * but only from this many down: the first failure's answer stays the plain
+ * "Incorrect email or password."
+ */
+export const ATTEMPTS_LEFT_SHOWN_FROM = 3;
+
+/**
+ * Failures the (email, ip) pair may still make before its limit locks it.
+ * Only that pair's count: the per-IP and per-email totals never reach the
+ * caller. It is the same for an email that is no user, which is counted the
+ * same way.
+ */
+export async function attemptsLeft(hash: string, ip: string): Promise<number> {
+  const { rows } = await pool.query<{ failures: number }>(
+    `select count(*)::int as failures
+       from public.login_attempts
+      where not succeeded
+        and attempted_at > now() - make_interval(mins => $3)
+        and email_hash = $1 and ip = $2::inet`,
+    [hash, ip, WINDOW_MINUTES]
+  );
+  return Math.max(0, LIMITS.perEmailAndIp - (rows[0]?.failures ?? 0));
+}
+
 export async function recordAttempt(hash: string, ip: string, succeeded: boolean): Promise<void> {
   await pool.query(
     'insert into public.login_attempts (email_hash, ip, succeeded) values ($1, $2, $3)',

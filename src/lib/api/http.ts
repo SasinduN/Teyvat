@@ -15,7 +15,9 @@ export class ApiRequestError extends Error {
     readonly code: ApiErrorCode | 'unreachable',
     message: string,
     /** Field-level messages from a 400, keyed by path (`itinerary.2.title`). */
-    readonly fields?: Record<string, string>
+    readonly fields?: Record<string, string>,
+    /** A failed sign-in's `attemptsLeft`, and a 429's `Retry-After` in seconds. */
+    readonly limits: { attemptsLeft?: number; retryAfterSeconds?: number } = {}
   ) {
     super(message);
     this.name = 'ApiRequestError';
@@ -49,7 +51,11 @@ async function request(path: string, init: RequestInit): Promise<{ res: Response
   if (res.ok && body !== undefined) return { res, body };
 
   if (isErrorPayload(body)) {
-    throw new ApiRequestError(res.status, body.error.code, body.error.message, body.error.fields);
+    const retryAfter = Number(res.headers.get('Retry-After'));
+    throw new ApiRequestError(res.status, body.error.code, body.error.message, body.error.fields, {
+      ...(typeof body.error.attemptsLeft === 'number' ? { attemptsLeft: body.error.attemptsLeft } : {}),
+      ...(retryAfter > 0 ? { retryAfterSeconds: retryAfter } : {})
+    });
   }
   throw new ApiRequestError(res.status, 'unreachable', UNREACHABLE);
 }
