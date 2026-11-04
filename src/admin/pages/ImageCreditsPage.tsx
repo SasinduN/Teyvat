@@ -70,7 +70,7 @@ const CreditFields: React.FC<{
         placeholder={placeholder}
         onChange={(e) => onChange({ ...draft, [name]: e.target.value })}
       />
-      {errors?.[name] && <p className="text-[11px] text-[var(--danger)]">{errors[name]}</p>}
+      {errors?.[name] && <p className="text-xs text-[var(--danger)]">{errors[name]}</p>}
     </div>
   );
   return (
@@ -132,12 +132,12 @@ const CreditCard: React.FC<{ item: ImageCreditItem; onSaved: () => void }> = ({ 
             ) : (
               <Badge tone="muted">Not used: not shown on the site</Badge>
             )}
-            <span className="truncate font-mono text-[10px] text-[var(--text-primary)]/50" title={item.url}>
+            <span className="truncate font-mono text-xs text-[var(--text-primary)]/50" title={item.url}>
               {item.url}
             </span>
           </div>
           {item.usedBy.length > 0 && (
-            <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+            <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
               {item.usedBy.map((u) => {
                 const link = usageLink(u);
                 return (
@@ -164,7 +164,7 @@ const CreditCard: React.FC<{ item: ImageCreditItem; onSaved: () => void }> = ({ 
                   Cancel
                 </Button>
                 {item.usedBy.length > 0 && (
-                  <p className="w-full text-[11px] text-[var(--danger)]">
+                  <p className="w-full text-xs text-[var(--danger)]">
                     This photo is on the site. Without a credit it disappears from the Photo Credits page.
                   </p>
                 )}
@@ -223,7 +223,7 @@ const NewCredit: React.FC<{ onSaved: () => void }> = ({ onSaved }) => {
         </FieldLabel>
         <Input id={`${id}-url`} value={url} placeholder="https://…" onChange={(e) => setUrl(e.target.value)} />
         <FieldHelp>Exactly as the record stores it: copy it from the media library or the record’s image field.</FieldHelp>
-        {errors?.url && <p className="text-[11px] text-[var(--danger)]">{errors.url}</p>}
+        {errors?.url && <p className="text-xs text-[var(--danger)]">{errors.url}</p>}
       </div>
       <CreditFields draft={draft} onChange={setDraft} errors={errors} />
       <div className="flex gap-2">

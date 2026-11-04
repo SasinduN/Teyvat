@@ -38,7 +38,7 @@ const NavItem: React.FC<{
     onClick={onNavigate}
     className={({ isActive }) =>
       cn(
-        'flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold transition-colors',
+        'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors',
         isActive
           ? 'bg-[var(--accent)] text-[var(--on-accent)]'
           : 'text-[var(--sand)]/75 hover:bg-white/10 hover:text-white'
@@ -49,7 +49,7 @@ const NavItem: React.FC<{
     <span className="truncate">{label}</span>
     {badge ? (
       <span
-        className="ml-auto rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-bold text-[var(--on-accent)]"
+        className="ml-auto rounded-full bg-[var(--accent)] px-2 py-0.5 text-xs font-bold text-[var(--on-accent)]"
         aria-label={`${badge} new`}
       >
         {badge}
@@ -83,7 +83,7 @@ export const AdminLayout: React.FC = () => {
     <div className="flex h-full flex-col bg-[var(--inverse-surface)] p-4">
       <div className="mb-6 px-2 pt-2">
         <div className="font-heading text-lg font-bold text-white">Travel Eye</div>
-        <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent-text)]">
+        <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-text)]">
           Content Admin
         </div>
       </div>
@@ -98,7 +98,7 @@ export const AdminLayout: React.FC = () => {
           onNavigate={closeMobile}
         />
 
-        <div className="px-3 pb-1 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--sand)]/40">
+        <div className="px-3 pb-1 pt-5 text-xs font-bold uppercase tracking-[0.2em] text-[var(--sand)]/40">
           Content
         </div>
         {COLLECTIONS.map((c) => (
@@ -111,7 +111,7 @@ export const AdminLayout: React.FC = () => {
           />
         ))}
 
-        <div className="px-3 pb-1 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--sand)]/40">
+        <div className="px-3 pb-1 pt-5 text-xs font-bold uppercase tracking-[0.2em] text-[var(--sand)]/40">
           Site
         </div>
         <NavItem to="/admin/bookings" icon={CalendarCheck} label="Bookings" onNavigate={closeMobile} />
@@ -125,14 +125,14 @@ export const AdminLayout: React.FC = () => {
           href="/"
           target="_blank"
           rel="noreferrer"
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-[var(--sand)]/75 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-[var(--sand)]/75 transition-colors hover:bg-white/10 hover:text-white"
         >
           <ExternalLink className="h-4 w-4 shrink-0" />
           <span>View live site</span>
         </a>
         <button
           onClick={() => void handleSignOut(false)}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-[var(--sand)]/75 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-[var(--sand)]/75 transition-colors hover:bg-white/10 hover:text-white"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           <span>Sign out</span>
@@ -140,13 +140,13 @@ export const AdminLayout: React.FC = () => {
         <button
           onClick={() => void handleSignOut(true)}
           title="Ends your session on every browser and device"
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold text-[var(--sand)]/75 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-[var(--sand)]/75 transition-colors hover:bg-white/10 hover:text-white"
         >
           <MonitorOff className="h-4 w-4 shrink-0" />
           <span>Sign out everywhere</span>
         </button>
 
-        <div className="truncate px-3 pt-3 text-[10px] font-light text-[var(--sand)]/40">
+        <div className="truncate px-3 pt-3 text-xs text-[var(--sand)]/40">
           {user?.fullName || user?.email}
         </div>
       </div>

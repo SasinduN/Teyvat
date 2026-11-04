@@ -6,6 +6,7 @@
  */
 import { BRAND_NAME } from '../../../shared/brand';
 import { escapeHtml } from '../../../shared/html';
+import type { TextSize } from '../../../shared/text-size';
 
 export interface PageMeta {
   title: string;
@@ -118,6 +119,14 @@ const END = '<!--/page-meta-->';
  * `index.html` with its default title and description (between the
  * `page-meta` markers) replaced by `head`.
  */
+/**
+ * The admin's text size on <html>: an attribute the stylesheet turns into the
+ * root font-size, so it arrives with the page (no flash) and is no inline style.
+ */
+export function injectTextSize(html: string, size: TextSize): string {
+  return html.replace('<html', `<html data-text-size="${size}"`);
+}
+
 export function injectHead(template: string, head: string): string {
   const start = template.indexOf(START);
   const end = template.indexOf(END);

@@ -14,7 +14,7 @@ export const FeaturedExperiences: React.FC = () => {
         {/* Header */}
         <div className="te-section-header">
           <div>
-            <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[var(--brand-primary)] tracking-tight">
+            <h2 className="font-heading text-5xl font-bold text-[var(--brand-primary)] tracking-tight">
               Experiences You’ll Remember
             </h2>
           </div>
@@ -33,10 +33,10 @@ export const FeaturedExperiences: React.FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-50px' }}
               transition={{ duration: 0.6, delay: idx * 0.15 }}
-              className="te-card te-content-card overflow-hidden flex flex-col sm:flex-row group cursor-pointer"
+              className="te-card te-content-card overflow-hidden flex flex-col lg:flex-row group cursor-pointer"
             >
               {/* Image Column */}
-              <div className="sm:w-1/2 relative min-h-[220px] sm:min-h-full overflow-hidden">
+              <div className="lg:w-1/2 relative min-h-[220px] lg:min-h-full overflow-hidden">
                 <TravelImage
                   src={item.image}
                   alt={item.title}
@@ -49,7 +49,7 @@ export const FeaturedExperiences: React.FC = () => {
               </div>
 
               {/* Text Details Column */}
-              <div className="sm:w-1/2 min-w-0 p-5 sm:p-6 flex flex-col justify-between space-y-4">
+              <div className="lg:w-1/2 min-w-0 p-5 sm:p-6 flex flex-col justify-between space-y-4">
                 <div>
                   <div className="te-card-meta flex items-center gap-2 mb-2">
                     <MapPin className="w-3.5 h-3.5 text-[var(--accent-text)]" />
@@ -60,11 +60,11 @@ export const FeaturedExperiences: React.FC = () => {
                     {item.title}
                   </h3>
 
-                  <p className="te-card-accent text-xs font-serif italic mb-3">
+                  <p className="te-card-accent text-sm font-heading mb-3">
                     “{item.subtitle}”
                   </p>
 
-                  <p className="te-card-description text-xs line-clamp-3 mb-6">
+                  <p className="te-card-description text-sm line-clamp-3 mb-6">
                     {item.description}
                   </p>
 

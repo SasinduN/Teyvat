@@ -31,7 +31,7 @@ export function PhotoCreditsPage() {
       <section className="bg-[var(--background)] py-16 sm:py-20" data-photo-credits>
         <div className="te-container">
           {credits.length === 0 ? (
-            <p className="mx-auto max-w-2xl text-center font-light text-[var(--text-primary)]/70">
+            <p className="mx-auto max-w-2xl text-center text-[var(--text-primary)]/70">
               None of the photos on the site currently need a credit.
             </p>
           ) : (
@@ -65,7 +65,7 @@ export function PhotoCreditsPage() {
                         href={credit.sourceUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-[var(--brand-primary)] underline underline-offset-2 hover:text-[var(--brand-primary)]"
+                        className="inline-flex items-center gap-1 text-sm text-[var(--brand-primary)] underline underline-offset-2 hover:text-[var(--brand-primary)]"
                       >
                         Original
                         <ExternalLink className="h-3 w-3" aria-hidden="true" />

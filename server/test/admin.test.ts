@@ -550,6 +550,53 @@ describe('site settings', () => {
     await pool.query("update public.site_settings set whatsapp_number = '94771234567' where id");
   });
 
+  test('the text size saves, and the next page is served with it', async () => {
+    assert.equal((await settings()).text_size, 100);
+    const page = () => fetch(`${app.baseUrl}/destinations`).then((r) => r.text());
+    assert.match(await page(), /<html[^>]* data-text-size="100"/);
+
+    const res = await save(await settings(), { text_size: 120 });
+    assert.equal(res.status, 200);
+    assert.equal((await json(res)).text_size, 120);
+    assert.equal((await settings()).text_size, 120);
+    assert.match(await page(), /<html[^>]* data-text-size="120"/);
+    // An attribute the stylesheet reads: never an inline style, which is what the CSP is about.
+    assert.doesNotMatch(await page(), /<html[^>]* style=/);
+  });
+
+  test('any other text size gets a field error and changes nothing', async () => {
+    const row = await settings();
+    for (const bad of [0, 80, 95, 100.5, 130, -100, '110', '120%', '', null, true, [120], { size: 120 }]) {
+      const res = await save(row, { text_size: bad });
+      assert.equal(res.status, 400, JSON.stringify(bad));
+      assert.match((await errorFields(res)).text_size ?? '', /Choose 90%, 100%, 110%, 120%/, JSON.stringify(bad));
+    }
+    assert.equal((await settings()).text_size, 100);
+  });
+
+  test('the text size is required on a save', async () => {
+    const row = await settings();
+    const { text_size: _omitted, ...rest } = row;
+    const res = await save(rest as typeof row, {});
+    assert.equal(res.status, 400);
+    assert.match((await errorFields(res)).text_size ?? '', /Choose/);
+  });
+
+  test('the database refuses any other text size written directly', async () => {
+    for (const bad of [0, 95, 130]) {
+      await assert.rejects(
+        pool.query('update public.site_settings set text_size = $1 where id', [bad]),
+        (error: { code?: string }) => error.code === '23514',
+        String(bad)
+      );
+    }
+  });
+
+  test('the text size stays out of the public content API', async () => {
+    const content = await (await fetch(`${app.baseUrl}/api/content`)).json();
+    assert.equal(content.siteSettings.text_size, undefined);
+  });
+
   test('a stale settings save is 409', async () => {
     const row = await settings();
     assert.equal((await save(row, { phone: '+94 11 000 0000' })).status, 200);

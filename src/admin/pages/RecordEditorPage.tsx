@@ -147,7 +147,7 @@ export const RecordEditorPage: React.FC = () => {
     <div>
       <Link
         to={`/admin/${collection.slug}`}
-        className="mb-4 inline-flex items-center gap-1 text-[11px] font-bold text-[var(--brand-primary)] transition-colors hover:text-[var(--brand-primary)]"
+        className="mb-4 inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)] transition-colors hover:text-[var(--brand-primary)]"
       >
         <ChevronLeft className="h-3.5 w-3.5" />
         Back to {collection.label}
@@ -163,7 +163,7 @@ export const RecordEditorPage: React.FC = () => {
               target="_blank"
               rel="noopener noreferrer"
               data-view-page
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-strong)]/60 bg-[var(--surface)] px-4 py-2.5 text-xs font-bold text-[var(--brand-primary)] transition-colors hover:bg-[var(--background-secondary)]"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-strong)]/60 bg-[var(--surface)] px-4 py-2.5 text-sm font-bold text-[var(--brand-primary)] transition-colors hover:bg-[var(--background-secondary)]"
             >
               View page
               <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />

@@ -34,10 +34,10 @@ export const SiteError: React.FC<{ message: string; onRetry: () => void }> = ({
       <h1 className="font-heading text-2xl font-bold text-[var(--brand-primary)]">
         We couldn’t load the island right now
       </h1>
-      <p className="text-sm text-[var(--text-primary)]/70 font-light leading-relaxed">{message}</p>
+      <p className="text-sm text-[var(--text-primary)]/70 leading-relaxed">{message}</p>
       <button
         onClick={onRetry}
-        className="inline-flex items-center space-x-2 px-8 py-3 bg-[var(--inverse-surface)] text-white font-bold rounded-2xl text-xs shadow-md hover:bg-[var(--brand-secondary)] transition-colors"
+        className="inline-flex items-center space-x-2 px-8 py-3 bg-[var(--inverse-surface)] text-white font-bold rounded-2xl text-sm shadow-md hover:bg-[var(--brand-secondary)] transition-colors"
       >
         <RefreshCw className="w-4 h-4" />
         <span>Try Again</span>

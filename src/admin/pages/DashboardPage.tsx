@@ -57,7 +57,7 @@ export const DashboardPage: React.FC = () => {
                   <div className="font-heading text-lg font-bold text-[var(--brand-primary)]">
                     Traveller enquiries
                   </div>
-                  <div className="mt-0.5 text-xs font-light text-[var(--text-primary)]/60">
+                  <div className="mt-0.5 text-sm text-[var(--text-primary)]/60">
                     {newInquiries > 0
                       ? `${newInquiries} awaiting a reply`
                       : 'Nothing new'}
@@ -79,7 +79,7 @@ export const DashboardPage: React.FC = () => {
               </div>
               <div>
                 <div className="font-heading text-lg font-bold text-[var(--brand-primary)]">Site settings</div>
-                <div className="mt-0.5 text-xs font-light text-[var(--text-primary)]/60">
+                <div className="mt-0.5 text-sm text-[var(--text-primary)]/60">
                   Address, phone, contact email and the footer's social and legal links.
                 </div>
               </div>
@@ -88,7 +88,7 @@ export const DashboardPage: React.FC = () => {
 
           {/* Content collections */}
           <div>
-            <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-primary)]/45">
+            <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[var(--text-primary)]/45">
               Content
             </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -108,7 +108,7 @@ export const DashboardPage: React.FC = () => {
                       <div className="mt-4 font-heading text-base font-bold text-[var(--brand-primary)]">
                         {c.label}
                       </div>
-                      <p className="mt-1 text-[11px] font-light leading-relaxed text-[var(--text-primary)]/55">
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--text-primary)]/55">
                         {c.description}
                       </p>
                     </Card>

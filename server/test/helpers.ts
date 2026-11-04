@@ -122,7 +122,8 @@ export async function resetContent(): Promise<void> {
             contact_email = 'hello@traveleye.lk',
             instagram_url = null, facebook_url = null, tiktok_url = null, youtube_url = null,
             privacy_url = null, terms_url = null, sustainability_url = null,
-            whatsapp_number = null
+            whatsapp_number = null,
+            text_size = 100
       where id`
   );
 }

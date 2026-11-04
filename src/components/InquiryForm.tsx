@@ -66,12 +66,12 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
           <h3 className="font-heading text-2xl font-bold text-[var(--brand-primary)]">
             Your Inquiry Has Been Received
           </h3>
-          <p className="text-sm text-[var(--text-primary)]/80 font-light max-w-md mx-auto leading-relaxed">
+          <p className="text-sm text-[var(--text-primary)]/80 max-w-md mx-auto leading-relaxed">
             Thank you, <strong>{formData.name || 'Traveler'}</strong>! A Travel Eye Sri Lanka travel specialist will review your request and get back to you within 12 hours with a bespoke itinerary.
           </p>
           <button
             onClick={onDone}
-            className="te-button te-button--secondary mt-4 px-8 py-3 font-bold text-xs"
+            className="te-button te-button--secondary mt-4 px-8 py-3 font-bold"
           >
             {doneLabel}
           </button>
@@ -83,10 +83,10 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
               <Compass className="w-3.5 h-3.5" />
               <span>Custom Trip Planner</span>
             </div>
-            <h3 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--brand-primary)]">
+            <h3 className="font-heading text-2xl font-bold text-[var(--brand-primary)]">
               Plan Your Sri Lanka Journey
             </h3>
-            <p className="text-xs text-[var(--text-primary)]/70 font-light mt-1">
+            <p className="text-sm text-[var(--text-primary)]/70 mt-1">
               Tell us about your dream trip and our local travel designers will assemble your personalized travel experience.
             </p>
           </div>
@@ -110,7 +110,7 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
                   placeholder="e.g. Elena Rostova"
                   value={formData.name}
                   onChange={(e) => setFormdata({ ...formData, name: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-[var(--background)] border border-[var(--border-strong)]/50 text-xs font-medium focus:outline-none focus:border-[var(--inverse-raised)]"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-[var(--background)] border border-[var(--border-strong)]/50 text-base font-medium focus:outline-none focus:border-[var(--inverse-raised)]"
                 />
               </div>
             </div>
@@ -127,7 +127,7 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
                     placeholder="elena@example.com"
                     value={formData.email}
                     onChange={(e) => setFormdata({ ...formData, email: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-[var(--background)] border border-[var(--border-strong)]/50 text-xs font-medium focus:outline-none focus:border-[var(--inverse-raised)]"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-[var(--background)] border border-[var(--border-strong)]/50 text-base font-medium focus:outline-none focus:border-[var(--inverse-raised)]"
                   />
                 </div>
               </div>
@@ -142,7 +142,7 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
                     placeholder="+1 (555) 019-2834"
                     value={formData.phone}
                     onChange={(e) => setFormdata({ ...formData, phone: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-[var(--background)] border border-[var(--border-strong)]/50 text-xs font-medium focus:outline-none focus:border-[var(--inverse-raised)]"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-[var(--background)] border border-[var(--border-strong)]/50 text-base font-medium focus:outline-none focus:border-[var(--inverse-raised)]"
                   />
                 </div>
               </div>
@@ -154,7 +154,7 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
                 <select id={`${id}-travelers`} name="travelers"
                   value={formData.travelers}
                   onChange={(e) => setFormdata({ ...formData, travelers: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-[var(--background)] border border-[var(--border-strong)]/50 text-xs font-medium focus:outline-none focus:border-[var(--inverse-raised)]"
+                  className="w-full px-4 py-3 rounded-xl bg-[var(--background)] border border-[var(--border-strong)]/50 text-base font-medium focus:outline-none focus:border-[var(--inverse-raised)]"
                 >
                   <option value="Solo Traveler">Solo Traveler</option>
                   <option value="2 Adults">2 Adults (Couple)</option>
@@ -168,7 +168,7 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
                 <select id={`${id}-dates`} name="dates"
                   value={formData.dates}
                   onChange={(e) => setFormdata({ ...formData, dates: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-[var(--background)] border border-[var(--border-strong)]/50 text-xs font-medium focus:outline-none focus:border-[var(--inverse-raised)]"
+                  className="w-full px-4 py-3 rounded-xl bg-[var(--background)] border border-[var(--border-strong)]/50 text-base font-medium focus:outline-none focus:border-[var(--inverse-raised)]"
                 >
                   <option value="Next 3 Months">Next 3 Months</option>
                   <option value="4-6 Months Out">4-6 Months Out</option>
@@ -185,14 +185,14 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
                 placeholder="Tell us about places you want to visit or preferred pace..."
                 value={formData.message}
                 onChange={(e) => setFormdata({ ...formData, message: e.target.value })}
-                className="w-full p-3 rounded-xl bg-[var(--background)] border border-[var(--border-strong)]/50 text-xs font-medium focus:outline-none focus:border-[var(--inverse-raised)]"
+                className="w-full p-3 rounded-xl bg-[var(--background)] border border-[var(--border-strong)]/50 text-base font-medium focus:outline-none focus:border-[var(--inverse-raised)]"
               />
             </div>
 
             {error && (
               <div role="alert" className="flex items-start space-x-2 rounded-xl bg-[var(--danger)]/10 border border-[var(--danger)]/30 px-3 py-2.5 text-[var(--danger)]">
                 <AlertCircle className="w-4 h-4 mt-px shrink-0" />
-                <p className="text-xs font-medium leading-relaxed">
+                <p className="text-sm font-medium leading-relaxed">
                   We couldn’t send your request. {error}
                 </p>
               </div>
@@ -202,7 +202,7 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
               type="submit"
               disabled={sending}
               data-keep-clear
-              className="te-button te-button--primary w-full py-4 font-bold text-xs flex items-center justify-center space-x-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="te-button te-button--primary w-full py-4 font-bold flex items-center justify-center space-x-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {sending ? (
                 <>

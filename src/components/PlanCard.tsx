@@ -22,7 +22,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ title, text, cta, priceFrom 
     <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[var(--inverse-surface)] p-7 text-white shadow-xl">
       <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-[var(--emerald-edge)]/25 blur-3xl" />
       <div className="relative space-y-4">
-        <span className="inline-block rounded-full border border-[var(--accent)]/30 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent-text)]">
+        <span className="inline-block rounded-full border border-[var(--accent)]/30 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-text)]">
           Plan with a local expert
         </span>
         {priceFrom !== undefined && (
@@ -34,7 +34,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ title, text, cta, priceFrom 
           </div>
         )}
         <h2 className="font-heading text-2xl font-bold">{title}</h2>
-        <p className="text-sm font-light leading-relaxed text-white/75">{text}</p>
+        <p className="text-sm leading-relaxed text-white/75">{text}</p>
         <button
           type="button"
           onClick={() => openInquiry()}

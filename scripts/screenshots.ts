@@ -4,6 +4,7 @@
  *   npm run screenshots -- --base origin/main
  *   npm run screenshots -- --base origin/main --pages /,/about --dark
  *   npm run screenshots -- --base origin/main --pages / --admin --dark
+ *   npm run screenshots -- --base origin/main --pages / --admin --text-size 120
  *
  * Builds `--base` in a throwaway git worktree and the working tree as it is,
  * serves each from its own scratch database on the local test server, and
@@ -13,6 +14,8 @@
  * (git-ignored: never committed). It then compares each pair and writes
  * `summary.md` there: identical, or how much differs and where. A PR lists
  * the pages that changed; the author drags those pairs into it on GitHub.
+ *
+ * `--text-size` sets the admin's text size in the "after" site only.
  *
  * `--admin` adds the admin: the login page, then (signed in as a throwaway
  * admin created in each scratch database) the dashboard, a collection, two
@@ -63,6 +66,7 @@ const { values } = parseArgs({
     pages: { type: 'string' },
     dark: { type: 'boolean', default: false },
     admin: { type: 'boolean', default: false },
+    'text-size': { type: 'string' },
     out: { type: 'string' }
   },
   strict: true
@@ -134,6 +138,15 @@ async function prepare(site: Site): Promise<void> {
   console.log(`\n[${site.label}] build`);
   run('npm', ['run', 'build'], site.dir);
   run('npx', ['tsx', 'scripts/migrate.ts'], site.dir, { ...process.env, DATABASE_URL: db });
+  if (site.label === 'after' && values['text-size']) {
+    const client = new Client({ connectionString: db });
+    await client.connect();
+    try {
+      await client.query('update public.site_settings set text_size = $1 where id', [Number(values['text-size'])]);
+    } finally {
+      await client.end();
+    }
+  }
   if (values.admin) {
     const client = new Client({ connectionString: db });
     await client.connect();
@@ -365,6 +378,12 @@ async function main(): Promise<void> {
             await shoot(page, join(out, `${slug(path)}-${suffix}`), true);
             console.log(`  ${slug(path)}-${suffix}`);
           }
+          // The footer on its own, from a page whose footer every page shares.
+          const foot = await open(chrome, site.url + '/about', viewport, dark);
+          await settle(foot);
+          await foot.evaluate(`document.querySelector('footer').scrollIntoView({ block: 'end', behavior: 'instant' }), true`);
+          await foot.evaluate(QUIET);
+          await shoot(foot, join(out, `state-footer-${suffix}`), false);
           // Named states: the phone menu, and the enquiry form on a tour.
           if (viewport.mobile) {
             const menu = await open(chrome, site.url + '/', viewport, dark);

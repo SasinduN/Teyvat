@@ -50,8 +50,8 @@ function ArticleView({ a }: { a: Article }) {
             </div>
           </div>
 
-          <div className="space-y-6 text-base font-light leading-relaxed text-[var(--text-primary)]/85 sm:text-lg">
-            <p className="font-heading text-xl font-medium italic text-[var(--brand-primary)] sm:text-2xl">“{a.snippet}”</p>
+          <div className="space-y-6 te-prose text-[var(--text-primary)]/85">
+            <p className="font-heading text-xl font-medium text-[var(--brand-primary)]">“{a.snippet}”</p>
             {a.content?.map((paragraph, i) => <p key={i}>{paragraph}</p>)}
           </div>
         </div>

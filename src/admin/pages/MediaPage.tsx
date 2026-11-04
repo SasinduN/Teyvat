@@ -94,7 +94,7 @@ export const MediaPage: React.FC = () => {
         actions={
           <label
             className={cn(
-              'inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-transparent bg-[var(--inverse-surface)] px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-[var(--brand-secondary)]',
+              'inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-transparent bg-[var(--inverse-surface)] px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[var(--brand-secondary)]',
               (!uploadsEnabled || progress) && 'pointer-events-none opacity-60'
             )}
           >
@@ -157,14 +157,14 @@ export const MediaPage: React.FC = () => {
                 <ImagePreview url={item.url} className="h-40 w-full rounded-none border-0 border-b" />
                 <div className="space-y-2 p-4">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="truncate font-mono text-[10px] text-[var(--text-primary)]/50">{item.folder}</span>
+                    <span className="truncate font-mono text-xs text-[var(--text-primary)]/50">{item.folder}</span>
                     {item.usedBy.length > 0 ? (
                       <Badge tone="gold">Used by {item.usedBy.length}</Badge>
                     ) : (
                       <Badge tone="muted">Unused</Badge>
                     )}
                   </div>
-                  <p className="text-[11px] font-light text-[var(--text-primary)]/55">
+                  <p className="text-xs text-[var(--text-primary)]/55">
                     {kb(item.bytes)} · {item.contentType.replace('image/', '').toUpperCase()} · {date(item.createdAt)}
                   </p>
 
@@ -172,11 +172,11 @@ export const MediaPage: React.FC = () => {
                     <div className="space-y-2 rounded-xl bg-[var(--danger)]/5 p-3">
                       {asking.usedBy.length > 0 ? (
                         <>
-                          <p className="flex items-start gap-1.5 text-[11px] font-bold text-[var(--danger)]">
+                          <p className="flex items-start gap-1.5 text-xs font-bold text-[var(--danger)]">
                             <TriangleAlert className="mt-px h-3.5 w-3.5 shrink-0" />
                             Still in use. Deleting it leaves a broken image on:
                           </p>
-                          <ul className="space-y-0.5 pl-5 text-[11px]">
+                          <ul className="space-y-0.5 pl-5 text-xs">
                             {asking.usedBy.map((u) => {
                               const link = usageLink(u);
                               return (
@@ -190,7 +190,7 @@ export const MediaPage: React.FC = () => {
                           </ul>
                         </>
                       ) : (
-                        <p className="text-[11px] text-[var(--text-primary)]/70">Delete this image for good?</p>
+                        <p className="text-xs text-[var(--text-primary)]/70">Delete this image for good?</p>
                       )}
                       <div className="flex gap-2">
                         <Button

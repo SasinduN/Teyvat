@@ -63,7 +63,7 @@ export const PageHero: React.FC<PageHeroProps> = ({ image, crumbs, eyebrow, titl
         )}
         <h1 className="te-page-title font-heading font-bold tracking-tight text-white">{title}</h1>
         {subtitle && (
-          <p className="te-page-description mt-4 text-base font-light leading-relaxed text-white/85 sm:text-lg">{subtitle}</p>
+          <p className="te-page-description mt-4 text-lg leading-relaxed text-white/85">{subtitle}</p>
         )}
       </div>
     </div>

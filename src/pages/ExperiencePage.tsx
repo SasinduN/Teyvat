@@ -72,7 +72,7 @@ function ExperienceView({ e }: { e: ExperienceItem }) {
             <dl className="grid grid-cols-2 gap-5 rounded-2xl border border-[var(--border-strong)]/40 bg-[var(--surface)] p-6 sm:grid-cols-4">
               {facts.map(([Icon, label, value]) => (
                 <div key={label}>
-                  <dt className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[var(--brand-primary)]">
+                  <dt className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)]">
                     <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                     {label}
                   </dt>
@@ -83,7 +83,7 @@ function ExperienceView({ e }: { e: ExperienceItem }) {
 
             <div className="space-y-4">
               <h2 className="font-heading text-3xl font-bold text-[var(--brand-primary)]">The Experience</h2>
-              <p className="text-base font-light leading-relaxed text-[var(--text-primary)]/85 sm:text-lg">{e.description}</p>
+              <p className="te-prose text-[var(--text-primary)]/85">{e.description}</p>
             </div>
 
             {e.highlights.length > 0 && (

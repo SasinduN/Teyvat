@@ -32,6 +32,7 @@ this file or anywhere else in git.
 | R+ | #12 parity: glass, buttons, header, Explore and planner markup (`docs/reviews/pr12-parity.md`) | in review (#28) |
 | R++ | `llms.txt` (#29); dialogs keep the scrollbar's space (#30) | done |
 | F | The friend import (`docs/reviews/friend-import.md`): A design, B photos, C bookings behind a flag | A done (#33); B done (#34); C in review (#35), merged only after a production backup (it runs 0014) |
+| T | Typography: DM Sans self-hosted, one rem scale, the admin's text size (0019) | in review |
 
 Update the Status column when a phase lands.
 
@@ -60,6 +61,33 @@ Update the Status column when a phase lands.
     importing `'zod'` directly brings back an `eval` probe the CSP reports.
   - A new external host (fonts, tiles, scripts) needs adding to the CSP;
     `server/test/browser-csp.test.ts` fails until it is.
+  - The Google Fonts hosts are still allowed, unused since the fonts moved in
+    house; they can be removed in their own PR.
+- **Type** (`src/styles/tokens.css`, `fonts.css`):
+  - DM Sans, self-hosted through `@fontsource/dm-sans`: Latin only, weights
+    400, 500, 600 and 700, no italics. Only 400 is preloaded (`index.html`). A
+    new weight is a new `@font-face`; there is no font CDN.
+  - Tailwind's `text-*` sizes are redefined in `@theme` (`tokens.css`), so
+    `text-xs` is 13 px (labels, badges), `text-sm` 15 px (cards, descriptions),
+    `text-base` 16 to 17 px, and `text-xl` and up are the `--heading-*`
+    `clamp()` scale. No `text-[11px]`, no `font-size` in px:
+    `browser-typography` greps for both.
+  - Long text is `.te-prose` (16 to 18 px, about 70 characters a line).
+  - Inputs are `--type-input`, never under 16 px at any text size: iPhones
+    zoom into smaller ones.
+- **Text size** (Admin → Settings, `site_settings.text_size`, `shared/text-size.ts`):
+  - 90, 100, 110 or 120. Express writes `data-text-size` on `<html>` in every
+    page (`injectTextSize`), and a rule in `index.css` sets the root font-size.
+    An attribute, not an inline style: no CSP change, no flash.
+  - Sizes in rem follow it; so must anything holding text. A fixed height in px
+    around text clips at 120%: use `min-h-[…rem]`.
+  - The header's links are a container query in rem (`.te-nav-links`), so they
+    hand over to the menu button when they don't fit, at any size. Links added
+    to the header can need a higher threshold: `browser-text-size` measures it.
+  - `browser-text-size` audits every page type at 120%, three widths, both
+    themes (`text-audit.ts`): sideways overflow, clipping, overlaps, cut-off
+    placeholders. It measures text rectangles, because `body { overflow-x:
+    hidden }` hides the overflow a scroll check would see.
 - **Glass and buttons** (#12 parity, `docs/reviews/pr12-parity.md`):
   - Glass is `src/styles/glass.css`: `.glass` plus `--inverse`, `--strong`,
     `--subtle`, `--round`, `--3d` (edge light and the same-origin grain

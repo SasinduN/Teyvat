@@ -221,12 +221,12 @@ export const InquiriesPage: React.FC = () => {
                         <Badge tone={STATUS_TONE[row.status]}>{STATUS_LABEL[row.status]}</Badge>
                       )}
                     </div>
-                    <p className="mt-0.5 truncate text-[11px] font-light text-[var(--text-primary)]/60">
+                    <p className="mt-0.5 truncate text-xs text-[var(--text-primary)]/60">
                       {row.subject || 'General enquiry'}
                     </p>
                   </div>
 
-                  <span className="hidden shrink-0 text-[11px] font-light text-[var(--text-primary)]/45 sm:block">
+                  <span className="hidden shrink-0 text-xs text-[var(--text-primary)]/45 sm:block">
                     {formatWhen(row.created_at)}
                   </span>
 
@@ -271,10 +271,10 @@ export const InquiriesPage: React.FC = () => {
 
                     {row.message && (
                       <div className="mt-4">
-                        <div className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]">
+                        <div className="mb-1.5 text-xs font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]">
                           Message
                         </div>
-                        <p className="whitespace-pre-wrap rounded-xl bg-[var(--background)] p-3.5 text-xs font-light leading-relaxed text-[var(--text-primary)]/80">
+                        <p className="whitespace-pre-wrap rounded-xl bg-[var(--background)] p-3.5 text-sm leading-relaxed text-[var(--text-primary)]/80">
                           {row.message}
                         </p>
                       </div>
@@ -282,7 +282,7 @@ export const InquiriesPage: React.FC = () => {
 
                     <div className="mt-5 grid gap-4 sm:grid-cols-[12rem_1fr]">
                       <div className="space-y-2">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]">
+                        <div className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]">
                           Status
                         </div>
                         <Select
@@ -304,7 +304,7 @@ export const InquiriesPage: React.FC = () => {
                       </div>
 
                       <div className="space-y-2">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]">
+                        <div className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]">
                           Internal notes
                         </div>
                         <Textarea
@@ -327,7 +327,7 @@ export const InquiriesPage: React.FC = () => {
 
                     <div className="mt-5 flex items-center justify-between border-t border-[var(--border-strong)]/45 pt-4">
                       <div className="flex items-center gap-3">
-                        <span className="text-[11px] font-light text-[var(--text-primary)]/45">
+                        <span className="text-xs text-[var(--text-primary)]/45">
                           Received {formatWhen(row.created_at)}
                         </span>
                         {row.spam && (
@@ -384,10 +384,10 @@ const Detail: React.FC<{
   <div className="flex items-start gap-2.5">
     <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--brand-primary)]/55" />
     <div className="min-w-0">
-      <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]">
+      <div className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]">
         {label}
       </div>
-      <div className="mt-0.5 break-words text-xs font-medium text-[var(--text-primary)]">{children}</div>
+      <div className="mt-0.5 break-words text-sm font-medium text-[var(--text-primary)]">{children}</div>
     </div>
   </div>
 );

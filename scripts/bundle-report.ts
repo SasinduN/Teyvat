@@ -36,6 +36,7 @@ const PAGES: [string, string, boolean][] = [
   ['Tours list', 'src/pages/ToursPage.tsx', false],
   ['Tour', 'src/pages/TourPage.tsx', true],
   ['Article', 'src/pages/ArticlePage.tsx', false],
+  ['Booking', 'src/pages/BookingPage.tsx', false],
   ['About', 'src/pages/AboutPage.tsx', false],
   ['Photo credits', 'src/pages/PhotoCreditsPage.tsx', false],
   ['Unsubscribe', 'src/pages/UnsubscribePage.tsx', false],
@@ -76,8 +77,11 @@ const sum = (files: Iterable<string>, ext: string) =>
 console.log('| Page type | JS on load | CSS on load | Map, on demand |');
 console.log('|---|---:|---:|---:|');
 for (const [label, key, map] of PAGES) {
-  if (!manifest[key]) throw new Error(`${key} isn't in the manifest; did the build run?`);
-  const files = closure(key, new Set(entry));
+  // A page another page also imports is a shared chunk, keyed by its file name (`_BookingPage-…`).
+  const stem = key.split('/').pop()!.replace(/\.tsx$/, '');
+  const found = manifest[key] ? key : Object.keys(manifest).find((k) => k.startsWith(`_${stem}-`) && k.endsWith('.js'));
+  if (!found) throw new Error(`${key} isn't in the manifest; did the build run?`);
+  const files = closure(found, new Set(entry));
   console.log(`| ${label} | ${kb(sum(files, '.js'))} | ${kb(sum(files, '.css'))} | ${map ? `+ ${kb(leaflet)} (Leaflet)` : '—'} |`);
 }
 console.log(`\nShared by every public page (the entry): ${kb(sum(entry, '.js'))} JS, ${kb(sum(entry, '.css'))} CSS, gzipped.`);

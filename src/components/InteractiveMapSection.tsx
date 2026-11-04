@@ -62,7 +62,7 @@ const MapLegendList: React.FC<{ id?: string; className: string }> = ({ id, class
       const Icon = LEGEND_ICONS[cat];
       const style = MAP_CATEGORY_STYLES[cat];
       return (
-        <li key={cat} className="flex items-center gap-1.5 text-[11px] text-[var(--text-primary)]/75" data-legend={cat}>
+        <li key={cat} className="flex items-center gap-1.5 text-xs text-[var(--text-primary)]/75" data-legend={cat}>
           <span
             className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
             style={{ backgroundColor: style.color }}
@@ -790,16 +790,16 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
           <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--brand-primary)] bg-[var(--brand-secondary)]/10 px-4 py-1 rounded-full inline-block mb-3">
             Interactive Island Map
           </span>
-          <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[var(--brand-primary)] tracking-tight mb-3">
+          <h2 className="font-heading text-5xl font-bold text-[var(--brand-primary)] tracking-tight mb-3">
             Find Your Place on the Map
           </h2>
-          <p className="text-lg text-[var(--text-primary)]/70 font-serif italic">
+          <p className="text-lg text-[var(--text-primary)]/70 font-heading">
             “Pick a place. Start your story.”
           </p>
         </div>
 
         {/* Category Filters Bar */}
-        <div className="flex items-center justify-start sm:justify-center gap-2 overflow-x-auto pb-4 no-scrollbar mb-8">
+        <div className="flex items-center justify-start sm:justify-center-safe gap-2 overflow-x-auto px-1.5 pb-4 no-scrollbar mb-8">
           {categories.map((cat) => {
             const isSelected = selectedCategory === cat;
             return (
@@ -807,7 +807,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                 key={cat}
                 onClick={() => chooseCategory(cat)}
                 aria-pressed={isSelected}
-                className={`shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-300 flex items-center space-x-1.5 shadow-xs ${
+                className={`shrink-0 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 flex items-center space-x-1.5 shadow-xs ${
                   isSelected
                     ? 'bg-[var(--inverse-surface)] text-[var(--accent-text)] shadow-md scale-105 border border-[var(--emerald-edge)]'
                     : 'bg-[var(--surface)] text-[var(--text-primary)]/80 hover:bg-[var(--brand-secondary)] hover:text-white border border-[var(--border-strong)]/50'
@@ -815,7 +815,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
               >
                 <span>{cat}</span>
                 {cat !== 'All' && (
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-sans ${
+                  <span className={`text-xs px-1.5 py-0.2 rounded-full font-sans ${
                     isSelected ? 'bg-[var(--emerald-edge)] text-white' : 'bg-[var(--background-secondary)] text-[var(--text-primary)]'
                   }`}>
                     {DESTINATIONS.filter((d) => d.category.includes(cat)).length}
@@ -910,8 +910,8 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
             </AnimatePresence>
 
             {/* Quick Location Pills */}
-            <div role="group" aria-label="Jump to a place on the map" data-keep-clear className="glass glass--strong absolute bottom-4 left-4 right-16 z-20 p-1.5 rounded-2xl shadow-md flex items-center gap-1">
-              <span className="text-[11px] font-bold text-[var(--brand-primary)] uppercase tracking-wider px-2 shrink-0">
+            <div role="group" aria-label="Jump to a place on the map" data-keep-clear className="glass glass--strong absolute bottom-10 left-4 right-16 z-20 p-1.5 rounded-2xl shadow-md flex items-center gap-1">
+              <span className="text-xs font-bold text-[var(--brand-primary)] uppercase tracking-wider px-2 shrink-0">
                 Quick Jump:
               </span>
               {/* The places scroll (touch, trackpad, or Tab to each), with no scrollbar; an edge fades where there are more. */}
@@ -971,7 +971,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                       </div>
 
                       <div className="absolute bottom-3 left-3 right-3 text-white">
-                        <span className="text-[10px] uppercase tracking-widest text-[var(--accent-text)] font-semibold">
+                        <span className="text-xs uppercase tracking-widest text-[var(--accent-text)] font-semibold">
                           {activeDest.region} • {activeDest.province}
                         </span>
                         <h3 className="te-place-name font-heading text-2xl font-bold">{activeDest.name}</h3>
@@ -979,7 +979,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                     </div>
 
                     {/* Short Description */}
-                    <p className="text-sm text-white/85 leading-relaxed font-light mb-4">
+                    <p className="text-sm text-white/85 leading-relaxed mb-4">
                       {activeDest.shortDescription}
                     </p>
 
@@ -996,13 +996,13 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                     </div>
 
                     {/* Best Time & Elevation */}
-                    <div className="grid grid-cols-2 gap-3 p-3 bg-white/5 rounded-xl border border-white/10 text-xs mb-3">
+                    <div className="grid grid-cols-2 gap-3 p-3 bg-white/5 rounded-xl border border-white/10 text-sm mb-3">
                       <div>
-                        <span className="text-white/75 block text-[10px] uppercase tracking-wider">Best Time</span>
+                        <span className="text-white/75 block text-xs uppercase tracking-wider">Best Time</span>
                         <span className="font-semibold text-white">{activeDest.bestTime}</span>
                       </div>
                       <div>
-                        <span className="text-white/75 block text-[10px] uppercase tracking-wider">Elevation/Type</span>
+                        <span className="text-white/75 block text-xs uppercase tracking-wider">Elevation/Type</span>
                         <span className="font-semibold text-white">{activeDest.elevation || activeDest.region}</span>
                       </div>
                     </div>
@@ -1010,7 +1010,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                     {/* Google Maps, and the travel time from the airport when set */}
                     <PlaceLinks
                       dest={activeDest}
-                      className="flex flex-col items-start gap-1.5 text-xs mb-5"
+                      className="flex flex-col items-start gap-1.5 text-sm mb-5"
                       linkClassName="inline-flex items-center gap-1.5 font-semibold text-[var(--accent-text)] hover:text-white transition-colors"
                       timeClassName="flex items-center gap-1.5 text-white/70"
                     />
@@ -1023,7 +1023,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                       </h4>
                       <ul className="space-y-1.5">
                         {activeDest.experiences.slice(0, 3).map((exp, i) => (
-                          <li key={i} className="text-xs text-white/80 flex items-start space-x-2">
+                          <li key={i} className="text-sm text-white/80 flex items-start space-x-2">
                             <CheckCircle2 className="w-3.5 h-3.5 text-[var(--emerald-edge)] shrink-0 mt-0.5" />
                             <span>{exp}</span>
                           </li>
@@ -1064,14 +1064,14 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span className="text-[10px] uppercase font-bold text-[var(--accent-text)]">{activeDest.region}</span>
+                    <span className="text-xs uppercase font-bold text-[var(--accent-text)]">{activeDest.region}</span>
                     <span className="text-xs text-white/75">• Best: {activeDest.bestTime}</span>
                   </div>
                   <h3 className="te-place-name font-heading text-xl font-bold text-white">{activeDest.name}</h3>
-                  <p className="text-xs text-white/70 line-clamp-2 mt-1">{activeDest.shortDescription}</p>
+                  <p className="text-sm text-white/70 line-clamp-2 mt-1">{activeDest.shortDescription}</p>
                   <PlaceLinks
                     dest={activeDest}
-                    className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px]"
+                    className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs"
                     linkClassName="inline-flex items-center gap-1 font-semibold text-[var(--accent-text)] hover:text-white transition-colors"
                     timeClassName="flex items-center gap-1 text-white/70"
                   />
@@ -1081,14 +1081,14 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
               <div className="flex flex-col gap-3 pt-2 border-t border-white/10 sm:flex-row sm:flex-wrap sm:items-center">
                 <div className="flex flex-wrap gap-1.5">
                   {activeDest.category.map((c) => (
-                    <span key={c} className="shrink-0 whitespace-nowrap text-[10px] bg-[var(--inverse-raised)] text-[var(--on-inverse)] px-2 py-0.5 rounded-full font-semibold">
+                    <span key={c} className="shrink-0 whitespace-nowrap text-xs bg-[var(--inverse-raised)] text-[var(--on-inverse)] px-2 py-0.5 rounded-full font-semibold">
                       {c}
                     </span>
                   ))}
                 </div>
                 <Link
                   to={paths.destination(activeDest.id)}
-                  className="te-button te-button--primary w-full sm:w-auto min-w-0 px-4 py-3 font-bold text-xs"
+                  className="te-button te-button--primary w-full sm:w-auto min-w-0 px-4 py-3 font-bold"
                 >
                   <span className="te-place-name">Explore {activeDest.name}</span>
                   <ChevronRight className="w-4 h-4 shrink-0" />

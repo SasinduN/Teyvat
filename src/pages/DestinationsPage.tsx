@@ -58,11 +58,11 @@ export function DestinationsPage() {
                     type="button"
                     onClick={() => choose(c)}
                     aria-pressed={selected}
-                    className={`te-button te-button--sm gap-1.5 text-xs sm:text-sm ${selected ? 'te-button--primary' : 'te-button--secondary'}`}
+                    className={`te-button te-button--sm gap-1.5 text-sm ${selected ? 'te-button--primary' : 'te-button--secondary'}`}
                   >
                     <span>{c}</span>
                     {c !== 'All' && (
-                      <span className="rounded-full px-1.5 font-sans text-[10px]">
+                      <span className="rounded-full px-1.5 font-sans text-xs">
                         {all.filter((d) => d.category.includes(c)).length}
                       </span>
                     )}

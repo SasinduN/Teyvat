@@ -397,9 +397,9 @@ sends. They don't apply under `npm run dev`, where Vite serves the page.
 | --- | --- | --- |
 | `script-src` | `'self'` | our own bundles only: no inline scripts, no `eval` |
 | `style-src` | `'self' 'unsafe-inline'` | our CSS, and the `<style>` the admin's toasts inject |
-| | `https://fonts.googleapis.com` | the Google Fonts stylesheet |
+| | `https://fonts.googleapis.com` | unused since DM Sans moved in house (`src/styles/fonts.css`); still allowed |
 | | `https://unpkg.com` | Leaflet's stylesheet, pinned by an integrity hash |
-| `font-src` | `'self' https://fonts.gstatic.com` | the font files |
+| `font-src` | `'self' https://fonts.gstatic.com` | our DM Sans files; the Google host is unused, still allowed |
 | `img-src` | `'self' https://images.unsplash.com` | the seeded photos |
 | | the `R2_PUBLIC_BASE_URL` origin | uploads; read at boot, so a new domain needs no code change |
 | | `https://basemaps.cartocdn.com` | the map tiles (exactly that host; a `*.` wildcard wouldn't match it) |

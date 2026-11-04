@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./styles/fonts.css";
 @import "./styles/tokens.css";
 @import "./styles/glass.css" layer(components);
 @import "./styles/cards.css";
@@ -6,9 +7,19 @@
 
 @layer base {
   :root {
-    --font-serif: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
-    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-heading: var(--font-sans);
   }
+
+  /*
+   * The admin's text size (Settings; site_settings.text_size), which Express
+   * writes on <html> in every page it sends: an attribute, not an inline
+   * style, so it needs nothing from the CSP and there is no flash. A percent
+   * keeps the visitor's own browser setting underneath it. 100 needs no rule.
+   */
+  :root[data-text-size="90"] { font-size: 90%; }
+  :root[data-text-size="110"] { font-size: 110%; }
+  :root[data-text-size="120"] { font-size: 120%; }
 
   /*
    * The scrollbar's space stays reserved when a dialog or the phone menu
@@ -22,15 +33,20 @@
 
   body {
     font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
     background-color: var(--background);
     color: var(--text-primary);
     overflow-x: hidden;
   }
 
   h1, h2, h3, h4, .font-heading {
-    font-family: var(--font-serif);
+    font-family: var(--font-heading);
   }
 }
+
+/* Form inputs: unlayered, so no utility can take them under 16 px. */
+input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"]), select, textarea { font-size: var(--type-input); }
 
 /*
  * A heading or section focused after navigation (src/lib/routeFocus.ts), so
@@ -80,6 +96,19 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 }
 
 @layer components {
+  /*
+   * Admin → Settings: the text size preview. Sized from a fixed 16 px, not from
+   * the root, so it shows the size chosen whatever is saved now.
+   */
+  .te-text-size-preview { --preview-scale: 1; display: flex; flex-direction: column; gap: .4em; font-size: calc(16px * var(--preview-scale)); padding: 1.25em; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--background); color: var(--text-primary); }
+  .te-text-size-preview[data-text-size-preview="90"] { --preview-scale: .9; }
+  .te-text-size-preview[data-text-size-preview="110"] { --preview-scale: 1.1; }
+  .te-text-size-preview[data-text-size-preview="120"] { --preview-scale: 1.2; }
+  .te-text-size-preview__label { font-size: .8125em; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-text); }
+  .te-text-size-preview__heading { font-size: 1.75em; font-weight: 700; line-height: 1.2; color: var(--brand-primary); }
+  .te-text-size-preview__body { font-size: 1.0625em; line-height: 1.6; }
+  .te-text-size-preview__card { font-size: .9375em; line-height: 1.55; color: var(--text-secondary); }
+
   /* The admin's phone top bar: the page gutter. */
   .te-admin-toolbar { padding-inline: var(--page-gutter); }
 
@@ -114,8 +143,8 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
     background-color: var(--button-bg, transparent);
     color: var(--button-text, inherit);
     font-family: var(--font-sans);
-    font-weight: 650;
-    font-size: .875rem;
+    font-weight: 600;
+    font-size: var(--text-sm);
     line-height: 1.4;
     text-align: center;
     white-space: normal;
@@ -127,8 +156,8 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   .te-button--secondary { --button-bg: var(--button-secondary-bg); --button-text: var(--button-secondary-text); --button-border: var(--button-edge); --button-hover-bg: var(--button-secondary-hover); }
   .te-button--outline { --button-text: var(--button-outline-text); --button-border: var(--button-edge); --button-hover-bg: var(--button-secondary-hover); }
   .te-button--icon { width: 44px; height: 44px; min-height: 44px; padding: 0; flex: none; border-radius: 50%; --button-bg: var(--button-secondary-bg); --button-text: var(--button-secondary-text); --button-border: var(--button-edge); --button-hover-bg: var(--button-secondary-hover); }
-  .te-button--sm { min-height: 44px; padding: .6rem 1.2rem; font-size: .8rem; }
-  .te-button--lg { min-height: 48px; padding: .75rem 1.35rem; font-size: .9375rem; }
+  .te-button--sm { min-height: 44px; padding: .6rem 1.2rem; font-size: .875rem; }
+  .te-button--lg { min-height: 48px; padding: .75rem 1.35rem; font-size: 1rem; }
   .te-button--text-link { --button-text: var(--button-outline-text); padding-inline: .25rem; text-underline-offset: .3rem; }
   .te-button > svg { flex-shrink: 0; }
   .te-button:disabled, .te-button[aria-disabled="true"] { opacity: .6; cursor: not-allowed; box-shadow: none; transform: none; }
@@ -208,8 +237,9 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   @media (min-width: 768px) {
     .te-section-header:not(.te-section-header--stack) { flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 2rem; }
   }
-  .te-eyebrow { display: inline-block; margin-bottom: .9rem; font-size: .7rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--accent-text); }
+  .te-eyebrow { display: inline-block; margin-bottom: .9rem; font-size: var(--text-xs); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--accent-text); }
   .te-reading-column { max-width: var(--content-reading-width); min-width: 0; }
+  .te-prose { max-width: var(--reading-measure); font-size: var(--type-prose); line-height: 1.65; }
 
   /* A row of calls to action: full width on phones. */
   .te-cta-group { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: flex-start; gap: 1rem; }
@@ -376,13 +406,28 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
  * directly on the photo, over a dark gradient; only the slide controls are
  * glass.
  */
+/*
+ * The header's links show only when they fit: a container query in rem, so a
+ * larger text size hands over to the menu button sooner (browser-text-size).
+ * Unlayered, to win over the markup's `flex`.
+ */
+.te-nav > .te-container { container: te-nav / inline-size; }
+.te-nav-links { display: none; font-size: .875rem; }
+/* Beside the menu button; between the logo and the links' end once the links show. */
+.te-nav-actions { margin-inline-start: auto; }
+@container te-nav (min-width: 72rem) {
+  .te-nav-links { display: flex; }
+  .te-nav-phone-actions { display: none; }
+  .te-nav-actions { margin-inline-start: 0; }
+}
+
 /* Keep all four 44px navigation controls reachable at 320px. Unlayered so
    the compact spacing overrides the markup's utility gap. */
 @media (max-width: 375px) {
   .te-nav .te-container { width: 100%; padding-inline: .5rem; }
   .te-nav .te-logo { gap: .25rem; }
   .te-nav .te-logo svg { width: 20px; height: 20px; }
-  .te-nav .te-logo > div:last-child > div:first-child { font-size: .75rem; }
+  .te-nav .te-logo > div:last-child > div:first-child { font-size: var(--text-xs); }
   .te-nav-phone-actions { gap: .125rem; }
 }
 .te-hero {
@@ -411,7 +456,7 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   text-shadow: 0 2px 16px rgb(var(--photo-channels) / .35);
 }
 .te-hero-emphasis { color: var(--inverse-accent); }
-.te-hero-copy .te-hero-subtitle { max-width: 34rem; margin-bottom: 2rem; font-size: clamp(1rem, 1.2vw, 1.125rem); text-shadow: 0 1px 8px rgb(var(--photo-channels) / .5); }
+.te-hero-copy .te-hero-subtitle { max-width: 34rem; margin-bottom: 2rem; font-size: var(--type-prose); text-shadow: 0 1px 8px rgb(var(--photo-channels) / .5); }
 .te-hero-controls { position: absolute; bottom: 2rem; right: max(1rem, calc((100vw - var(--container-max)) / 2)); z-index: 25; display: flex; gap: .5rem; }
 .te-hero-controls button { display: grid; place-items: center; }
 @media (max-width: 639px) {
@@ -419,7 +464,7 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 }
 @media (max-height: 700px) {
   .te-hero { padding-block: calc(var(--header-height) + 1.5rem) 6rem; }
-  .te-hero-title { font-size: clamp(2.25rem, 5vw, 4rem); margin-bottom: 1rem; }
+  .te-hero-title { margin-bottom: 1rem; }
   .te-hero-copy .te-hero-subtitle { margin-bottom: 1.25rem; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -445,7 +490,7 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 .te-page-hero-copy { width: 100%; max-width: var(--content-reading-width); min-width: 0; }
 .te-page-title {
   max-width: var(--hero-content-max);
-  font-family: var(--font-serif);
+  font-family: var(--font-heading);
   font-size: var(--heading-page);
   font-weight: var(--heading-page-weight);
   line-height: var(--heading-page-leading);
@@ -494,7 +539,7 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   border-radius: 9999px;
   background: rgb(var(--surface-channels) / .85);
   color: var(--text-secondary);
-  font-size: 9px;
+  font-size: var(--text-xs);
   line-height: 1.5;
 }
 .leaflet-container .leaflet-control-attribution a {
@@ -628,7 +673,7 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   white-space: nowrap;
   background: var(--inverse-deep);
   color: var(--white);
-  font-size: 10px;
+  font-size: var(--text-xs);
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 9999px;
@@ -672,8 +717,8 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--text-xs);
+  font-weight: 700;
   line-height: 1;
 }
 .route-stop-marker:focus {

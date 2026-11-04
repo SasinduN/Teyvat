@@ -33,7 +33,7 @@
   border: 1px solid var(--border);
   background: var(--button-primary-bg);
   color: var(--button-primary-text);
-  font-size: .8125rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   line-height: 1.25;
   white-space: nowrap;

@@ -26,12 +26,12 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
             <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--brand-primary)] bg-[var(--brand-secondary)]/10 px-4 py-1.5 rounded-full inline-block mb-3">
               Editorial Off-Beat Collection
             </span>
-            <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[var(--brand-primary)] tracking-tight">
+            <h2 className="font-heading text-5xl font-bold text-[var(--brand-primary)] tracking-tight">
               Not Everything Worth Seeing <br className="hidden sm:inline" />
-              <span className="italic font-serif text-[var(--brand-primary)]">Is on the Map.</span>
+              <span className="font-heading text-[var(--brand-primary)]">Is on the Map.</span>
             </h2>
           </div>
-          <p className="text-[var(--text-primary)]/70 font-light max-w-md mt-4 md:mt-0 text-sm sm:text-base">
+          <p className="text-[var(--text-primary)]/70 max-w-md mt-4 md:mt-0 text-sm sm:text-base">
             For curious wanderers seeking untouched horizons. Uncover ancient waterfall caves, swimming elephants, and sea of clouds peaks.
           </p>
         </div>
@@ -41,7 +41,7 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
           {HIDDEN_GEMS.map((gem, idx) => {
             // Asymmetric layout span rules
             const isLarge = idx === 0 || idx === 3;
-            const spanClass = isLarge ? 'md:col-span-8 h-[400px]' : 'md:col-span-4 h-[400px]';
+            const spanClass = isLarge ? 'md:col-span-6 lg:col-span-8 min-h-[25rem]' : 'md:col-span-6 lg:col-span-4 min-h-[25rem]';
 
             return (
               <motion.div
@@ -75,8 +75,8 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
                 <div className="absolute inset-0 bg-gradient-to-t from-[var(--inverse-surface)] via-[var(--inverse-surface)]/50 to-transparent group-hover:from-[var(--inverse-surface)]/95 transition-colors duration-500" />
 
                 {/* Top Badge */}
-                <div className="absolute top-5 left-5 right-5 flex items-center justify-between z-10">
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-[var(--accent-text)] bg-[var(--inverse-surface)]/80 backdrop-blur-md px-3 py-1 rounded-full border border-[var(--accent)]/30">
+                <div className="relative z-10 mb-auto flex flex-wrap items-center justify-between gap-2 pb-4">
+                  <span className="text-xs uppercase font-bold tracking-widest text-[var(--accent-text)] bg-[var(--inverse-surface)]/80 backdrop-blur-md px-3 py-1 rounded-full border border-[var(--accent)]/30">
                     {gem.tag}
                   </span>
                   <span className="text-xs text-white/90 font-medium flex items-center space-x-1 bg-black/60 px-2.5 py-1 rounded-full">
@@ -87,15 +87,15 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
 
                 {/* Content */}
                 <div className="relative z-10 text-white space-y-2">
-                  <h3 className="font-heading text-2xl sm:text-3xl font-bold group-hover:text-[var(--accent-text)] transition-colors">
+                  <h3 className="font-heading text-2xl font-bold group-hover:text-[var(--accent-text)] transition-colors">
                     {gem.name}
                   </h3>
 
-                  <p className="text-xs text-white/90 line-clamp-2 font-light leading-relaxed">
+                  <p className="text-sm text-white/90 line-clamp-2 leading-relaxed">
                     {gem.description}
                   </p>
 
-                  <div className="pt-2 flex items-center space-x-2 text-xs font-semibold text-[var(--accent-text)] group-hover:text-white transition-colors">
+                  <div className="pt-2 flex items-center space-x-2 text-sm font-semibold text-[var(--accent-text)] group-hover:text-white transition-colors">
                     <span>Discover Secret Spot</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </div>
@@ -163,7 +163,7 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
                   <p className="text-sm font-semibold text-[var(--brand-primary)]">“{selectedGem.whyVisit}”</p>
                 </div>
 
-                <p className="text-sm text-[var(--text-primary)]/80 font-light leading-relaxed">
+                <p className="text-sm text-[var(--text-primary)]/80 leading-relaxed">
                   {selectedGem.description}
                 </p>
 
@@ -177,7 +177,7 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
                       setSelectedGem(null);
                       onOpenInquiry(name);
                     }}
-                    className="te-button te-button--primary px-6 py-3 font-bold text-xs"
+                    className="te-button te-button--primary px-6 py-3 font-bold"
                   >
                     Include in My Journey
                   </button>

@@ -68,9 +68,9 @@ export const Logo: React.FC<LogoProps> = ({ variant = 'auto', className = '', si
           <span className={variant === 'dark' ? 'text-[var(--brand-primary)]' : variant === 'light' ? 'text-white' : 'text-current'}>
             TRAVEL
           </span>
-          <span className="text-[var(--logo-accent,var(--accent))] font-extrabold">EYE</span>
+          <span className="text-[var(--logo-accent,var(--accent))] font-bold">EYE</span>
         </div>
-        <span className="text-[9px] uppercase tracking-[0.25em] font-sans font-semibold text-[var(--logo-tagline,var(--palette-muted-text))] mt-0.5">
+        <span className="text-xs uppercase tracking-[0.12em] font-sans font-semibold text-[var(--logo-tagline,var(--palette-muted-text))] mt-0.5">
           SRI LANKA
         </span>
       </div>

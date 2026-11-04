@@ -82,21 +82,21 @@ function DestinationView({ d }: { d: Destination }) {
           <div className="space-y-12 lg:col-span-8">
             <div className="space-y-4">
               <h2 className="font-heading text-3xl font-bold text-[var(--brand-primary)]">About {d.name}</h2>
-              <p className="text-base font-light leading-relaxed text-[var(--text-primary)]/85 sm:text-lg">{d.longDescription}</p>
+              <p className="te-prose text-[var(--text-primary)]/85">{d.longDescription}</p>
             </div>
 
             <div>
               <div className="grid grid-cols-2 gap-5 rounded-2xl border border-[var(--border-strong)]/40 bg-[var(--surface)] p-6 sm:grid-cols-3">
                 <div>
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--brand-primary)]">Best Visiting Season</span>
+                  <span className="block text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)]">Best Visiting Season</span>
                   <span className="text-sm font-semibold text-[var(--brand-primary)]">{d.bestTime}</span>
                 </div>
                 <div>
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--brand-primary)]">Elevation / Terrain</span>
+                  <span className="block text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)]">Elevation / Terrain</span>
                   <span className="text-sm font-semibold text-[var(--brand-primary)]">{d.elevation || d.region}</span>
                 </div>
                 <div className="col-span-2 sm:col-span-1">
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--brand-primary)]">Ideal Travel For</span>
+                  <span className="block text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)]">Ideal Travel For</span>
                   <span className="text-sm font-semibold text-[var(--brand-primary)]">{d.idealFor.join(', ')}</span>
                 </div>
               </div>

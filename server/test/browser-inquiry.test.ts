@@ -13,8 +13,8 @@
  * Tab.
  *
  * Needs `npm run build` first (for the CSS) and an installed Chrome; skipped
- * with a message otherwise. Offline on purpose: the site's Google Fonts are
- * not loaded, so both versions render in the same fallback fonts and no
+ * with a message otherwise. Offline on purpose: the site's DM Sans is not
+ * served, so both versions render in the same fallback fonts and no
  * network stall can hang the test. The honeypot's effect doesn't depend on
  * the typeface.
  */

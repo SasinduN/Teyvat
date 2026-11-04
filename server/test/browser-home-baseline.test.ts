@@ -25,8 +25,8 @@ import './test-db';
  * question 1) and the map section (its only change, "Explore <name>" as a
  * link, is checked in browser-routes; its tiles need the network).
  *
- * Offline on purpose: images are a solid placeholder and the Google Fonts
- * aren't loaded, so both versions render alike and nothing can stall.
+ * Offline on purpose: images are a solid placeholder and DM Sans isn't
+ * served, so both versions render alike and nothing can stall.
  * Needs `npm run build` (for the CSS) and Chrome; skipped otherwise.
  */
 import assert from 'node:assert/strict';

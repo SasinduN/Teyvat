@@ -18,10 +18,10 @@ export const PhotoStorySection: React.FC = () => {
         
         {/* Header */}
         <div className="te-section-header te-section-header--stack">
-          <h2 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight mb-4">
+          <h2 className="font-heading text-5xl font-bold tracking-tight mb-4">
             Stories From The Island
           </h2>
-          <p className="text-lg text-white/80 font-light leading-relaxed">
+          <p className="text-lg text-white/80 leading-relaxed">
             A window into daily Sri Lankan life—misty train bends, ancient stone carvings, golden surf tides, and serene highland tea slopes.
           </p>
         </div>
@@ -61,7 +61,7 @@ export const PhotoStorySection: React.FC = () => {
               </div>
 
               <div className="te-photo-caption absolute bottom-4 left-4 right-4 text-white opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-y-0 translate-y-2 duration-300">
-                <span className="text-[10px] uppercase font-bold text-[var(--accent-text)] flex items-center gap-1">
+                <span className="text-xs uppercase font-bold text-[var(--accent-text)] flex items-center gap-1">
                   <MapPin className="w-3 h-3" /> {photo.location}
                 </span>
                 <h4 className="font-heading font-bold text-sm leading-tight mt-0.5">{photo.title}</h4>
@@ -120,7 +120,7 @@ export const PhotoStorySection: React.FC = () => {
                   <p className="text-xs text-white/60 mb-4 flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5 text-[var(--accent-text)]" /> {selectedPhoto.location}
                   </p>
-                  <p className="text-sm text-white/85 font-light leading-relaxed italic border-l-2 border-[var(--accent)] pl-3 py-1">
+                  <p className="text-sm text-white/85 leading-relaxed border-l-2 border-[var(--accent)] pl-3 py-1">
                     “{selectedPhoto.caption}”
                   </p>
                 </div>
