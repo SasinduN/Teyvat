@@ -286,7 +286,11 @@ async function shoot(page: Page, file: string, fullPage: boolean): Promise<void>
 /** One element only, at full size, however far down the page it is. */
 async function shootElement(page: Page, file: string, selector: string): Promise<void> {
   const clip = await page.evaluate<{ x: number; y: number; width: number; height: number; scale: number }>(`(() => {
-    const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();
+    // The fixed header and buttons would be painted over it, wherever they sit: only this element shows.
+    const element = document.querySelector(${JSON.stringify(selector)});
+    document.body.style.visibility = 'hidden';
+    element.style.visibility = 'visible';
+    const r = element.getBoundingClientRect();
     return { x: r.left + scrollX, y: r.top + scrollY, width: r.width, height: r.height, scale: 1 };
   })()`);
   const { data } = (await page.send('Page.captureScreenshot', { format: 'jpeg', quality: 60, captureBeyondViewport: true, clip })) as { data: string };
