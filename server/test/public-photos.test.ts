@@ -79,3 +79,63 @@ test('Gal Oya replaces only the identified Ekgal Oya regional photograph', () =>
   assert.match(publicPhoto('hidden_gems','gal-oya',before.image), /^\/assets\/gal-oya-park-/);
   assert.equal(publicPhoto('hidden_gems','gal-oya','/assets/owner-gal-oya.webp'),'/assets/owner-gal-oya.webp');
 });
+
+/* ------------------------------------------- the move to R2 (photoResolver) */
+
+import { fullSrcSet, registerPhotoSets, usableVariants, withoutFullWidth, type PhotoSets } from '../../shared/photo-assets';
+import { photoResolver } from '../../shared/public-photos';
+
+const R2 = 'https://bucket.r2.dev/assets';
+const sets: PhotoSets = {
+  ella: [480, 768, 1280, 1920].map(width => ({ width, url: `${R2}/${width}-ella.webp` })),
+  jaffna: [480, 768, 1280, 1920].map(width => ({ width, url: `${R2}/${width}-jaffna.webp` })),
+  train: [480, 768, 1280].map(width => ({ width, url: `${R2}/${width}-train.webp` }))
+};
+
+test('a photo in R2 resolves there; one not moved yet keeps its local file', () => {
+  const rules = photoResolver(sets);
+  const seed = legacy.find(row => row.table === 'destinations' && row.id === 'ella')!;
+  assert.equal(rules.publicPhoto('destinations', 'ella', seed.image), `${R2}/1280-ella.webp`);
+  assert.equal(rules.publicPhoto('destinations', 'ella', `${R2}/1280-ella.webp`), `${R2}/1280-ella.webp`);
+  assert.equal(rules.publicPhoto('destinations', 'ella', '/assets/ella-1280-0aac7f6297dfbdf1.webp'), `${R2}/1280-ella.webp`);
+  assert.match(rules.publicPhoto('destinations', 'mirissa', ''), /^\/assets\/mirissa-1280-/);
+  assert.equal(rules.localPhoto('https://images.unsplash.com/custom'), 'https://images.unsplash.com/custom');
+  assert.equal(rules.localPhoto('/assets/owner-photo.webp'), '/assets/owner-photo.webp');
+});
+
+test('a gallery and a story still recognise their photo on its R2 URL', () => {
+  const rules = photoResolver(sets);
+  const seeded = ['https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1588598198321-9735fd52455b?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&q=80&w=800'];
+  assert.deepEqual(rules.publicGallery('ella', seeded), [`${R2}/1280-ella.webp`, `${R2}/1280-train.webp`]);
+  assert.equal(rules.photoStoryLocation('p1', `${R2}/1280-train.webp`, 'Ella & Nuwara Eliya'), 'Ella');
+  assert.equal(rules.photoStoryLocation('p1', 'https://images.unsplash.com/owner', 'Ella & Nuwara Eliya'), 'Ella & Nuwara Eliya');
+  assert.equal(rules.photoStoryCopy('p1', `${R2}/1280-train.webp`, 'Highland Mist & Blue Trains', 'x').title, 'Nine Arch Bridge in Ella');
+});
+
+test('1920 px is only for full-width heroes, and never for Jaffna or Udawalawe', () => {
+  assert.deepEqual(usableVariants('jaffna', sets.jaffna).map(v => v.width), [480, 768, 1280]);
+  assert.deepEqual(usableVariants('udawalawe', sets.ella).map(v => v.width), [480, 768, 1280]);
+  assert.deepEqual(usableVariants('ella', sets.ella).map(v => v.width), [480, 768, 1280, 1920]);
+
+  const local = photoAsset(localPhoto(photographs.find(p => p.key === 'ella')!.image))!.srcSet!;
+  assert.match(local, /1920w/);
+  assert.doesNotMatch(withoutFullWidth(local)!, /1920w/);
+  for (const key of ['jaffna', 'udawalawe']) {
+    assert.doesNotMatch(photoAsset(localPhoto(photographs.find(p => p.key === key)!.image))!.srcSet!, /1920w/, key);
+  }
+  assert.equal(withoutFullWidth(undefined), undefined);
+});
+
+test('the client learns the R2 URLs; the old paths still answer', () => {
+  assert.equal(photoAsset(`${R2}/1280-ella.webp`), undefined);
+  registerPhotoSets(sets);
+  const asset = photoAsset(`${R2}/1280-ella.webp`)!;
+  assert.equal(asset.alt, 'Nine Arch Bridge surrounded by forest in Ella, Sri Lanka');
+  assert.equal(asset.srcSet, `${R2}/480-ella.webp 480w, ${R2}/768-ella.webp 768w, ${R2}/1280-ella.webp 1280w, ${R2}/1920-ella.webp 1920w`);
+  assert.doesNotMatch(photoAsset(`${R2}/1280-jaffna.webp`)!.srcSet!, /1920w/);
+  assert.match(photoAsset('/assets/ella-1280-0aac7f6297dfbdf1.webp')!.srcSet!, /^\/assets\//);
+  assert.equal(fullSrcSet(`${R2}/768-train.webp`, sets), `${R2}/480-train.webp 480w, ${R2}/768-train.webp 768w, ${R2}/1280-train.webp 1280w`);
+  assert.match(fullSrcSet('/assets/ella-1280-0aac7f6297dfbdf1.webp', {})!, /^\/assets\/ella-480/);
+  assert.equal(fullSrcSet('https://images.unsplash.com/custom', sets), undefined);
+  registerPhotoSets(undefined);
+});

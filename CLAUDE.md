@@ -36,6 +36,7 @@ this file or anywhere else in git.
 | L | Local runs never use production (`shared/database-target.ts`) | done (#36) |
 | P | After the import: maps and photos (#37, #41, #42, #44); Book Your Ride (#38, #39, #45); the WhatsApp button (#40) | done |
 | A | Admin login: show/hide password, attempts left, a live lock countdown | done (#46) |
+| M | Photos in `public/assets/` move to R2, with `srcset` (A); the files go once the audit is clean (B) | A in review; B after the production run |
 | T | Typography: DM Sans self-hosted, one rem scale, the admin's text size (0019) | open (#47) |
 
 Update the Status column when a phase lands.
@@ -59,6 +60,15 @@ Update the Status column when a phase lands.
     do not add independent overrides in mappers or head tags. Credits are `image_credits`
     (keyed by URL), shown on `/photo-credits`, edited in *Admin → Photo
     credits*.
+  - **Photo sets** (0020, `npm run images:migrate-assets`): one photograph at
+    several widths, `media.photo_key` and `width`. `photoResolver(sets)` picks the
+    R2 file once a photo has one and `public/assets/` until then, so both kinds of
+    row work. `TravelImage` renders `srcset` and `sizes`; only `fullWidth` heroes
+    may load 1920 px, and Jaffna's and Udawalawe's 1920 px files (upscaled) are
+    never offered. The library lists a set once and deletes it whole.
+  - `images:audit` also says whether `public/assets/` is still needed. Rows
+    alone can't: the code swaps URLs as it reads, so a row on R2 can still show a
+    local file.
 - **CSP** (`server/src/security-headers.ts`):
   - `script-src 'self'`: no inline scripts, no `eval`.
   - Anything the admin loads imports Zod from `shared/zod.ts` (jitless);
@@ -206,10 +216,6 @@ Update the Status column when a phase lands.
 
 Agreed, not started. Each one gets its own plan first.
 
-- **Responsive images:** `srcset` for the R2 photos, with 1920 px versions
-  only for full-width heroes. Skip Jaffna and Udawalawe (the friend import's
-  1920 px files are upscaled). Until then R2 keeps its 1280 px copies
-  (`docs/reviews/friend-import.md`, section 5).
 - **TripAdvisor reviews section:** real reviews only.
 - **Booking flow fixes:** Sasindu will list them.
 - **Bug and performance audit.**
@@ -282,7 +288,7 @@ Agreed, not started. Each one gets its own plan first.
   `NODE_ENV=production` (`shared/database-target.ts`).
 - **Production only through `PROD_DATABASE_URL` with `--prod`,** after the host
   is typed back (`admin:create`, `images:audit`, `images:import`,
-  `media:rebase`). Never run anything against production without asking.
+  `images:migrate-assets`, `media:rebase`). Never run anything against production without asking.
 - **Never read, print or copy `.env`'s contents,** and never copy `.env` into a
   worktree.
 - **Never run the Railway CLI.** It is linked at the home directory to a
@@ -301,8 +307,9 @@ Agreed, not started. Each one gets its own plan first.
   `img-src` has Unsplash, R2, the map tile hosts and Wikimedia. The Google
   Fonts hosts still on `main` go with #47.
 - **Photos come from R2 via the database, never committed to the repo.** The
-  WebP files already in `public/assets/` (`shared/optimized-photos.json`, used
-  by `shared/public-photos.ts`) predate this rule; don't add to them.
+  WebP files still in `public/assets/` (`shared/optimized-photos.json`) predate
+  this rule and are on their way out: `npm run images:migrate-assets`, then
+  their removal. Don't add to them.
 - **Screenshots are never committed** (`docs/screenshots/` is git-ignored).
 - **AA contrast in both themes. One `h1` per page.**
 - **DM Sans everywhere (self-hosted). Body text at least 16 px on phones. The

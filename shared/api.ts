@@ -21,6 +21,7 @@ import type {
   TourRow
 } from './database.types';
 import type { ImageCreditRow, PublicImageCredit } from './image-credits';
+import type { PhotoSets } from './photo-assets';
 import type { TourStopInput, TourStopPayload } from './tour-stops';
 
 export const API_ROUTES = {
@@ -85,6 +86,8 @@ export interface SiteContentPayload {
   siteSettings: PublicSiteSettings;
   /** Credits for the photos the published rows above use (`/photo-credits`). */
   imageCredits: PublicImageCredit[];
+  /** The photos now in R2, with their widths, so `srcset` knows them. */
+  photoSets: PhotoSets;
   /** What the server has switched on (`BOOKINGS_ENABLED`). */
   features: SiteFeatures;
 }

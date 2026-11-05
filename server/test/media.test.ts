@@ -389,6 +389,32 @@ describe('library delete', () => {
     assert.equal(store.objects.has(item.key), false);
   });
 
+  test('a photo set shows once, as its main file, and is deleted whole', async () => {
+    const ordinary = await uploaded();
+    for (const [width, key] of [[480, 'assets/480-aaaaaaaaaaaaaaaa.webp'], [1280, 'assets/1280-bbbbbbbbbbbbbbbb.webp']] as const) {
+      await store.put(key, file(PNG), 'image/webp');
+      await pool.query(
+        `insert into public.media (key, url, content_type, bytes, photo_key, width) values ($1, $2, 'image/webp', 64, 'ella', $3)`,
+        [key, `${BASE}/${key}`, width]
+      );
+    }
+
+    const listed = (await library()).items;
+    assert.deepEqual(listed.map((i) => i.key).sort(), ['assets/1280-bbbbbbbbbbbbbbbb.webp', ordinary.key].sort());
+
+    const main = listed.find((i) => i.key.startsWith('assets/'))!;
+    const ella = await getRow('destinations', 'ella');
+    assert.equal((await saveRow('destinations', ella, { image: main.url })).status, 200);
+    assert.equal((await call('DELETE', `/admin/media/${main.id}`)).status, 409);
+    assert.equal(store.objects.has('assets/480-aaaaaaaaaaaaaaaa.webp'), true, 'in use: nothing goes');
+
+    assert.equal((await call('DELETE', `/admin/media/${main.id}?force=true`)).status, 204);
+    assert.equal(store.objects.has('assets/480-aaaaaaaaaaaaaaaa.webp'), false);
+    assert.equal(store.objects.has('assets/1280-bbbbbbbbbbbbbbbb.webp'), false);
+    assert.equal(store.objects.has(ordinary.key), true, 'an ordinary upload stays');
+    assert.equal(Number((await pool.query(`select count(*) from public.media where photo_key = 'ella'`)).rows[0].count), 0);
+  });
+
   test('if R2 refuses the delete: 502, and the image is still listed', async () => {
     const item = await uploaded();
     store.failures.delete = true;

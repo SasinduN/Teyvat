@@ -23,7 +23,9 @@ import type { SiteConfig } from '../env';
 import { pool } from '../db';
 import { describeForLog } from '../http';
 import { injectHead, renderHead, type PageMeta } from './head';
-import { publicPhoto } from '../../../shared/public-photos';
+import { fullSrcSet } from '../../../shared/photo-assets';
+import { photoResolver } from '../../../shared/public-photos';
+import { loadPhotoSets } from '../media/photo-sets';
 
 type Resolved = { redirect: string } | { status: 200 | 404; meta: PageMeta; noindexHeader?: boolean };
 
@@ -64,7 +66,7 @@ async function firstImage(table: 'hero_slides' | 'destinations' | 'featured_expe
   const { rows } = await pool.query<{ id: string; image: string }>(
     `select id, image from public.${table} where ${where} order by sort_order asc, id asc limit 1`
   );
-  return rows[0] ? publicPhoto(table, rows[0].id, rows[0].image) : null;
+  return rows[0] ? photoResolver(await loadPhotoSets(pool)).publicPhoto(table, rows[0].id, rows[0].image) : null;
 }
 
 const notFound = (): Resolved => ({
@@ -130,7 +132,7 @@ export async function resolvePage(path: string, query: URLSearchParams, features
         title: pageTitle(row.title),
         description: row.description,
         path: page.path(slug),
-        image: publicPhoto(page.table, slug, row.image),
+        image: photoResolver(await loadPhotoSets(pool)).publicPhoto(page.table, slug, row.image),
         imageAlt: row.title,
         type: page.type
       }
@@ -351,11 +353,14 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
       return;
     }
     if (resolved.noindexHeader) res.set('X-Robots-Tag', 'noindex');
-    // The hero's first photo otherwise waits for the JS, the content API and
-    // the page chunk. Same URL the hero requests (no srcset), so it is fetched once.
+    // The hero's first photo otherwise waits for the JS, the content API and the
+    // page chunk. The same srcset and sizes as the hero, so it is fetched once:
+    // a phone gets the small file here too, not the 1280 px one as well.
     let head = renderHead(resolved.meta, { origin, indexable: site.indexable });
     if (path === paths.home && resolved.status === 200 && resolved.meta.image) {
-      head += `\n<link rel="preload" as="image" href="${escapeHtml(resolved.meta.image)}" fetchpriority="high">`;
+      const srcSet = fullSrcSet(resolved.meta.image, await loadPhotoSets(pool));
+      const responsive = srcSet ? ` imagesrcset="${escapeHtml(srcSet)}" imagesizes="100vw"` : '';
+      head += `\n<link rel="preload" as="image" href="${escapeHtml(resolved.meta.image)}"${responsive} fetchpriority="high">`;
     }
     res
       .status(resolved.status)

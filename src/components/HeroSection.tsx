@@ -86,7 +86,7 @@ export const HeroSection: React.FC = () => {
           key={bg.url} aria-hidden={idx !== currentBg} data-active={idx === currentBg}
           className="te-hero-slide"
         >
-          {seenSlides.has(idx) && <TravelImage loading="eager" fetchPriority={idx === currentBg ? 'high' : 'low'} sizes="100vw"
+          {seenSlides.has(idx) && <TravelImage fullWidth loading="eager" fetchPriority={idx === currentBg ? 'high' : 'low'} sizes="100vw"
             onLoad={() => setReadySlides(previous => previous.has(idx) ? previous : new Set([...previous, idx]))}
             src={bg.url}
             alt={bg.title}
