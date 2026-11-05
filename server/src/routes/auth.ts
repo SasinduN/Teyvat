@@ -7,12 +7,19 @@
 import { Router } from 'express';
 import { z } from 'zod';
 
-import type { AuthUserPayload } from '../../../shared/api';
+import type { ApiErrorPayload, AuthUserPayload } from '../../../shared/api';
 import { clearSessionCookie, readCookie, SESSION_COOKIE, setSessionCookie } from '../auth/cookies';
 import { requireSession, sessionOf } from '../auth/middleware';
 import { getDummyHash, passwords } from '../auth/passwords';
 import { createSession, revokeSessionByToken, revokeUserSessions } from '../auth/sessions';
-import { clearEmailFailures, emailHash, recordAttempt, secondsUntilAllowed } from '../auth/throttle';
+import {
+  ATTEMPTS_LEFT_SHOWN_FROM,
+  attemptsLeft,
+  clearEmailFailures,
+  emailHash,
+  recordAttempt,
+  secondsUntilAllowed
+} from '../auth/throttle';
 import { pool } from '../db';
 import { asyncRoute, clientIp, sendError } from '../http';
 
@@ -81,7 +88,15 @@ authRouter.post(
 
     if (!user || !ok) {
       await recordAttempt(hash, ip, false);
-      sendError(res, 'unauthorized', BAD_CREDENTIALS);
+      const left = await attemptsLeft(hash, ip);
+      const body: ApiErrorPayload = {
+        error: {
+          code: 'unauthorized',
+          message: BAD_CREDENTIALS,
+          ...(left <= ATTEMPTS_LEFT_SHOWN_FROM ? { attemptsLeft: left } : {})
+        }
+      };
+      res.status(401).json(body);
       return;
     }
 

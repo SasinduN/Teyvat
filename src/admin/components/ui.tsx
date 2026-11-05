@@ -1,5 +1,5 @@
-import React from 'react';
-import { LoaderCircle, type LucideIcon } from 'lucide-react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
+import { Eye, EyeOff, LoaderCircle, type LucideIcon } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
 /**
@@ -68,6 +68,68 @@ export const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = ({
   className,
   ...rest
 }) => <input {...rest} className={cn(CONTROL_BASE, className)} />;
+
+/**
+ * A password field with a show/hide button inside it. Hidden to begin with.
+ * The button is `type="button"`, so it never submits the form. A click keeps
+ * focus (and the caret) in the field; from the keyboard it is the next Tab
+ * stop and works with Enter and Space.
+ *
+ * Place it in a `relative` box (the one holding the field's own icon): the
+ * button is positioned in it. A box of its own would paint over that icon.
+ */
+export const PasswordInput: React.FC<Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'>> = ({
+  className,
+  id,
+  ...rest
+}) => {
+  const [visible, setVisible] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  // Changing `type` can move the caret, so it is put back where it was.
+  const selection = useRef<[number | null, number | null] | null>(null);
+
+  useLayoutEffect(() => {
+    const field = input.current;
+    const saved = selection.current;
+    selection.current = null;
+    if (field && saved && document.activeElement === field) field.setSelectionRange(saved[0], saved[1]);
+  }, [visible]);
+
+  const toggle = () => {
+    const field = input.current;
+    if (field) selection.current = [field.selectionStart, field.selectionEnd];
+    setVisible((v) => !v);
+  };
+
+  const Icon = visible ? EyeOff : Eye;
+  return (
+    <>
+      <input
+        {...rest}
+        id={id}
+        ref={input}
+        type={visible ? 'text' : 'password'}
+        className={cn(CONTROL_BASE, 'pr-11', className)}
+      />
+      <button
+        type="button"
+        aria-label={visible ? 'Hide password' : 'Show password'}
+        aria-pressed={visible}
+        aria-controls={id}
+        // Without this a click would move focus out of the field.
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={toggle}
+        className={cn(
+          'absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg',
+          'text-[var(--brand-primary)]/75 transition-colors hover:bg-[var(--brand-secondary)]/10 hover:text-[var(--brand-primary)]',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]'
+        )}
+      >
+        <Icon className="h-4 w-4" aria-hidden="true" />
+      </button>
+    </>
+  );
+};
 
 export const Textarea: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement>> = ({
   className,

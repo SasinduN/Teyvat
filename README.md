@@ -364,7 +364,10 @@ rate limits keep IP addresses for 24 hours. Status emails go through Resend.
 - **Unknown email and wrong password** get the same 401, with the same argon2
   work, so the response doesn't reveal which it was.
 - **Sign-in limits** over 15 minutes: 5 failures per (email, IP), 20 per IP,
-  50 per email. Past a limit: 429 with `Retry-After`.
+  50 per email. Past a limit: 429 with `Retry-After`. Once 3 or fewer
+  remain, the 401 carries `attemptsLeft`: the (email, IP) pair's count only,
+  the same for an unknown email. The login page shows it, and counts down a
+  429's `Retry-After` with the button disabled.
 
 The per-IP limits rely on `req.ip` being the visitor, not Railway's proxy
 (`app.set('trust proxy', 1)`). To check it after a proxy change:
