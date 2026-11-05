@@ -155,6 +155,16 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     await sleep(800);
     await collect('/explore (scrolled)');
 
+    // Leaflet's stylesheet: ours, loaded, and in front of the site's own so index.css's map rules win.
+    const leafletCss = await page.evaluate<{ sameOrigin: boolean; rules: number; first: boolean }>(`(() => {
+      const link = document.querySelector('link[data-leaflet]');
+      const sheets = [...document.querySelectorAll('link[rel="stylesheet"], style')];
+      return { sameOrigin: new URL(link.href).origin === location.origin, rules: link.sheet.cssRules.length, first: sheets[0] === link };
+    })()`);
+    assert.ok(leafletCss.sameOrigin, 'Leaflet stylesheet is self-hosted');
+    assert.ok(leafletCss.rules > 10, `Leaflet stylesheet loaded: ${leafletCss.rules} rules`);
+    assert.ok(leafletCss.first, 'Leaflet stylesheet comes before the site stylesheet');
+
     // The tiles: CARTO's exact host, keyed when the build had VITE_CARTO_KEY
     // (local builds read it from .env; CI has none and gets the keyless
     // fallback), and actually loaded. Keys are never printed.
