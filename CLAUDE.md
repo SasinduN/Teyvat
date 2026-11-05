@@ -246,7 +246,14 @@ Agreed, not started. Each one gets its own plan first.
 
 - **TripAdvisor reviews section:** real reviews only.
 - **Booking flow fixes:** Sasindu will list them.
-- **Bug and performance audit.**
+- **Bug and performance audit.** It includes the layout shift on `<body>`:
+  about 80 px as each page's code loads, before any photo.
+- **`media:rebase` and photo credits:** make it update `image_credits.url`.
+  Do this before any custom-domain move, or credits on other uploads stop showing.
+- **R2 custom domain before launch:** `r2.dev` is rate-limited (launch checklist
+  item 9).
+- **Watch `browser-hero-contrast` for flakiness:** one 60 s timeout in a full
+  run (#49), then 10/10 twice alone; the cause wasn't found.
 - **Admin drawer focus trap:** the phone drawer in
   `src/admin/components/AdminLayout.tsx` doesn't use `useModalFocus` yet.
 - **The parked WhatsApp flaky test:** `browser-whatsapp`'s phone check ("steps
