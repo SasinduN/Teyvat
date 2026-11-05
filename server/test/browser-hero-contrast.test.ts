@@ -80,7 +80,7 @@ const TARGETS = `(() => {
       const control = el.closest('a, button');
       const decorative = el.getAttribute('aria-hidden') === 'true' && !(control && !control.textContent.trim());
       if (decorative) continue;
-      // A filled icon (the rating star) shows its fill; the rest are strokes in the text colour.
+      // A filled icon shows its fill; the rest are strokes in the text colour.
       const fill = style.fill && style.fill !== 'none' && !style.fill.startsWith('url') ? style.fill : null;
       const c = rgba(fill && el.getAttribute('fill') !== 'none' && el.classList.value.includes('fill-') ? fill : style.color);
       out.push({ what: 'icon in ' + (el.parentElement.getAttribute('aria-label') || el.parentElement.textContent.trim() || el.parentElement.tagName).slice(0, 40), colour: [c[0], c[1], c[2], c[3] * opacity], need: 3, rects: [{ x: r.x, y: r.y, w: r.width, h: r.height }] });

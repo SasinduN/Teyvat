@@ -1,6 +1,7 @@
 import { Destination } from '../../src/types';
 
-export const DESTINATIONS: Destination[] = [
+/** The seed's rating stays in the database; the public site never gets it. */
+export const DESTINATIONS: (Destination & { rating: number })[] = [
   {
     id: 'ella',
     name: 'Ella',

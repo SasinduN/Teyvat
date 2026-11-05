@@ -38,7 +38,7 @@ this file or anywhere else in git.
 | A | Admin login: show/hide password, attempts left, a live lock countdown | done (#46) |
 | M | Photos in `public/assets/` moved to R2, with `srcset` (A); the files removed once the audit was clean (B) | done (#49, #50) |
 | T | Typography: DM Sans self-hosted, one rem scale, the admin's text size (0019) | done (#47) |
-| E | Editorial, photo-led redesign, stats in Admin → Settings (0021), `docs/reviews/generic-ui-audit.md` | open (#52) |
+| E | Editorial, photo-led redesign, stats in Admin → Settings (0021), `docs/reviews/generic-ui-audit.md` | done (#52) |
 
 Update the Status column when a phase lands.
 
@@ -257,8 +257,10 @@ Update the Status column when a phase lands.
 Agreed, not started. Each one gets its own plan first.
 
 - **TripAdvisor reviews section:** real reviews only. Ratings come back with it,
-  and not before: the seeded `rating` columns stay in the database but aren't shown
-  (`no-ratings`).
+  and not before: the seeded `rating` columns stay in the database and the admin API,
+  and are neither shown nor in `/api/content` (`no-ratings`).
+- **Remove `'unsafe-inline'` from `style-src`:** it is there only for the `<style>` the
+  admin's toasts (Sonner) inject.
 - **Booking flow fixes:** Sasindu will list them.
 - **Bug and performance audit.** It includes the layout shift on `<body>`:
   about 80 px as each page's code loads, before any photo.
@@ -289,9 +291,12 @@ Agreed, not started. Each one gets its own plan first.
   writing any code.
 - **Push and open PRs without stopping once all local checks pass. Never merge
   a PR yourself.**
-- **`main` takes changes through pull requests.** Push a branch, open a PR,
-  and wait for CI (`.github/workflows/ci.yml`, job `checks`). Merging deploys:
-  Railway builds from `main` and *Wait for CI* holds it until CI passes.
+- **`main` takes changes through pull requests,** and a ruleset on `main` enforces it:
+  a PR is required (0 approvals, because Sasindu merges his own), the `checks` status
+  must pass, and force pushes and deleting the branch are blocked. Nobody can bypass
+  it. Push a branch, open a PR, and wait for CI (`.github/workflows/ci.yml`, job
+  `checks`). Merging deploys: Railway builds from `main` and *Wait for CI* holds it
+  until CI passes.
 
 ### Design changes
 
@@ -318,7 +323,9 @@ Agreed, not started. Each one gets its own plan first.
 
 - **Re-running CI** is allowed only for the known WhatsApp zoom-button flake,
   or for infrastructure failures where the code never ran (Docker pull limits,
-  GitHub billing). Investigate everything else.
+  GitHub billing). Investigate everything else. That includes `browser-inquiry`: it
+  failed once on the laptop with "the baseline differs from itself" (#52), cause
+  unknown. If it fails again, find the cause; don't re-run it.
 
 ### Running tests on this laptop
 
@@ -350,10 +357,10 @@ Agreed, not started. Each one gets its own plan first.
 ### Security and design
 
 - **The CSP stays strict:** self-hosted fonts and assets only, no
-  `'unsafe-inline'`, no new external hosts without asking. Already allowed, and
-  not to grow: `style-src` has `'unsafe-inline'` only for the `<style>` the
-  admin's toasts (Sonner) inject; `img-src` has Unsplash, R2 and the map tile
-  hosts.
+  `'unsafe-inline'`, no new external hosts without asking. `script-src` must never
+  have `'unsafe-inline'`. Already allowed, and not to grow: `style-src` has
+  `'unsafe-inline'` only for the `<style>` the admin's toasts (Sonner) inject (its
+  removal is in the backlog); `img-src` has Unsplash, R2 and the map tile hosts.
 - **New photos go through Admin → Media (R2), never into the repo.**
   `no-committed-images` fails on any jpg, png, webp or avif under `public/`, except
   the favicon and the logo.

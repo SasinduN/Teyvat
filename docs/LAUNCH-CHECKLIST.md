@@ -44,19 +44,20 @@ off in a pull request, so the history shows when each was done.
       version in Railway (or from `npm run migrate -- --dry-run`, which prints
       it) and set the same in `.github/workflows/ci.yml` (`public.ecr.aws/docker/library/postgres:18` today).
       **Blocks:** CI testing what production runs. **Who:** Developer.
-- [ ] **6. Protect `main`.** In GitHub, *Settings → Rules → Rulesets → New
-      branch ruleset*, targeting `main`, enforcement *Active*, with an empty
-      bypass list:
-      - **Restrict deletions:** on.
-      - **Block force pushes:** on.
+- [x] **6. Protect `main`.** On since 6 November 2026: a branch ruleset in GitHub,
+      *Settings → Rules → Rulesets*, targeting the default branch, enforcement
+      *Active*, with an empty bypass list:
       - **Require a pull request before merging:** on, with **0 required
         approvals**, because Sasindu reviews and merges his own PRs, and
         GitHub doesn't let an author approve their own (CLAUDE.md).
-      - **Require status checks to pass:** on. Add the check **`checks`**,
-        and tick *Require branches to be up to date before merging*.
+      - **Require status checks to pass:** on, the check **`checks`**.
+      - **Block force pushes:** on.
+      - **Restrict deletions:** on.
 
-      Then in Railway: API service → Settings → **Wait for CI**: on.
-      **Blocks:** safe deploys. **Who:** GitHub admin + Railway admin.
+      **Blocks:** safe deploys. **Who:** GitHub admin.
+- [ ] **6a. Railway → API service → Settings → Wait for CI: on,** so a deploy waits
+      for the check above. Confirm it stays on.
+      **Blocks:** safe deploys. **Who:** Railway admin.
 
 ## Brand and domain
 

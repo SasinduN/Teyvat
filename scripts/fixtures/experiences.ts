@@ -51,7 +51,8 @@ export const EXPERIENCE_CATEGORIES = [
   }
 ];
 
-export const FEATURED_EXPERIENCES: ExperienceItem[] = [
+/** The seed's rating stays in the database; the public site never gets it. */
+export const FEATURED_EXPERIENCES: (ExperienceItem & { rating: number })[] = [
   {
     id: 'sunrise-ella',
     title: 'Sunrise at Ella',

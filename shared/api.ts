@@ -64,6 +64,13 @@ export const API_ROUTES = {
  * route handler is what guarantees both; nothing in the database does. See
  * the header of `db/migrations/0001_init.sql`.
  */
+/**
+ * The seeded `rating` columns aren't reviews. They stay in the database and the
+ * admin API, and never reach this payload (`no-ratings`).
+ */
+export type PublicDestinationRow = Omit<DestinationRow, 'rating'>;
+export type PublicFeaturedExperienceRow = Omit<FeaturedExperienceRow, 'rating'>;
+
 /** A tour row with its route stops attached, in order. */
 export type PublicTourRow = TourRow & { stops: TourStopPayload[] };
 
@@ -74,9 +81,9 @@ export type PublicTourRow = TourRow & { stops: TourStopPayload[] };
 export type AdminTourRow = TourRow & { stops: TourStopInput[] };
 
 export interface SiteContentPayload {
-  destinations: DestinationRow[];
+  destinations: PublicDestinationRow[];
   experienceCategories: ExperienceCategoryRow[];
-  featuredExperiences: FeaturedExperienceRow[];
+  featuredExperiences: PublicFeaturedExperienceRow[];
   tours: PublicTourRow[];
   articles: ArticleRow[];
   hiddenGems: HiddenGemRow[];

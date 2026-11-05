@@ -19,7 +19,6 @@ export interface Destination {
   bestTime: string;
   experiences: string[];
   highlights: string[];
-  rating: number;
   elevation?: string;
   idealFor: string[];
   featured?: boolean;
@@ -38,7 +37,6 @@ export interface ExperienceItem {
   description: string;
   highlights: string[];
   recommendedTime?: string;
-  rating: number;
 }
 
 /** One stop on a tour's route, in order. */

@@ -21,15 +21,13 @@ import type {
 } from '@/types';
 import type {
   ArticleRow,
-  DestinationRow,
   ExperienceCategoryRow,
-  FeaturedExperienceRow,
   HeroSlideRow,
   HiddenGemRow,
   PhotoStoryRow,
   PillarRow,
 } from '@shared/database.types';
-import type { PublicSiteSettings, PublicTourRow } from '@shared/api';
+import type { PublicDestinationRow, PublicFeaturedExperienceRow, PublicSiteSettings, PublicTourRow } from '@shared/api';
 import type { PublicImageCredit } from '@shared/image-credits';
 
 /** The `EXPERIENCE_CATEGORIES` tiles have no interface in `src/types`. */
@@ -66,7 +64,7 @@ export function toDateInputValue(isoDate: string): string {
   return isoDate.slice(0, 10);
 }
 
-export const toDestination = (r: DestinationRow): Destination => ({
+export const toDestination = (r: PublicDestinationRow): Destination => ({
   id: r.id,
   name: r.name,
   latitude: r.latitude,
@@ -84,7 +82,6 @@ export const toDestination = (r: DestinationRow): Destination => ({
   bestTime: r.best_time,
   experiences: r.experiences,
   highlights: r.highlights,
-  rating: Number(r.rating),
   elevation: opt(r.elevation),
   idealFor: r.ideal_for,
   featured: r.featured,
@@ -100,7 +97,7 @@ export const toExperienceCategory = (r: ExperienceCategoryRow): ExperienceCatego
   description: r.description
 });
 
-export const toExperienceItem = (r: FeaturedExperienceRow): ExperienceItem => ({
+export const toExperienceItem = (r: PublicFeaturedExperienceRow): ExperienceItem => ({
   id: r.id,
   title: r.title,
   subtitle: opt(r.subtitle),
@@ -110,8 +107,7 @@ export const toExperienceItem = (r: FeaturedExperienceRow): ExperienceItem => ({
   image: r.image,
   description: r.description,
   highlights: r.highlights,
-  recommendedTime: opt(r.recommended_time),
-  rating: Number(r.rating)
+  recommendedTime: opt(r.recommended_time)
 });
 
 export const toTourPackage = (r: PublicTourRow): TourPackage => ({

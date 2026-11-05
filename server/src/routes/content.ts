@@ -87,6 +87,11 @@ async function selectSiteSettings(): Promise<PublicSiteSettings> {
   return rows[0];
 }
 
+/** The public rows carry no rating: see `PublicDestinationRow` in shared/api.ts. */
+function withoutRating<T extends { rating: number }>({ rating: _rating, ...row }: T): Omit<T, 'rating'> {
+  return row;
+}
+
 export const contentRouter = Router();
 
 contentRouter.get(
@@ -125,9 +130,9 @@ contentRouter.get(
     const { resolvedPhoto, publicPhoto, publicGallery, photoStoryLocation, photoStoryCopy } = photoResolver(photoSets);
 
     const payload: SiteContentPayload = {
-      destinations,
+      destinations: destinations.map(withoutRating),
       experienceCategories,
-      featuredExperiences,
+      featuredExperiences: featuredExperiences.map(withoutRating),
       // Each tour carries its route stops, resolved, so the client joins nothing.
       tours: tours.map((tour) => ({ ...tour, stops: stopsByTour.get(tour.id) ?? [] })),
       articles,
