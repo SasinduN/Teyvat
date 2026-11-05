@@ -135,7 +135,7 @@ describe('the map\'s framing, in Chrome', { skip }, () => {
       return out;
     })()`);
 
-  const CATEGORIES = ['All', 'Beaches', 'Mountains', 'Culture', 'Wildlife', 'Adventure', 'Food', 'Hidden Gems'];
+  const CATEGORIES = ['All', 'Beaches', 'Mountains', 'Culture', 'Wildlife', 'Adventure', 'Food', 'Off the path'];
   const SIZES = [{ width: 1920, height: 870 }, { width: 1280, height: 800 }, { width: 390, height: 844 }];
 
   for (const size of SIZES) {

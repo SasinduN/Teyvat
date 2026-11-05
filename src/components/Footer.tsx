@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { BRAND_NAME } from '@shared/brand';
 import { Logo } from './Logo';
 import { useFeatures, useSiteSettings } from '@/hooks/useSiteContent';
 import { MapPin, Phone, Mail, CheckCircle2, ArrowRight } from 'lucide-react';
@@ -63,7 +64,7 @@ export const Footer: React.FC = () => {
               “See Sri Lanka Through a Different Eye.”
             </p>
             <p className="text-sm text-white/70 leading-relaxed">
-              Travel Eye is Sri Lanka’s premier travel discovery and experience platform. Dedicated to showcasing the island’s authentic heritage, wild landscapes, and luxury sanctuaries.
+              Trips around Sri Lanka, planned by people who live here.
             </p>
 
             {/* Social Icons */}
@@ -105,7 +106,7 @@ export const Footer: React.FC = () => {
           {/* Contact Details (3 cols) */}
           <div className="md:col-span-6 xl:col-span-3 space-y-4">
             <h2 className="text-xs font-bold uppercase tracking-widest text-[var(--accent)]">
-              Contact Travel Eye
+              Contact
             </h2>
             <ul className="space-y-3 text-sm text-white/80">
               <li className="flex items-start space-x-3">
@@ -128,16 +129,16 @@ export const Footer: React.FC = () => {
           {/* Newsletter (3 cols) */}
           <div className="md:col-span-6 xl:col-span-3 space-y-4">
             <h2 className="text-xs font-bold uppercase tracking-widest text-[var(--accent)]">
-              Travel Eye Dispatch
+              Newsletter
             </h2>
             <p className="text-sm text-white/70">
-              Get secret island guides, travel inspiration, and seasonal offers delivered to your inbox.
+              Trip ideas and seasonal notes, by email.
             </p>
 
             {subscribed ? (
               <div className="p-3 bg-[var(--inverse-raised)] rounded-2xl border border-[var(--brand-secondary)] text-sm text-[var(--accent)] flex items-center space-x-2">
                 <CheckCircle2 className="w-4 h-4 text-[var(--accent)]" />
-                <span>Welcome to Travel Eye Dispatch!</span>
+                <span>You are subscribed.</span>
               </div>
             ) : (
               <form onSubmit={handleSubscribe} className="space-y-2">
@@ -186,7 +187,7 @@ export const Footer: React.FC = () => {
 
         {/* Bottom Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-white/80 space-y-2 sm:space-y-0">
-          <p>© 2026 Travel Eye Sri Lanka. All rights reserved.</p>
+          <p>© 2026 {BRAND_NAME} Sri Lanka. All rights reserved.</p>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
             <Link to={paths.photoCredits} className="hover:text-white transition-colors">Photo Credits</Link>
             <a href={settings.privacyUrl} className="hover:text-white transition-colors">Privacy Policy</a>

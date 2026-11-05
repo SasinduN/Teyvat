@@ -397,7 +397,8 @@ adminRouter.put(
           set ${columns.map((c, i) => `"${c}" = $${i + 1}`).join(', ')}
         where id and ${versionMatches(columns.length + 1)}
         returning *, ${REVISION_COLUMN}`,
-      [...columns.map((c) => values[c]), body.expectedUpdatedAt]
+      // `stats` is jsonb: pg would send an array as a Postgres array.
+      [...columns.map((c) => (c === 'stats' ? JSON.stringify(values[c]) : values[c])), body.expectedUpdatedAt]
     );
 
     if (!rows[0]) throw new ApiError('conflict', CHANGED_SINCE);

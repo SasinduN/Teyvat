@@ -19,10 +19,10 @@ export const PhotoStorySection: React.FC = () => {
         {/* Header */}
         <div className="te-section-header te-section-header--stack">
           <h2 className="font-heading text-5xl font-bold tracking-tight mb-4">
-            Stories From The Island
+            Photos from the island
           </h2>
           <p className="text-lg text-white/80 leading-relaxed">
-            A window into daily Sri Lankan life—misty train bends, ancient stone carvings, golden surf tides, and serene highland tea slopes.
+            Daily life in Sri Lanka: a train on a mountain bend, old stone carvings, surf at dusk.
           </p>
         </div>
 

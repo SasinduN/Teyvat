@@ -9,7 +9,6 @@ import {
   readSavedJourney,
   SAVED_PLAN_KEY
 } from '@/lib/planner';
-import { Compass, Sparkles, Calendar, MapPin, CheckCircle2, ArrowRight, Bookmark } from 'lucide-react';
 
 interface TravelPlannerProps {
   onSavePlan: (itineraryTitle: string) => void;
@@ -54,7 +53,7 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
     } catch {
       setSaveError('This browser could not save your journey. You can still request a custom quote.');
     }
-    onSavePlan(`${style} Expedition (${duration}) — ${region}`);
+    onSavePlan(`${style} trip (${duration}), ${region}`);
   };
 
   return (
@@ -78,14 +77,13 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
         </div>
 
         {/* Builder Form Card */}
-        <div className="bg-white/5 backdrop-blur-xl p-6 sm:p-10 rounded-3xl border border-white/10 shadow-2xl mb-12">
+        <div className="bg-white/5 p-6 sm:p-10 rounded-lg border border-white/15 mb-12">
           {/* Keep-clear: the floating buttons (WhatsApp, back to top) step aside rather than sit on the options. */}
           <form onSubmit={handleBuild} data-keep-clear className="space-y-8">
             
             {/* 1. Travel Style */}
             <div>
               <p className="text-xs uppercase tracking-widest text-[var(--accent-text)] font-bold block mb-3 flex items-center space-x-2">
-                <Sparkles className="w-4 h-4" />
                 <span>1. Select Travel Style</span>
               </p>
               <div role="group" aria-label="Travel style" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -110,7 +108,6 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
             {/* 2. Trip Duration */}
             <div>
               <p className="text-xs uppercase tracking-widest text-[var(--accent-text)] font-bold block mb-3 flex items-center space-x-2">
-                <Calendar className="w-4 h-4" />
                 <span>2. Select Trip Duration</span>
               </p>
               <div role="group" aria-label="Trip duration" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -135,7 +132,6 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
             {/* 3. Preferred Region */}
             <div>
               <p className="text-xs uppercase tracking-widest text-[var(--accent-text)] font-bold block mb-3 flex items-center space-x-2">
-                <MapPin className="w-4 h-4" />
                 <span>3. Select Preferred Focus Region</span>
               </p>
               <div role="group" aria-label="Focus region" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -163,7 +159,6 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
                 type="submit"
                 className="te-button te-button--primary px-10 py-4 font-bold text-base flex items-center space-x-2 mx-auto"
               >
-                <Compass className="w-5 h-5" />
                 <span>Build My Journey</span>
               </button>
             </div>
@@ -183,7 +178,6 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-[var(--border-strong)]/40 mb-6 gap-4">
                 <div>
                   <div className="inline-flex items-center space-x-2 text-xs uppercase font-bold text-[var(--brand-primary)] bg-[var(--brand-secondary)]/10 px-3 py-1 rounded-full mb-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[var(--brand-primary)]" />
                     <span>Your Recommended Journey</span>
                   </div>
                   <h3 className="font-heading text-2xl font-bold text-[var(--brand-primary)]">
@@ -200,7 +194,6 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
                     onClick={saveJourney}
                     className="te-button te-button--secondary px-5 py-2.5 font-bold"
                   >
-                    <Bookmark className="w-4 h-4" />
                     <span>{saved ? 'Saved on This Device' : 'Save Itinerary'}</span>
                   </button>
                 </div>
@@ -242,12 +235,11 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
                   Would you like a local travel specialist to customize this itinerary with boutique hotels, private driver, and experiences?
                 </p>
                 <button
-                  onClick={() => onSavePlan(`Custom ${style} (${duration}) — ${region}`)}
+                  onClick={() => onSavePlan(`Custom ${style} (${duration}), ${region}`)}
                   type="button"
                   className="te-button te-button--primary px-6 py-3 font-bold shrink-0"
                 >
                   <span>Request Custom Quote</span>
-                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
 

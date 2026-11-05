@@ -1,101 +1,50 @@
 import { TravelImage } from '@/components/TravelImage';
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useArticles } from '@/hooks/useSiteContent';
 import { paths } from '@shared/site-paths';
-import { MotionLink } from './MotionLink';
-import { Calendar, Clock, ArrowRight } from 'lucide-react';
+import { SectionHead } from './PageCards';
 
+/** One lead story beside its photo, then the rest as simple rows. */
 export const JournalSection: React.FC = () => {
-  const ARTICLES = useArticles();
-
+  const [lead, ...rest] = useArticles();
+  if (!lead) return null;
   return (
-    <section id="journal" className="py-24 bg-[var(--background)] relative overflow-hidden">
+    <section id="journal" className="te-ed-section">
       <div className="te-container">
-        
-        {/* Header */}
-        <div className="te-section-header">
-          <div>
-            <h2 className="font-heading text-5xl font-bold text-[var(--brand-primary)] tracking-tight">
-              Travel Eye Journal
-            </h2>
+        <SectionHead title="Latest stories" text="Guides, food and places, written from here." />
+
+        <Link to={paths.article(lead.id)} className="te-card te-ed-row te-split">
+          <div className="te-ed-photo">
+            <TravelImage src={lead.image} alt={lead.title} sizes="(min-width: 900px) 58vw, 100vw" />
           </div>
-          <p className="text-[var(--text-primary)]/70 max-w-md mt-4 md:mt-0 text-sm sm:text-base">
-            Local travel guides, culture, viewpoints and food discoveries.
-          </p>
-        </div>
+          <div>
+            <p className="te-ed-label">{lead.category}</p>
+            <h3 className="te-ed-card__title font-heading">{lead.title}</h3>
+            <p className="te-ed-card__text">{lead.snippet}</p>
+            <p className="te-ed-meta mt-3">{lead.author.name}. {lead.date}. {lead.readTime}.</p>
+          </div>
+        </Link>
 
-        {/* 6 Article Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {ARTICLES.map((art, idx) => (
-            <MotionLink
-              key={art.id}
-              to={paths.article(art.id)}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className="bg-[var(--surface)] rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-[var(--border-strong)]/40 flex flex-col justify-between group cursor-pointer"
-            >
-              <div>
-                {/* Image */}
-                <div className="relative h-56 overflow-hidden">
-                  <TravelImage
-                    src={art.image}
-                    alt={art.title}
-                    className="w-full h-full object-cover group-hover:scale-[1.035] transition-transform duration-500"
-                  />
-                  <div className="absolute top-4 left-4 bg-[var(--inverse-surface)] text-[var(--accent-text)] text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
-                    {art.category}
+        {rest.length > 0 && (
+          <ul className="te-ed-rows">
+            {rest.map((art) => (
+              <li key={art.id}>
+                <Link to={paths.article(art.id)} className="te-card te-ed-row">
+                  <div className="te-ed-photo">
+                    <TravelImage src={art.image} alt={art.title} sizes="(min-width: 768px) 20vw, 40vw" />
                   </div>
-                </div>
-
-                {/* Body */}
-                <div className="p-6 space-y-3">
-                  <div className="flex items-center space-x-3 text-xs text-[var(--text-secondary)]">
-                    <span className="flex items-center space-x-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span>{art.date}</span>
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center space-x-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>{art.readTime}</span>
-                    </span>
+                  <div>
+                    <p className="te-ed-label">{art.category}</p>
+                    <h3 className="te-ed-card__title font-heading">{art.title}</h3>
+                    <p className="te-ed-meta mt-2">{art.date}. {art.readTime}.</p>
                   </div>
-
-                  <h3 className="font-heading text-xl font-bold text-[var(--brand-primary)] group-hover:text-[var(--brand-primary)] transition-colors leading-snug">
-                    {art.title}
-                  </h3>
-
-                  <p className="text-sm text-[var(--text-primary)]/75 leading-relaxed line-clamp-3">
-                    {art.snippet}
-                  </p>
-                </div>
-              </div>
-
-              {/* Author & Read Action */}
-              <div className="px-6 pb-6 pt-2 border-t border-[var(--border-strong)]/30 flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <img
-                    src={art.author.avatar}
-                    alt={art.author.name}
-                    className="w-7 h-7 rounded-full object-cover border border-[var(--border-strong)]"
-                  />
-                  <span className="text-xs font-medium text-[var(--brand-primary)]">{art.author.name}</span>
-                </div>
-
-                <span className="text-sm font-bold text-[var(--brand-primary)] flex items-center space-x-1 group-hover:translate-x-1 transition-transform">
-                  <span>Read story</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </span>
-              </div>
-
-            </MotionLink>
-          ))}
-        </div>
-
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-
     </section>
   );
 };

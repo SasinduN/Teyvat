@@ -1,101 +1,37 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import {
-  Award,
-  Binoculars,
-  Camera,
-  Clock,
-  Compass,
-  Globe,
-  Handshake,
-  Heart,
-  Leaf,
-  MapPin,
-  Mountain,
-  ShieldCheck,
-  Sliders,
-  Sparkles,
-  Star,
-  Users,
-  Utensils,
-  Waves,
-  type LucideIcon
-} from 'lucide-react';
-import { usePillars } from '@/hooks/useSiteContent';
-import { PillarIcon } from '../types';
+import { TravelImage } from '@/components/TravelImage';
+import { useDestinations, usePillars } from '@/hooks/useSiteContent';
 
 /**
- * The database stores an icon's name; this turns it back into the component.
- * Same list as the CHECK on `pillars.icon` and `PillarIconName` in
- * `shared/database.types.ts`: add an icon to all three together.
+ * How we plan: the pillars as a numbered list, beside a photo. `pillars.icon` stays in
+ * the database and the admin; the public site no longer shows it.
  */
-const PILLAR_ICONS: Record<PillarIcon, LucideIcon> = {
-  Users,
-  Compass,
-  Sliders,
-  Leaf,
-  Heart,
-  ShieldCheck,
-  Star,
-  MapPin,
-  Camera,
-  Globe,
-  Sparkles,
-  Award,
-  Clock,
-  Handshake,
-  Mountain,
-  Waves,
-  Utensils,
-  Binoculars
-};
-
-export const WhyTravelEye: React.FC = () => {
+export function WhyTravelEye() {
   const pillars = usePillars();
-
+  const destinations = useDestinations();
+  const photo = destinations.find((destination) => destination.id === 'sigiriya')?.image ?? destinations[0]?.image;
+  if (pillars.length === 0) return null;
   return (
-    <section className="py-24 bg-[var(--background)] relative overflow-hidden">
-      <div className="te-container">
-        
-        {/* Header */}
-        <div className="te-section-header te-section-header--stack">
-          <h2 className="font-heading text-5xl font-bold text-[var(--brand-primary)] tracking-tight">
-            Travel With A Clearer View.
-          </h2>
-        </div>
-
-        {/* 4 Pillars Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {pillars.map((p, i) => {
-            // The fallback only matters if the lists above ever drift apart:
-            // a missing icon would otherwise crash the section.
-            const IconComponent = PILLAR_ICONS[p.icon] ?? Compass;
-            return (
-              <motion.div
-                key={p.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-50px' }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="bg-[var(--surface)] p-8 rounded-3xl shadow-sm border border-[var(--border-strong)]/40 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-[var(--inverse-surface)] text-[var(--accent-text)] flex items-center justify-center mb-6 group-hover:bg-[var(--brand-secondary)] transition-colors shadow-md">
-                  <IconComponent className="w-7 h-7" />
+    <section className="te-ed-section te-ed-section--tint">
+      <div className="te-container te-split te-split--flip">
+        {photo && (
+          <div className="te-ed-photo te-ed-photo--tall">
+            <TravelImage src={photo} alt="Sigiriya" sizes="(min-width: 900px) 42vw, 100vw" />
+          </div>
+        )}
+        <div>
+          <h2 className="te-ed-title font-heading">How we plan</h2>
+          <ol className="te-numbered mt-6">
+            {pillars.map((pillar) => (
+              <li key={pillar.title}>
+                <div>
+                  <h3 className="font-heading">{pillar.title}</h3>
+                  <p>{pillar.desc}</p>
                 </div>
-
-                <h3 className="font-heading text-xl font-bold text-[var(--brand-primary)] mb-3 group-hover:text-[var(--brand-primary)] transition-colors">
-                  {p.title}
-                </h3>
-
-                <p className="text-sm text-[var(--text-primary)]/80 leading-relaxed">
-                  {p.desc}
-                </p>
-              </motion.div>
-            );
-          })}
+              </li>
+            ))}
+          </ol>
         </div>
-
       </div>
     </section>
   );
-};
+}

@@ -73,12 +73,23 @@ const { values } = parseArgs({
     'no-states': { type: 'boolean', default: false },
     admin: { type: 'boolean', default: false },
     'text-size': { type: 'string' },
+    /** A site's public URL: both versions show that site's R2 photos, as production does. */
+    'live-photos': { type: 'string' },
     out: { type: 'string' }
   },
   strict: true
 });
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** The live site's public photo sets. Scratch databases have no R2 rows, so without this they show the seed's stock photos. */
+const livePhotos = await (async () => {
+  if (!values['live-photos']) return null;
+  const { photoSets } = (await (await fetch(new URL('/api/content', values['live-photos']))).json()) as { photoSets: Record<string, { width: number; url: string }[]> };
+  const first = Object.values(photoSets)[0]?.[0];
+  if (!first) throw new Error('--live-photos: that site has no photo sets.');
+  return { sets: photoSets, origin: new URL(first.url).origin };
+})();
 const run = (cmd: string, args: string[], cwd: string, env: NodeJS.ProcessEnv = process.env) =>
   execFileSync(cmd, args, { cwd, env, stdio: 'inherit', shell: process.platform === 'win32' });
 
@@ -144,6 +155,22 @@ async function prepare(site: Site): Promise<void> {
   console.log(`\n[${site.label}] build`);
   run('npm', ['run', 'build'], site.dir);
   run('npx', ['tsx', 'scripts/migrate.ts'], site.dir, { ...process.env, DATABASE_URL: db });
+  if (livePhotos) {
+    const client = new Client({ connectionString: db });
+    await client.connect();
+    try {
+      for (const [key, variants] of Object.entries(livePhotos.sets)) {
+        for (const { width, url } of variants) {
+          await client.query(
+            `insert into public.media (key, url, content_type, bytes, uploaded_by, photo_key, width) values ($1, $2, 'image/webp', 1, null, $3, $4)`,
+            [new URL(url).pathname.slice(1), url, key, width]
+          );
+        }
+      }
+    } finally {
+      await client.end();
+    }
+  }
   if (site.label === 'after' && values['text-size']) {
     const client = new Client({ connectionString: db });
     await client.connect();
@@ -174,6 +201,10 @@ async function prepare(site: Site): Promise<void> {
   for (const key of ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET', 'R2_PUBLIC_BASE_URL', 'RESEND_API_KEY', 'NOTIFY_EMAIL_TO', 'NOTIFY_EMAIL_FROM']) env[key] = '';
   // The same for the switches: as the base would have them.
   env.BOOKINGS_ENABLED = '';
+  // The bucket's public origin, so the CSP lets the photos in. The rest only has to be set: nothing is uploaded.
+  if (livePhotos) {
+    Object.assign(env, { R2_ACCOUNT_ID: 'screenshots', R2_ACCESS_KEY_ID: 'screenshots', R2_SECRET_ACCESS_KEY: 'screenshots', R2_BUCKET: 'screenshots', R2_PUBLIC_BASE_URL: livePhotos.origin });
+  }
   env.SITE_INDEXABLE = '';
   site.server = spawn(process.execPath, ['server/dist/index.js'], { cwd: site.dir, env, stdio: 'ignore' });
   site.url = `http://127.0.0.1:${port}`;

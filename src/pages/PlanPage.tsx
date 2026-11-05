@@ -23,7 +23,6 @@ export function PlanPage() {
         compact
         image={slides[0]?.url}
         crumbs={[{ label: 'Home', to: paths.home }, { label: 'Plan Your Trip' }]}
-        eyebrow="Your Island. Your Pace."
         title="Plan Your Trip"
         subtitle={PAGE_DESCRIPTIONS.plan}
       />
@@ -34,13 +33,10 @@ export function PlanPage() {
 
       <section className="bg-[var(--background)] py-16 sm:py-20">
         <div className="te-container">
-          <div className="glass glass--strong glass--3d p-6 sm:p-8">
-            <h2 className="font-heading text-[var(--brand-primary)]">
-              Let us take care of the details.
-            </h2>
+          <div className="te-reading-column">
+            <h2 className="te-ed-title font-heading">We can handle the details</h2>
             <p className="my-4 text-[var(--text-secondary)]">
-              Your journey is a starting point. Our local travel designers confirm availability, transfers and the right
-              pace for you.
+              This is a sample route. Our travel designers check availability and transfers, and adjust the pace with you.
             </p>
             <SiteLink to={paths.contact} className="te-button te-button--primary">
               Contact a Travel Designer

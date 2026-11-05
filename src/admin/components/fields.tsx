@@ -1,3 +1,4 @@
+import { MAX_SITE_STATS, MAX_STAT_LABEL, MAX_STAT_SUFFIX, type SiteStatDraft } from '@shared/site-stats';
 import React, { useId } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { Button, FieldHelp, Input, Textarea } from '@/admin/components/ui';
@@ -302,6 +303,42 @@ export const ItineraryField: React.FC<{
       >
         Add day
       </Button>
+    </div>
+  );
+};
+
+/**
+ * The stats strip: always four rows, in a fixed table, so a row is emptied rather
+ * than deleted. The server drops empty rows (`parseSiteStats`).
+ */
+export const StatsField: React.FC<{ value: SiteStatDraft[]; onChange: (value: SiteStatDraft[]) => void }> = ({ value, onChange }) => {
+  const rows = Array.from({ length: MAX_SITE_STATS }, (_, i) => value[i] ?? { label: '', number: '', suffix: '', order: '' });
+  const set = (index: number, key: keyof SiteStatDraft, next: string) =>
+    onChange(rows.map((row, i) => (i === index ? { ...row, [key]: next } : row)));
+  const shown = (v: unknown) => (typeof v === 'string' || typeof v === 'number' ? String(v) : '');
+  return (
+    <div className="space-y-4" data-stats-field>
+      {rows.map((row, i) => (
+        <fieldset key={i} className="grid grid-cols-2 gap-3 rounded-lg border border-[var(--border)] p-3 sm:grid-cols-[minmax(0,1fr)_7rem_5rem_5rem]" data-stat-row>
+          <legend className="px-1 text-sm font-semibold text-[var(--text-primary)]">Stat {i + 1}</legend>
+          <label className="col-span-2 block text-sm sm:col-span-1">
+            <span className="mb-1 block text-[var(--text-secondary)]">Label</span>
+            <Input value={shown(row.label)} maxLength={MAX_STAT_LABEL} onChange={(e) => set(i, 'label', e.target.value)} data-stat-field="label" />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block text-[var(--text-secondary)]">Number</span>
+            <Input value={shown(row.number)} inputMode="numeric" onChange={(e) => set(i, 'number', e.target.value)} data-stat-field="number" />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block text-[var(--text-secondary)]">Suffix</span>
+            <Input value={shown(row.suffix)} maxLength={MAX_STAT_SUFFIX} onChange={(e) => set(i, 'suffix', e.target.value)} data-stat-field="suffix" />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block text-[var(--text-secondary)]">Order</span>
+            <Input value={shown(row.order)} inputMode="numeric" onChange={(e) => set(i, 'order', e.target.value)} data-stat-field="order" />
+          </label>
+        </fieldset>
+      ))}
     </div>
   );
 };

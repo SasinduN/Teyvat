@@ -1,3 +1,4 @@
+import type { SiteStatDraft } from '@shared/site-stats';
 import React from 'react';
 import { Controller, type Control, type FieldErrors } from 'react-hook-form';
 import { CircleAlert } from 'lucide-react';
@@ -8,6 +9,7 @@ import { type StopDraft, TourStopsField } from '@/admin/components/TourStopsFiel
 import {
   type ItineraryDay,
   ItineraryField,
+  StatsField,
   MultiSelectField,
   StringListField,
   TextSizeField,
@@ -39,6 +41,7 @@ const asStringArray = (v: unknown): string[] =>
 const asItinerary = (v: unknown): ItineraryDay[] =>
   Array.isArray(v) ? (v as ItineraryDay[]) : [];
 
+const asStats = (v: unknown): SiteStatDraft[] => (Array.isArray(v) ? (v as SiteStatDraft[]) : []);
 const asStops = (v: unknown): StopDraft[] => (Array.isArray(v) ? (v as StopDraft[]) : []);
 
 /* ------------------------------------------------------------------------- */
@@ -305,6 +308,9 @@ function renderControl(
 
     case 'textSize':
       return <TextSizeField value={typeof value === 'number' ? value : DEFAULT_TEXT_SIZE} label={field.label} onChange={onChange} />;
+
+    case 'stats':
+      return <StatsField value={asStats(value)} onChange={onChange} />;
 
     case 'stringList':
       return (

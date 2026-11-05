@@ -1,7 +1,7 @@
 import { TravelImage } from '@/components/TravelImage';
 import React, { useState, useEffect, useRef } from 'react';
 import { useReducedMotion } from 'framer-motion';
-import { Compass, MapPin, Pause, Play, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Pause, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useHeroSlides } from '@/hooks/useSiteContent';
 import { SiteLink } from './SiteLink';
 import { paths } from '@shared/site-paths';
@@ -115,7 +115,7 @@ export const HeroSection: React.FC = () => {
           <p
             className="te-hero-subtitle text-lg text-white/90 leading-relaxed mb-10 text-shadow"
           >
-            Discover hidden places, timeless culture, wild adventures and unforgettable moments across the island.
+            Tea country, ancient cities, leopards and surf, all on one island.
           </p>
 
           {/* Action Buttons */}
@@ -125,14 +125,12 @@ export const HeroSection: React.FC = () => {
             <SiteLink to={paths.explore}
               className="te-button te-button--secondary te-button--lg w-full sm:w-auto group"
             >
-              <MapPin className="w-5 h-5" />
               <span>Explore Sri Lanka</span>
             </SiteLink>
 
             <SiteLink to={paths.plan}
               className="te-button te-button--primary te-button--lg w-full sm:w-auto"
             >
-              <Compass className="w-5 h-5" />
               <span>Plan Your Journey</span>
             </SiteLink>
           </div>

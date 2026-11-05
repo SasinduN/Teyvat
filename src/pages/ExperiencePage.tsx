@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { CheckCircle2, Clock, MapPin, Star, Sun, Tag } from 'lucide-react';
+import { categoryLabel } from '@/lib/categories';
 import { HeroChip, PageHero } from '@/components/PageHero';
 import { DestinationCard, ExperienceCard, SectionHead } from '@/components/PageCards';
 import { PlanCard } from '@/components/PlanCard';
@@ -41,11 +41,11 @@ function ExperienceView({ e }: { e: ExperienceItem }) {
   const all = useFeaturedExperiences();
   const where = whereItHappens(e, useDestinations());
 
-  const facts: [typeof Clock, string, string][] = [
-    [Clock, 'Duration', e.duration],
-    [Sun, 'Best Time', e.recommendedTime ?? 'Year-round'],
-    [MapPin, 'Location', e.location],
-    [Tag, 'Category', e.category]
+  const facts: [string, string][] = [
+    ['Duration', e.duration],
+    ['Best time', e.recommendedTime ?? 'Year-round'],
+    ['Location', e.location],
+    ['Category', categoryLabel(e.category)]
   ];
 
   return (
@@ -55,10 +55,8 @@ function ExperienceView({ e }: { e: ExperienceItem }) {
         crumbs={[{ label: 'Home', to: paths.home }, { label: 'Experiences', to: paths.experiences }, { label: e.title }]}
         chips={
           <>
-            <HeroChip gold>
-              <Star className="h-3.5 w-3.5 fill-[var(--accent)]" aria-hidden="true" /> {e.rating}
-            </HeroChip>
-            <HeroChip>{e.category}</HeroChip>
+            <HeroChip>Rated {e.rating}</HeroChip>
+            <HeroChip>{categoryLabel(e.category)}</HeroChip>
           </>
         }
         eyebrow={e.location}
@@ -69,14 +67,11 @@ function ExperienceView({ e }: { e: ExperienceItem }) {
       <section className="py-14 sm:py-20">
         <div className="te-container grid gap-10 lg:grid-cols-12 lg:gap-14">
           <div className="space-y-12 lg:col-span-8">
-            <dl className="grid grid-cols-2 gap-5 rounded-2xl border border-[var(--border-strong)]/40 bg-[var(--surface)] p-6 sm:grid-cols-4">
-              {facts.map(([Icon, label, value]) => (
+            <dl className="te-facts">
+              {facts.map(([label, value]) => (
                 <div key={label}>
-                  <dt className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)]">
-                    <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                    {label}
-                  </dt>
-                  <dd className="text-sm font-semibold text-[var(--brand-primary)]">{value}</dd>
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
                 </div>
               ))}
             </dl>
@@ -87,14 +82,11 @@ function ExperienceView({ e }: { e: ExperienceItem }) {
             </div>
 
             {e.highlights.length > 0 && (
-              <div className="rounded-2xl border border-[var(--border-strong)]/40 bg-[var(--background-secondary)] p-6">
-                <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)]">Highlights</h2>
-                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <h2 className="mb-4 font-heading text-2xl font-bold text-[var(--brand-primary)]">Highlights</h2>
+                <ul className="te-plain-list te-plain-list--2">
                   {e.highlights.map((h, i) => (
-                    <li key={i} className="flex items-start space-x-2 text-sm text-[var(--text-primary)]/90">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-primary)]" aria-hidden="true" />
-                      <span>{h}</span>
-                    </li>
+                    <li key={i}>{h}</li>
                   ))}
                 </ul>
               </div>
@@ -126,7 +118,7 @@ function ExperienceView({ e }: { e: ExperienceItem }) {
         <Section name="MoreExperiences">
           <section className="bg-[var(--background-secondary)] py-16 sm:py-20">
             <div className="te-container">
-              <SectionHead eyebrow="Unforgettable Moments" title="More Experiences" />
+              <SectionHead title="More to do" />
               <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                 {all
                   .filter((x) => x.id !== e.id)

@@ -129,7 +129,7 @@ export function ScrollToTop({ hidden = false }: { hidden?: boolean }) {
       onClick={toTop}
       aria-label="Back to top"
       title="Back to top"
-      className="te-scroll-top glass glass--inverse glass--strong glass--round"
+      className="te-scroll-top"
     >
       <ArrowUp className="w-5 h-5" aria-hidden="true" />
     </button>

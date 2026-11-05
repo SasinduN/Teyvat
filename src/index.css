@@ -4,6 +4,7 @@
 @import "./styles/glass.css" layer(components);
 @import "./styles/cards.css";
 @import "./styles/home-destinations.css";
+@import "./styles/editorial.css";
 
 @layer base {
   :root {

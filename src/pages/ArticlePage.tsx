@@ -62,7 +62,7 @@ function ArticleView({ a }: { a: Article }) {
         <Section name="MoreArticles">
           <section className="bg-[var(--background-secondary)] py-16 sm:py-20">
             <div className="te-container">
-              <SectionHead eyebrow="Stories & Insights" title="More From the Journal" />
+              <SectionHead title="More from the journal" />
               <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                 {all
                   .filter((x) => x.id !== a.id)

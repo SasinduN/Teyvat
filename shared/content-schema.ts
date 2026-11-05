@@ -21,6 +21,7 @@ import {
 } from './database.types';
 import { IMAGE_HOST_REFUSED, isAllowedImageUrl } from './image-hosts';
 import { MAX_TOUR_STOPS, STOP_NAME_MAX, TOUR_STOP_BOUNDS } from './tour-stops';
+import { parseSiteStats } from './site-stats';
 import { normalizeWhatsAppNumber, whatsappNumberProblem } from './whatsapp';
 
 export const CATEGORY_OPTIONS = [
@@ -84,6 +85,8 @@ export type Field =
   | (FieldBase & { type: 'whatsapp' })
   /** The site-wide text size (`shared/text-size.ts`), with a live preview. */
   | (FieldBase & { type: 'textSize' })
+  /** The stats strip (`shared/site-stats.ts`): up to four rows. */
+  | (FieldBase & { type: 'stats' })
   /**
    * A tour's route stops. Not a column: they live in `public.tour_stops`, and
    * the API writes them alongside the row (see `writableColumns`).
@@ -271,6 +274,13 @@ export const SITE_SETTINGS_FIELDS: Field[] = [
     type: 'textSize',
     span: 2,
     help: 'For the whole site and this admin panel, from the next page load.'
+  },
+  {
+    name: 'stats',
+    label: 'Stats strip',
+    type: 'stats',
+    span: 2,
+    help: 'Up to four, on the home and About pages. Leave a row empty to remove it; with none, the strip is hidden. Only use numbers you have a source for.'
   }
 ];
 
@@ -421,6 +431,13 @@ function schemaForField(field: Field, options: SchemaOptions = {}): z.ZodTypeAny
         .nullable()
         .transform((v) => (v ? v : null))
         .pipe(httpsUrl(`${field.label} must start with https://, or be left empty.`, 500).nullable());
+
+    case 'stats':
+      return z.unknown().transform((rows, ctx) => {
+        const { stats, problems } = parseSiteStats(rows);
+        for (const message of problems) ctx.addIssue({ code: 'custom', message });
+        return stats;
+      });
 
     case 'textSize':
       return z.unknown().refine(isTextSize, { message: `Choose ${TEXT_SIZES.join('%, ')}%.` });

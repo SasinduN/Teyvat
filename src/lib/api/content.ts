@@ -76,8 +76,9 @@ export const EMPTY_CONTENT: SiteContent = {
     youtubeUrl: '',
     privacyUrl: '',
     termsUrl: '',
-    sustainabilityUrl: ''
+    sustainabilityUrl: '',
     // No whatsappNumber: the button stays hidden until content has loaded.
+    stats: []
   },
   imageCredits: [],
   features: { bookings: false }

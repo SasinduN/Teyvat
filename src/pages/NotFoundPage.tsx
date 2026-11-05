@@ -1,6 +1,5 @@
 import { TravelImage } from '@/components/TravelImage';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Compass, MapPin } from 'lucide-react';
 import { DestinationCard, SectionHead } from '@/components/PageCards';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useDestinations } from '@/hooks/useSiteContent';
@@ -29,28 +28,25 @@ export function NotFoundPage() {
             This path isn’t <span className="font-heading text-[var(--accent-text)]">on the map.</span>
           </h1>
           <p className="te-page-description text-lg text-white/80">
-            The page may have moved, or the link may be mistyped. Here are some good places to pick up the trail.
+            The page may have moved, or the link may be mistyped.
           </p>
           <div className="te-cta-group flex flex-col gap-4 pt-4 sm:flex-row">
             <Link
               to={paths.home}
               className="te-button te-button--primary w-full sm:w-auto"
             >
-              <Compass className="h-5 w-5" aria-hidden="true" />
               <span>Back to Home</span>
             </Link>
             <Link
               to={paths.destinations}
               className="te-button te-button--secondary w-full sm:w-auto"
             >
-              <MapPin className="h-5 w-5" aria-hidden="true" />
               <span>Browse Destinations</span>
             </Link>
             <Link
               to={paths.tours}
               className="te-button te-button--secondary w-full sm:w-auto"
             >
-              <ArrowRight className="h-5 w-5" aria-hidden="true" />
               <span>See Tours</span>
             </Link>
           </div>
@@ -61,7 +57,7 @@ export function NotFoundPage() {
         <Section name="NotFoundSuggestions">
           <section className="py-16 sm:py-20">
             <div className="te-container">
-              <SectionHead eyebrow="Popular Right Now" title="Start Somewhere Beautiful" />
+              <SectionHead title="Or start with one of these" />
               <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                 {featured.slice(0, 3).map((d) => (
                   <DestinationCard key={d.id} dest={d} />
