@@ -29,7 +29,7 @@ export const ExperiencesSection: React.FC<ExperiencesSectionProps> = ({
         
         {/* Header */}
         <div className="te-section-header te-section-header--stack">
-          <h2 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight text-[var(--brand-primary)] mb-4">
+          <h2 className="font-heading text-5xl font-bold tracking-tight text-[var(--brand-primary)] mb-4">
             What Kind of Journey Are You Looking For?
           </h2>
           <p className="text-lg text-[var(--text-secondary)] leading-relaxed">
@@ -61,7 +61,7 @@ export const ExperiencesSection: React.FC<ExperiencesSectionProps> = ({
               </div>
 
               {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[var(--inverse-surface)] via-[var(--inverse-surface)]/80 via-50% to-black/10 group-hover:from-[var(--inverse-surface)]/90 transition-colors duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[var(--inverse-surface)] via-[var(--inverse-surface)]/85 via-70% to-black/10 group-hover:from-[var(--inverse-surface)]/90 transition-colors duration-500" />
 
               {/* Content */}
               <div className="relative z-10 space-y-3">
@@ -73,7 +73,7 @@ export const ExperiencesSection: React.FC<ExperiencesSectionProps> = ({
                   {exp.title}
                 </h3>
 
-                <p className="te-card-accent text-xs font-medium font-serif italic">
+                <p className="te-card-accent text-sm font-medium font-heading">
                   {exp.subtitle}
                 </p>
 
@@ -81,7 +81,7 @@ export const ExperiencesSection: React.FC<ExperiencesSectionProps> = ({
                   {exp.description}
                 </p>
 
-                <div className="te-card-action pt-2 flex items-center space-x-2 text-xs font-semibold">
+                <div className="te-card-action pt-2 flex items-center space-x-2 text-sm font-semibold">
                   <span>Explore {exp.title}</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>

@@ -25,8 +25,8 @@ import './test-db';
  * question 1) and the map section (its only change, "Explore <name>" as a
  * link, is checked in browser-routes; its tiles need the network).
  *
- * Offline on purpose: images are a solid placeholder and the Google Fonts
- * aren't loaded, so both versions render alike and nothing can stall.
+ * Offline on purpose: images are a solid placeholder and DM Sans isn't
+ * served, so both versions render alike and nothing can stall.
  * Needs `npm run build` (for the CSS) and Chrome; skipped otherwise.
  */
 import assert from 'node:assert/strict';
@@ -64,18 +64,18 @@ const skip = !executable
  * ones; the rest are measured.
  */
 const SECTIONS: { name: string; baseline: string; props: string; height?: number }[] = [
-  // The friend import (aee696e): the header in the page's colours, the logo's home link (was e6cdc02).
-  { name: 'Navbar', baseline: 'aee696e', props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
+  // Typography (ca26709): DM Sans, the rem scale, the link and button sizes (was aee696e, the friend import).
+  { name: 'Navbar', baseline: 'ca26709', props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
   // The friend import (aee696e): photo-first destination cards (was 4e9942d).
   { name: 'DestinationSpotlight', baseline: 'aee696e', props: '{ onSelectDestination() {} }' },
-  // Owner-authorized PR #39 cleanup: removed promotional badges and simplified copy.
-  // Pin the approved source commit; retain exact pixels, controls and both widths.
-  { name: 'FeaturedExperiences', baseline: '4129cd4', props: '{ onSelectExperience() {} }' },
-  { name: 'ToursSection', baseline: '4129cd4', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
-  { name: 'ExperiencesSection', baseline: '4129cd4', props: '{ onSelectCategory() {} }' },
-  { name: 'JournalSection', baseline: '4129cd4', props: '{}' },
-  // #12 parity (e6cdc02): every match listed, as in #12 (was 4e9942d).
-  { name: 'SearchModal', baseline: 'e6cdc02', props: '{ isOpen: true, onClose() {}, onSelectDestination() {} }', height: 900 }
+  // Typography (ca26709): the rem scale and DM Sans on the cards (was 4129cd4, the PR #39 cleanup).
+  { name: 'FeaturedExperiences', baseline: 'ca26709', props: '{ onSelectExperience() {} }' },
+  { name: 'ToursSection', baseline: 'ca26709', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
+  // 4c6ae6c: the same, and the photo overlay's dark band reaches further up, for AA under the taller copy.
+  { name: 'ExperiencesSection', baseline: '4c6ae6c', props: '{ onSelectCategory() {} }' },
+  { name: 'JournalSection', baseline: 'ca26709', props: '{}' },
+  // Typography (ca26709): the rem scale in the modal and its input (was e6cdc02, #12 parity).
+  { name: 'SearchModal', baseline: 'ca26709', props: '{ isOpen: true, onClose() {}, onSelectDestination() {} }', height: 900 }
 ];
 
 const baselineOf = (name: string): string => SECTIONS.find((s) => s.name === name)!.baseline;

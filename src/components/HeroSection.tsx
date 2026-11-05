@@ -103,17 +103,17 @@ export const HeroSection: React.FC = () => {
         <div className="te-hero-copy">
           {/* Main Title */}
           <h1
-            className="te-hero-title font-heading text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.1] mb-6 drop-shadow-md"
+            className="te-hero-title font-heading text-4xl font-bold tracking-tight text-white leading-[1.1] mb-6 drop-shadow-md"
           >
             See Sri Lanka Through a <br className="hidden sm:inline" />
-            <span className="te-hero-emphasis italic font-serif">
+            <span className="te-hero-emphasis font-heading">
               Different Eye.
             </span>
           </h1>
 
           {/* Supporting Subtitle */}
           <p
-            className="te-hero-subtitle text-lg sm:text-xl md:text-2xl text-white/90 font-light leading-relaxed mb-10 text-shadow"
+            className="te-hero-subtitle text-lg text-white/90 leading-relaxed mb-10 text-shadow"
           >
             Discover hidden places, timeless culture, wild adventures and unforgettable moments across the island.
           </p>

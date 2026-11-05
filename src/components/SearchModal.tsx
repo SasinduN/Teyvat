@@ -69,7 +69,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
               placeholder="Search Ella, Yala, Sigiriya, beaches, safaris..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full text-base sm:text-lg font-medium text-[var(--brand-primary)] placeholder-[var(--text-primary)]/40 focus:outline-none bg-transparent"
+              className="w-full text-base font-medium text-[var(--brand-primary)] placeholder-[var(--text-primary)]/40 focus:outline-none bg-transparent"
             />
             <button
               type="button" aria-label="Close search"
@@ -82,7 +82,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 
           {/* Search Suggestions */}
           <div>
-            <span role="status" className="text-[11px] font-bold uppercase tracking-widest text-[var(--brand-primary)] block mb-3">
+            <span role="status" className="text-xs font-bold uppercase tracking-widest text-[var(--brand-primary)] block mb-3">
               {searchTerm ? `Matching Locations (${filtered.length})` : 'Featured Sri Lanka Destinations'}
             </span>
 
@@ -105,11 +105,11 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                         <h4 className="font-heading font-bold text-[var(--brand-primary)] text-base group-hover:text-[var(--brand-primary)]">
                           {dest.name}
                         </h4>
-                        <span className="text-[10px] bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)] px-2 py-0.5 rounded-full font-semibold">
+                        <span className="text-xs bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)] px-2 py-0.5 rounded-full font-semibold">
                           {dest.region}
                         </span>
                       </div>
-                      <p className="text-xs text-[var(--text-primary)]/70 line-clamp-1">{dest.shortDescription}</p>
+                      <p className="text-sm text-[var(--text-primary)]/70 line-clamp-1">{dest.shortDescription}</p>
                     </div>
                   </div>
 
@@ -118,7 +118,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
               ))}
 
               {filtered.length === 0 && (
-                <div className="text-center py-8 text-xs text-[var(--text-secondary)]">
+                <div className="text-center py-8 text-sm text-[var(--text-secondary)]">
                   No locations found matching “{searchTerm}”. Try searching for “Ella”, “Beaches”, or “Yala”.
                 </div>
               )}

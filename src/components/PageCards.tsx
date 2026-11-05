@@ -12,9 +12,9 @@ export const SectionHead: React.FC<{ eyebrow: string; title: string; text?: stri
       <span className="mb-3 inline-block rounded-full bg-[var(--brand-secondary)]/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-[var(--brand-primary)]">
         {eyebrow}
       </span>
-      <h2 className="font-heading text-3xl font-bold tracking-tight text-[var(--brand-primary)] sm:text-4xl">{title}</h2>
+      <h2 className="font-heading text-5xl font-bold tracking-tight text-[var(--brand-primary)]">{title}</h2>
     </div>
-    {text && <p className="mt-4 max-w-md text-sm font-light text-[var(--text-primary)]/70 md:mt-0">{text}</p>}
+    {text && <p className="mt-4 max-w-md text-sm text-[var(--text-primary)]/70 md:mt-0">{text}</p>}
   </div>
 );
 
@@ -91,7 +91,7 @@ export function DestinationRevealCard({ dest, home, sizes }: { dest: Destination
 const DestinationSpotlightCard: React.FC<{ dest: Destination }> = ({ dest }) => (
   <Link
     to={paths.destination(dest.id)}
-    className="te-card te-content-card te-content-card--photo group relative flex h-[360px] flex-col justify-end overflow-hidden bg-[var(--inverse-surface)]"
+    className="te-card te-content-card te-content-card--photo group relative flex min-h-[22.5rem] flex-col justify-end overflow-hidden pt-16 bg-[var(--inverse-surface)]"
   >
     <TravelImage
       src={dest.image}
@@ -103,10 +103,10 @@ const DestinationSpotlightCard: React.FC<{ dest: Destination }> = ({ dest }) => 
       <Star className="h-3.5 w-3.5 fill-[var(--accent)]" aria-hidden="true" /> {dest.rating}
     </div>
     <div className="glass glass--inverse glass--card glass--3d te-destination-caption relative z-10 m-3 space-y-2 p-5">
-      <p className="te-card-accent text-[10px] font-semibold uppercase tracking-widest">{dest.region} Region</p>
+      <p className="te-card-accent text-xs font-semibold uppercase tracking-widest">{dest.region} Region</p>
       <h3 className="te-card-title font-heading text-2xl font-bold">{dest.name}</h3>
-      <p className="te-card-description line-clamp-2 text-xs">{dest.shortDescription}</p>
-      <span className="te-card-action flex items-center gap-1 pt-1 text-xs font-bold">
+      <p className="te-card-description line-clamp-2 text-sm">{dest.shortDescription}</p>
+      <span className="te-card-action flex items-center gap-1 pt-1 text-sm font-bold">
         Explore {dest.name} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
       </span>
     </div>
@@ -127,7 +127,7 @@ export const TourCard: React.FC<{ tour: TourPackage }> = ({ tour }) => (
       </div>
       <h3 className="te-card-title absolute bottom-4 left-4 right-4 font-heading text-xl font-bold">{tour.title}</h3>
     </div>
-    <div className="flex items-center justify-between gap-3 p-5 text-xs">
+    <div className="flex items-center justify-between gap-3 p-5 text-sm">
       <span className="te-card-meta">
         From <strong className="text-[var(--text-primary)]">${tour.priceFrom}</strong>
       </span>
@@ -170,7 +170,7 @@ export const ArticleCard: React.FC<{ art: Article }> = ({ art }) => (
   >
     <div className="relative h-48 overflow-hidden">
       <TravelImage src={art.image} alt={art.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]" />
-      <div className="absolute left-4 top-4 rounded-full bg-[var(--inverse-surface)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--accent-text)] shadow-md">
+      <div className="absolute left-4 top-4 rounded-full bg-[var(--inverse-surface)] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[var(--accent-text)] shadow-md">
         {art.category}
       </div>
     </div>

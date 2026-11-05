@@ -181,7 +181,7 @@ export const CollectionPage: React.FC = () => {
       />
 
       {collection.table === 'destinations' && (
-        <p className="-mt-2 mb-4 text-[11px] font-medium text-[var(--brand-primary)]">
+        <p className="-mt-2 mb-4 text-xs font-medium text-[var(--brand-primary)]">
           Spotlight: {SPOTLIGHT_NOTICE}
         </p>
       )}
@@ -279,11 +279,11 @@ export const CollectionPage: React.FC = () => {
                           ))}
                       </div>
                       {subtitle && (
-                        <p className="mt-0.5 truncate text-[11px] font-light text-[var(--text-primary)]/55">
+                        <p className="mt-0.5 truncate text-xs text-[var(--text-primary)]/55">
                           {subtitle}
                         </p>
                       )}
-                      <p className="mt-0.5 truncate font-mono text-[10px] text-[var(--text-primary)]/35">
+                      <p className="mt-0.5 truncate font-mono text-xs text-[var(--text-primary)]/35">
                         {row.id}
                         {meta && ` · ${meta}`}
                       </p>
@@ -358,7 +358,7 @@ export const CollectionPage: React.FC = () => {
           </Card>
 
           {searching && (
-            <p className="mt-3 text-[11px] font-light text-[var(--text-primary)]/50">
+            <p className="mt-3 text-xs text-[var(--text-primary)]/50">
               Clear the search to reorder records.
             </p>
           )}

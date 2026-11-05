@@ -21,6 +21,9 @@ import { Button, Card, ErrorNote, PageHeader, Spinner } from '@/admin/components
  * renders that link with no destination. Anything else must be https://.
  *
  * The WhatsApp number is behind the public site's chat button; empty hides it.
+ *
+ * The text size is the root font-size of every page. The server writes it on
+ * <html>; a save also sets it here, so this page shows it straight away.
  */
 export const SettingsPage: React.FC = () => {
   const qc = useQueryClient();
@@ -54,6 +57,7 @@ export const SettingsPage: React.FC = () => {
     },
     onSuccess: (saved) => {
       qc.setQueryData(queryKeys.admin.siteSettings, saved);
+      document.documentElement.dataset.textSize = String(saved.text_size);
       // The Footer reads these.
       void qc.invalidateQueries({ queryKey: queryKeys.siteContent });
       toast.success('Settings saved');
@@ -81,7 +85,7 @@ export const SettingsPage: React.FC = () => {
     <div>
       <PageHeader
         title="Site settings"
-        description="The contact details and links in the public site's footer, and the number behind its WhatsApp button. Links are optional: leave one empty and the footer shows it without a destination."
+        description="The contact details and links in the public site's footer, the number behind its WhatsApp button, and the site's text size. Links are optional: leave one empty and the footer shows it without a destination."
       />
 
       {current.isError ? (
@@ -129,7 +133,7 @@ export const SettingsPage: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     data-whatsapp-test
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--brand-primary)] underline-offset-2 hover:text-[var(--brand-primary)] hover:underline"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)] underline-offset-2 hover:text-[var(--brand-primary)] hover:underline"
                   >
                     Test in WhatsApp
                     <ExternalLink className="h-3 w-3" aria-hidden="true" />

@@ -231,16 +231,53 @@
   --heading-space: clamp(1.5rem, 3vw, 2.5rem);
   --section-space: clamp(2rem, 5vw, 4rem);
   --grid-gap: clamp(1rem, 2vw, 1.5rem);
-  --heading-hero: clamp(2.25rem, 4.5vw, 4rem);
-  --heading-page: clamp(2rem, 4vw, 3.25rem);
+  /*
+   * One heading scale, phone to desktop. In rem (plus a little vw), so the
+   * admin's text size (`data-text-size` on <html>) and browser zoom both move it.
+   */
+  --heading-hero: clamp(2.25rem, 1.75rem + 2.4vw, 4rem);
+  --heading-page: clamp(2rem, 1.6rem + 1.8vw, 3.25rem);
   --heading-page-weight: 700;
   --heading-page-leading: 1.12;
   --heading-page-tracking: -.025em;
-  --heading-section: clamp(1.75rem, 3.4vw, 2.75rem);
-  --heading-card: clamp(1.125rem, 1.8vw, 1.5rem);
+  --heading-section: clamp(1.75rem, 1.5rem + 1.25vw, 2.75rem);
+  --heading-lead: clamp(1.625rem, 1.4rem + .9vw, 2.25rem);
+  --heading-sub: clamp(1.375rem, 1.25rem + .55vw, 1.75rem);
+  --heading-card: clamp(1.125rem, 1.05rem + .35vw, 1.375rem);
+  /* Long text (journal articles, destination descriptions): 16 to 18 px, about 70 characters a line. */
+  --type-prose: clamp(1rem, .9375rem + .3vw, 1.125rem);
+  --reading-measure: 36em;
+  /* Never under 16 px, at any text size: iPhones zoom the page into a smaller input. */
+  --type-input: max(1rem, 16px);
   --radius-sm: .5rem;
   --radius-md: .75rem;
   --radius-lg: 1.125rem;
   --radius-xl: 1.5rem;
   --radius-card: var(--radius-lg);
+}
+
+/*
+ * Tailwind's text sizes, on the scale above, so no utility can go under the
+ * minimums: labels and badges 13 px, card and description text 15 px, body
+ * text 16 px on phones and 17 px on desktop. The larger ones are the heading scale.
+ */
+@theme {
+  --text-xs: .8125rem;
+  --text-xs--line-height: 1.45;
+  --text-sm: .9375rem;
+  --text-sm--line-height: 1.55;
+  --text-base: clamp(1rem, .9375rem + .2vw, 1.0625rem);
+  --text-base--line-height: 1.6;
+  --text-lg: clamp(1.0625rem, 1rem + .25vw, 1.1875rem);
+  --text-lg--line-height: 1.55;
+  --text-xl: var(--heading-card);
+  --text-xl--line-height: 1.3;
+  --text-2xl: var(--heading-sub);
+  --text-2xl--line-height: 1.25;
+  --text-3xl: var(--heading-lead);
+  --text-3xl--line-height: 1.2;
+  --text-4xl: var(--heading-section);
+  --text-4xl--line-height: 1.15;
+  --text-5xl: var(--heading-section);
+  --text-5xl--line-height: 1.15;
 }

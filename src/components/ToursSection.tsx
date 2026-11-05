@@ -22,7 +22,7 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
         
         {/* Header */}
         <div className="te-section-header te-section-header--stack">
-          <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[var(--brand-primary)] tracking-tight mb-4">
+          <h2 className="font-heading text-5xl font-bold text-[var(--brand-primary)] tracking-tight mb-4">
             Your Journey. Your Way.
           </h2>
           <p className="text-lg text-[var(--text-secondary)] leading-relaxed">
@@ -61,7 +61,7 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
                   </div></div>
 
                   <div className="absolute bottom-4 left-4 right-4">
-                    <span className="te-card-accent text-[10px] uppercase tracking-widest font-semibold">
+                    <span className="te-card-accent text-xs uppercase tracking-widest font-semibold">
                       {tour.category} Tour
                     </span>
                     <h3 className="te-card-title font-heading text-2xl font-bold">{tour.title}</h3>
@@ -70,7 +70,7 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
 
                 {/* Body Content */}
                 <div className="p-5 sm:p-6 space-y-4">
-                  <p className="te-card-accent text-xs font-serif italic">
+                  <p className="te-card-accent text-sm font-heading">
                     “{tour.subtitle}”
                   </p>
 
@@ -81,14 +81,14 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
                   {/* Route Places Flow */}
                   <div>
                     <div className="te-route-heading flex items-center justify-between gap-3 mb-2">
-                      <span className="te-card-meta text-[11px] font-bold uppercase tracking-wider block">
+                      <span className="te-card-meta text-xs font-bold uppercase tracking-wider block">
                         Journey Route:
                       </span>
                       {onViewRoute && tour.stops.length > 0 && (
                         <button
                           type="button"
                           onClick={() => onViewRoute(tour)}
-                          className="te-button te-button--text-link te-button--sm text-[11px] font-bold gap-1 shrink-0"
+                          className="te-button te-button--text-link te-button--sm font-bold gap-1 shrink-0"
                         >
                           <MapIcon className="w-3.5 h-3.5" aria-hidden="true" />
                           <span>View route on map</span>

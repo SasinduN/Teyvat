@@ -131,7 +131,7 @@ const UploadButton: React.FC<{
           />
         </div>
       )}
-      {!enabled && <p className="text-[11px] font-light text-[var(--text-primary)]/50">{UPLOADS_OFF}</p>}
+      {!enabled && <p className="text-xs text-[var(--text-primary)]/50">{UPLOADS_OFF}</p>}
       {error && <ErrorNote>{error}</ErrorNote>}
     </div>
   );
@@ -179,9 +179,9 @@ export const MediaPickerModal: React.FC<{
           {library.isError ? (
             <ErrorNote>{describeError(library.error)}</ErrorNote>
           ) : library.isPending ? (
-            <p className="text-xs text-[var(--text-primary)]/60">Loading the library…</p>
+            <p className="text-sm text-[var(--text-primary)]/60">Loading the library…</p>
           ) : shown.length === 0 ? (
-            <p className="text-xs text-[var(--text-primary)]/60">Nothing uploaded yet.</p>
+            <p className="text-sm text-[var(--text-primary)]/60">Nothing uploaded yet.</p>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
               {shown.map((item) => (
@@ -195,7 +195,7 @@ export const MediaPickerModal: React.FC<{
                   className="group overflow-hidden rounded-xl border border-[var(--border-strong)]/70 bg-[var(--surface)] text-left transition-colors hover:border-[var(--inverse-raised)]"
                 >
                   <ImagePreview url={item.url} className="h-24 w-full rounded-none border-0" />
-                  <div className="truncate px-2 py-1.5 text-[10px] text-[var(--text-primary)]/55">{item.folder}</div>
+                  <div className="truncate px-2 py-1.5 text-xs text-[var(--text-primary)]/55">{item.folder}</div>
                 </button>
               ))}
             </div>

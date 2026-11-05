@@ -22,9 +22,10 @@ import { escapeHtml } from '../../../shared/html';
 import type { SiteConfig } from '../env';
 import { pool } from '../db';
 import { describeForLog } from '../http';
-import { injectHead, renderHead, type PageMeta } from './head';
+import { injectHead, injectTextSize, renderHead, type PageMeta } from './head';
 import { fullSrcSet } from '../../../shared/photo-assets';
 import { photoResolver } from '../../../shared/public-photos';
+import { DEFAULT_TEXT_SIZE, isTextSize, type TextSize } from '../../../shared/text-size';
 import { loadPhotoSets } from '../media/photo-sets';
 
 type Resolved = { redirect: string } | { status: 200 | 404; meta: PageMeta; noindexHeader?: boolean };
@@ -167,6 +168,12 @@ export async function resolvePage(path: string, query: URLSearchParams, features
   }
 
   return notFound();
+}
+
+/** The admin's text size (Settings). Read per request, like everything here. */
+async function currentTextSize(): Promise<TextSize> {
+  const { rows } = await pool.query<{ text_size: number }>('select text_size from public.site_settings where id');
+  return isTextSize(rows[0]?.text_size) ? rows[0].text_size : DEFAULT_TEXT_SIZE;
 }
 
 /** Where absolute URLs point: PUBLIC_SITE_URL, or this request's own origin. */
@@ -337,8 +344,10 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
 
     const origin = originOf(req, site);
     let resolved: Resolved;
+    let textSize: TextSize = DEFAULT_TEXT_SIZE;
     try {
       resolved = await resolvePage(path, new URLSearchParams(search), features);
+      if (!('redirect' in resolved)) textSize = await currentTextSize();
     } catch (error) {
       // The database is down: still send the shell (it shows its own error),
       // with the default head, and a status that says try again.
@@ -366,7 +375,7 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
       .status(resolved.status)
       .set('Cache-Control', 'no-cache')
       .type('html')
-      .send(injectHead(template, head));
+      .send(injectTextSize(injectHead(template, head), textSize));
   });
 
   return router;

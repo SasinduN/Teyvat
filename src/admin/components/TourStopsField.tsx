@@ -95,7 +95,7 @@ export const TourStopsField: React.FC<{
           >
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--brand-secondary)] text-[11px] font-bold text-white">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--brand-secondary)] text-xs font-bold text-white">
                   {i + 1}
                 </span>
                 <div className="flex rounded-lg border border-[var(--border-strong)] bg-[var(--surface)] p-0.5" role="group" aria-label={`Stop ${i + 1} type`}>
@@ -106,7 +106,7 @@ export const TourStopsField: React.FC<{
                       aria-pressed={stop.kind === kind}
                       onClick={() => switchKind(i, kind)}
                       className={cn(
-                        'rounded-md px-2.5 py-1 text-[11px] font-bold transition-colors',
+                        'rounded-md px-2.5 py-1 text-xs font-bold transition-colors',
                         stop.kind === kind ? 'bg-[var(--brand-secondary)] text-white' : 'text-[var(--text-primary)]/60 hover:text-[var(--brand-primary)]'
                       )}
                     >
@@ -194,7 +194,7 @@ export const TourStopsField: React.FC<{
                 {showPreview ? (
                   <StopPreview lat={lat} lng={lng} />
                 ) : (
-                  <p className="text-[11px] text-[var(--text-primary)]/50">
+                  <p className="text-xs text-[var(--text-primary)]/50">
                     A map preview appears once both coordinates are inside Sri Lanka.
                   </p>
                 )}
@@ -223,10 +223,10 @@ const Labelled: React.FC<{ label: string; error: string | null; children: React.
   children
 }) => (
   <div className="space-y-1">
-    <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--text-primary)]/50">{label}</span>
+    <span className="block text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]/50">{label}</span>
     {children}
     {error && (
-      <p className="flex items-start gap-1.5 text-[11px] font-medium text-[var(--danger)]">
+      <p className="flex items-start gap-1.5 text-xs font-medium text-[var(--danger)]">
         <CircleAlert className="mt-px h-3.5 w-3.5 shrink-0" />
         {error}
       </p>

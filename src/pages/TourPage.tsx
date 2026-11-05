@@ -49,7 +49,7 @@ function TourView({ t }: { t: TourPackage }) {
           <div className="space-y-14 lg:col-span-8">
             <div className="space-y-4">
               <h2 className="font-heading text-3xl font-bold text-[var(--brand-primary)]">Tour Overview</h2>
-              <p className="text-base font-light leading-relaxed text-[var(--text-primary)]/85 sm:text-lg">{t.fullDesc}</p>
+              <p className="te-prose text-[var(--text-primary)]/85">{t.fullDesc}</p>
             </div>
 
             {t.highlights.length > 0 && (
@@ -105,12 +105,12 @@ function TourView({ t }: { t: TourPackage }) {
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="font-heading text-lg font-bold text-[var(--brand-primary)]">{day.title}</h3>
                           {day.location && (
-                            <span className="rounded-full bg-[var(--brand-secondary)]/10 px-2 py-0.5 text-[10px] font-semibold text-[var(--brand-primary)]">
+                            <span className="rounded-full bg-[var(--brand-secondary)]/10 px-2 py-0.5 text-xs font-semibold text-[var(--brand-primary)]">
                               {day.location}
                             </span>
                           )}
                         </div>
-                        <p className="mt-1 text-sm font-light leading-relaxed text-[var(--text-primary)]/80">{day.description}</p>
+                        <p className="mt-1 text-sm leading-relaxed text-[var(--text-primary)]/80">{day.description}</p>
                       </div>
                     </li>
                   ))}

@@ -37,7 +37,7 @@ this file or anywhere else in git.
 | P | After the import: maps and photos (#37, #41, #42, #44); Book Your Ride (#38, #39, #45); the WhatsApp button (#40) | done |
 | A | Admin login: show/hide password, attempts left, a live lock countdown | done (#46) |
 | M | Photos in `public/assets/` move to R2, with `srcset` (A); the files go once the audit is clean (B) | A in review; B after the production run |
-| T | Typography: DM Sans self-hosted, one rem scale, the admin's text size (0019) | open (#47) |
+| T | Typography: DM Sans self-hosted, one rem scale, the admin's text size (0019) | done (#47) |
 
 Update the Status column when a phase lands.
 
@@ -75,6 +75,34 @@ Update the Status column when a phase lands.
     importing `'zod'` directly brings back an `eval` probe the CSP reports.
   - A new external host needs asking about first (Standing rules), then adding
     to the CSP; `server/test/browser-csp.test.ts` fails until it is.
+- **Type** (`src/styles/tokens.css`, `fonts.css`):
+  - DM Sans, self-hosted through `@fontsource/dm-sans`: Latin only, weights
+    400, 500, 600 and 700, no italics. Only 400 is preloaded (`index.html`). A
+    new weight is a new `@font-face`; there is no font CDN.
+  - Tailwind's `text-*` sizes are redefined in `@theme` (`tokens.css`), so
+    `text-xs` is 13 px (labels, badges), `text-sm` 15 px (cards, descriptions),
+    `text-base` 16 to 17 px, and `text-xl` and up are the `--heading-*`
+    `clamp()` scale. No `text-[11px]`, no `font-size` in px:
+    `browser-typography` greps for both.
+  - Long text is `.te-prose` (16 to 18 px, about 70 characters a line).
+  - Inputs are `--type-input`, never under 16 px at any text size: iPhones
+    zoom into smaller ones.
+- **Text size** (Admin → Settings, `site_settings.text_size`, `shared/text-size.ts`):
+  - 100, 110 or 120. Express writes `data-text-size` on `<html>` in every
+    page (`injectTextSize`), and a rule in `index.css` sets the root font-size.
+    An attribute, not an inline style: no CSP change, no flash.
+  - Sizes in rem follow it; so must anything holding text. A fixed height in px
+    around text clips at 120%: use `min-h-[…rem]`.
+  - The header's links are a container query in rem (`.te-nav-links`), so they
+    hand over to the menu button when they don't fit, at any size: the full
+    header from about 1100 px at 100% and 1280 px at 110%, with compact
+    buttons. Links added to the header can need a higher threshold:
+    `browser-text-size` measures it.
+  - Body text on phones is never under 16 px: the smallest setting is 100%.
+  - `browser-text-size` audits every page type at 120%, three widths, both
+    themes (`text-audit.ts`): sideways overflow, clipping, overlaps, cut-off
+    placeholders. It measures text rectangles, because `body { overflow-x:
+    hidden }` hides the overflow a scroll check would see.
 - **Glass and buttons** (#12 parity, `docs/reviews/pr12-parity.md`):
   - Glass is `src/styles/glass.css`: `.glass` plus `--inverse`, `--strong`,
     `--subtle`, `--round`, `--3d` (edge light and the same-origin grain
@@ -125,7 +153,7 @@ Update the Status column when a phase lands.
   - The honeypot in `InquiryModal` must stay its form's first child (Tailwind
     v4's `space-y-*` puts a margin on every child but the last).
   - `server/test/browser-inquiry.test.ts` compares its render against
-    `d106be5` (the focus-trap PR).
+    `ca26709` (typography).
 - **Newsletter** (`server/src/routes/newsletter.ts`): the Footer form stores
   addresses; nothing sends them yet. Unsubscribing is a POST from the
   `/unsubscribe?token=` page (never a GET) and deletes the row. Its honeypot
@@ -304,8 +332,7 @@ Agreed, not started. Each one gets its own plan first.
   `'unsafe-inline'`, no new external hosts without asking. Already allowed, and
   not to grow: `style-src` has `'unsafe-inline'` only for the `<style>` the
   admin's toasts (Sonner) inject, and unpkg only for Leaflet's stylesheet;
-  `img-src` has Unsplash, R2, the map tile hosts and Wikimedia. The Google
-  Fonts hosts still on `main` go with #47.
+  `img-src` has Unsplash, R2, the map tile hosts and Wikimedia.
 - **Photos come from R2 via the database, never committed to the repo.** The
   WebP files still in `public/assets/` (`shared/optimized-photos.json`) predate
   this rule and are on their way out: `npm run images:migrate-assets`, then
@@ -313,8 +340,7 @@ Agreed, not started. Each one gets its own plan first.
 - **Screenshots are never committed** (`docs/screenshots/` is git-ignored).
 - **AA contrast in both themes. One `h1` per page.**
 - **DM Sans everywhere (self-hosted). Body text at least 16 px on phones. The
-  admin's text size options are 100, 110 and 120%.** #47 brings the code into
-  line with all three.
+  admin's text size options are 100, 110 and 120%.**
 - **The brand is undecided.** The code says "Travel Eye". Don't rename it, and
   don't add new "Travel Eye" strings.
 - **`BOOKINGS_ENABLED` stays off in production** until there's a privacy policy

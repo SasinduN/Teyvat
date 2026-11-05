@@ -40,7 +40,7 @@ export const Button: React.FC<ButtonProps> = ({
     disabled={disabled || loading}
     className={cn(
       'inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5',
-      'text-xs font-bold transition-colors',
+      'text-sm font-bold transition-colors',
       'disabled:cursor-not-allowed disabled:opacity-60',
       'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1',
       VARIANTS[variant],
@@ -59,7 +59,7 @@ export const Button: React.FC<ButtonProps> = ({
 /* ------------------------------------------------------------------- input */
 
 const CONTROL_BASE =
-  'w-full rounded-xl border border-[var(--border-strong)]/70 bg-[var(--surface)] px-3.5 py-2.5 text-xs font-medium ' +
+  'w-full rounded-xl border border-[var(--border-strong)]/70 bg-[var(--surface)] px-3.5 py-2.5 text-base font-medium ' +
   'text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/35 transition-colors ' +
   'focus:border-[var(--inverse-raised)] focus:outline-none focus:ring-1 focus:ring-[var(--inverse-raised)] ' +
   'disabled:bg-[var(--background-secondary)] disabled:text-[var(--text-primary)]/50';
@@ -155,7 +155,7 @@ export const FieldLabel: React.FC<{
 }> = ({ htmlFor, children, required }) => (
   <label
     htmlFor={htmlFor}
-    className="block text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]"
+    className="block text-xs font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]"
   >
     {children}
     {required && <span className="ml-1 text-[var(--danger)]">*</span>}
@@ -163,7 +163,7 @@ export const FieldLabel: React.FC<{
 );
 
 export const FieldHelp: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <p className="text-[11px] font-light leading-relaxed text-[var(--text-primary)]/55">{children}</p>
+  <p className="text-xs leading-relaxed text-[var(--text-primary)]/55">{children}</p>
 );
 
 /* -------------------------------------------------------------------- card */
@@ -200,7 +200,7 @@ export const Badge: React.FC<{ tone?: BadgeTone; children: React.ReactNode }> = 
 }) => (
   <span
     className={cn(
-      'inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider',
+      'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wider',
       TONES[tone]
     )}
   >
@@ -213,12 +213,12 @@ export const Badge: React.FC<{ tone?: BadgeTone; children: React.ReactNode }> = 
 export const Spinner: React.FC<{ label?: string }> = ({ label = 'Loading' }) => (
   <div className="flex items-center justify-center gap-2 py-16 text-[var(--brand-primary)]">
     <LoaderCircle className="h-4 w-4 animate-spin" />
-    <span className="text-xs font-bold uppercase tracking-[0.15em]">{label}</span>
+    <span className="text-sm font-bold uppercase tracking-[0.15em]">{label}</span>
   </div>
 );
 
 export const ErrorNote: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/8 px-4 py-3 text-xs font-medium text-[var(--danger)]">
+  <div className="rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/8 px-4 py-3 text-base font-medium text-[var(--danger)]">
     {children}
   </div>
 );
@@ -234,7 +234,7 @@ export const EmptyState: React.FC<{
     </div>
     <h3 className="font-heading text-lg font-bold text-[var(--brand-primary)]">{title}</h3>
     {children && (
-      <div className="max-w-sm text-xs font-light leading-relaxed text-[var(--text-primary)]/60">
+      <div className="max-w-sm text-sm leading-relaxed text-[var(--text-primary)]/60">
         {children}
       </div>
     )}
@@ -252,7 +252,7 @@ export const PageHeader: React.FC<{
     <div>
       <h1 className="font-heading text-2xl font-bold tracking-tight text-[var(--brand-primary)]">{title}</h1>
       {description && (
-        <p className="mt-1 max-w-2xl text-xs font-light leading-relaxed text-[var(--text-primary)]/60">
+        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[var(--text-primary)]/60">
           {description}
         </p>
       )}

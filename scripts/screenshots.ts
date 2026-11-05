@@ -4,6 +4,7 @@
  *   npm run screenshots -- --base origin/main
  *   npm run screenshots -- --base origin/main --pages /,/about --dark
  *   npm run screenshots -- --base origin/main --pages / --admin --dark
+ *   npm run screenshots -- --base origin/main --pages / --admin --text-size 120
  *
  * Builds `--base` in a throwaway git worktree and the working tree as it is,
  * serves each from its own scratch database on the local test server, and
@@ -13,6 +14,11 @@
  * (git-ignored: never committed). It then compares each pair and writes
  * `summary.md` there: identical, or how much differs and where. A PR lists
  * the pages that changed; the author drags those pairs into it on GitHub.
+ *
+ * `--text-size` sets the admin's text size in the "after" site only.
+ *
+ * For a short run (the laptop's memory, a time limit): `--only-dark` skips the
+ * light theme and `--no-states` the named states, so a set can go in batches.
  *
  * `--admin` adds the admin: the login page (empty, a password typed and
  * shown, after two wrong tries, locked), then (signed in as a throwaway
@@ -63,7 +69,10 @@ const { values } = parseArgs({
     base: { type: 'string', default: 'origin/main' },
     pages: { type: 'string' },
     dark: { type: 'boolean', default: false },
+    'only-dark': { type: 'boolean', default: false },
+    'no-states': { type: 'boolean', default: false },
     admin: { type: 'boolean', default: false },
+    'text-size': { type: 'string' },
     out: { type: 'string' }
   },
   strict: true
@@ -135,6 +144,15 @@ async function prepare(site: Site): Promise<void> {
   console.log(`\n[${site.label}] build`);
   run('npm', ['run', 'build'], site.dir);
   run('npx', ['tsx', 'scripts/migrate.ts'], site.dir, { ...process.env, DATABASE_URL: db });
+  if (site.label === 'after' && values['text-size']) {
+    const client = new Client({ connectionString: db });
+    await client.connect();
+    try {
+      await client.query('update public.site_settings set text_size = $1 where id', [Number(values['text-size'])]);
+    } finally {
+      await client.end();
+    }
+  }
   if (values.admin) {
     const client = new Client({ connectionString: db });
     await client.connect();
@@ -183,7 +201,7 @@ async function waitFor(page: Page, expression: string, ms = 15_000): Promise<boo
   return false;
 }
 
-async function open(chrome: Chrome, url: string, viewport: (typeof VIEWPORTS)[keyof typeof VIEWPORTS], dark: boolean): Promise<Page> {
+async function open(chrome: Chrome, url: string, viewport: { width: number; height: number; mobile: boolean }, dark: boolean): Promise<Page> {
   const page = await chrome.newPage();
   await page.send('Emulation.setDeviceMetricsOverride', { ...viewport, deviceScaleFactor: 1 });
   await page.send('Emulation.setEmulatedMedia', {
@@ -202,7 +220,7 @@ async function open(chrome: Chrome, url: string, viewport: (typeof VIEWPORTS)[ke
 }
 
 /** An admin page (no public route marker): loaded, then still. */
-async function openAdmin(chrome: Chrome, url: string, viewport: (typeof VIEWPORTS)[keyof typeof VIEWPORTS], dark: boolean): Promise<Page> {
+async function openAdmin(chrome: Chrome, url: string, viewport: { width: number; height: number; mobile: boolean }, dark: boolean): Promise<Page> {
   const page = await chrome.newPage();
   await page.send('Emulation.setDeviceMetricsOverride', { ...viewport, deviceScaleFactor: 1 });
   await page.send('Emulation.setEmulatedMedia', {
@@ -307,6 +325,23 @@ async function shoot(page: Page, file: string, fullPage: boolean): Promise<void>
   writeFileSync(file, Buffer.from(data, 'base64'));
 }
 
+/** One element only, at full size, however far down the page it is. */
+async function shootElement(page: Page, file: string, selector: string): Promise<void> {
+  const clip = await page.evaluate<{ x: number; y: number; width: number; height: number; scale: number }>(`(() => {
+    // The fixed header and buttons would be painted over it, wherever they sit: only this element shows.
+    const element = document.querySelector(${JSON.stringify(selector)});
+    document.body.style.visibility = 'hidden';
+    element.style.visibility = 'visible';
+    const r = element.getBoundingClientRect();
+    return { x: r.left + scrollX, y: r.top + scrollY, width: r.width, height: r.height, scale: 1 };
+  })()`);
+  const { data } = (await page.send('Page.captureScreenshot', { format: 'jpeg', quality: 60, captureBeyondViewport: true, clip })) as { data: string };
+  writeFileSync(file, Buffer.from(data, 'base64'));
+}
+
+/** A tab is closed once its shot is taken: a full run opens a hundred or more, and this laptop runs out of memory. */
+const closePage = (page: Page) => page.send('Page.close').catch(() => undefined);
+
 /**
  * Each before/after pair: identical (the same bytes: the same pixels encode
  * the same), or the share of pixels differing by more than 25 levels in any
@@ -381,7 +416,8 @@ async function main(): Promise<void> {
       throw new Error(`"${page}" isn't a site path like /about. In Git Bash, prefix the command with MSYS_NO_PATHCONV=1.`);
     }
   }
-  const themes = values.dark ? [false, true] : [false];
+  const themes = values['only-dark'] ? [true] : values.dark ? [false, true] : [false];
+  const states = !values['no-states'];
 
   const worktree = mkdtempSync(join(tmpdir(), 'teyvat-shots-'));
   rmSync(worktree, { recursive: true });
@@ -405,18 +441,39 @@ async function main(): Promise<void> {
             const page = await open(chrome, site.url + path, viewport, dark);
             await settle(page);
             await shoot(page, join(out, `${slug(path)}-${suffix}`), true);
+            await closePage(page);
             console.log(`  ${slug(path)}-${suffix}`);
           }
-          // Named states: the phone menu, and the enquiry form on a tour.
-          if (viewport.mobile) {
-            const menu = await open(chrome, site.url + '/', viewport, dark);
-            await menu.evaluate(`document.querySelector('header button[aria-label*="menu" i]')?.click(), true`);
-            await menu.evaluate(QUIET);
-            await shoot(menu, join(out, `state-menu-${suffix}`), false);
+          if (states) {
+            // The footer on its own, from a page whose footer every page shares.
+            const foot = await open(chrome, site.url + '/about', viewport, dark);
+            await settle(foot);
+            await foot.evaluate(`document.querySelector('footer').scrollIntoView({ block: 'end', behavior: 'instant' }), true`);
+            await foot.evaluate(QUIET);
+            await shoot(foot, join(out, `state-footer-${suffix}`), false);
+            // On a phone the footer is taller than the screen: the whole of it, cropped from the page.
+            if (viewport.mobile) await shootElement(foot, join(out, `state-footer-crop-${suffix}`), 'footer');
+            await closePage(foot);
+            // Named states: the phone menu, and the enquiry form on a tour.
+            if (viewport.mobile) {
+              const menu = await open(chrome, site.url + '/', viewport, dark);
+              await menu.evaluate(`document.querySelector('header button[aria-label*="menu" i]')?.click(), true`);
+              await menu.evaluate(QUIET);
+              await shoot(menu, join(out, `state-menu-${suffix}`), false);
+              await closePage(menu);
+            } else {
+              // The header at the narrowest width that keeps its links.
+              const narrow = await open(chrome, site.url + '/about', { width: 1100, height: 700, mobile: false }, dark);
+              await narrow.evaluate(LOADED);
+              await shootElement(narrow, join(out, `state-header-1100${dark ? '-dark' : ''}-${site.label}.jpg`), 'header');
+              await closePage(narrow);
+            }
           }
           if (values.admin) {
             // Signed out first: the last pass signed in, and the login page sends a session on to /admin.
-            await (await chrome.newPage()).send('Network.clearBrowserCookies');
+            const blank = await chrome.newPage();
+            await blank.send('Network.clearBrowserCookies');
+            await closePage(blank);
             const login = await openAdmin(chrome, `${site.url}/admin/login`, viewport, dark);
             await shoot(login, join(out, `admin-login-${suffix}`), true);
             // Its states: a password typed and shown (where there's a toggle), two wrong tries, locked.
@@ -427,12 +484,15 @@ async function main(): Promise<void> {
             await typed.evaluate(`document.querySelector('button[aria-controls="admin-password"]')?.click(), true`);
             await still(typed);
             await shoot(typed, join(out, `admin-login-visible-${suffix}`), true);
+            await closePage(typed);
             const failed = await openAdmin(chrome, `${site.url}/admin/login`, viewport, dark);
             await tryLogin(failed, 'someone@example.test', 2);
             await shoot(failed, join(out, `admin-login-failed-${suffix}`), true);
+            await closePage(failed);
             const locked = await openAdmin(chrome, `${site.url}/admin/login`, viewport, dark);
             await tryLogin(locked, 'locked@example.test', 6);
             await shoot(locked, join(out, `admin-login-locked-${suffix}`), true);
+            await closePage(locked);
             // Otherwise the next pass's tries would reach the per-IP limit (20).
             await clearLoginAttempts(site);
             const status = await login.evaluate<number>(`fetch('/api/auth/login', {
@@ -440,45 +500,52 @@ async function main(): Promise<void> {
               body: JSON.stringify(${JSON.stringify(SHOTS_ADMIN)})
             }).then((r) => r.status)`);
             if (status !== 200) throw new Error(`[${site.label}] admin sign-in failed (${status})`);
+            await closePage(login);
             for (const path of ADMIN_PAGES) {
               const page = await openAdmin(chrome, site.url + path, viewport, dark);
               await shoot(page, join(out, `${slug(path)}-${suffix}`), true);
+              await closePage(page);
               console.log(`  ${slug(path)}-${suffix}`);
             }
           }
-          // The map with a place picked from Quick Jump (its second place), the map in view.
-          const map = await open(chrome, `${site.url}/explore`, viewport, dark);
-          await map.evaluate(`document.getElementById('explore-map')?.scrollIntoView({ block: 'start' }), true`);
-          await waitFor(map, `document.querySelector('#explore-map .leaflet-marker-icon')`, 10_000);
-          await map.evaluate(`document.querySelectorAll('#explore-map [role=group] button')[1]?.click(), true`);
-          await map.evaluate(LOADED);
-          await map.evaluate(QUIET);
-          // The map and its side card, just under the header.
-          await map.evaluate(`(() => { const box = document.querySelector('#explore-map .leaflet-container')?.closest('.grid'); if (box) window.scrollTo(0, box.getBoundingClientRect().top + scrollY - 100); return true; })()`);
-          await map.evaluate(QUIET);
-          await shoot(map, join(out, `state-map-${suffix}`), false);
-          // The map's first view (nothing picked), then the category chips scrolled under the header.
-          const first = await open(chrome, `${site.url}/explore`, viewport, dark);
-          await first.evaluate(`document.getElementById('explore-map')?.scrollIntoView({ block: 'start' }), true`);
-          await waitFor(first, `document.querySelector('#explore-map .leaflet-marker-icon')`, 10_000);
-          await first.evaluate(LOADED);
-          await first.evaluate(`(() => { const box = document.querySelector('#explore-map .leaflet-container')?.closest('.grid'); if (box) window.scrollTo(0, box.getBoundingClientRect().top + scrollY - 100); return true; })()`);
-          await first.evaluate(QUIET);
-          await shoot(first, join(out, `state-map-view-${suffix}`), false);
-          await first.evaluate(`(() => {
-            const header = document.querySelector('header')?.getBoundingClientRect();
-            const chip = document.querySelector('#explore-map [aria-pressed]')?.getBoundingClientRect();
-            if (header && chip) window.scrollTo(0, chip.top + scrollY - (header.height - chip.height) / 2);
-            return true;
-          })()`);
-          await first.evaluate(QUIET);
-          await shoot(first, join(out, `state-header-${suffix}`), false);
-          const tour = await open(chrome, `${site.url}/tours/island-in-7-days`, viewport, dark);
-          await tour.evaluate(`[...document.querySelectorAll('main button')].find((b) => /enquire|inquire/i.test(b.textContent))?.click(), true`);
-          await waitFor(tour, `document.querySelector('[role=dialog] form, .fixed.inset-0 form')`, 5_000);
-          await tour.evaluate(LOADED);
-          await tour.evaluate(QUIET);
-          await shoot(tour, join(out, `state-enquiry-${suffix}`), false);
+          if (states) {
+            // The map with a place picked from Quick Jump (its second place), the map in view.
+            const map = await open(chrome, `${site.url}/explore`, viewport, dark);
+            await map.evaluate(`document.getElementById('explore-map')?.scrollIntoView({ block: 'start' }), true`);
+            await waitFor(map, `document.querySelector('#explore-map .leaflet-marker-icon')`, 10_000);
+            await map.evaluate(`document.querySelectorAll('#explore-map [role=group] button')[1]?.click(), true`);
+            await map.evaluate(LOADED);
+            await map.evaluate(QUIET);
+            // The map and its side card, just under the header.
+            await map.evaluate(`(() => { const box = document.querySelector('#explore-map .leaflet-container')?.closest('.grid'); if (box) window.scrollTo(0, box.getBoundingClientRect().top + scrollY - 100); return true; })()`);
+            await map.evaluate(QUIET);
+            await shoot(map, join(out, `state-map-${suffix}`), false);
+            await closePage(map);
+            // The map's first view (nothing picked), then the category chips scrolled under the header.
+            const first = await open(chrome, `${site.url}/explore`, viewport, dark);
+            await first.evaluate(`document.getElementById('explore-map')?.scrollIntoView({ block: 'start' }), true`);
+            await waitFor(first, `document.querySelector('#explore-map .leaflet-marker-icon')`, 10_000);
+            await first.evaluate(LOADED);
+            await first.evaluate(`(() => { const box = document.querySelector('#explore-map .leaflet-container')?.closest('.grid'); if (box) window.scrollTo(0, box.getBoundingClientRect().top + scrollY - 100); return true; })()`);
+            await first.evaluate(QUIET);
+            await shoot(first, join(out, `state-map-view-${suffix}`), false);
+            await first.evaluate(`(() => {
+              const header = document.querySelector('header')?.getBoundingClientRect();
+              const chip = document.querySelector('#explore-map [aria-pressed]')?.getBoundingClientRect();
+              if (header && chip) window.scrollTo(0, chip.top + scrollY - (header.height - chip.height) / 2);
+              return true;
+            })()`);
+            await first.evaluate(QUIET);
+            await shoot(first, join(out, `state-header-${suffix}`), false);
+            await closePage(first);
+            const tour = await open(chrome, `${site.url}/tours/island-in-7-days`, viewport, dark);
+            await tour.evaluate(`[...document.querySelectorAll('main button')].find((b) => /enquire|inquire/i.test(b.textContent))?.click(), true`);
+            await waitFor(tour, `document.querySelector('[role=dialog] form, .fixed.inset-0 form')`, 5_000);
+            await tour.evaluate(LOADED);
+            await tour.evaluate(QUIET);
+            await shoot(tour, join(out, `state-enquiry-${suffix}`), false);
+            await closePage(tour);
+          }
         }
       }
     }

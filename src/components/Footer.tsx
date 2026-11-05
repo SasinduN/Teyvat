@@ -57,12 +57,12 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-12 pb-16 border-b border-white/10">
           
           {/* Brand Info (4 cols) */}
-          <div className="md:col-span-4 space-y-5">
+          <div className="md:col-span-6 xl:col-span-4 space-y-5">
             <Logo variant="light" size="lg" />
-            <p className="font-heading italic text-lg text-[var(--accent)]">
+            <p className="font-heading text-lg text-[var(--accent)]">
               “See Sri Lanka Through a Different Eye.”
             </p>
-            <p className="text-xs text-white/70 leading-relaxed font-light">
+            <p className="text-sm text-white/70 leading-relaxed">
               Travel Eye is Sri Lanka’s premier travel discovery and experience platform. Dedicated to showcasing the island’s authentic heritage, wild landscapes, and luxury sanctuaries.
             </p>
 
@@ -84,11 +84,11 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Navigation Links (2 cols) */}
-          <div className="md:col-span-2 space-y-4">
+          <div className="md:col-span-6 xl:col-span-2 space-y-4">
             <h2 className="text-xs font-bold uppercase tracking-widest text-[var(--accent)]">
               Navigation
             </h2>
-            <ul className="space-y-2.5 text-xs text-white/80 font-medium">
+            <ul className="space-y-2.5 text-sm text-white/80 font-medium">
               {links.map((link) => (
                 <li key={link.to}>
                   <SiteLink
@@ -103,11 +103,11 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Contact Details (3 cols) */}
-          <div className="md:col-span-3 space-y-4">
+          <div className="md:col-span-6 xl:col-span-3 space-y-4">
             <h2 className="text-xs font-bold uppercase tracking-widest text-[var(--accent)]">
               Contact Travel Eye
             </h2>
-            <ul className="space-y-3 text-xs text-white/80">
+            <ul className="space-y-3 text-sm text-white/80">
               <li className="flex items-start space-x-3">
                 <MapPin className="w-4 h-4 text-[var(--accent)] shrink-0 mt-0.5" />
                 <span>{settings.postalAddress}</span>
@@ -126,16 +126,16 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Newsletter (3 cols) */}
-          <div className="md:col-span-3 space-y-4">
+          <div className="md:col-span-6 xl:col-span-3 space-y-4">
             <h2 className="text-xs font-bold uppercase tracking-widest text-[var(--accent)]">
               Travel Eye Dispatch
             </h2>
-            <p className="text-xs text-white/70 font-light">
+            <p className="text-sm text-white/70">
               Get secret island guides, travel inspiration, and seasonal offers delivered to your inbox.
             </p>
 
             {subscribed ? (
-              <div className="p-3 bg-[var(--inverse-raised)] rounded-2xl border border-[var(--brand-secondary)] text-xs text-[var(--accent)] flex items-center space-x-2">
+              <div className="p-3 bg-[var(--inverse-raised)] rounded-2xl border border-[var(--brand-secondary)] text-sm text-[var(--accent)] flex items-center space-x-2">
                 <CheckCircle2 className="w-4 h-4 text-[var(--accent)]" />
                 <span>Welcome to Travel Eye Dispatch!</span>
               </div>
@@ -152,25 +152,25 @@ export const Footer: React.FC = () => {
                   type="email"
                   required
                   aria-label="Email address"
-                  placeholder="Enter your email address"
+                  placeholder="Your email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/15 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[var(--accent)]"
+                  className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/15 text-base text-white placeholder-white/40 focus:outline-none focus:border-[var(--accent)]"
                 />
                 <button
                   type="submit"
                   disabled={sending}
-                  className="te-button te-button--primary w-full py-3 font-bold text-xs"
+                  className="te-button te-button--primary w-full py-3 font-bold"
                 >
                   <span>{sending ? 'Subscribing…' : 'Subscribe'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
                 {error && (
-                  <p role="alert" className="text-[11px] text-[var(--danger-on-inverse)]">
+                  <p role="alert" className="text-xs text-[var(--danger-on-inverse)]">
                     {error}
                   </p>
                 )}
-                <p className="text-[11px] leading-relaxed text-white/80" data-newsletter-consent>
+                <p className="text-sm leading-relaxed text-white/80" data-newsletter-consent>
                   By subscribing you agree to receive occasional emails from us. You can unsubscribe at any time
                   from the link in every email. See our{' '}
                   <a href={settings.privacyUrl} className="underline underline-offset-2 hover:text-white">

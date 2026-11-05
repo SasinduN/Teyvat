@@ -10,9 +10,11 @@ import {
   ItineraryField,
   MultiSelectField,
   StringListField,
+  TextSizeField,
   ToggleField
 } from '@/admin/components/fields';
 import { cn } from '@/utils/cn';
+import { DEFAULT_TEXT_SIZE } from '@shared/text-size';
 
 export type FormValues = Record<string, unknown>;
 
@@ -67,8 +69,8 @@ export const RecordForm: React.FC<RecordFormProps> = ({
           key={field.name}
           className={cn('space-y-2', (field.span ?? 1) === 2 && 'sm:col-span-2')}
         >
-          {/* Toggles carry their own label inside the control. */}
-          {field.type !== 'boolean' &&
+          {/* Toggles and the text size carry their own label inside the control. */}
+          {field.type !== 'boolean' && field.type !== 'textSize' &&
             (extra ? (
               <div className="flex items-center justify-between gap-3">
                 {label}
@@ -87,7 +89,7 @@ export const RecordForm: React.FC<RecordFormProps> = ({
           />
 
           {message && (
-            <p className="flex items-start gap-1.5 text-[11px] font-medium text-[var(--danger)]">
+            <p className="flex items-start gap-1.5 text-xs font-medium text-[var(--danger)]">
               <CircleAlert className="mt-px h-3.5 w-3.5 shrink-0" />
               {message}
             </p>
@@ -277,7 +279,7 @@ function renderControl(
           type="url"
           inputMode="url"
           spellCheck={false}
-          placeholder="https://… (leave empty if there is none)"
+          placeholder="https://… (optional)"
           value={asString(value)}
           className={errorRing}
           onBlur={onBlur}
@@ -293,13 +295,16 @@ function renderControl(
           inputMode="tel"
           autoComplete="off"
           spellCheck={false}
-          placeholder="94771234567 (leave empty to hide the button)"
+          placeholder="94771234567 (optional)"
           value={asString(value)}
           className={errorRing}
           onBlur={onBlur}
           onChange={(e) => onChange(e.target.value)}
         />
       );
+
+    case 'textSize':
+      return <TextSizeField value={typeof value === 'number' ? value : DEFAULT_TEXT_SIZE} label={field.label} onChange={onChange} />;
 
     case 'stringList':
       return (
