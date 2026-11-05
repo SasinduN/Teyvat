@@ -28,10 +28,10 @@ export function PhotoCreditsPage() {
         subtitle={PAGE_DESCRIPTIONS.photoCredits}
       />
 
-      <section className="bg-[var(--background)] py-16 sm:py-20" data-photo-credits>
+      <section className="scroll-mt-[var(--header-height)] bg-[var(--background)] py-16 sm:py-20" data-photo-credits>
         <div className="te-container">
           {credits.length > 0 && (
-            <p className="mx-auto mb-10 max-w-2xl text-center text-[var(--text-primary)]/70" data-photo-adaptations>
+            <p className="mx-auto mb-10 max-w-2xl scroll-mt-[calc(var(--header-height)+1rem)] text-center text-[var(--text-primary)]/70" data-photo-adaptations>
               Photos may be resized, re-encoded or cropped for this site. Each keeps the licence shown here.
             </p>
           )}

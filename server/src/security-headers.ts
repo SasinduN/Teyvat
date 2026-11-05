@@ -9,8 +9,6 @@
  *                                                 scripts, no eval (the build has neither)
  *   style-src    'self' 'unsafe-inline'          our CSS, plus the <style> the admin's
  *                                                 toast library (Sonner) injects at runtime
- *                https://unpkg.com                Leaflet's stylesheet, pinned by an
- *                                                 integrity hash in index.html
  *   font-src     'self'                          our DM Sans files (src/styles/fonts.css)
  *   img-src      'self' + allowedImageOrigins()   Unsplash and our R2 bucket
  *                https://*.basemaps.cartocdn.com  the map tiles
@@ -37,9 +35,9 @@ export function contentSecurityPolicy(media: MediaConfig | null): string {
   const directives: Record<string, string[]> = {
     'default-src': ["'self'"],
     'script-src': ["'self'"],
-    'style-src': ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+    'style-src': ["'self'", "'unsafe-inline'"],
     'font-src': ["'self'"],
-    'img-src': ["'self'", ...allowedImageOrigins(media?.publicBaseUrl ?? null), MAP_TILES_SOURCE, OSM_TILES_ORIGIN, 'https://upload.wikimedia.org'],
+    'img-src': ["'self'", ...allowedImageOrigins(media?.publicBaseUrl ?? null), MAP_TILES_SOURCE, OSM_TILES_ORIGIN],
     'connect-src': ["'self'"],
     'frame-ancestors': ["'none'"],
     'base-uri': ["'self'"],

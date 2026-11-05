@@ -90,9 +90,9 @@ describe('security headers', () => {
     assert.deepEqual(directives, {
       'default-src': ["'self'"],
       'script-src': ["'self'"],
-      'style-src': ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+      'style-src': ["'self'", "'unsafe-inline'"],
       'font-src': ["'self'"],
-      'img-src': ["'self'", 'https://images.unsplash.com', BASE, 'https://basemaps.cartocdn.com', 'https://tile.openstreetmap.org', 'https://upload.wikimedia.org'],
+      'img-src': ["'self'", 'https://images.unsplash.com', BASE, 'https://basemaps.cartocdn.com', 'https://tile.openstreetmap.org'],
       'connect-src': ["'self'"],
       'frame-ancestors': ["'none'"],
       'base-uri': ["'self'"],
@@ -104,7 +104,7 @@ describe('security headers', () => {
   test('without R2, the CSP has no bucket origin', () => {
     const csp = contentSecurityPolicy(null);
     assert.ok(!csp.includes('r2.dev'));
-    assert.match(csp, /img-src 'self' https:\/\/images\.unsplash\.com https:\/\/basemaps\.cartocdn\.com https:\/\/tile\.openstreetmap\.org https:\/\/upload\.wikimedia\.org;/);
+    assert.match(csp, /img-src 'self' https:\/\/images\.unsplash\.com https:\/\/basemaps\.cartocdn\.com https:\/\/tile\.openstreetmap\.org;/);
   });
 });
 

@@ -25,7 +25,7 @@ import photographs from '../../shared/travel-photos.json';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { memoryStore } from '../src/media/store';
-import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
+import { findChrome, launchChrome, saveTheme, type Chrome, type Page } from './chrome';
 import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetAuthTables, resetContent, seedPhotoSet, type RunningApp } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
 
@@ -205,6 +205,32 @@ describe('photos at the right width, in Chrome', { skip, timeout: 8 * 60_000 }, 
       assert.match(shown.authors, /MichaelJames2468/);
       assert.match(shown.note, /resized, re-encoded or cropped/);
     });
+
+    for (const theme of ['light', 'dark'] as const) {
+      for (const width of [1280, 375]) {
+        test(`/photo-credits at ${width} px, ${theme}: the sticky header doesn't cover the sentence`, async () => {
+          await saveTheme(page, theme);
+          try {
+            await visit('/photo-credits', width);
+            await page.evaluate(`new Promise((resolve) => { const until = Date.now() + 8000; (function check() { if (document.querySelector('[data-photo-adaptations]') || Date.now() > until) resolve(true); else setTimeout(check, 50); })(); })`);
+            assert.equal(await page.evaluate<string>('document.documentElement.dataset.theme'), theme);
+            for (const target of ['[data-photo-adaptations]', '[data-photo-credits]']) {
+              const seen = await page.evaluate<{ top: number; header: number; onTop: boolean }>(`(() => {
+                document.querySelector(${JSON.stringify(target)}).scrollIntoView({ behavior: 'instant', block: 'start' });
+                const note = document.querySelector('[data-photo-adaptations]');
+                const box = note.getBoundingClientRect();
+                const top = document.elementFromPoint(box.left + box.width / 2, box.top + 2);
+                return { top: box.top, header: document.querySelector('.te-nav').getBoundingClientRect().bottom, onTop: top === note };
+              })()`);
+              assert.ok(seen.top >= seen.header, `scrolled to ${target}: the sentence at ${seen.top}, the header ends at ${seen.header}`);
+              assert.ok(seen.onTop, `scrolled to ${target}: something is over the sentence`);
+            }
+          } finally {
+            await saveTheme(page, 'light');
+          }
+        });
+      }
+    }
 
     test('a card and a hero render their srcset from R2, and load', async () => {
       await visit('/destinations/ella', 1280);

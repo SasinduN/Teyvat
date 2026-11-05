@@ -206,7 +206,7 @@ Update the Status column when a phase lands.
     (gzipped) to every page, for scroll restoration we do in
     `src/lib/ScrollRestorer.tsx`.
   - Each page is a lazy chunk. Map code is only in the Explore and tour
-    pages' chunks, and Leaflet (JS and its unpkg stylesheet) loads through
+    pages' chunks, and Leaflet (JS and its self-hosted stylesheet) loads through
     `loadLeaflet()` (`src/lib/leaflet.ts`) when a map is about to render.
   - The Explore map frames the whole island first, and each filter's
     markers after, padded clear of every overlay (measured: the Map Guide,
@@ -336,12 +336,13 @@ Agreed, not started. Each one gets its own plan first.
 - **The CSP stays strict:** self-hosted fonts and assets only, no
   `'unsafe-inline'`, no new external hosts without asking. Already allowed, and
   not to grow: `style-src` has `'unsafe-inline'` only for the `<style>` the
-  admin's toasts (Sonner) inject, and unpkg only for Leaflet's stylesheet;
-  `img-src` has Unsplash, R2, the map tile hosts and Wikimedia.
+  admin's toasts (Sonner) inject; `img-src` has Unsplash, R2 and the map tile
+  hosts.
 - **New photos go through Admin → Media (R2), never into the repo.**
   `no-committed-images` fails on any jpg, png, webp or avif under `public/`, except
   the favicon and the logo.
-- **Screenshots are never committed** (`docs/screenshots/` is git-ignored).
+- **Screenshots are never committed** (`docs/screenshots/` is git-ignored, and
+  `no-committed-images` fails if anything there is tracked).
 - **AA contrast in both themes. One `h1` per page.**
 - **DM Sans everywhere (self-hosted). Body text at least 16 px on phones. The
   admin's text size options are 100, 110 and 120%.**
