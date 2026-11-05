@@ -25,7 +25,7 @@
 | `0012_newsletter_unsubscribe.sql` | `newsletter_subscribers.unsubscribe_token` and `consented_at` |
 | `0013_wikimedia_fallback.sql` | any row still on a 0010 Wikimedia photo goes back to its seed photo (the CSP no longer allows Wikimedia; data only) |
 | `0019_site_settings_text_size.sql` | `site_settings.text_size` (100, 110 or 120; the default is 100, today's size) |
-| `0020_media_photo_sets.sql` | `media.photo_key` and `width`: one photograph at several widths, for `srcset` (`npm run images:migrate-assets`) |
+| `0020_media_photo_sets.sql` | `media.photo_key` and `width`: one photograph at several widths, for `srcset` |
 
 **Where the rules live.** There is no row-level security: every connection is
 the API's single database role. Rules are enforced in two layers:

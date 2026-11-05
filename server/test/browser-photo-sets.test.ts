@@ -5,12 +5,13 @@ import './test-db';
 /**
  * Photos in R2, in Chrome: `srcset` and `sizes` are rendered, a phone loads the
  * small file, 1920 px is only for full-width heroes (and never Jaffna's or
- * Udawalawe's), the page works before the move as well as after it, and nothing
+ * Udawalawe's), a database with no R2 rows shows what its rows store, and nothing
  * shifts as photos arrive.
  *
  * `media.url` only takes https, so the bucket is `https://r2.test`, answered
  * from `memoryStore()` by intercepting the requests, a little late as a real
- * network would be. The files are the real ones.
+ * network would be. The files are SVGs of each width's true size. Stored Unsplash
+ * photos are answered the same way, so nothing here needs the network.
  *
  * Needs `npm run build` and Chrome; skipped otherwise.
  */
@@ -20,14 +21,12 @@ import { join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { after, before, describe, test } from 'node:test';
 
-import type { PoolClient } from 'pg';
-
+import photographs from '../../shared/travel-photos.json';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
-import { migrateAssets } from '../src/media/migrate-assets';
 import { memoryStore } from '../src/media/store';
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
-import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetAuthTables, resetContent, type RunningApp } from './helpers';
+import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetAuthTables, resetContent, seedPhotoSet, type RunningApp } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
 
 const ROOT = resolve(import.meta.dirname, '..', '..');
@@ -40,12 +39,18 @@ const skip = !executable
 
 const BASE = 'https://r2.test';
 const LATE_MS = 120;
+/** The photos with a 1920 px file. Jaffna's and Udawalawe's are here on purpose: they must never be offered. */
+const HAS_FULL_WIDTH = new Set(['ella', 'sigiriya', 'galle', 'yala', 'anuradhapura', 'polonnaruwa', 'udawalawe', 'weligama', 'jaffna']);
+
+/** An image of this width, three by two, as a photo would be. */
+const imageOf = (width: number) => Buffer.from(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${Math.round((width * 2) / 3)}"><rect width="100%" height="100%" fill="#6f8a7a"/></svg>`
+);
 
 describe('photos at the right width, in Chrome', { skip, timeout: 8 * 60_000 }, () => {
   let app: RunningApp;
   let chrome: Chrome;
   let page: Page;
-  let client: PoolClient;
   const store = memoryStore();
   const media = { store, publicBaseUrl: BASE };
   /** What the page asked the bucket for. */
@@ -56,21 +61,21 @@ describe('photos at the right width, in Chrome', { skip, timeout: 8 * 60_000 }, 
     await assertConnectedToTestDatabase();
     await resetContent();
     await resetAuthTables();
-    client = await pool.connect();
     app = await listen(createApp({ media, bookings: false }));
     chrome = await launchChrome(executable!);
     page = await chrome.newPage();
     await page.send('Page.enable');
     await page.send('Network.enable');
     await page.send('Network.setCacheDisabled', { cacheDisabled: true });
-    await page.send('Fetch.enable', { patterns: [{ urlPattern: `${BASE}/*` }] });
+    await page.send('Fetch.enable', { patterns: [{ urlPattern: `${BASE}/*` }, { urlPattern: 'https://images.unsplash.com/*' }] });
     page.on('Fetch.requestPaused', (event) => {
       const { requestId, request } = event as { requestId: string; request: { url: string } };
-      const key = new URL(request.url).pathname.slice(1);
-      requested.push(key);
-      const object = store.objects.get(key);
+      const url = new URL(request.url);
+      const key = url.pathname.slice(1);
+      if (url.origin === BASE) requested.push(key);
+      const object = url.origin === BASE ? store.objects.get(key) : { bytes: imageOf(1200) };
       void sleep(LATE_MS).then(() => page.send('Fetch.fulfillRequest', object
-        ? { requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: object.contentType }], body: Buffer.from(object.bytes).toString('base64') }
+        ? { requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: 'image/svg+xml' }], body: Buffer.from(object.bytes).toString('base64') }
         : { requestId, responseCode: 404 })).catch(() => undefined);
     });
     // Every layout shift and blocked resource, from the first moment of each page.
@@ -86,7 +91,6 @@ describe('photos at the right width, in Chrome', { skip, timeout: 8 * 60_000 }, 
   }, HOOK_TIMEOUT);
 
   after(async () => {
-    client?.release();
     await chrome?.close();
     await app?.close();
     await pool.end();
@@ -133,12 +137,81 @@ describe('photos at the right width, in Chrome', { skip, timeout: 8 * 60_000 }, 
 
   const SHIFT_PAGES = ['/', '/destinations', '/destinations/ella', '/tours', '/journal'];
 
-  describe('before the move: the committed files', () => {
-    test('a card and a hero render their srcset from public/assets/, and load', async () => {
+  describe('no R2 rows, as in local and CI', () => {
+    const storedImage = async (id: string) =>
+      (await pool.query<{ image: string }>('select image from public.destinations where id = $1', [id])).rows[0].image;
+
+    test('a pinned cover shows what its row stores, and it loads', async () => {
       await visit('/destinations/ella', 1280);
       const hero = await heroImage('main img');
-      assert.match(hero.src, /^\/assets\/ella-1280-/);
-      assert.match(hero.srcset, /^\/assets\/ella-480-.* 480w, .*1920w$/);
+      assert.equal(hero.src, await storedImage('ella'));
+      assert.equal(hero.srcset, '');
+      assert.ok(hero.loaded);
+      assert.deepEqual(requested, [], 'nothing asked of R2');
+    });
+
+    test('a card with no set has no srcset, and no page asks for a local photo', async () => {
+      await visit('/destinations', 1280);
+      await scrollThrough();
+      const all = await images();
+      assert.ok(all.length > 5, `${all.length} images`);
+      for (const image of all) assert.equal(image.srcset, '', image.src);
+      assert.deepEqual(all.filter((i) => i.src.startsWith('/assets/')), []);
+      assert.deepEqual(await page.evaluate<string[]>('window.__blocked'), []);
+    });
+
+    test('nothing stored: the placeholder', async () => {
+      const stored = await storedImage('ella');
+      await pool.query(`update public.destinations set image = '' where id = 'ella'`);
+      try {
+        await visit('/destinations/ella', 1280);
+        const hero = await page.evaluate<{ src: string | null; state: string | undefined }>(`(() => { const i = document.querySelector('main img'); return { src: i.getAttribute('src'), state: i.dataset.imageState }; })()`);
+        assert.deepEqual(hero, { src: '/images/photo-unavailable.svg', state: 'unavailable' });
+      } finally {
+        await pool.query(`update public.destinations set image = $1 where id = 'ella'`, [stored]);
+      }
+    });
+
+    test('the home preload is the stored photo, with no srcset', async () => {
+      await visit('/', 375);
+      const preload = await page.evaluate<{ href: string | null; srcset: string | null }>(`(() => {
+        const l = document.querySelector('link[rel=preload][as=image]');
+        return { href: l.getAttribute('href'), srcset: l.getAttribute('imagesrcset') };
+      })()`);
+      assert.match(preload.href ?? '', /^https:\/\/images\.unsplash\.com\//);
+      assert.equal(preload.srcset, null);
+    });
+  });
+
+  describe('the files in R2', () => {
+    before(async () => {
+      for (const { key } of photographs) {
+        if (key === 'gal-oya') continue;
+        for (const file of await seedPhotoSet(key, BASE, HAS_FULL_WIDTH.has(key) ? [480, 768, 1280, 1920] : [480, 768, 1280])) {
+          await store.put(file.objectKey, imageOf(file.width), 'image/webp');
+        }
+      }
+    }, HOOK_TIMEOUT);
+
+    test('/photo-credits credits the photos in R2, and says they may be adapted', async () => {
+      await visit('/photo-credits', 1280);
+      await page.evaluate(`new Promise((resolve) => { const until = Date.now() + 8000; (function check() { if (document.querySelector('[data-photo-credits] li') || Date.now() > until) resolve(true); else setTimeout(check, 50); })(); })`);
+      const shown = await page.evaluate<{ credits: number; authors: string; note: string }>(`({
+        credits: document.querySelectorAll('[data-photo-credits] li').length,
+        authors: document.querySelector('[data-photo-credits]').textContent,
+        note: document.querySelector('[data-photo-adaptations]')?.textContent ?? ''
+      })`);
+      assert.ok(shown.credits > 20, `${shown.credits} credits`);
+      assert.match(shown.authors, /MichaelJames2468/);
+      assert.match(shown.note, /resized, re-encoded or cropped/);
+    });
+
+    test('a card and a hero render their srcset from R2, and load', async () => {
+      await visit('/destinations/ella', 1280);
+      const hero = await heroImage('main img');
+      assert.equal(new URL(hero.src).origin, BASE);
+      assert.equal(widthOf(hero.src), 1280);
+      assert.match(hero.srcset, new RegExp(`^${BASE}/assets/480-.* 480w, .*1920w$`));
       assert.equal(hero.sizes, '100vw');
       assert.ok(hero.loaded);
 
@@ -146,33 +219,8 @@ describe('photos at the right width, in Chrome', { skip, timeout: 8 * 60_000 }, 
       await scrollThrough();
       const cards = (await images()).filter((i) => i.srcset && i.sizes !== '100vw');
       assert.ok(cards.length > 5, `${cards.length} cards`);
-      for (const card of cards) {
-        assert.match(card.srcset, /^\/assets\//);
-        assert.doesNotMatch(card.srcset, /1920w/, 'a card never offers 1920 px');
-      }
-      assert.deepEqual(requested, [], 'nothing asked of R2 yet');
+      for (const card of cards) assert.doesNotMatch(card.srcset, /1920w/, 'a card never offers 1920 px');
     });
-
-    test('the home page preloads what the hero will use, on a phone too', async () => {
-      await visit('/', 375);
-      const preload = await page.evaluate<{ href: string; srcset: string; sizes: string } | null>(`(() => {
-        const l = document.querySelector('link[rel=preload][as=image]');
-        return l && { href: l.getAttribute('href'), srcset: l.getAttribute('imagesrcset') || '', sizes: l.getAttribute('imagesizes') || '' };
-      })()`);
-      assert.ok(preload);
-      assert.match(preload.href, /^\/assets\/ella-1280-/);
-      assert.match(preload.srcset, /^\/assets\/ella-480-/);
-      assert.equal(preload.sizes, '100vw');
-      const loaded = await page.evaluate<string[]>(`performance.getEntriesByType('resource').map((e) => e.name).filter((n) => n.includes('/assets/ella-'))`);
-      assert.ok(loaded.length > 0 && loaded.every((n) => /ella-(480|768)-/.test(n)), `a phone loads the small file only: ${loaded.join(', ')}`);
-    });
-  });
-
-  describe('after the move: the files in R2', () => {
-    before(async () => {
-      const result = await migrateAssets(client, media);
-      assert.equal(result.photos.filter((p) => p.status === 'failed').length, 0);
-    }, HOOK_TIMEOUT);
 
     test('a phone loads the small files, from R2, with nothing blocked', async () => {
       await visit('/', 375);
@@ -241,7 +289,8 @@ describe('photos at the right width, in Chrome', { skip, timeout: 8 * 60_000 }, 
     });
 
     test('an image R2 can\'t serve falls back as before', async () => {
-      const key = 'assets/480-d8f17e14559c5e03.webp';
+      const { rows } = await pool.query<{ key: string }>(`select key from public.media where photo_key = 'ella' and width = 480`);
+      const key = rows[0].key;
       const object = store.objects.get(key)!;
       store.objects.delete(key);
       try {
@@ -262,8 +311,8 @@ describe('photos at the right width, in Chrome', { skip, timeout: 8 * 60_000 }, 
           await scrollThrough();
           await sleep(LATE_MS * 2);
           // Not `hadRecentInput`: Chrome sets it unpredictably under emulation. Not <body> either:
-          // it moves once as the page's chunk mounts, about 0.06 to 0.1, before any photo and on the
-          // committed files too. Everything else on the page is what a late photo could move.
+          // it moves once as the page's chunk mounts, about 0.06 to 0.1, before any photo (on the backlog).
+          // Everything else on the page is what a late photo could move.
           const shifts = await page.evaluate<{ value: number; nodes: string[] }[]>(`window.__shifts
             .map((s) => ({ value: s.value, nodes: s.nodes.filter((n) => n && !n.startsWith('BODY')) }))
             .filter((s) => s.nodes.length > 0)`);

@@ -30,6 +30,11 @@ export function PhotoCreditsPage() {
 
       <section className="bg-[var(--background)] py-16 sm:py-20" data-photo-credits>
         <div className="te-container">
+          {credits.length > 0 && (
+            <p className="mx-auto mb-10 max-w-2xl text-center text-[var(--text-primary)]/70" data-photo-adaptations>
+              Photos may be resized, re-encoded or cropped for this site. Each keeps the licence shown here.
+            </p>
+          )}
           {credits.length === 0 ? (
             <p className="mx-auto max-w-2xl text-center text-[var(--text-primary)]/70">
               None of the photos on the site currently need a credit.

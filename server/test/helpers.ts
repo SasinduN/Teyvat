@@ -5,6 +5,7 @@
  * Import `./test-db` before this file.
  */
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -72,6 +73,34 @@ const CONTENT_TABLES = [
 ];
 
 const migration = (name: string) => readFileSync(resolve(REPO_ROOT, 'db/migrations', name), 'utf8');
+
+/**
+ * A photo set in `media`, as production has them: one row per width, at a stable
+ * key. Returns the files. `resetContent` leaves these; `resetAuthTables` removes them.
+ */
+export async function seedPhotoSet(photoKey: string, base: string, widths: readonly number[] = [480, 768, 1280]): Promise<{ width: number; objectKey: string; url: string }[]> {
+  const files = widths.map((width) => {
+    const objectKey = `assets/${width}-${createHash('sha256').update(`${photoKey}-${width}`).digest('hex').slice(0, 16)}.webp`;
+    return { width, objectKey, url: `${base}/${objectKey}` };
+  });
+  for (const { width, objectKey, url } of files) {
+    await pool.query(
+      `insert into public.media (key, url, content_type, bytes, uploaded_by, photo_key, width) values ($1, $2, 'image/webp', 1, null, $3, $4)`,
+      [objectKey, url, photoKey, width]
+    );
+  }
+  return files;
+}
+
+/** A credit for a photo a row stores, so `/photo-credits` has cards to measure: with no R2 rows it would be empty. */
+export async function seedStoredPhotoCredit(): Promise<void> {
+  await pool.query(
+    `insert into public.image_credits (url, author, license, license_url, source_url)
+     select image, 'A. Photographer', 'CC BY-SA 4.0', 'https://creativecommons.org/licenses/by-sa/4.0/', 'https://commons.wikimedia.org/wiki/File:X.jpg'
+       from public.destinations where id = 'ella'
+     on conflict (url) do nothing`
+  );
+}
 
 /** The seeded content, copied once per test process (see `resetContent`). */
 const SEED_SCHEMA = 'test_seed';

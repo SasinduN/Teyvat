@@ -18,7 +18,6 @@
     "admin:create": "tsx scripts/create-admin.ts",
     "images:audit": "tsx scripts/images-audit.ts",
     "images:import": "tsx scripts/images-import.ts",
-    "images:migrate-assets": "tsx scripts/images-migrate-assets.ts",
     "media:rebase": "tsx scripts/media-rebase.ts",
     "test": "node scripts/run-tests.mjs",
     "seed:generate": "tsx scripts/generate-seed.ts",

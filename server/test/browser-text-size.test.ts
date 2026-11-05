@@ -20,7 +20,7 @@ import { after, before, describe, test } from 'node:test';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { findChrome, launchChrome, saveTheme, type Chrome, type Page } from './chrome';
-import { assertConnectedToTestDatabase, createUser, listen, migrateTestDatabase, PASSWORD, resetAuthTables, resetContent, type RunningApp } from './helpers';
+import { assertConnectedToTestDatabase, createUser, listen, migrateTestDatabase, PASSWORD, resetAuthTables, resetContent, seedStoredPhotoCredit, type RunningApp } from './helpers';
 import { SCROLL_THROUGH, TEXT_AUDIT } from './text-audit';
 import { HOOK_TIMEOUT } from './timeouts';
 
@@ -62,6 +62,7 @@ describe('text size 120% on every page type, in Chrome', { skip, timeout: 9 * 60
     migrateTestDatabase();
     await assertConnectedToTestDatabase();
     await resetContent();
+    await seedStoredPhotoCredit();
     await pool.query(`update public.site_settings set text_size = 120, whatsapp_number = '94771234567' where id`);
     app = await listen(createApp({ media: null, bookings: true }));
     chrome = await launchChrome(executable!);

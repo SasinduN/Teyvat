@@ -1,30 +1,29 @@
 import photographs from './travel-photos.json';
 import legacyReferences from './legacy-photo-references.json';
 import { PHOTO_CORRECTIONS } from './photo-corrections';
-import optimized from './optimized-photos.json';
 import { photoAsset, PRIMARY_WIDTH, sameSeedPhoto, type PhotoSets } from './photo-assets';
 
-/** A photo's main file in R2, once it has one (`npm run images:migrate-assets`). */
+const PHOTO_UNAVAILABLE = '/images/photo-unavailable.svg';
+
+/** A photo's main file in R2, if it has one. */
 function primaryFile(sets: PhotoSets, key: string | undefined): string | undefined {
   return key ? sets[key]?.find(variant => variant.width === PRIMARY_WIDTH)?.url : undefined;
 }
 
 /**
- * The photo rules for one request. `sets` is what `media` holds: a photo in it
- * resolves to its R2 file and any other to public/assets/, so both kinds of row
- * work while the move is under way.
+ * The photo rules for one request. `sets` is what `media` holds. A photo in it
+ * resolves to its R2 file. One that isn't, as in a local or CI database with no
+ * R2 rows, shows what the row stores, or the placeholder if the row stores nothing.
  */
 export function photoResolver(sets: PhotoSets = {}) {
 
-/** Prefer the verified copy of a known photograph: in R2, or else the same-origin file. */
-function localPhoto(image: string): string {
-  const inR2 = primaryFile(sets, photoAsset(image)?.key);
-  if (inR2) return inR2;
-  const variants = (optimized as Record<string, string>)[image];
-  if (!variants) return image;
-  const candidates = variants.split(',').map(value => value.trim().split(/\s+/));
-  return (candidates.find(([, width]) => width === '1280w') ?? candidates[candidates.length - 1])[0];
+/** A known photograph's R2 file; any other URL stays as it is. */
+function resolvedPhoto(image: string): string {
+  return primaryFile(sets, photoAsset(image)?.key) ?? image;
 }
+
+/** The verified photo a row is pinned or corrected to, while it is in R2. */
+const verifiedPhoto = (key: string | undefined, stored: string) => primaryFile(sets, key) ?? (stored || PHOTO_UNAVAILABLE);
 
 /** Verified destination covers, plus guarded corrections for older content payloads. */
 function publicPhoto(table: string, id: string, image: string): string {
@@ -32,21 +31,17 @@ function publicPhoto(table: string, id: string, image: string): string {
   // Resolve by stable ID even when a CMS URL is not a recognizable seed photo.
   // Newly added destinations and curated galleries retain their stored images.
   if (table === 'destinations' && Object.prototype.hasOwnProperty.call(PHOTO_CORRECTIONS.destinations, id)) {
-    const photo = photographs.find(row => row.key === PHOTO_CORRECTIONS.destinations[id]);
-    return photo ? localPhoto(photo.image) : '/images/photo-unavailable.svg';
+    return verifiedPhoto(PHOTO_CORRECTIONS.destinations[id], image);
   }
   if (table === 'hidden_gems' && id === 'gal-oya') {
     const previous = photographs.find(photo => photo.key === 'gal-oya')!;
-    const replacement = photographs.find(photo => photo.key === 'gal-oya-park')!;
-    if ([previous.image, previous.original, localPhoto(previous.image)].includes(image)) return localPhoto(replacement.image);
+    if ([previous.image, previous.original].includes(image)) return verifiedPhoto('gal-oya-park', image);
   }
   const legacy = legacyReferences.find(row => row.table === table && row.id === id);
-  if (!legacy || !sameSeedPhoto(image, legacy.image)) return localPhoto(image);
+  if (!legacy || !sameSeedPhoto(image, legacy.image)) return resolvedPhoto(image) || PHOTO_UNAVAILABLE;
   // No licensed, identified Belilena photo is available: never show a stock landmark.
-  if (table === 'hidden_gems' && id === 'belilena') return '/images/photo-unavailable.svg';
-  const photo = photographs.find(row => row.key === PHOTO_CORRECTIONS[table]?.[id]);
-  if (!photo) return image;
-  return localPhoto(id === 'jaffna' && table === 'destinations' ? photo.original : photo.image);
+  if (table === 'hidden_gems' && id === 'belilena') return PHOTO_UNAVAILABLE;
+  return verifiedPhoto(PHOTO_CORRECTIONS[table]?.[id], image);
 }
 
 /** Correct only the old geographic labels associated with our credited photographs. */
@@ -57,7 +52,7 @@ function photoStoryLocation(id: string, image: string, location: string): string
   if (!correction || location !== correction.before) return location;
   const legacy = legacyReferences.find(row => row.table === 'photo_stories' && row.id === id);
   const credited = photographs.find(photo => photo.key === PHOTO_CORRECTIONS.photo_stories[id]);
-  return (legacy && sameSeedPhoto(image, legacy.image)) || credited?.image === image || credited?.original === image || (credited && localPhoto(credited.image) === image) ? correction.after : location;
+  return (legacy && sameSeedPhoto(image, legacy.image)) || credited?.image === image || credited?.original === image || (credited && resolvedPhoto(credited.image) === image) ? correction.after : location;
 }
 
 /** Only replace the exact old seeded galleries; never overwrite curated admin galleries. */
@@ -75,14 +70,15 @@ function publicGallery(id: string, gallery: string[]): string[] {
   };
   const before = legacy[id];
   if (!before || before.length !== gallery.length || before.some((image, index) => !sameSeedPhoto(gallery[index], image))) return gallery;
-  return (id === 'ella' ? ['ella', 'train'] : ['sigiriya']).map(key => localPhoto(photographs.find(row => row.key === key)!.image));
+  const files = (id === 'ella' ? ['ella', 'train'] : ['sigiriya']).map(key => primaryFile(sets, key));
+  return files.every(file => file !== undefined) ? files as string[] : gallery;
 }
 
 /** Correct inaccurate scene captions only while the known photo and original copy match. */
 function photoStoryCopy(id: string, image: string, title: string, caption: string): { title: string; caption: string } {
   const legacy = legacyReferences.find(row => row.table === 'photo_stories' && row.id === id);
   const photo = photographs.find(row => row.key === PHOTO_CORRECTIONS.photo_stories[id]);
-  if (!photo || !(legacy && sameSeedPhoto(image, legacy.image) || [photo.image, photo.original, localPhoto(photo.image)].includes(image))) return { title, caption };
+  if (!photo || !(legacy && sameSeedPhoto(image, legacy.image) || [photo.image, photo.original, resolvedPhoto(photo.image)].includes(image))) return { title, caption };
   const corrections: Record<string, { beforeTitle?: string; title?: string; beforeCaption?: string; caption?: string }> = {
     p1: { beforeTitle: 'Highland Mist & Blue Trains', title: 'Nine Arch Bridge in Ella', beforeCaption: 'The legendary highland express winding across mountain viaducts through morning fog.', caption: 'Nine Arch Bridge framed by forested hills in Ella.' },
     p2: { beforeCaption: 'An ancient granite palace fortress rising 200m above the jungle canopy at sunrise.', caption: 'Sigiriya Rock Fortress rising above the surrounding forest.' },
@@ -97,8 +93,5 @@ function photoStoryCopy(id: string, image: string, title: string, caption: strin
     caption: correction?.beforeCaption === caption ? correction.caption! : caption };
 }
 
-return { localPhoto, publicPhoto, publicGallery, photoStoryLocation, photoStoryCopy };
+return { resolvedPhoto, publicPhoto, publicGallery, photoStoryLocation, photoStoryCopy };
 }
-
-/** The rules with nothing in R2 yet. */
-export const { localPhoto, publicPhoto, publicGallery, photoStoryLocation, photoStoryCopy } = photoResolver();

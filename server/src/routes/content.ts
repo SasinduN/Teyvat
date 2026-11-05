@@ -122,7 +122,7 @@ contentRouter.get(
       publicImageCredits(pool)
     ]);
     const photoSets = await loadPhotoSets(pool);
-    const { localPhoto, publicPhoto, publicGallery, photoStoryLocation, photoStoryCopy } = photoResolver(photoSets);
+    const { resolvedPhoto, publicPhoto, publicGallery, photoStoryLocation, photoStoryCopy } = photoResolver(photoSets);
 
     const payload: SiteContentPayload = {
       destinations,
@@ -158,14 +158,14 @@ contentRouter.get(
         row.image = publicPhoto(table, row.id, row.image);
       }
     }
-    for (const row of payload.destinations) row.gallery = publicGallery(row.id, row.gallery).map(localPhoto);
+    for (const row of payload.destinations) row.gallery = publicGallery(row.id, row.gallery).map(resolvedPhoto);
     const used = new Set(photoCollections.flatMap(([, rows]) => rows.map(row => row.image)));
     for (const row of payload.destinations) for (const image of row.gallery) used.add(image);
     payload.imageCredits = payload.imageCredits
-      .map(credit => ({ ...credit, url: localPhoto(credit.url) }))
+      .map(credit => ({ ...credit, url: resolvedPhoto(credit.url) }))
       .filter(credit => used.has(credit.url));
     for (const photo of photographs) {
-      for (const url of new Set([localPhoto(photo.image), localPhoto(photo.original)])) {
+      for (const url of new Set([resolvedPhoto(photo.image), resolvedPhoto(photo.original)])) {
         if (used.has(url) && !payload.imageCredits.some(credit => credit.url === url)) {
           payload.imageCredits.push({ url, author: photo.author, license: photo.license,
             license_url: photo.licenseUrl, source_url: photo.source });

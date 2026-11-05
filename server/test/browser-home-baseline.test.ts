@@ -150,7 +150,7 @@ const PLACEHOLDER = `data:image/svg+xml,${encodeURIComponent(
 )}`;
 
 function offline(value: unknown): unknown {
-  if (typeof value === 'string') return (/^https?:\/\//.test(value) || value.startsWith('/assets/')) ? PLACEHOLDER : value;
+  if (typeof value === 'string') return /^https?:\/\//.test(value) ? PLACEHOLDER : value;
   if (Array.isArray(value)) return value.map(offline);
   if (value && typeof value === 'object') {
     return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, offline(v)]));
