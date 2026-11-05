@@ -66,14 +66,16 @@ const skip = !executable
 const SECTIONS: { name: string; baseline: string; props: string; height?: number }[] = [
   // Typography (ca26709): DM Sans, the rem scale, the link and button sizes (was aee696e, the friend import).
   { name: 'Navbar', baseline: 'ca26709', props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
-  // The friend import (aee696e): photo-first destination cards (was 4e9942d).
-  { name: 'DestinationSpotlight', baseline: 'aee696e', props: '{ onSelectDestination() {} }' },
-  // Typography (ca26709): the rem scale and DM Sans on the cards (was 4129cd4, the PR #39 cleanup).
-  { name: 'FeaturedExperiences', baseline: 'ca26709', props: '{ onSelectExperience() {} }' },
-  { name: 'ToursSection', baseline: 'ca26709', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
-  // 4c6ae6c: the same, and the photo overlay's dark band reaches further up, for AA under the taller copy.
-  { name: 'ExperiencesSection', baseline: '4c6ae6c', props: '{ onSelectCategory() {} }' },
-  { name: 'JournalSection', baseline: 'ca26709', props: '{}' },
+  // The editorial redesign (0bec8db): one large card and three smaller, a plain heading (was aee696e, the friend import).
+  { name: 'DestinationSpotlight', baseline: '0bec8db', props: '{ onSelectDestination() {} }' },
+  // The editorial redesign (d233e32): a lead row and plain rows (was ca26709, typography).
+  { name: 'FeaturedExperiences', baseline: 'd233e32', props: '{ onSelectExperience() {} }' },
+  // d233e32: photo and text side by side (was ca26709).
+  { name: 'ToursSection', baseline: 'd233e32', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
+  // d233e32: an asymmetric grid, captions under the photos (was 4c6ae6c).
+  { name: 'ExperiencesSection', baseline: 'd233e32', props: '{ onSelectCategory() {} }' },
+  // 0bec8db: a lead story and plain rows (was ca26709).
+  { name: 'JournalSection', baseline: '0bec8db', props: '{}' },
   // Typography (ca26709): the rem scale in the modal and its input (was e6cdc02, #12 parity).
   { name: 'SearchModal', baseline: 'ca26709', props: '{ isOpen: true, onClose() {}, onSelectDestination() {} }', height: 900 }
 ];
