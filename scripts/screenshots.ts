@@ -17,6 +17,9 @@
  *
  * `--text-size` sets the admin's text size in the "after" site only.
  *
+ * For a short run (the laptop's memory, a time limit): `--only-dark` skips the
+ * light theme and `--no-states` the named states, so a set can go in batches.
+ *
  * `--admin` adds the admin: the login page, then (signed in as a throwaway
  * admin created in each scratch database) the dashboard, a collection, two
  * editors, the media library, photo credits, enquiries and settings.
@@ -65,6 +68,8 @@ const { values } = parseArgs({
     base: { type: 'string', default: 'origin/main' },
     pages: { type: 'string' },
     dark: { type: 'boolean', default: false },
+    'only-dark': { type: 'boolean', default: false },
+    'no-states': { type: 'boolean', default: false },
     admin: { type: 'boolean', default: false },
     'text-size': { type: 'string' },
     out: { type: 'string' }
@@ -365,7 +370,8 @@ async function main(): Promise<void> {
       throw new Error(`"${page}" isn't a site path like /about. In Git Bash, prefix the command with MSYS_NO_PATHCONV=1.`);
     }
   }
-  const themes = values.dark ? [false, true] : [false];
+  const themes = values['only-dark'] ? [true] : values.dark ? [false, true] : [false];
+  const states = !values['no-states'];
 
   const worktree = mkdtempSync(join(tmpdir(), 'teyvat-shots-'));
   rmSync(worktree, { recursive: true });
@@ -392,28 +398,30 @@ async function main(): Promise<void> {
             await closePage(page);
             console.log(`  ${slug(path)}-${suffix}`);
           }
-          // The footer on its own, from a page whose footer every page shares.
-          const foot = await open(chrome, site.url + '/about', viewport, dark);
-          await settle(foot);
-          await foot.evaluate(`document.querySelector('footer').scrollIntoView({ block: 'end', behavior: 'instant' }), true`);
-          await foot.evaluate(QUIET);
-          await shoot(foot, join(out, `state-footer-${suffix}`), false);
-          // On a phone the footer is taller than the screen: the whole of it, cropped from the page.
-          if (viewport.mobile) await shootElement(foot, join(out, `state-footer-crop-${suffix}`), 'footer');
-          await closePage(foot);
-          // Named states: the phone menu, and the enquiry form on a tour.
-          if (viewport.mobile) {
-            const menu = await open(chrome, site.url + '/', viewport, dark);
-            await menu.evaluate(`document.querySelector('header button[aria-label*="menu" i]')?.click(), true`);
-            await menu.evaluate(QUIET);
-            await shoot(menu, join(out, `state-menu-${suffix}`), false);
-            await closePage(menu);
-          } else {
-            // The header at the narrowest width that keeps its links.
-            const narrow = await open(chrome, site.url + '/about', { width: 1100, height: 700, mobile: false }, dark);
-            await narrow.evaluate(LOADED);
-            await shootElement(narrow, join(out, `state-header-1100${dark ? '-dark' : ''}-${site.label}.jpg`), 'header');
-            await closePage(narrow);
+          if (states) {
+            // The footer on its own, from a page whose footer every page shares.
+            const foot = await open(chrome, site.url + '/about', viewport, dark);
+            await settle(foot);
+            await foot.evaluate(`document.querySelector('footer').scrollIntoView({ block: 'end', behavior: 'instant' }), true`);
+            await foot.evaluate(QUIET);
+            await shoot(foot, join(out, `state-footer-${suffix}`), false);
+            // On a phone the footer is taller than the screen: the whole of it, cropped from the page.
+            if (viewport.mobile) await shootElement(foot, join(out, `state-footer-crop-${suffix}`), 'footer');
+            await closePage(foot);
+            // Named states: the phone menu, and the enquiry form on a tour.
+            if (viewport.mobile) {
+              const menu = await open(chrome, site.url + '/', viewport, dark);
+              await menu.evaluate(`document.querySelector('header button[aria-label*="menu" i]')?.click(), true`);
+              await menu.evaluate(QUIET);
+              await shoot(menu, join(out, `state-menu-${suffix}`), false);
+              await closePage(menu);
+            } else {
+              // The header at the narrowest width that keeps its links.
+              const narrow = await open(chrome, site.url + '/about', { width: 1100, height: 700, mobile: false }, dark);
+              await narrow.evaluate(LOADED);
+              await shootElement(narrow, join(out, `state-header-1100${dark ? '-dark' : ''}-${site.label}.jpg`), 'header');
+              await closePage(narrow);
+            }
           }
           if (values.admin) {
             const login = await openAdmin(chrome, `${site.url}/admin/login`, viewport, dark);
@@ -431,42 +439,44 @@ async function main(): Promise<void> {
             }
             await closePage(login);
           }
-          // The map with a place picked from Quick Jump (its second place), the map in view.
-          const map = await open(chrome, `${site.url}/explore`, viewport, dark);
-          await map.evaluate(`document.getElementById('explore-map')?.scrollIntoView({ block: 'start' }), true`);
-          await waitFor(map, `document.querySelector('#explore-map .leaflet-marker-icon')`, 10_000);
-          await map.evaluate(`document.querySelectorAll('#explore-map [role=group] button')[1]?.click(), true`);
-          await map.evaluate(LOADED);
-          await map.evaluate(QUIET);
-          // The map and its side card, just under the header.
-          await map.evaluate(`(() => { const box = document.querySelector('#explore-map .leaflet-container')?.closest('.grid'); if (box) window.scrollTo(0, box.getBoundingClientRect().top + scrollY - 100); return true; })()`);
-          await map.evaluate(QUIET);
-          await shoot(map, join(out, `state-map-${suffix}`), false);
-          await closePage(map);
-          // The map's first view (nothing picked), then the category chips scrolled under the header.
-          const first = await open(chrome, `${site.url}/explore`, viewport, dark);
-          await first.evaluate(`document.getElementById('explore-map')?.scrollIntoView({ block: 'start' }), true`);
-          await waitFor(first, `document.querySelector('#explore-map .leaflet-marker-icon')`, 10_000);
-          await first.evaluate(LOADED);
-          await first.evaluate(`(() => { const box = document.querySelector('#explore-map .leaflet-container')?.closest('.grid'); if (box) window.scrollTo(0, box.getBoundingClientRect().top + scrollY - 100); return true; })()`);
-          await first.evaluate(QUIET);
-          await shoot(first, join(out, `state-map-view-${suffix}`), false);
-          await first.evaluate(`(() => {
-            const header = document.querySelector('header')?.getBoundingClientRect();
-            const chip = document.querySelector('#explore-map [aria-pressed]')?.getBoundingClientRect();
-            if (header && chip) window.scrollTo(0, chip.top + scrollY - (header.height - chip.height) / 2);
-            return true;
-          })()`);
-          await first.evaluate(QUIET);
-          await shoot(first, join(out, `state-header-${suffix}`), false);
-          await closePage(first);
-          const tour = await open(chrome, `${site.url}/tours/island-in-7-days`, viewport, dark);
-          await tour.evaluate(`[...document.querySelectorAll('main button')].find((b) => /enquire|inquire/i.test(b.textContent))?.click(), true`);
-          await waitFor(tour, `document.querySelector('[role=dialog] form, .fixed.inset-0 form')`, 5_000);
-          await tour.evaluate(LOADED);
-          await tour.evaluate(QUIET);
-          await shoot(tour, join(out, `state-enquiry-${suffix}`), false);
-          await closePage(tour);
+          if (states) {
+            // The map with a place picked from Quick Jump (its second place), the map in view.
+            const map = await open(chrome, `${site.url}/explore`, viewport, dark);
+            await map.evaluate(`document.getElementById('explore-map')?.scrollIntoView({ block: 'start' }), true`);
+            await waitFor(map, `document.querySelector('#explore-map .leaflet-marker-icon')`, 10_000);
+            await map.evaluate(`document.querySelectorAll('#explore-map [role=group] button')[1]?.click(), true`);
+            await map.evaluate(LOADED);
+            await map.evaluate(QUIET);
+            // The map and its side card, just under the header.
+            await map.evaluate(`(() => { const box = document.querySelector('#explore-map .leaflet-container')?.closest('.grid'); if (box) window.scrollTo(0, box.getBoundingClientRect().top + scrollY - 100); return true; })()`);
+            await map.evaluate(QUIET);
+            await shoot(map, join(out, `state-map-${suffix}`), false);
+            await closePage(map);
+            // The map's first view (nothing picked), then the category chips scrolled under the header.
+            const first = await open(chrome, `${site.url}/explore`, viewport, dark);
+            await first.evaluate(`document.getElementById('explore-map')?.scrollIntoView({ block: 'start' }), true`);
+            await waitFor(first, `document.querySelector('#explore-map .leaflet-marker-icon')`, 10_000);
+            await first.evaluate(LOADED);
+            await first.evaluate(`(() => { const box = document.querySelector('#explore-map .leaflet-container')?.closest('.grid'); if (box) window.scrollTo(0, box.getBoundingClientRect().top + scrollY - 100); return true; })()`);
+            await first.evaluate(QUIET);
+            await shoot(first, join(out, `state-map-view-${suffix}`), false);
+            await first.evaluate(`(() => {
+              const header = document.querySelector('header')?.getBoundingClientRect();
+              const chip = document.querySelector('#explore-map [aria-pressed]')?.getBoundingClientRect();
+              if (header && chip) window.scrollTo(0, chip.top + scrollY - (header.height - chip.height) / 2);
+              return true;
+            })()`);
+            await first.evaluate(QUIET);
+            await shoot(first, join(out, `state-header-${suffix}`), false);
+            await closePage(first);
+            const tour = await open(chrome, `${site.url}/tours/island-in-7-days`, viewport, dark);
+            await tour.evaluate(`[...document.querySelectorAll('main button')].find((b) => /enquire|inquire/i.test(b.textContent))?.click(), true`);
+            await waitFor(tour, `document.querySelector('[role=dialog] form, .fixed.inset-0 form')`, 5_000);
+            await tour.evaluate(LOADED);
+            await tour.evaluate(QUIET);
+            await shoot(tour, join(out, `state-enquiry-${suffix}`), false);
+            await closePage(tour);
+          }
         }
       }
     }
