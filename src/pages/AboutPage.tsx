@@ -50,7 +50,7 @@ export function AboutPage() {
         <div className="te-container grid gap-10 lg:grid-cols-12 lg:gap-14">
           <div className="space-y-6 lg:col-span-5">
             <h2 className="te-ed-title font-heading">Contact us</h2>
-            <p className="te-ed-lead">Tell us what you want to see. A travel designer will reply within 12 hours.</p>
+            <p className="te-ed-lead">Tell us what you want to see. We’ll reply by email.</p>
             <ul data-keep-clear className="te-contact-list">
               <li>
                 <MapPin aria-hidden="true" />

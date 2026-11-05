@@ -133,10 +133,11 @@ Update the Status column when a phase lands.
   - Glass only on the header, map panels and overlays on photos.
   - One icon set at one size: `.site svg.lucide` is 18 px. Icons mark controls and
     contact details, not decoration.
-  - `plain-copy` fails on stock phrases and em dashes in the public components.
+  - `plain-copy` fails on stock phrases, em dashes and reply-time promises in the
+    public components.
   - **Stats** (`site_settings.stats`, `shared/site-stats.ts`, `StatStrip`): up to four,
     from Admin → Settings, hidden when empty. Every number needs a source; the
-    sources are in the audit.
+    sources are in the audit. National parks stays out: the sources disagree.
   - `npm run screenshots -- --live-photos <site URL>`: the scratch databases have no
     R2 rows, so without it both versions show the seed's stock photos.
 - **Dialogs** (enquiry, search, hidden gem, photo story, the phone menu)
@@ -255,7 +256,9 @@ Update the Status column when a phase lands.
 
 Agreed, not started. Each one gets its own plan first.
 
-- **TripAdvisor reviews section:** real reviews only.
+- **TripAdvisor reviews section:** real reviews only. Ratings come back with it,
+  and not before: the seeded `rating` columns stay in the database but aren't shown
+  (`no-ratings`).
 - **Booking flow fixes:** Sasindu will list them.
 - **Bug and performance audit.** It includes the layout shift on `<body>`:
   about 80 px as each page's code loads, before any photo.

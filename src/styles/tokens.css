@@ -128,7 +128,7 @@
   --glass-emerald-glow: rgb(var(--teal-channels) / .18);
   --glass-inverse-bg: rgb(var(--photo-channels) / .58);
   --glass-inverse-strong: rgb(var(--photo-channels) / .9);
-  /* Chips on photos (rating, days, price): AA for small gold text on a white photo (browser-contrast). */
+  /* Chips on photos (days, price): AA for small gold text on a white photo (browser-contrast). */
   --glass-inverse-subtle: rgb(var(--photo-channels) / .78);
   --glass-photo-reflection: linear-gradient(135deg, rgb(var(--pearl-channels) / .07), transparent 48%, rgb(var(--pearl-channels) / .02));
   --glass-scroll-thumb: rgb(var(--teal-channels) / .62);

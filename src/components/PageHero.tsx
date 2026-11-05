@@ -15,7 +15,7 @@ interface PageHeroProps {
   eyebrow?: string;
   title: string;
   subtitle?: string;
-  /** Small badges above the eyebrow (rating, region, days, price). */
+  /** Small badges above the eyebrow (region, days, price). */
   chips?: React.ReactNode;
   /** Shorter, for the list pages and About. */
   compact?: boolean;

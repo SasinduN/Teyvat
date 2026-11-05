@@ -37,7 +37,8 @@ here started from it. No key is in the repo.
 | `/about` | `IntroSection` | `Sparkles` beside "National Parks" | Gone with the cards |
 | `/experiences` | `FeaturedExperiences` | `Sparkles` before the category; a gold `Star` badge on every photo | Plain text; no badge |
 | `/destinations/:slug` | Heading | `Sparkles` before "Must-Do Experiences" | Removed |
-| `/destinations/:slug`, `/experiences/:slug` | `PageHero` chips | Gold `Star` beside the rating | Plain "Rated 4.8" |
+| `/destinations/:slug`, `/experiences/:slug` | `PageHero` chips | Gold `Star` beside the rating | Removed |
+| `/explore` | Map side panel | `★ 4.95` on the photo | Removed |
 | `/destinations`, home | `DestinationRevealCard` | Star rating badge on the photo | Removed from cards |
 | `/explore` | Hidden gem dialog, map panel | `Sparkles` beside "Secret Uncrowded Destination" and "Top Experiences" | Removed |
 | `/explore`, `/plan` | `QuickSearch`, `TravelPlanner` | `Sparkles`, `MapPin`, `Calendar` beside form labels | Removed: the labels already say it |
@@ -46,8 +47,9 @@ here started from it. No key is in the repo.
 
 **One icon set, one size:** lucide only, 18 px, for controls and contact details.
 
-**Ratings have no source.** The 4.x numbers are seeded, not reviews. Cards no longer
-show them. Detail pages keep the plain number for now. See "Questions" below.
+**Ratings have no source.** The 4.x numbers are seeded, not reviews, so the public site
+no longer shows them anywhere. The column stays. They come back only with real reviews
+(`no-ratings`).
 
 ## 4. Glass used everywhere
 
@@ -123,14 +125,16 @@ said "2,500 years", which has no source (section 8).
 | UNESCO World Heritage sites | 8 | **8** (6 cultural, 2 natural) | [UNESCO, Sri Lanka](https://whc.unesco.org/en/statesparties/lk/) | Confirmed from a search result of that page; a direct fetch returned 403 |
 | Coastline | 1,300+ km | **1,620 km** | [Coast Conservation Department](https://www.coastal.gov.lk/): "about 1620 km long" | Official figure. Other sources give 1,340 to 1,920 km, depending on how bays and islands are counted |
 | Years of history | 2,500+ | **2,200+** | [UNESCO, Anuradhapura](https://whc.unesco.org/en/list/200/): a cutting of the Buddha's fig tree brought in the 3rd century B.C. | Supported, and worded as exactly that. 2,500 had no source |
-| National parks | 26 | **Left out** | [DWC, Protected Areas](https://www.dwc.gov.lk/?page_id=72) | **Uncertain.** The page says "Twenty Eight (25) National Parks" and "National Park – 25". Wikipedia says 26 |
+| National parks | 26 | **Left out** | [DWC, Protected Areas](https://www.dwc.gov.lk/?page_id=72) | **Left out, decided by Sasindu: the sources disagree.** The page says "Twenty Eight (25) National Parks" and "National Park – 25". Wikipedia says 26 |
 
 The strip is editable, so the fourth stat is one row in Admin → Settings once the
 number is settled.
 
-## Questions for Sasindu
+## Decisions from Sasindu
 
-1. **National parks:** 25, 26 or 28? The Department's own page disagrees with itself.
-2. **Ratings:** the 4.x numbers have no source. Remove them from detail pages too, until
-   TripAdvisor reviews are in?
-3. **"A travel designer will reply within 12 hours":** kept from the old copy. Is it true?
+1. **National parks:** left out, because the sources disagree. Three stats are enough.
+2. **Ratings:** removed from the public site until there are real reviews. The database
+   column stays.
+3. **Reply times:** no promise anywhere. "A travel designer will reply within 12 hours" and
+   the enquiry form's "within 12 hours" both became "We'll reply by email."
+4. **"Planned by people who live on the island":** accurate, and kept.

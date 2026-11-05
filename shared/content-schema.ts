@@ -145,7 +145,7 @@ export const FIELDS_BY_TABLE: Record<ContentTableName, Field[]> = {
     { name: 'best_time', label: 'Best time to visit', type: 'text', required: true, span: 1 },
     { name: 'elevation', label: 'Elevation', type: 'text', span: 1, help: 'Optional, e.g. “1,041 m”.' },
     { name: 'travel_time_from_airport', label: 'Travel time from the airport', type: 'text', maxLength: 30, span: 1, help: 'Optional, e.g. “~4 h”. Shown as “~4 h from Colombo airport (CMB)”.' },
-    { name: 'rating', label: 'Rating', type: 'number', step: 0.01, min: 0, max: 5, required: true, span: 1 },
+    { name: 'rating', label: 'Rating', help: 'Not shown on the public site. Ratings come back only with real reviews.', type: 'number', step: 0.01, min: 0, max: 5, required: true, span: 1 },
     { name: 'featured', label: 'Featured', type: 'boolean', span: 1, help: `Shows the destination in the spotlight. ${SPOTLIGHT_NOTICE}` },
     { name: 'experiences', label: 'Things to do', type: 'stringList', span: 2, placeholder: 'e.g. Nine Arch Bridge Train Watch' },
     { name: 'highlights', label: 'Highlights', type: 'stringList', span: 2, placeholder: 'e.g. Ella Rock' },
@@ -174,7 +174,7 @@ export const FIELDS_BY_TABLE: Record<ContentTableName, Field[]> = {
     { name: 'image', label: 'Image', type: 'image', folder: 'experiences', required: true, span: 2 },
     { name: 'description', label: 'Description', type: 'textarea', rows: 4, required: true, span: 2 },
     { name: 'highlights', label: 'Highlights', type: 'stringList', span: 2 },
-    { name: 'rating', label: 'Rating', type: 'number', step: 0.01, min: 0, max: 5, required: true, span: 1 },
+    { name: 'rating', label: 'Rating', help: 'Not shown on the public site. Ratings come back only with real reviews.', type: 'number', step: 0.01, min: 0, max: 5, required: true, span: 1 },
     publishedField
   ],
 

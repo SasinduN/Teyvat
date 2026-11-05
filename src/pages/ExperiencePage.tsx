@@ -55,7 +55,6 @@ function ExperienceView({ e }: { e: ExperienceItem }) {
         crumbs={[{ label: 'Home', to: paths.home }, { label: 'Experiences', to: paths.experiences }, { label: e.title }]}
         chips={
           <>
-            <HeroChip>Rated {e.rating}</HeroChip>
             <HeroChip>{categoryLabel(e.category)}</HeroChip>
           </>
         }

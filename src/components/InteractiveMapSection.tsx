@@ -965,10 +965,6 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 via-40% to-transparent to-80%" />
                       
-                      <div className="absolute top-3 right-3 bg-[var(--inverse-surface)]/90 text-[var(--accent-text)] px-2.5 py-1 rounded-full text-xs font-bold flex items-center space-x-1 border border-[var(--accent)]/30">
-                        <span>★ {activeDest.rating}</span>
-                      </div>
-
                       <div className="absolute bottom-3 left-3 right-3 text-white">
                         <span className="text-xs uppercase tracking-widest text-[var(--accent-text)] font-semibold">
                           {activeDest.region} • {activeDest.province}

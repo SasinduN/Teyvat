@@ -45,7 +45,6 @@ function DestinationView({ d }: { d: Destination }) {
         crumbs={[{ label: 'Home', to: paths.home }, { label: 'Destinations', to: paths.destinations }, { label: d.name }]}
         chips={
           <>
-            <HeroChip>Rated {d.rating}</HeroChip>
             <HeroChip>{d.region} region</HeroChip>
           </>
         }
