@@ -11,6 +11,7 @@ import express, { Router, type Request } from 'express';
 
 import type { MediaItem, MediaLibraryPayload, MediaUsage } from '../../../shared/api';
 import { SNIFF_BYTES, sniffImage, SVG_REFUSED, TYPE_REFUSED } from '../../../shared/image-sniff';
+import { PRIMARY_WIDTH } from '../../../shared/photo-assets';
 import { requireAdmin, sessionOf } from '../auth/middleware';
 import { pool } from '../db';
 import { ApiError, asyncRoute } from '../http';
@@ -130,8 +131,10 @@ mediaRouter.get(
   '/admin/media',
   asyncRoute(async (req, res) => {
     const { rows } = await pool.query<MediaRow>(
+      // A photo set shows once, as its main file: deleting one width would break its srcset.
       `select id, key, url, content_type, bytes, created_at
-         from public.media order by created_at desc, id`
+         from public.media where photo_key is null or width = ${PRIMARY_WIDTH}
+        order by created_at desc, id`
     );
     const usage = await usageOf(pool, rows.map((r) => r.url));
 
@@ -174,10 +177,10 @@ mediaRouter.delete(
     try {
       await client.query('begin');
 
-      const { rows } = await client.query<{ key: string; url: string }>(
+      const { rows } = await client.query<{ key: string; url: string; photo_key: string | null }>(
         // `id::text` so a malformed id is simply "not found" rather than an
         // invalid-uuid error.
-        'select key, url from public.media where id::text = $1 for update',
+        'select key, url, photo_key from public.media where id::text = $1 for update',
         [id]
       );
       const row = rows[0];
@@ -193,14 +196,19 @@ mediaRouter.delete(
         return;
       }
 
+      // A photo set goes whole: its other widths aren't listed, so nothing else would remove them.
+      const set = row.photo_key === null
+        ? [{ key: row.key }]
+        : (await client.query<{ key: string }>('select key from public.media where photo_key = $1 for update', [row.photo_key])).rows;
+
       try {
-        await media.store.delete(row.key);
+        for (const { key } of set) await media.store.delete(key);
       } catch (error) {
         console.error('[media] delete from R2 failed:', (error as Error).message);
         throw new ApiError('bad_gateway', 'Couldn’t delete it from storage. Try again.');
       }
 
-      await client.query('delete from public.media where id::text = $1', [id]);
+      await client.query('delete from public.media where key = any($1::text[])', [set.map(({ key }) => key)]);
       await client.query('commit');
     } catch (error) {
       await client.query('rollback').catch(() => undefined);

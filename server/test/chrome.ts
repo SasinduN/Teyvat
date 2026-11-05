@@ -34,6 +34,9 @@ interface CdpMessage {
   id?: number;
   result?: Record<string, unknown>;
   error?: { message: string };
+  method?: string;
+  params?: Record<string, unknown>;
+  sessionId?: string;
 }
 
 export interface Page {
@@ -41,6 +44,8 @@ export interface Page {
   evaluate<T>(expression: string): Promise<T>;
   /** Any DevTools Protocol command on this page (viewport, screenshots, key presses). */
   send(method: string, params?: object): Promise<Record<string, unknown>>;
+  /** Every DevTools Protocol event of this name on this page (`Fetch.requestPaused`, say). */
+  on(method: string, listener: (params: Record<string, unknown>) => void): void;
 }
 
 export interface Chrome {
@@ -116,9 +121,11 @@ async function launchOnce(executable: string): Promise<Chrome> {
 
   let nextId = 1;
   const pending = new Map<number, (message: CdpMessage) => void>();
+  const listeners = new Map<string, ((params: Record<string, unknown>) => void)[]>();
   socket.addEventListener('message', (event) => {
     const message = JSON.parse(String(event.data)) as CdpMessage;
     if (message.id !== undefined) pending.get(message.id)?.(message);
+    else if (message.method) for (const listener of listeners.get(`${message.sessionId}:${message.method}`) ?? []) listener(message.params ?? {});
   });
 
   function send(method: string, params: object = {}, sessionId?: string): Promise<Record<string, unknown>> {
@@ -142,6 +149,10 @@ async function launchOnce(executable: string): Promise<Chrome> {
 
       return {
         send: (method: string, params: object = {}) => send(method, params, sessionId),
+        on(method, listener) {
+          const name = `${sessionId}:${method}`;
+          listeners.set(name, [...(listeners.get(name) ?? []), listener]);
+        },
         async evaluate<T>(expression: string): Promise<T> {
           const result = (await send(
             'Runtime.evaluate',

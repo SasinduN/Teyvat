@@ -162,9 +162,10 @@ npm run build && npm start     # everything on http://localhost:8081
 | `npm run bundle:report` | After a build: the gzipped JS and CSS each page type loads |
 | `npm run screenshots` | Before/after screenshots of a design change at 1280 px and 375 px (`-- --base origin/main`, `--pages /,/about`, `--dark`), into `docs/screenshots/<branch>/` (git-ignored), with a `summary.md` of which pairs differ. Every page type, the phone menu, the enquiry form and the map with a place picked. `--base b46de13` compares against #12's design. In Git Bash, prefix it with `MSYS_NO_PATHCONV=1` when passing `--pages` |
 | `npm run migrate` | Apply pending migrations (`-- --dry-run` to list them) |
+| `npm run images:migrate-assets` | Move `public/assets/` into R2 and repoint the rows (`-- --dry-run` for the plan; `-- --prod` for production) |
 | `npm run seed:generate` | Regenerate `0002_seed.sql` from `scripts/fixtures/*.ts` |
 | `npm run admin:create` | Create an admin, or `--reset-password` for an existing one (`--prod`) |
-| `npm run images:audit` | Read-only: stored image URLs the CSP would block (`--prod`) |
+| `npm run images:audit` | Read-only: stored image URLs the CSP would block, and whether `public/assets/` is still needed (`--prod`) |
 | `npm run media:rebase` | Move stored image URLs to a new R2 base (`--from`, `--to`, `--dry-run`, `--prod`) |
 | `npm run images:import` | Copy the Wikimedia photos the content uses into R2 and repoint rows and credits (`--dry-run`, `--prod`) |
 
@@ -451,7 +452,7 @@ point-in-time recovery).
   no `sslmode`: its traffic never leaves Railway's private network. It logs a
   warning at start-up if given anything else.
 - The scripts that reach production from a laptop with `--prod`
-  (`admin:create`, `images:audit`, `images:import`, `media:rebase`) read
+  (`admin:create`, `images:audit`, `images:import`, `images:migrate-assets`, `media:rebase`) read
   `PROD_DATABASE_URL`: the Postgres service's `DATABASE_PUBLIC_URL` with
   `?sslmode=require`. That is encrypted but not authenticated, because
   Railway's proxy certificate is self-signed.

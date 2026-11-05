@@ -25,6 +25,7 @@
 | `0012_newsletter_unsubscribe.sql` | `newsletter_subscribers.unsubscribe_token` and `consented_at` |
 | `0013_wikimedia_fallback.sql` | any row still on a 0010 Wikimedia photo goes back to its seed photo (the CSP no longer allows Wikimedia; data only) |
 | `0019_site_settings_text_size.sql` | `site_settings.text_size` (100, 110 or 120; the default is 100, today's size) |
+| `0020_media_photo_sets.sql` | `media.photo_key` and `width`: one photograph at several widths, for `srcset` (`npm run images:migrate-assets`) |
 
 **Where the rules live.** There is no row-level security: every connection is
 the API's single database role. Rules are enforced in two layers:
@@ -363,6 +364,8 @@ One row per image uploaded to R2 (`POST /api/admin/media`). A URL under
 | `content_type` | `text` | `image/jpeg`, `png`, `webp` or `avif` (from the bytes, not the request) |
 | `bytes` | `integer` | 1 B to 10 MB |
 | `uploaded_by` | `uuid` NULL | → `users`, `ON DELETE SET NULL` |
+| `photo_key` | `text` NULL | the photograph this file is a width of (`shared/travel-photos.json`); 0020. NULL for an ordinary upload |
+| `width` | `integer` NULL | the file's width in px, in a photo set; unique per `photo_key`. Set together with `photo_key` |
 
 Nothing is deleted automatically. A content save that uses one of our URLs
 takes a share lock on its row, and a library delete takes an update lock, so

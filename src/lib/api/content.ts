@@ -6,6 +6,7 @@
  * approved components expect.
  */
 import { API_ROUTES, type SiteContentPayload, type SiteFeatures } from '@shared/api';
+import { registerPhotoSets } from '@shared/photo-assets';
 import {
   toArticle,
   toDestination,
@@ -84,6 +85,7 @@ export const EMPTY_CONTENT: SiteContent = {
 
 export async function fetchSiteContent(): Promise<SiteContent> {
   const payload = await getJson<SiteContentPayload>(API_ROUTES.content);
+  registerPhotoSets(payload.photoSets);
 
   return {
     destinations: payload.destinations.map(toDestination),

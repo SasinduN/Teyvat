@@ -28,7 +28,8 @@ import { pool } from '../db';
 import { publicImageCredits } from '../media/credits';
 import { asyncRoute } from '../http';
 import { publicStopsByTour } from '../tour-stops';
-import { localPhoto, publicPhoto, publicGallery, photoStoryLocation, photoStoryCopy } from '../../../shared/public-photos';
+import { photoResolver } from '../../../shared/public-photos';
+import { loadPhotoSets } from '../media/photo-sets';
 import photographs from '../../../shared/travel-photos.json';
 
 /**
@@ -120,6 +121,8 @@ contentRouter.get(
       publicStopsByTour(pool),
       publicImageCredits(pool)
     ]);
+    const photoSets = await loadPhotoSets(pool);
+    const { localPhoto, publicPhoto, publicGallery, photoStoryLocation, photoStoryCopy } = photoResolver(photoSets);
 
     const payload: SiteContentPayload = {
       destinations,
@@ -134,6 +137,7 @@ contentRouter.get(
       pillars,
       siteSettings,
       imageCredits,
+      photoSets,
       features: { bookings: req.app.locals.bookings === true }
     };
 
