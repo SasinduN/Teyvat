@@ -50,8 +50,8 @@ off in a pull request, so the history shows when each was done.
       - **Restrict deletions:** on.
       - **Block force pushes:** on.
       - **Require a pull request before merging:** on, with **0 required
-        approvals** for now, because a solo owner can't approve their own PR.
-        **Raise to 1 when a teammate joins.**
+        approvals**, because Sasindu reviews and merges his own PRs, and
+        GitHub doesn't let an author approve their own (CLAUDE.md).
       - **Require status checks to pass:** on. Add the check **`checks`**,
         and tick *Require branches to be up to date before merging*.
 

@@ -29,10 +29,14 @@ this file or anywhere else in git.
 | 8a | Real pages and links: routes, layout, page types, code splitting (`docs/plans/phase-8-pages.md`) | done |
 | 8b | Server side of phase 8: head tags, 404 status, 301s, sitemap, robots | done (#8) |
 | R | Redesign: #12 redone in PRs 0–5 (`docs/plans/redesign-redo.md`) | done (#17, #19, #22, #23, #24, #26) |
-| R+ | #12 parity: glass, buttons, header, Explore and planner markup (`docs/reviews/pr12-parity.md`) | in review (#28) |
-| R++ | `llms.txt` (#29); dialogs keep the scrollbar's space (#30) | done |
-| F | The friend import (`docs/reviews/friend-import.md`): A design, B photos, C bookings behind a flag | A done (#33); B done (#34); C in review (#35), merged only after a production backup (it runs 0014) |
-| T | Typography: DM Sans self-hosted, one rem scale, the admin's text size (0019) | in review |
+| R+ | #12 parity: glass, buttons, header, Explore and planner markup (`docs/reviews/pr12-parity.md`) | done (#28) |
+| R++ | Dialogs keep focus (#27) and the scrollbar's space (#30); `llms.txt` (#29); wrap-up docs (#31); Explore's header and map framing (#32) | done |
+| C | Tests and CI: steadier timing test (#18), a fresh schema per test file (#20), the WhatsApp test's diagnostic (#21), Postgres from AWS's mirror (#25) | done |
+| F | The friend import (`docs/reviews/friend-import.md`): A design, B photos, C bookings behind a flag | done (#33, #34, #35) |
+| L | Local runs never use production (`shared/database-target.ts`) | done (#36) |
+| P | After the import: maps and photos (#37, #41, #42, #44); Book Your Ride (#38, #39, #45); the WhatsApp button (#40) | done |
+| A | Admin login: show/hide password, attempts left, a live lock countdown | done (#46) |
+| T | Typography: DM Sans self-hosted, one rem scale, the admin's text size (0019) | open (#47) |
 
 Update the Status column when a phase lands.
 
@@ -59,8 +63,8 @@ Update the Status column when a phase lands.
   - `script-src 'self'`: no inline scripts, no `eval`.
   - Anything the admin loads imports Zod from `shared/zod.ts` (jitless);
     importing `'zod'` directly brings back an `eval` probe the CSP reports.
-  - A new external host (fonts, tiles, scripts) needs adding to the CSP;
-    `server/test/browser-csp.test.ts` fails until it is.
+  - A new external host needs asking about first (Standing rules), then adding
+    to the CSP; `server/test/browser-csp.test.ts` fails until it is.
 - **Type** (`src/styles/tokens.css`, `fonts.css`):
   - DM Sans, self-hosted through `@fontsource/dm-sans`: Latin only, weights
     400, 500, 600 and 700, no italics. Only 400 is preloaded (`index.html`). A
@@ -123,8 +127,9 @@ Update the Status column when a phase lands.
   `public/theme-init.js` (a classic script, above the stylesheets) sets the
   theme before the first paint: the saved choice (`site:theme`, from the
   Navbar's toggle), else light (the system's setting doesn't count). Browser
-  tests that need dark save the choice (`saveTheme`, `server/test/chrome.ts`). The maps swap to CARTO's `dark_all`
-  tiles in place (`src/lib/mapTiles.ts`). `browser-contrast` measures AA on
+  tests that need dark save the choice (`saveTheme`, `server/test/chrome.ts`). The maps stay on a light
+  basemap in both themes (#41): CARTO Voyager with `VITE_CARTO_KEY`,
+  OpenStreetMap without it (`shared/map-tiles.ts`). `browser-contrast` measures AA on
   every page type in both themes, photos painted white (the worst case);
   `browser-hero-contrast` the photo headers. Text on a gold fill is
   `--on-accent`; `--brand-secondary` is a fill under white text, never text.
@@ -147,8 +152,7 @@ Update the Status column when a phase lands.
   `require` encrypts without verifying, for Railway's public proxy; the
   deployed app uses the internal URL with no `sslmode`.
 - **Site settings links** are NULL or `https://…` (migration 0004). An unset
-  link renders without an `href`. `Footer.tsx` changed only for the Photo
-  Credits link and the newsletter form (the #11 fix-forward).
+  link renders without an `href`.
 - **Tests:** `npm test` runs `scripts/run-tests.mjs`: each file in its own
   process, 60 s per test, and every hook passes `HOOK_TIMEOUT`.
 - **Tour routes** live in `tour_stops` (0007 replaced `tours.route`). A
@@ -165,7 +169,10 @@ Update the Status column when a phase lands.
   404 page, and nothing links there (`navLinks(features)`, `useFeatures()`
   from `/api/content`). Migration 0014 runs either way. The guest cookie is
   `__Host-`, the database keeps its SHA-256 only; never log a request. GPS
-  only on the button press; no geocoding service.
+  only on the button press; no geocoding service. The ride form at `/booking`
+  sends nothing to the server (#45, `docs/RIDE_WHATSAPP.md`): submitting opens
+  a WhatsApp draft to `site_settings.whatsapp_number`, for the visitor to
+  review and send. `/booking?tour=…`, the API and the admin's records stay.
 
 - **WhatsApp button** (`src/components/WhatsAppButton.tsx`,
   `shared/whatsapp.ts`):
@@ -173,8 +180,10 @@ Update the Status column when a phase lands.
     link: no widget, no script, no CSP change.
   - Its message links to the page the visitor is on (a tour, destination or
     experience), set by the page with `usePageSubject`.
-  - It fades out over the map's zoom buttons and anything marked
-    `data-keep-clear`, and hides while the enquiry or search modal is open.
+  - `FloatingActions` stacks it with the Book Your Ride button. Each one steps
+    aside from whatever it would cover (cards, map controls, form controls,
+    the footer, anything marked `data-keep-clear`), and both hide while a modal
+    dialog is open.
 - **Old links:** `/?tour=<id>` and `/?destination=<id>` must keep reaching
   the pages; they are in WhatsApp chats. `HomeRoute` (`src/App.tsx`)
   redirects them in the browser; phase 8b adds the server's 301. Keep both.
@@ -229,12 +238,37 @@ Agreed, not started. Each one gets its own plan first.
   only for full-width heroes. Skip Jaffna and Udawalawe (the friend import's
   1920 px files are upscaled). Until then R2 keeps its 1280 px copies
   (`docs/reviews/friend-import.md`, section 5).
+- **TripAdvisor reviews section:** real reviews only.
+- **Booking flow fixes:** Sasindu will list them.
+- **Bug and performance audit.**
+- **Admin drawer focus trap:** the phone drawer in
+  `src/admin/components/AdminLayout.tsx` doesn't use `useModalFocus` yet.
+- **The parked WhatsApp flaky test:** `browser-whatsapp`'s phone check ("steps
+  aside from the zoom buttons"); the cause is unknown. Its diagnostic is in the
+  test (#21, `explainOnFailure`) and prints when the check fails.
+- **Replace the Belilena image** in the admin (Sasindu).
 
 ## Standing rules
 
+### Team and merging
+
+- **Sasindu is the project lead and design approver.** He reviews and merges
+  his own PRs after CI is green. Other contributors' PRs (for example
+  Roshika's) need Sasindu's approval before merging.
+- **Never merge on red CI. Always merge with "Create a merge commit":** the
+  pixel baselines are commits, so a squash or a rebase breaks them.
+- **One redesign PR open at a time; small fix PRs may be open alongside.**
 - **Plan first, then stop.** Write the plan and wait for approval before
   writing any code.
-- **Public design changes need evidence and a second approval.** Any change
+- **Push and open PRs without stopping once all local checks pass. Never merge
+  a PR yourself.**
+- **`main` takes changes through pull requests.** Push a branch, open a PR,
+  and wait for CI (`.github/workflows/ci.yml`, job `checks`). Merging deploys:
+  Railway builds from `main` and *Wait for CI* holds it until CI passes.
+
+### Design changes
+
+- **Public design changes need evidence and Sasindu's approval.** Any change
   to markup, `className`, styles or layout of the public site (or the
   admin):
   - is called out in its plan first;
@@ -246,20 +280,70 @@ Agreed, not started. Each one gets its own plan first.
     (from `summary.md`) and the author drags those before/after pairs into
     the PR on GitHub. A PR with no visual change says so, with the count of
     identical pairs, and no images;
-  - is approved by the other teammate (never the author) before merging.
+  - is approved by Sasindu before merging.
 
   A pixel test (`browser-home-baseline`, `browser-inquiry`) is re-baselined
   only for sections the PR changes on purpose, in that PR, and listed in
   its description. Tests are never deleted or weakened to get a change
-  through. Merge with a merge commit, not a squash: the baselines are
-  commits. The redesign's order and rules: `docs/plans/redesign-redo.md`.
-- **One redesign PR open at a time; small fix PRs may be open alongside.**
-  Nobody merges their own PR, and nobody merges on red CI.
+  through. The redesign's order and rules: `docs/plans/redesign-redo.md`.
+
+### CI
+
+- **Re-running CI** is allowed only for the known WhatsApp zoom-button flake,
+  or for infrastructure failures where the code never ran (Docker pull limits,
+  GitHub billing). Investigate everything else.
+
+### Running tests on this laptop
+
+- **One file at a time, in the foreground.** No background test runs or
+  watchers.
+- **If available memory drops below 2 GB, stop and tell Sasindu** instead of
+  restarting.
+- **Close each browser tab after its screenshot,** and clean up leftover test
+  processes.
+
+### Databases and secrets
+
+- **Local runs never use production.** `DATABASE_URL` is the local Postgres
+  (`localhost:5433/teyvat_dev`); tests use `TEST_DATABASE_URL`
+  (`teyvat_test`). The server and `migrate` refuse any other host unless
+  `NODE_ENV=production` (`shared/database-target.ts`).
+- **Production only through `PROD_DATABASE_URL` with `--prod`,** after the host
+  is typed back (`admin:create`, `images:audit`, `images:import`,
+  `media:rebase`). Never run anything against production without asking.
+- **Never read, print or copy `.env`'s contents,** and never copy `.env` into a
+  worktree.
 - **Never run the Railway CLI.** It is linked at the home directory to a
   different project (`alluring-warmth`), not Teyvat.
-- **`main` takes changes through pull requests.** Push a branch, open a PR,
-  and wait for CI (`.github/workflows/ci.yml`, job `checks`). Merging deploys:
-  Railway builds from `main` and *Wait for CI* holds it until CI passes.
+- **`db/migrations/0002_seed.sql` is an upsert.** Never run it by hand against
+  production. It overwrites admin edits.
+- **Rotate the Postgres password before go-live.** It is on the launch
+  checklist (`docs/LAUNCH-CHECKLIST.md`), with everything else before launch.
+
+### Security and design
+
+- **The CSP stays strict:** self-hosted fonts and assets only, no
+  `'unsafe-inline'`, no new external hosts without asking. Already allowed, and
+  not to grow: `style-src` has `'unsafe-inline'` only for the `<style>` the
+  admin's toasts (Sonner) inject, and unpkg only for Leaflet's stylesheet;
+  `img-src` has Unsplash, R2, the map tile hosts and Wikimedia.
+- **Photos come from R2 via the database, never committed to the repo.** The
+  WebP files already in `public/assets/` (`shared/optimized-photos.json`, used
+  by `shared/public-photos.ts`) predate this rule; don't add to them.
+- **Screenshots are never committed** (`docs/screenshots/` is git-ignored).
+- **AA contrast in both themes. One `h1` per page.**
+- **DM Sans everywhere (self-hosted). Body text at least 16 px on phones. The
+  admin's text size options are 100, 110 and 120%.**
+- **The brand is undecided.** The code says "Travel Eye". Don't rename it, and
+  don't add new "Travel Eye" strings.
+- **`BOOKINGS_ENABLED` stays off in production** until there's a privacy policy
+  and real vehicle capacities.
+- **Never log request data.** `errorHandler` logs errors through
+  `describeForLog` (no Postgres `detail`, no request bodies). Enquiry names,
+  emails and messages must never reach the logs.
+
+### Deployment and ports
+
 - **Railway API service variables:**
   - `DATABASE_URL = ${{Postgres.DATABASE_URL}}`
   - `NODE_ENV=production`
@@ -279,23 +363,8 @@ Agreed, not started. Each one gets its own plan first.
     every page, no sitemap, no `llms.txt`). Launch checklist item 21.
   - `BOOKINGS_ENABLED`: `true` turns booking requests on. Unset or anything
     else keeps them off (the page and API are 404s). Launch checklist item 24.
-- **Never log request data.** `errorHandler` logs errors through
-  `describeForLog` (no Postgres `detail`, no request bodies). Enquiry names,
-  emails and messages must never reach the logs.
 - **The local API runs on port 8081**, because Apache holds 8080. Vite proxies
   `/api` there.
-- **Local runs never use production.** `DATABASE_URL` is the local database
-  (`localhost:5433/teyvat_dev`); the server and `migrate` refuse any other
-  host unless `NODE_ENV=production` (`shared/database-target.ts`). Production
-  from a laptop only through `PROD_DATABASE_URL` with `--prod`, in
-  `admin:create`, `images:audit`, `images:import` and `media:rebase`, after
-  the host is typed back.
-- **The brand is undecided.** The code says "Travel Eye". Don't rename it, and
-  don't add new brand strings.
-- **`db/migrations/0002_seed.sql` is an upsert.** Never run it by hand against
-  production. It overwrites admin edits.
-- **Rotate the Postgres password before go-live.** It is on the launch
-  checklist (`docs/LAUNCH-CHECKLIST.md`), with everything else before launch.
 
 ## Checks
 
@@ -308,4 +377,4 @@ CI runs all of these on every pull request and every push to `main`.
   map back to exactly the values the approved components render.
 - The pixel tests (`browser-home-baseline`, `browser-inquiry`) pass against
   their baseline commits; a PR that changes a section's design moves that
-  section's baseline, with screenshots and the other teammate's approval.
+  section's baseline, with screenshots and Sasindu's approval.
