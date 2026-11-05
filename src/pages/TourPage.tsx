@@ -1,5 +1,4 @@
 import { Link, useParams } from 'react-router-dom';
-import { CheckCircle2, MapPin } from 'lucide-react';
 import { HeroChip, PageHero } from '@/components/PageHero';
 import { SectionHead, TourCard } from '@/components/PageCards';
 import { PlanCard } from '@/components/PlanCard';
@@ -53,14 +52,11 @@ function TourView({ t }: { t: TourPackage }) {
             </div>
 
             {t.highlights.length > 0 && (
-              <div className="rounded-2xl border border-[var(--border-strong)]/40 bg-[var(--background-secondary)] p-6">
-                <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)]">Journey Highlights</h2>
-                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <h2 className="mb-4 font-heading text-2xl font-bold text-[var(--brand-primary)]">Highlights</h2>
+                <ul className="te-plain-list te-plain-list--2">
                   {t.highlights.map((h, i) => (
-                    <li key={i} className="flex items-start space-x-2 text-sm text-[var(--text-primary)]/90">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-primary)]" aria-hidden="true" />
-                      <span>{h}</span>
-                    </li>
+                    <li key={i}>{h}</li>
                   ))}
                 </ul>
               </div>
@@ -70,22 +66,12 @@ function TourView({ t }: { t: TourPackage }) {
               <Section name="TourRoute">
                 <div>
                   <h2 className="mb-4 font-heading text-3xl font-bold text-[var(--brand-primary)]">The Route</h2>
-                  <ol className="mb-4 flex flex-wrap gap-1.5" aria-label="Stops, in order">
+                  <ol className="mb-4 flex flex-wrap gap-x-1.5 text-[var(--text-primary)]" aria-label="Stops, in order">
                     {t.route.map((place, i) => (
-                      <li key={i} className="flex items-center gap-1.5">
-                        <span className="flex items-center space-x-1 rounded-lg border border-[var(--border-strong)]/40 bg-[var(--background-secondary)] px-2.5 py-1 text-xs font-semibold text-[var(--brand-primary)]">
-                          <MapPin className="h-3 w-3 text-[var(--brand-primary)]" aria-hidden="true" />
-                          <span>{place}</span>
-                        </span>
-                        {i < t.route.length - 1 && (
-                          <span className="text-xs text-[var(--text-primary)]/30" aria-hidden="true">
-                            →
-                          </span>
-                        )}
-                      </li>
+                      <li key={i}>{place}{i < t.route.length - 1 ? ',' : ''}</li>
                     ))}
                   </ol>
-                  <div className="h-[380px] overflow-hidden rounded-3xl border border-[var(--border-strong)]/60 shadow-xl sm:h-[460px]">
+                  <div className="h-[380px] overflow-hidden rounded-lg border border-[var(--border-strong)]/60 sm:h-[460px]">
                     <RouteMap stops={t.stops} />
                   </div>
                 </div>
@@ -95,22 +81,14 @@ function TourView({ t }: { t: TourPackage }) {
             {t.itinerary.length > 0 && (
               <div>
                 <h2 className="mb-5 font-heading text-3xl font-bold text-[var(--brand-primary)]">Day-by-Day Itinerary</h2>
-                <ol className="space-y-4">
+                <ol className="te-days">
                   {t.itinerary.map((day) => (
-                    <li key={day.day} className="flex items-start space-x-4 rounded-2xl border border-[var(--border-strong)]/30 bg-[var(--surface)] p-5">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--inverse-surface)] text-sm font-bold text-[var(--accent-text)]">
-                        D{day.day}
-                      </div>
+                    <li key={day.day}>
+                      <span className="te-days__day">Day {day.day}</span>
                       <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-heading text-lg font-bold text-[var(--brand-primary)]">{day.title}</h3>
-                          {day.location && (
-                            <span className="rounded-full bg-[var(--brand-secondary)]/10 px-2 py-0.5 text-xs font-semibold text-[var(--brand-primary)]">
-                              {day.location}
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-1 text-sm leading-relaxed text-[var(--text-primary)]/80">{day.description}</p>
+                        <h3 className="font-heading">{day.title}</h3>
+                        {day.location && <span className="te-ed-meta">{day.location}</span>}
+                        <p>{day.description}</p>
                       </div>
                     </li>
                   ))}
@@ -129,7 +107,7 @@ function TourView({ t }: { t: TourPackage }) {
               <PlanCard
                 priceFrom={t.priceFrom}
                 title={`${t.days} days, your way`}
-                text="Every itinerary is a starting point: dates, hotels and pace are tailored to you."
+                text="Every itinerary can change: dates, hotels and pace."
                 cta={bookings ? 'Inquire About This Tour' : 'Book / Inquire This Tour'}
               />
             </div>
@@ -141,7 +119,7 @@ function TourView({ t }: { t: TourPackage }) {
         <Section name="OtherTours">
           <section className="bg-[var(--background-secondary)] py-16 sm:py-20">
             <div className="te-container">
-              <SectionHead eyebrow="Signature Itineraries" title="Other Journeys" />
+              <SectionHead title="Other routes" />
               <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                 {tours
                   .filter((x) => x.id !== t.id)

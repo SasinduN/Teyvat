@@ -317,7 +317,7 @@ describe('pages and links, in Chrome', { skip, timeout: 4 * 60_000 }, () => {
     await waitFor(page, `[...document.querySelectorAll('#planner button')].some((b) => b.textContent.trim() === 'Request Custom Quote')`, 'a sample journey');
     await page.evaluate(`[...document.querySelectorAll('#planner button')].find((b) => b.textContent.trim() === 'Request Custom Quote').click(), true`);
     await waitFor(page, `document.querySelector('.fixed.inset-0 textarea')`, 'the enquiry form');
-    assert.equal(await message(page), 'I would like to inquire about: Journey Plan: Custom Culture & Nature (6–8 days) — Around the Island');
+    assert.equal(await message(page), 'I would like to inquire about: Journey Plan: Custom Culture & Nature (6–8 days), Around the Island');
 
     // The About page's form is inline.
     page = await openPage('/about');

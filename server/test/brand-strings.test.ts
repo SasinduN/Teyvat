@@ -34,14 +34,9 @@ const ALLOWED: Record<string, number> = {
   'src/admin/components/AdminLayout.tsx': 2,
   'src/admin/pages/LoginPage.tsx': 2,
   'src/admin/useInquiryCounts.ts': 2,
-  'src/components/Footer.tsx': 5,
-  'src/components/HiddenGemsSection.tsx': 1,
-  'src/components/InquiryForm.tsx': 2,
-  'src/components/IntroSection.tsx': 2,
-  'src/components/JournalSection.tsx': 1,
+  'src/components/InquiryForm.tsx': 1,
   'src/components/Navbar.tsx': 1,
   'src/components/PhotoStorySection.tsx': 1,
-  'src/components/WhyTravelEye.tsx': 1,
   'src/types/index.ts': 1
 };
 

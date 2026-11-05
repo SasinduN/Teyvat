@@ -10,14 +10,13 @@ import { addThemedTiles, onThemeChangeWhileMapped } from '@/lib/mapTiles';
 import { tokenValue } from '@/lib/theme';
 import { MAP_CATEGORIES, MAP_CATEGORY_STYLES, markerHtml, routeStopHtml, type MapCategory } from '@/lib/mapMarkers';
 import { airportTravelTime, googleMapsUrl } from '@/lib/googleMaps';
+import { categoryLabel } from '@/lib/categories';
 import { Destination, CategoryType, TourPackage } from '../types';
 import {
   MapPin,
-  Sparkles,
   ChevronRight,
   Compass,
   ArrowUpRight,
-  CheckCircle2,
   Waves,
   Mountain,
   Landmark,
@@ -69,7 +68,7 @@ const MapLegendList: React.FC<{ id?: string; className: string }> = ({ id, class
           >
             <Icon className="w-2.5 h-2.5" style={{ color: style.iconColor }} strokeWidth={2.6} aria-hidden="true" />
           </span>
-          {cat}
+          {categoryLabel(cat)}
         </li>
       );
     })}
@@ -813,7 +812,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                     : 'bg-[var(--surface)] text-[var(--text-primary)]/80 hover:bg-[var(--brand-secondary)] hover:text-white border border-[var(--border-strong)]/50'
                 }`}
               >
-                <span>{cat}</span>
+                <span>{categoryLabel(cat)}</span>
                 {cat !== 'All' && (
                   <span className={`text-xs px-1.5 py-0.2 rounded-full font-sans ${
                     isSelected ? 'bg-[var(--emerald-edge)] text-white' : 'bg-[var(--background-secondary)] text-[var(--text-primary)]'
@@ -966,10 +965,6 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 via-40% to-transparent to-80%" />
                       
-                      <div className="absolute top-3 right-3 bg-[var(--inverse-surface)]/90 text-[var(--accent-text)] px-2.5 py-1 rounded-full text-xs font-bold flex items-center space-x-1 border border-[var(--accent)]/30">
-                        <span>★ {activeDest.rating}</span>
-                      </div>
-
                       <div className="absolute bottom-3 left-3 right-3 text-white">
                         <span className="text-xs uppercase tracking-widest text-[var(--accent-text)] font-semibold">
                           {activeDest.region} • {activeDest.province}
@@ -990,7 +985,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                           key={cat}
                           className="bg-[var(--inverse-raised)] text-[var(--on-inverse)] border border-[var(--emerald-edge)]/50 px-2.5 py-0.5 rounded-full text-xs font-semibold"
                         >
-                          {cat}
+                          {categoryLabel(cat)}
                         </span>
                       ))}
                     </div>
@@ -1018,13 +1013,11 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
                     {/* Top Experiences */}
                     <div>
                       <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--accent-text)] mb-2 flex items-center space-x-1">
-                        <Sparkles className="w-3.5 h-3.5" />
                         <span>Top Experiences</span>
                       </h4>
                       <ul className="space-y-1.5">
                         {activeDest.experiences.slice(0, 3).map((exp, i) => (
                           <li key={i} className="text-sm text-white/80 flex items-start space-x-2">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-[var(--emerald-edge)] shrink-0 mt-0.5" />
                             <span>{exp}</span>
                           </li>
                         ))}

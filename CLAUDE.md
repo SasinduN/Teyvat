@@ -38,6 +38,7 @@ this file or anywhere else in git.
 | A | Admin login: show/hide password, attempts left, a live lock countdown | done (#46) |
 | M | Photos in `public/assets/` moved to R2, with `srcset` (A); the files removed once the audit was clean (B) | done (#49, #50) |
 | T | Typography: DM Sans self-hosted, one rem scale, the admin's text size (0019) | done (#47) |
+| E | Editorial, photo-led redesign, stats in Admin → Settings (0021), `docs/reviews/generic-ui-audit.md` | open (#52) |
 
 Update the Status column when a phase lands.
 
@@ -126,6 +127,19 @@ Update the Status column when a phase lands.
     (`--copy-edge`, and `--photo-top-shade` under the home page's clear header). When
     a light tint can't hold AA, darken the photo under the text, not the
     whole panel. `browser-contrast` measures it (sticky elements pinned).
+- **Editorial layouts** (`src/styles/editorial.css`, `docs/reviews/generic-ui-audit.md`):
+  - Photos lead: full-width bands, split photo and text, an asymmetric grid, plain
+    lists with hairlines. No pill eyebrows, no icon squares, no fade-up on scroll.
+  - Glass only on the header, map panels and overlays on photos.
+  - One icon set at one size: `.site svg.lucide` is 18 px. Icons mark controls and
+    contact details, not decoration.
+  - `plain-copy` fails on stock phrases, em dashes and reply-time promises in the
+    public components.
+  - **Stats** (`site_settings.stats`, `shared/site-stats.ts`, `StatStrip`): up to four,
+    from Admin → Settings, hidden when empty. Every number needs a source; the
+    sources are in the audit. National parks stays out: the sources disagree.
+  - `npm run screenshots -- --live-photos <site URL>`: the scratch databases have no
+    R2 rows, so without it both versions show the seed's stock photos.
 - **Dialogs** (enquiry, search, hidden gem, photo story, the phone menu)
   use `useModalFocus`: focus trapped, Escape closes, the page behind inert
   and not scrolling. `html { scrollbar-gutter: stable }` keeps the
@@ -242,7 +256,9 @@ Update the Status column when a phase lands.
 
 Agreed, not started. Each one gets its own plan first.
 
-- **TripAdvisor reviews section:** real reviews only.
+- **TripAdvisor reviews section:** real reviews only. Ratings come back with it,
+  and not before: the seeded `rating` columns stay in the database but aren't shown
+  (`no-ratings`).
 - **Booking flow fixes:** Sasindu will list them.
 - **Bug and performance audit.** It includes the layout shift on `<body>`:
   about 80 px as each page's code loads, before any photo.

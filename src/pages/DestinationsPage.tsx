@@ -1,3 +1,4 @@
+import { categoryLabel } from '@/lib/categories';
 import { useSearchParams } from 'react-router-dom';
 import { PageHero } from '@/components/PageHero';
 import { DestinationCard } from '@/components/PageCards';
@@ -60,7 +61,7 @@ export function DestinationsPage() {
                     aria-pressed={selected}
                     className={`te-button te-button--sm gap-1.5 text-sm ${selected ? 'te-button--primary' : 'te-button--secondary'}`}
                   >
-                    <span>{c}</span>
+                    <span>{categoryLabel(c)}</span>
                     {c !== 'All' && (
                       <span className="rounded-full px-1.5 font-sans text-xs">
                         {all.filter((d) => d.category.includes(c)).length}
@@ -74,7 +75,7 @@ export function DestinationsPage() {
             <p className="mb-6 text-sm text-[var(--text-secondary)]" role="status">
               Showing <strong className="text-[var(--brand-primary)]">{shown.length}</strong>{' '}
               {shown.length === 1 ? 'destination' : 'destinations'}
-              {category !== 'All' && <> for <strong className="text-[var(--brand-primary)]">{category}</strong></>}
+              {category !== 'All' && <> for <strong className="text-[var(--brand-primary)]">{categoryLabel(category)}</strong></>}
             </p>
 
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">

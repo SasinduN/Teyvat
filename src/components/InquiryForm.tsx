@@ -67,7 +67,7 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
             Your Inquiry Has Been Received
           </h3>
           <p className="text-sm text-[var(--text-primary)]/80 max-w-md mx-auto leading-relaxed">
-            Thank you, <strong>{formData.name || 'Traveler'}</strong>! A Travel Eye Sri Lanka travel specialist will review your request and get back to you within 12 hours with a bespoke itinerary.
+            Thank you, <strong>{formData.name || 'Traveler'}</strong>! We’ll reply by email.
           </p>
           <button
             onClick={onDone}

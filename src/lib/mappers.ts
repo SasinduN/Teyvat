@@ -200,7 +200,8 @@ export const toSiteSettings = (r: PublicSiteSettings): SiteSettings => ({
   privacyUrl: r.privacy_url ?? undefined,
   termsUrl: r.terms_url ?? undefined,
   sustainabilityUrl: r.sustainability_url ?? undefined,
-  whatsappNumber: r.whatsapp_number ?? undefined
+  whatsappNumber: r.whatsapp_number ?? undefined,
+  stats: r.stats ?? []
 });
 
 export const toImageCredit = (r: PublicImageCredit): ImageCredit => ({

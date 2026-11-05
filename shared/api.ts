@@ -116,7 +116,8 @@ export const PUBLIC_SITE_SETTINGS_COLUMNS = [
   'terms_url',
   'sustainability_url',
   // Public by nature: it is in every WhatsApp link the button opens.
-  'whatsapp_number'
+  'whatsapp_number',
+  'stats'
 ] as const satisfies readonly (keyof SiteSettingsRow)[];
 
 export type PublicSiteSettings = Pick<

@@ -1,3 +1,5 @@
+import type { SiteStat } from '@shared/site-stats';
+
 import type { PillarIconName } from '@shared/database.types';
 
 export type CategoryType = 'All' | 'Beaches' | 'Mountains' | 'Culture' | 'Wildlife' | 'Adventure' | 'Food' | 'Hidden Gems';
@@ -155,6 +157,8 @@ export interface ImageCredit {
 }
 
 export interface SiteSettings {
+  /** The stats strip; empty hides it. */
+  stats: SiteStat[];
   postalAddress: string;
   phone: string;
   contactEmail: string;

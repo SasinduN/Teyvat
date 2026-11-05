@@ -9,7 +9,7 @@ import { BRAND_NAME, BRAND_TAGLINE } from './brand';
 export const HOME_TITLE = `${BRAND_NAME} | ${BRAND_TAGLINE}`;
 
 /** The home page's description: the one `index.html` has always had. */
-export const HOME_DESCRIPTION = `Discover hidden places, timeless culture, wild adventures and unforgettable moments across Sri Lanka with ${BRAND_NAME}.`;
+export const HOME_DESCRIPTION = `Tea country, ancient cities, wildlife and surf in Sri Lanka, with routes planned by ${BRAND_NAME}.`;
 
 /** Any other page: "Ella | Travel Eye". */
 export const pageTitle = (name: string): string => `${name} | ${BRAND_NAME}`;
@@ -34,11 +34,11 @@ export const PAGE_TITLES = {
  * their `<meta name="description">` and share text.
  */
 export const PAGE_DESCRIPTIONS = {
-  destinations: 'Misty peaks, ancient citadels, turquoise bays and northern kovils: every place we know and love.',
+  destinations: 'Highlands, ancient cities, beaches and northern temples: the places we plan trips to.',
   experiences: "Safaris, sunrise hikes, surf breaks and slow afternoons in old forts: what to do once you're here.",
-  tours: 'Multi-day journeys planned by local experts, each one a starting point we tailor to you.',
-  about: "Local travel designers who know the island's back roads, its seasons and its people.",
-  explore: 'Explore Sri Lanka on the map, discover hidden places and find a route around the island.',
+  tours: 'Multi-day routes planned by local experts. Each one can change to suit you.',
+  about: "Local travel designers who know the island's roads and seasons.",
+  explore: 'See Sri Lanka on the map and find a route around the island.',
   plan: 'Shape a sample Sri Lankan journey around your interests, time and preferred regions, then plan the details with a local travel designer.',
   journal: 'Local travel stories, practical guides and photographic moments from across Sri Lanka.',
   photoCredits: 'The photographers behind the pictures on this site, and the licences their work is shared under.',

@@ -1,5 +1,6 @@
 import React, { useState, useId } from 'react';
-import { Search, MapPin, Sparkles, Calendar, ArrowRight } from 'lucide-react';
+import { Search, ArrowRight } from 'lucide-react';
+import { categoryLabel } from '@/lib/categories';
 import { useDestinations } from '@/hooks/useSiteContent';
 import { TRAVEL_TIMINGS } from '@/lib/travelTiming';
 import { CategoryType } from '../types';
@@ -35,13 +36,12 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
 
   return (
     <div className="te-container te-search">
-      <div className="glass glass--inverse glass--strong text-white p-4 sm:p-6 md:p-8 rounded-3xl">
+      <div className="bg-[var(--inverse-surface)] text-white p-4 sm:p-6 md:p-8 rounded-lg">
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[1.2fr_1.2fr_1fr_auto] gap-4 items-center">
           
           {/* Where field */}
           <div className="bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
             <label htmlFor={`${id}-where`} className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[var(--accent-text)] font-bold mb-1">
-              <MapPin className="w-3.5 h-3.5 text-[var(--accent-text)]" />
               <span>Where to go?</span>
             </label>
             <select id={`${id}-where`}
@@ -63,7 +63,6 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
           {/* What experience field */}
           <div className="bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
             <label htmlFor={`${id}-category`} className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[var(--accent-text)] font-bold mb-1">
-              <Sparkles className="w-3.5 h-3.5 text-[var(--accent-text)]" />
               <span>What Experience?</span>
             </label>
             <select id={`${id}-category`}
@@ -73,7 +72,7 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
             >
               {categories.map((cat) => (
                 <option key={cat} value={cat} className="bg-[var(--inverse-surface)] text-white">
-                  {cat === 'All' ? 'All Experiences' : cat}
+                  {cat === 'All' ? 'All Experiences' : categoryLabel(cat)}
                 </option>
               ))}
             </select>
@@ -82,7 +81,6 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
           {/* When traveling field */}
           <div className="bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
             <label htmlFor={`${id}-timing`} className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[var(--accent-text)] font-bold mb-1">
-              <Calendar className="w-3.5 h-3.5 text-[var(--accent-text)]" />
               <span>When Travelling?</span>
             </label>
             <select id={`${id}-timing`} aria-describedby={`${id}-timing-help`}

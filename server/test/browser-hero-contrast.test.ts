@@ -13,7 +13,7 @@ import './test-db';
  * and any button's own fill. Every piece of text, icon and control on it is
  * then measured against every pixel behind it: 4.5:1 for text, 3:1 for
  * large text and for the icons of icon-only controls (the slide controls).
- * An icon beside its own text (a breadcrumb chevron, the rating star) is
+ * An icon beside its own text (a breadcrumb chevron) is
  * decorative: the text carries it (WCAG 1.4.11).
  *
  * Needs `npm run build` and Chrome; skipped with a message otherwise.
