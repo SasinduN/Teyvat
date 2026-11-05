@@ -13,7 +13,7 @@ export const PageCrash: React.FC<{ onRetry: () => void }> = ({ onRetry }) => (
       <TriangleAlert className="h-6 w-6" />
     </div>
     <h1 className="font-heading text-xl font-bold text-[var(--brand-primary)]">This page hit an error</h1>
-    <p className="mt-2 text-xs font-light leading-relaxed text-[var(--text-primary)]/65">
+    <p className="mt-2 text-sm leading-relaxed text-[var(--text-primary)]/65">
       Nothing was saved or lost by it. Try again, or go back to the dashboard. If it keeps
       happening, note what you clicked just before.
     </p>

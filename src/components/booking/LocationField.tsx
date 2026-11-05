@@ -29,7 +29,7 @@ export function LocationField({
         required={required}
         maxLength={300}
         value={value.label}
-        placeholder="City, hotel, airport or landmark"
+        placeholder="City, hotel or airport"
         autoComplete="off"
         aria-describedby={`${id}-help`}
         aria-invalid={Boolean(error)}

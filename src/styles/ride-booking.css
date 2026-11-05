@@ -9,34 +9,34 @@
 .ride-page .booking-card { margin-bottom: 0; padding: 1.25rem; }
 .ride-page label { margin-top: .9rem; margin-bottom: .35rem; }
 .ride-page :is(input:not([type="radio"]), select) { min-height: 48px; background: var(--surface); }
-.ride-page small { font-size: .8rem; line-height: 1.5; margin: .25rem 0; }
+.ride-page small { font-size: var(--text-sm); line-height: 1.5; margin: .25rem 0; }
 .ride-page :is(input, select, button, a):focus-visible { outline: 3px solid var(--brand-secondary); outline-offset: 3px; }
 .ride-page [aria-invalid="true"] { border-color: var(--danger); }
 .ride-page .ride-field-error { color: var(--danger); }
 .ride-location-button { display: inline-flex; align-items: center; min-height: 44px; color: var(--text-link); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .ride-page .ride-trip { margin-top: 1rem; }
-.ride-page .ride-trip legend { font-size: 1rem; font-weight: 550; margin: 0 0 .4rem; color: var(--text-primary); }
+.ride-page .ride-trip legend { font-size: 1rem; font-weight: 500; margin: 0 0 .4rem; color: var(--text-primary); }
 .ride-trip-options { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
 .ride-page .ride-trip-option { display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-strong); border-radius: var(--radius-md); min-height: 48px; margin: 0; padding: .4rem; cursor: pointer; }
 .ride-trip-option.is-selected { color: var(--palette-white); background: var(--palette-tropical-teal); border-color: var(--palette-tropical-teal); }
 .ride-page .ride-trip-option input { accent-color: var(--palette-white); }
 .ride-page .ride-submit { width: 100%; min-height: 48px; margin: 1.2rem 0 .25rem; }
-.ride-page .ride-consent { font-size: .8rem; line-height: 1.5; margin: .5rem 0 0; }
+.ride-page .ride-consent { font-size: var(--text-sm); line-height: 1.5; margin: .5rem 0 0; }
 .ride-page .ride-summary { background: var(--palette-sky-mist); }
 :root[data-theme="dark"] .ride-page .ride-summary { background: var(--palette-night-sky); }
-.ride-page .ride-summary h2 { font-size: 1.25rem; margin-bottom: .8rem; }
-.ride-summary .booking-summary { grid-template-columns: 95px minmax(0, 1fr); gap: .6rem; font-size: .9rem; }
+.ride-page .ride-summary h2 { font-size: var(--heading-card); margin-bottom: .8rem; }
+.ride-summary .booking-summary { grid-template-columns: 6rem minmax(0, 1fr); gap: .6rem; font-size: var(--text-sm); }
 .ride-summary dd { margin: 0; }
-.ride-page .booking-price { border-top: 1px solid var(--border); padding-top: .8rem; font-size: .85rem; margin-bottom: 0; }
+.ride-page .booking-price { border-top: 1px solid var(--border); padding-top: .8rem; font-size: var(--text-xs); margin-bottom: 0; }
 .ride-page .ride-success, .ride-page .ride-requests { margin: 1rem 0; }
-.ride-success h2 { font-size: 1.15rem; }
+.ride-success h2 { font-size: var(--heading-card); }
 .ride-callback { width: min(440px, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto; background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 1.5rem; margin: auto; }
 .ride-callback::backdrop { background: rgb(16 31 27 / .55); }
-.ride-callback h2 { font-size: 1.4rem; margin-bottom: .65rem; }
+.ride-callback h2 { font-size: var(--heading-sub); margin-bottom: .65rem; }
 .ride-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 @media (max-width: 767px) {
   .ride-grid, .ride-grid--empty { grid-template-columns: minmax(0, 1fr); }
   .ride-page .booking-card { padding: 1rem; }
   .ride-page .booking-aside { position: static; }
-  .ride-summary .booking-summary { grid-template-columns: 95px minmax(0, 1fr); }
+  .ride-summary .booking-summary { grid-template-columns: 6rem minmax(0, 1fr); }
 }

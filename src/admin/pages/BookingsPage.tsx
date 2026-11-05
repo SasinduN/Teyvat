@@ -143,7 +143,7 @@ const Bookings: React.FC = () => {
         }
       />
       {error && <ErrorNote>{error}</ErrorNote>}
-      <p role="status" className="mb-3 text-xs text-[var(--text-secondary)]">
+      <p role="status" className="mb-3 text-sm text-[var(--text-secondary)]">
         {notice}
       </p>
 
@@ -181,11 +181,11 @@ const Bookings: React.FC = () => {
                   <h2 className="font-heading text-base font-bold text-[var(--brand-primary)]">{b.reference}</h2>
                   <Badge tone={b.status === 'pending' ? 'gold' : b.status === 'confirmed' ? 'success' : 'muted'}>{b.status}</Badge>
                 </div>
-                <p className="text-xs text-[var(--text-primary)]">
+                <p className="text-sm text-[var(--text-primary)]">
                   {b.details.kind === 'ride' ? `Ride: ${b.details.pickup.label}` : b.tourName ?? 'Custom transfer'} → {b.destinationName} · {b.details.departureDate} {b.details.departureTime} (Sri Lanka) ·{' '}
                   {b.vehicle.name} · {b.details.passengers} passengers
                 </p>
-                <details className="text-xs text-[var(--text-primary)]">
+                <details className="text-sm text-[var(--text-primary)]">
                   <summary className="cursor-pointer py-1 font-semibold text-[var(--brand-primary)]">Travel details, contact and history</summary>
                   <dl className="mt-2 grid grid-cols-[8rem_minmax(0,1fr)] gap-x-3 gap-y-1.5">
                     <dt className="text-[var(--text-secondary)]">Pickup</dt>
@@ -303,7 +303,7 @@ const Bookings: React.FC = () => {
               onChange={(e) => setVehicle((v) => ({ ...v, luggageCapacity: e.target.value === '' ? null : Number(e.target.value) }))}
             />
           </div>
-          <label className="flex items-center gap-2 self-end text-xs text-[var(--text-primary)]">
+          <label className="flex items-center gap-2 self-end text-sm text-[var(--text-primary)]">
             <input type="checkbox" checked={vehicle.acceptingRequests} onChange={(e) => setVehicle((v) => ({ ...v, acceptingRequests: e.target.checked }))} />
             Take booking requests for this category
           </label>

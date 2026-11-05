@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Search, Menu, X, Compass, ArrowRight } from 'lucide-react';
 import { useModalFocus } from '@/hooks/useModalFocus';
@@ -28,16 +28,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
   const menuRef = useModalFocus(mobileMenuOpen, () => setMobileMenuOpen(false));
   const activeTarget = activeNavigationTarget(location.pathname, location.hash);
   const links = navLinks(useFeatures());
+  const phoneActionsRef = useRef<HTMLDivElement>(null);
 
-  // A navigation closes the menu, and so does widening past the phone layout.
+  // A navigation closes the menu, and so does widening until the links fit
+  // (the menu button goes then: a container query, index.css, `.te-nav-links`).
   useEffect(() => setMobileMenuOpen(false), [location.key]);
   useEffect(() => {
-    const desktop = matchMedia('(min-width: 1024px)');
     const closeOnDesktop = () => {
-      if (desktop.matches) setMobileMenuOpen(false);
+      if (phoneActionsRef.current && getComputedStyle(phoneActionsRef.current).display === 'none') setMobileMenuOpen(false);
     };
-    desktop.addEventListener('change', closeOnDesktop);
-    return () => desktop.removeEventListener('change', closeOnDesktop);
+    window.addEventListener('resize', closeOnDesktop);
+    return () => window.removeEventListener('resize', closeOnDesktop);
   }, []);
 
   useEffect(() => {
@@ -71,13 +72,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
             </SiteLink>
 
             {/* Desktop Navigation Links */}
-            <nav className="hidden lg:flex items-center gap-6" aria-label="Main Navigation">
+            <nav className="te-nav-links items-center gap-4" aria-label="Main Navigation">
               {links.map((link) => (
                 <SiteLink
                   key={link.to}
                   to={link.to}
                   onClick={handleLinkClick}
-                  className="te-nav-link text-sm font-medium tracking-wide"
+                  className="te-nav-link font-medium"
                   {...current(link.to)}
                 >
                   {link.label}
@@ -87,7 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
             </nav>
 
             {/* Right Side Buttons */}
-            <div className="hidden sm:flex items-center gap-3">
+            <div className="te-nav-actions hidden sm:flex items-center gap-3">
               <ThemeToggle />
               <button
                 type="button"
@@ -106,7 +107,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
             </div>
 
             {/* Mobile: the theme, search and the menu */}
-            <div className="te-nav-phone-actions flex items-center gap-1.5 lg:hidden">
+            <div ref={phoneActionsRef} className="te-nav-phone-actions flex items-center gap-1.5">
               <ThemeToggle className="sm:hidden" />
               <SiteLink
                 to={paths.plan}
@@ -149,7 +150,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
           aria-modal="true"
           aria-label="Site navigation"
           tabIndex={-1}
-          className="te-mobile-navigation fixed inset-0 z-[60] pt-24 px-6 pb-8 flex flex-col justify-between overflow-y-auto lg:hidden"
+          className="te-mobile-navigation fixed inset-0 z-[60] pt-24 px-6 pb-8 flex flex-col justify-between overflow-y-auto"
         >
           {/* Solid, not glass: a full-screen menu over moving page content must stay readable. */}
           <SiteLink to="/" onClick={handleLinkClick} className="te-home-link absolute top-5 left-5 rounded-lg p-1">
@@ -190,7 +191,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
           </nav>
 
           <div className="pt-8 border-t border-[var(--border)] text-center text-xs text-[var(--text-secondary)] space-y-1">
-            <p className="font-heading italic text-sm text-[var(--accent-text)]">“See Sri Lanka Through a Different Eye.”</p>
+            <p className="font-heading text-sm text-[var(--accent-text)]">“See Sri Lanka Through a Different Eye.”</p>
             <p>© 2026 Travel Eye Sri Lanka</p>
           </div>
         </div>

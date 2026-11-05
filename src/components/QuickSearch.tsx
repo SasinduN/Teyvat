@@ -39,7 +39,7 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[1.2fr_1.2fr_1fr_auto] gap-4 items-center">
           
           {/* Where field */}
-          <div className=" bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
+          <div className="bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
             <label htmlFor={`${id}-where`} className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[var(--accent-text)] font-bold mb-1">
               <MapPin className="w-3.5 h-3.5 text-[var(--accent-text)]" />
               <span>Where to go?</span>
@@ -61,7 +61,7 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
           </div>
 
           {/* What experience field */}
-          <div className=" bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
+          <div className="bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
             <label htmlFor={`${id}-category`} className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[var(--accent-text)] font-bold mb-1">
               <Sparkles className="w-3.5 h-3.5 text-[var(--accent-text)]" />
               <span>What Experience?</span>
@@ -80,7 +80,7 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
           </div>
 
           {/* When traveling field */}
-          <div className=" bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
+          <div className="bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
             <label htmlFor={`${id}-timing`} className="flex items-center space-x-2 text-xs uppercase tracking-wider text-[var(--accent-text)] font-bold mb-1">
               <Calendar className="w-3.5 h-3.5 text-[var(--accent-text)]" />
               <span>When Travelling?</span>
@@ -114,7 +114,7 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
           </div>
 
         </form>
-        <p id={`${id}-timing-help`} className="mt-3 text-xs text-white/75">Season choices match destinations’ published best-time guidance; conditions may vary.</p>
+        <p id={`${id}-timing-help`} className="mt-3 text-sm text-white/75">Season choices match destinations’ published best-time guidance; conditions may vary.</p>
       </div>
     </div>
   );

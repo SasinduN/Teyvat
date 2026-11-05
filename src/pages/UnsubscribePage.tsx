@@ -56,7 +56,7 @@ export function UnsubscribePage() {
             </p>
           ) : valid ? (
             <>
-              <p className="font-light text-[var(--text-primary)]/75">
+              <p className="text-[var(--text-primary)]/75">
                 Press the button to stop receiving our newsletter. Your email address is deleted, not just paused.
               </p>
               <button
@@ -75,7 +75,7 @@ export function UnsubscribePage() {
               )}
             </>
           ) : (
-            <p className="font-light text-[var(--text-primary)]/75">
+            <p className="text-[var(--text-primary)]/75">
               This unsubscribe link is incomplete. Open the link from the newsletter email again, or{' '}
               <Link to={paths.contact} className="text-[var(--brand-primary)] underline underline-offset-2">
                 contact us

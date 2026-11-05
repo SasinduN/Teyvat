@@ -43,10 +43,10 @@ export const IntroSection: React.FC = () => {
         
         {/* Top Header */}
         <div className="te-section-header te-section-header--stack">
-          <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[var(--brand-primary)] tracking-tight mb-6">
-            One Island. <span className="italic font-serif text-[var(--brand-primary)]">A Thousand Stories.</span>
+          <h2 className="font-heading text-5xl font-bold text-[var(--brand-primary)] tracking-tight mb-6">
+            One Island. <span className="font-heading text-[var(--brand-primary)]">A Thousand Stories.</span>
           </h2>
-          <p className="text-lg text-[var(--text-primary)]/80 font-light leading-relaxed">
+          <p className="text-lg text-[var(--text-primary)]/80 leading-relaxed">
             Sri Lanka is more than a destination. It is a collection of places, people, flavours, landscapes and stories waiting to be discovered.
           </p>
         </div>
@@ -63,7 +63,7 @@ export const IntroSection: React.FC = () => {
             <div className="w-12 h-12 bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)] rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-[var(--brand-secondary)] group-hover:text-white transition-colors">
               <ShieldCheck className="w-6 h-6" />
             </div>
-            <div className="font-heading text-4xl sm:text-5xl font-extrabold text-[var(--brand-primary)] mb-1">
+            <div className="font-heading text-4xl font-bold text-[var(--brand-primary)] mb-1">
               {unescoCount}
             </div>
             <p className="text-sm font-medium text-[var(--text-primary)]/70 uppercase tracking-wide">
@@ -80,7 +80,7 @@ export const IntroSection: React.FC = () => {
             <div className="w-12 h-12 bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)] rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-[var(--brand-secondary)] group-hover:text-white transition-colors">
               <Compass className="w-6 h-6" />
             </div>
-            <div className="font-heading text-4xl sm:text-5xl font-extrabold text-[var(--brand-primary)] mb-1">
+            <div className="font-heading text-4xl font-bold text-[var(--brand-primary)] mb-1">
               {coastlineCount}+ <span className="text-2xl font-sans font-normal text-[var(--brand-primary)]">km</span>
             </div>
             <p className="text-sm font-medium text-[var(--text-primary)]/70 uppercase tracking-wide">
@@ -97,7 +97,7 @@ export const IntroSection: React.FC = () => {
             <div className="w-12 h-12 bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)] rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-[var(--brand-secondary)] group-hover:text-white transition-colors">
               <Sparkles className="w-6 h-6" />
             </div>
-            <div className="font-heading text-4xl sm:text-5xl font-extrabold text-[var(--brand-primary)] mb-1">
+            <div className="font-heading text-4xl font-bold text-[var(--brand-primary)] mb-1">
               {parksCount}
             </div>
             <p className="text-sm font-medium text-[var(--text-primary)]/70 uppercase tracking-wide">
@@ -114,7 +114,7 @@ export const IntroSection: React.FC = () => {
             <div className="w-12 h-12 bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)] rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-[var(--brand-secondary)] group-hover:text-white transition-colors">
               <Heart className="w-6 h-6" />
             </div>
-            <div className="font-heading text-4xl sm:text-5xl font-extrabold text-[var(--brand-primary)] mb-1">
+            <div className="font-heading text-4xl font-bold text-[var(--brand-primary)] mb-1">
               {historyCount}+ <span className="text-2xl font-sans font-normal text-[var(--brand-primary)]">yrs</span>
             </div>
             <p className="text-sm font-medium text-[var(--text-primary)]/70 uppercase tracking-wide">
@@ -168,7 +168,7 @@ export const IntroSection: React.FC = () => {
             <h3 className="font-heading text-3xl font-bold text-[var(--brand-primary)] leading-tight">
               Curated for Travelers Who Seek Genuine Connection
             </h3>
-            <p className="text-[var(--text-primary)]/80 font-light leading-relaxed">
+            <p className="text-[var(--text-primary)]/80 leading-relaxed">
               From golden beaches framed by coconut palms to ancient granite fortresses soaring above rainforests, Sri Lanka condenses centuries of biodiversity and culture into one compact paradise.
             </p>
             <div className="space-y-3 pt-2">

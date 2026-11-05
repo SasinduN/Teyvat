@@ -32,7 +32,7 @@ const AdminCrash = (
       <button
         type="button"
         onClick={() => window.location.reload()}
-        className="mt-4 rounded-xl bg-[var(--inverse-surface)] px-4 py-2.5 text-xs font-bold text-white"
+        className="mt-4 rounded-xl bg-[var(--inverse-surface)] px-4 py-2.5 text-sm font-bold text-white"
       >
         Reload
       </button>

@@ -59,7 +59,7 @@ export const WhyTravelEye: React.FC = () => {
         
         {/* Header */}
         <div className="te-section-header te-section-header--stack">
-          <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[var(--brand-primary)] tracking-tight">
+          <h2 className="font-heading text-5xl font-bold text-[var(--brand-primary)] tracking-tight">
             Travel With A Clearer View.
           </h2>
         </div>
@@ -87,7 +87,7 @@ export const WhyTravelEye: React.FC = () => {
                   {p.title}
                 </h3>
 
-                <p className="text-xs text-[var(--text-primary)]/80 font-light leading-relaxed">
+                <p className="text-sm text-[var(--text-primary)]/80 leading-relaxed">
                   {p.desc}
                 </p>
               </motion.div>

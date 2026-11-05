@@ -44,10 +44,10 @@ export function AboutPage() {
       <section id="contact" className="relative overflow-hidden bg-[var(--background-secondary)] py-20 sm:py-24">
         <div className="te-container grid gap-10 lg:grid-cols-12 lg:gap-14">
           <div className="space-y-6 lg:col-span-5">
-            <h2 className="font-heading text-3xl font-bold tracking-tight text-[var(--brand-primary)] sm:text-5xl">
-              Contact <span className="font-serif italic text-[var(--brand-primary)]">Us</span>
+            <h2 className="font-heading text-5xl font-bold tracking-tight text-[var(--brand-primary)]">
+              Contact <span className="font-heading text-[var(--brand-primary)]">Us</span>
             </h2>
-            <p className="font-light leading-relaxed text-[var(--text-primary)]/75">
+            <p className="leading-relaxed text-[var(--text-primary)]/75">
               Tell us what you want to experience, and a travel designer will reply within 12 hours.
             </p>
             <ul data-keep-clear className="space-y-4 rounded-3xl bg-[var(--inverse-surface)] p-7 text-sm text-white/85 shadow-xl">

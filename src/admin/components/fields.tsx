@@ -1,7 +1,8 @@
 import React, { useId } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
-import { Button, Input, Textarea } from '@/admin/components/ui';
+import { Button, FieldHelp, Input, Textarea } from '@/admin/components/ui';
 import { cn } from '@/utils/cn';
+import { TEXT_SIZES, DEFAULT_TEXT_SIZE } from '@shared/text-size';
 
 /* -------------------------------------------------------- string list field */
 
@@ -26,7 +27,7 @@ export const StringListField: React.FC<{
     <div className="space-y-2">
       {value.map((item, i) => (
         <div key={i} className="flex items-start gap-2">
-          <span className="mt-2.5 w-5 shrink-0 text-right text-[11px] font-bold text-[var(--text-primary)]/35">
+          <span className="mt-2.5 w-5 shrink-0 text-right text-xs font-bold text-[var(--text-primary)]/35">
             {i + 1}
           </span>
 
@@ -119,7 +120,7 @@ export const MultiSelectField: React.FC<{
             )
           }
           className={cn(
-            'rounded-full border px-3.5 py-1.5 text-[11px] font-bold transition-colors',
+            'rounded-full border px-3.5 py-1.5 text-xs font-bold transition-colors',
             active
               ? 'border-transparent bg-[var(--brand-secondary)] text-white'
               : 'border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text-primary)]/65 hover:border-[var(--inverse-raised)] hover:text-[var(--brand-primary)]'
@@ -152,8 +153,60 @@ export const ToggleField: React.FC<{
         onChange={(e) => onChange(e.target.checked)}
         className="h-4 w-4 shrink-0 accent-[var(--inverse-raised)]"
       />
-      <span className="text-xs font-medium text-[var(--text-primary)]">{label}</span>
+      <span className="text-sm font-medium text-[var(--text-primary)]">{label}</span>
     </label>
+  );
+};
+
+/* ------------------------------------------------------- text size field */
+
+/**
+ * The site-wide text size, with a preview at the size chosen. Saved, it
+ * applies to every page (the server writes it on <html>); this preview is
+ * sized from a fixed base (index.css), so it doesn't follow what's saved now.
+ */
+export const TextSizeField: React.FC<{
+  value: number;
+  onChange: (value: number) => void;
+  label: string;
+}> = ({ value, onChange, label }) => {
+  const name = useId();
+  return (
+    <fieldset className="space-y-3" data-text-size-field>
+      <legend className="block text-xs font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]">{label}</legend>
+      <div className="flex flex-wrap gap-2">
+        {TEXT_SIZES.map((size) => (
+          <label
+            key={size}
+            className={cn(
+              'flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-3.5 text-sm font-medium transition-colors',
+              value === size
+                ? 'border-[var(--brand-secondary)] bg-[var(--background-secondary)] text-[var(--brand-primary)]'
+                : 'border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text-primary)]'
+            )}
+          >
+            <input
+              type="radio"
+              name={name}
+              value={size}
+              checked={value === size}
+              onChange={() => onChange(size)}
+              className="h-4 w-4 shrink-0 accent-[var(--inverse-raised)]"
+            />
+            {size}%{size === DEFAULT_TEXT_SIZE ? ' (default)' : ''}
+          </label>
+        ))}
+      </div>
+      <div className="te-text-size-preview" data-text-size-preview={value} aria-label={`Preview at ${value}%`} role="group">
+        <span className="te-text-size-preview__label">Preview at {value}%</span>
+        <span className="te-text-size-preview__heading">Sri Lanka, your way</span>
+        <p className="te-text-size-preview__body">
+          Body text looks like this: tea country at dawn, then the long road down to the south coast.
+        </p>
+        <span className="te-text-size-preview__card">Card and description text looks like this.</span>
+      </div>
+      <FieldHelp>Live preview. Nothing changes for visitors until you save.</FieldHelp>
+    </fieldset>
   );
 };
 
@@ -189,7 +242,7 @@ export const ItineraryField: React.FC<{
       {value.map((day, i) => (
         <div key={i} className="rounded-xl border border-[var(--border-strong)]/70 bg-[var(--background)] p-4">
           <div className="mb-3 flex items-center justify-between">
-            <span className="rounded-full bg-[var(--brand-secondary)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+            <span className="rounded-full bg-[var(--brand-secondary)] px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
               Day {day.day}
             </span>
             <div className="flex items-center gap-1">

@@ -15,11 +15,11 @@ export const JournalSection: React.FC = () => {
         {/* Header */}
         <div className="te-section-header">
           <div>
-            <h2 className="font-heading text-3xl sm:text-5xl font-bold text-[var(--brand-primary)] tracking-tight">
+            <h2 className="font-heading text-5xl font-bold text-[var(--brand-primary)] tracking-tight">
               Travel Eye Journal
             </h2>
           </div>
-          <p className="text-[var(--text-primary)]/70 font-light max-w-md mt-4 md:mt-0 text-sm sm:text-base">
+          <p className="text-[var(--text-primary)]/70 max-w-md mt-4 md:mt-0 text-sm sm:text-base">
             Local travel guides, culture, viewpoints and food discoveries.
           </p>
         </div>
@@ -44,7 +44,7 @@ export const JournalSection: React.FC = () => {
                     alt={art.title}
                     className="w-full h-full object-cover group-hover:scale-[1.035] transition-transform duration-500"
                   />
-                  <div className="absolute top-4 left-4 bg-[var(--inverse-surface)] text-[var(--accent-text)] text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
+                  <div className="absolute top-4 left-4 bg-[var(--inverse-surface)] text-[var(--accent-text)] text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
                     {art.category}
                   </div>
                 </div>
@@ -67,7 +67,7 @@ export const JournalSection: React.FC = () => {
                     {art.title}
                   </h3>
 
-                  <p className="text-xs text-[var(--text-primary)]/75 font-light leading-relaxed line-clamp-3">
+                  <p className="text-sm text-[var(--text-primary)]/75 leading-relaxed line-clamp-3">
                     {art.snippet}
                   </p>
                 </div>
@@ -84,7 +84,7 @@ export const JournalSection: React.FC = () => {
                   <span className="text-xs font-medium text-[var(--brand-primary)]">{art.author.name}</span>
                 </div>
 
-                <span className="text-xs font-bold text-[var(--brand-primary)] flex items-center space-x-1 group-hover:translate-x-1 transition-transform">
+                <span className="text-sm font-bold text-[var(--brand-primary)] flex items-center space-x-1 group-hover:translate-x-1 transition-transform">
                   <span>Read story</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </span>

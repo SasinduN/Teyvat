@@ -69,10 +69,10 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
           <span className="text-xs uppercase tracking-[0.2em] font-bold text-[var(--accent-text)] bg-white/10 px-4 py-1.5 rounded-full inline-block mb-3 border border-[var(--accent)]/30">
             Interactive Journey Engine
           </span>
-          <h2 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight mb-4">
+          <h2 className="font-heading text-5xl font-bold tracking-tight mb-4">
             Build Your Sri Lanka Journey
           </h2>
-          <p className="text-lg text-white/80 font-light leading-relaxed">
+          <p className="text-lg text-white/80 leading-relaxed">
             Select your preferences below to build a sample journey from our published destinations. Our local travel specialists can refine the route, stays and travel times.
           </p>
         </div>
@@ -95,7 +95,7 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
                     type="button"
                     aria-pressed={style === s}
                     onClick={() => { setStyle(s); setGenerated(false); setSaved(false); }}
-                    className={`py-3 px-4 rounded-2xl text-xs font-semibold transition-all border ${
+                    className={`py-3 px-4 rounded-2xl text-sm font-semibold transition-all border ${
                       style === s
                         ? 'bg-[var(--accent)] text-[var(--on-accent)] font-bold border-[var(--accent)] shadow-lg scale-102'
                         : 'bg-white/5 text-white hover:bg-white/10 border-white/10'
@@ -120,7 +120,7 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
                     type="button"
                     aria-pressed={duration === d}
                     onClick={() => { setDuration(d); setGenerated(false); setSaved(false); }}
-                    className={`py-3 px-4 rounded-2xl text-xs font-semibold transition-all border ${
+                    className={`py-3 px-4 rounded-2xl text-sm font-semibold transition-all border ${
                       duration === d
                         ? 'bg-[var(--accent)] text-[var(--on-accent)] font-bold border-[var(--accent)] shadow-lg scale-102'
                         : 'bg-white/5 text-white hover:bg-white/10 border-white/10'
@@ -145,7 +145,7 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
                     type="button"
                     aria-pressed={region === r}
                     onClick={() => { setRegion(r); setGenerated(false); setSaved(false); }}
-                    className={`py-3 px-4 rounded-2xl text-xs font-semibold transition-all border ${
+                    className={`py-3 px-4 rounded-2xl text-sm font-semibold transition-all border ${
                       region === r
                         ? 'bg-[var(--accent)] text-[var(--on-accent)] font-bold border-[var(--accent)] shadow-lg scale-102'
                         : 'bg-white/5 text-white hover:bg-white/10 border-white/10'
@@ -186,10 +186,10 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
                     <CheckCircle2 className="w-3.5 h-3.5 text-[var(--brand-primary)]" />
                     <span>Your Recommended Journey</span>
                   </div>
-                  <h3 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--brand-primary)]">
+                  <h3 className="font-heading text-2xl font-bold text-[var(--brand-primary)]">
                     The {style} Expedition ({duration})
                   </h3>
-                  <p className="text-xs text-[var(--text-primary)]/70 mt-1">
+                  <p className="text-sm text-[var(--text-primary)]/70 mt-1">
                     Focused on: <strong>{region}</strong>
                   </p>
                 </div>
@@ -198,7 +198,7 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
                   <button
                     type="button"
                     onClick={saveJourney}
-                    className="te-button te-button--secondary px-5 py-2.5 text-xs font-bold"
+                    className="te-button te-button--secondary px-5 py-2.5 font-bold"
                   >
                     <Bookmark className="w-4 h-4" />
                     <span>{saved ? 'Saved on This Device' : 'Save Itinerary'}</span>
@@ -216,7 +216,7 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
                   No published destinations match this region yet. Request a custom quote for local advice.
                 </p>
               ) : (
-                <p className="mb-4 text-xs text-[var(--text-secondary)]">
+                <p className="mb-4 text-sm text-[var(--text-secondary)]">
                   A sample · {currentItinerary.length} days · built from our destinations. A travel specialist confirms
                   availability and transfers.
                 </p>
@@ -229,22 +229,22 @@ export const TravelPlanner: React.FC<TravelPlannerProps> = ({ onSavePlan }) => {
                       <span className="text-xs font-bold text-white bg-[var(--inverse-surface)] px-2.5 py-0.5 rounded-full">
                         Day {String(item.day).padStart(2, '0')}
                       </span>
-                      <span className="text-[10px] text-[var(--brand-primary)] font-semibold uppercase">Highlights</span>
+                      <span className="text-xs text-[var(--brand-primary)] font-semibold uppercase">Highlights</span>
                     </div>
                     <h4 className="font-heading text-base font-bold text-[var(--brand-primary)]">{item.title}</h4>
-                    <p className="text-xs text-[var(--text-primary)]/75 font-light leading-relaxed">{item.desc}</p>
+                    <p className="text-sm text-[var(--text-primary)]/75 leading-relaxed">{item.desc}</p>
                   </div>
                 ))}
               </div>
 
               <div className="p-4 bg-[var(--background-secondary)] rounded-2xl border border-[var(--border-strong)]/40 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p className="text-xs text-[var(--brand-primary)] font-medium">
+                <p className="text-sm text-[var(--brand-primary)] font-medium">
                   Would you like a local travel specialist to customize this itinerary with boutique hotels, private driver, and experiences?
                 </p>
                 <button
                   onClick={() => onSavePlan(`Custom ${style} (${duration}) — ${region}`)}
                   type="button"
-                  className="te-button te-button--primary px-6 py-3 font-bold text-xs shrink-0"
+                  className="te-button te-button--primary px-6 py-3 font-bold shrink-0"
                 >
                   <span>Request Custom Quote</span>
                   <ArrowRight className="w-4 h-4" />

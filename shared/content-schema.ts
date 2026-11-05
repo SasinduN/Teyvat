@@ -12,6 +12,8 @@
  */
 import { z } from './zod';
 
+import { isTextSize, TEXT_SIZES } from './text-size';
+
 import {
   PILLAR_ICON_NAMES,
   type ContentTableName,
@@ -80,6 +82,8 @@ export type Field =
    * leading + are stripped; digits only are stored; empty is NULL.
    */
   | (FieldBase & { type: 'whatsapp' })
+  /** The site-wide text size (`shared/text-size.ts`), with a live preview. */
+  | (FieldBase & { type: 'textSize' })
   /**
    * A tour's route stops. Not a column: they live in `public.tour_stops`, and
    * the API writes them alongside the row (see `writableColumns`).
@@ -260,6 +264,13 @@ export const SITE_SETTINGS_FIELDS: Field[] = [
     type: 'whatsapp',
     span: 2,
     help: 'International format, digits only, e.g. 94771234567. Leave empty to hide the WhatsApp button.'
+  },
+  {
+    name: 'text_size',
+    label: 'Text size',
+    type: 'textSize',
+    span: 2,
+    help: 'For the whole site and this admin panel, from the next page load.'
   }
 ];
 
@@ -410,6 +421,9 @@ function schemaForField(field: Field, options: SchemaOptions = {}): z.ZodTypeAny
         .nullable()
         .transform((v) => (v ? v : null))
         .pipe(httpsUrl(`${field.label} must start with https://, or be left empty.`, 500).nullable());
+
+    case 'textSize':
+      return z.unknown().refine(isTextSize, { message: `Choose ${TEXT_SIZES.join('%, ')}%.` });
 
     case 'whatsapp':
       return z
