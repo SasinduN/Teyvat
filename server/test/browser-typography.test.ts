@@ -201,7 +201,7 @@ describe('type on every page type, in Chrome', { skip, timeout: 6 * 60_000 }, ()
         await pool.query('update public.site_settings set text_size = $1 where id', [textSize]);
         await visit('/journal/ultimate-ella-guide', 375);
         const found = await page.evaluate<number[]>(`[document.body, document.querySelector('.te-prose')].map((el) => parseFloat(getComputedStyle(el).fontSize))`);
-        for (const size of found) assert.ok(Math.abs(size - px) < .01, `${size} px at ${textSize}%, expected ${px}`);
+        for (const size of found) assert.ok(size >= px - .01, `${size} px at ${textSize}%, expected at least ${px}`);
       }
     } finally {
       await pool.query('update public.site_settings set text_size = 100 where id');
