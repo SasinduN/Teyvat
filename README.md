@@ -199,7 +199,7 @@ import).
 A design change is called out in its plan, comes with before/after
 screenshots at 1280 px and 375 px (`npm run screenshots -- --base
 origin/main`; not committed, attached to the PR on GitHub), and is approved
-by the other teammate before it merges.
+by Sasindu, the project's design approver, before it merges.
 The pixel tests (`browser-home-baseline`, `browser-inquiry`) move their
 baselines only for the sections a PR changes on purpose. See CLAUDE.md and
 `docs/plans/redesign-redo.md`.
