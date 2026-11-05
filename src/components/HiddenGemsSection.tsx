@@ -72,7 +72,7 @@ export const HiddenGemsSection: React.FC<HiddenGemsSectionProps> = ({ onOpenInqu
                 </div>
 
                 {/* Dark Editorial Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[var(--inverse-surface)] via-[var(--inverse-surface)]/50 to-transparent group-hover:from-[var(--inverse-surface)]/95 transition-colors duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[var(--inverse-surface)] via-[var(--inverse-surface)]/60 to-transparent group-hover:from-[var(--inverse-surface)]/95 transition-colors duration-500" />
 
                 {/* Top Badge */}
                 <div className="relative z-10 mb-auto flex flex-wrap items-center justify-between gap-2 pb-4">

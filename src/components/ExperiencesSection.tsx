@@ -61,7 +61,7 @@ export const ExperiencesSection: React.FC<ExperiencesSectionProps> = ({
               </div>
 
               {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[var(--inverse-surface)] via-[var(--inverse-surface)]/80 via-50% to-black/10 group-hover:from-[var(--inverse-surface)]/90 transition-colors duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[var(--inverse-surface)] via-[var(--inverse-surface)]/85 via-70% to-black/10 group-hover:from-[var(--inverse-surface)]/90 transition-colors duration-500" />
 
               {/* Content */}
               <div className="relative z-10 space-y-3">
