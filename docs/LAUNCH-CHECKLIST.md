@@ -137,8 +137,9 @@ off in a pull request, so the history shows when each was done.
       email them nothing until they confirm, or delete them.
       **Blocks:** go-live with the form visible. **Who:** Owner, then
       Developer.
-- [ ] **23. Copy the Wikimedia photos into R2, then drop the host from the
-      CSP.** Once the fix-forward PR for #11 is deployed, run
+- [x] **23. Copy the Wikimedia photos into R2, then drop the host from the
+      CSP.** Done: the photos are in R2, and `chore/cleanup-after-r2` removes the
+      host. What was done: once the fix-forward PR for #11 is deployed, run
       `npm run images:import -- --dry-run --prod` and then
       `npm run images:import -- --prod` (needs `PROD_DATABASE_URL` and the
       five `R2_*` values in `.env`). Then `npm run images:audit -- --prod` on the

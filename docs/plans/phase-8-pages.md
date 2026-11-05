@@ -83,7 +83,7 @@ The modal's content, laid out as a page:
 
 | Desktop | Phone |
 |---|---|
-| ![](../screenshots/phase8-destination-desktop.jpg) | ![](../screenshots/phase8-destination-phone.jpg) |
+| ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-destination-desktop.jpg) | ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-destination-phone.jpg) |
 
 ### `/tours/:slug`
 
@@ -96,7 +96,7 @@ The modal's content, laid out as a page:
 
 | Desktop | Phone |
 |---|---|
-| ![](../screenshots/phase8-tour-desktop.jpg) | ![](../screenshots/phase8-tour-phone.jpg) |
+| ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-tour-desktop.jpg) | ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-tour-phone.jpg) |
 
 ### `/experiences/:slug`
 
@@ -109,7 +109,7 @@ The modal's content, laid out as a page:
 
 | Desktop | Phone |
 |---|---|
-| ![](../screenshots/phase8-experience-desktop.jpg) | ![](../screenshots/phase8-experience-phone.jpg) |
+| ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-experience-desktop.jpg) | ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-experience-phone.jpg) |
 
 ### `/journal/:slug` (from the article reader modal)
 
@@ -119,7 +119,7 @@ The modal's content, laid out as a page:
 
 | Desktop | Phone |
 |---|---|
-| ![](../screenshots/phase8-article-desktop.jpg) | ![](../screenshots/phase8-article-phone.jpg) |
+| ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-article-desktop.jpg) | ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-article-phone.jpg) |
 
 ### `/destinations`
 
@@ -129,7 +129,7 @@ list can be shared.
 
 | Desktop | Phone |
 |---|---|
-| ![](../screenshots/phase8-destinations-desktop.jpg) | ![](../screenshots/phase8-destinations-phone.jpg) |
+| ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-destinations-desktop.jpg) | ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-destinations-phone.jpg) |
 
 ### `/experiences`
 
@@ -139,7 +139,7 @@ page it still filters the map.
 
 | Desktop | Phone |
 |---|---|
-| ![](../screenshots/phase8-experiences-desktop.jpg) | ![](../screenshots/phase8-experiences-phone.jpg) |
+| ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-experiences-desktop.jpg) | ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-experiences-phone.jpg) |
 
 ### `/tours`
 
@@ -149,7 +149,7 @@ shown.
 
 | Desktop | Phone |
 |---|---|
-| ![](../screenshots/phase8-tours-desktop.jpg) | ![](../screenshots/phase8-tours-phone.jpg) |
+| ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-tours-desktop.jpg) | ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-tours-phone.jpg) |
 
 ### `/about`
 
@@ -163,7 +163,7 @@ by both, so there is one form and one submit path.
 
 | Desktop | Phone |
 |---|---|
-| ![](../screenshots/phase8-about-desktop.jpg) | ![](../screenshots/phase8-about-phone.jpg) |
+| ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-about-desktop.jpg) | ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-about-phone.jpg) |
 
 ### 404
 
@@ -172,7 +172,7 @@ Destinations, Tours), and three featured destinations. Served with HTTP 404.
 
 | Desktop | Phone |
 |---|---|
-| ![](../screenshots/phase8-404-desktop.jpg) | ![](../screenshots/phase8-404-phone.jpg) |
+| ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-404-desktop.jpg) | ![](https://raw.githubusercontent.com/SasinduN/Teyvat/9978813250f6f318569d2730f97cc4e6ab1f909c/docs/screenshots/phase8-404-phone.jpg) |
 
 **New copy.** The headers' one-line subtitles, "Plan with a local expert",
 the 404 text, and "About Us" / "Contact Us". None of it contains the brand

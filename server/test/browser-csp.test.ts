@@ -9,6 +9,10 @@ import './test-db';
  * blocked. A control (an image from a host that isn't allowed) proves the
  * recorder works, so "no violations" means something.
  *
+ * Unsplash isn't needed: its requests are answered here. Chrome applies the CSP
+ * before a request leaves the page, so a blocked photo never reaches the stub;
+ * the control goes through the same stub to prove it.
+ *
  * Needs `npm run build` and Chrome; skipped with a message otherwise.
  */
 import assert from 'node:assert/strict';
@@ -45,6 +49,10 @@ interface Violation {
   directive: string;
   blocked: string;
 }
+
+/** The hosts answered here, and what they answer with: an image of a photo's shape. */
+const STUBBED = ['https://images.unsplash.com/*', 'https://not-allowed.example/*'];
+const STUB_IMAGE = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><rect width="100%" height="100%" fill="#6f8a7a"/></svg>').toString('base64');
 
 /** Installed before any page script runs, on every document. */
 const RECORDER = `
@@ -107,6 +115,11 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     await page.send('Page.enable');
     await page.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
     await page.send('Page.addScriptToEvaluateOnNewDocument', { source: RECORDER });
+    await page.send('Fetch.enable', { patterns: STUBBED.map((urlPattern) => ({ urlPattern })) });
+    page.on('Fetch.requestPaused', (event) => {
+      const { requestId } = event as { requestId: string };
+      void page.send('Fetch.fulfillRequest', { requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: 'image/svg+xml' }], body: STUB_IMAGE }).catch(() => undefined);
+    });
   }, HOOK_TIMEOUT);
 
   after(async () => {
@@ -141,6 +154,16 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     await waitFor(`document.querySelector('.leaflet-tile')`, 'map tiles to be requested');
     await sleep(800);
     await collect('/explore (scrolled)');
+
+    // Leaflet's stylesheet: ours, loaded, and in front of the site's own so index.css's map rules win.
+    const leafletCss = await page.evaluate<{ sameOrigin: boolean; rules: number; first: boolean }>(`(() => {
+      const link = document.querySelector('link[data-leaflet]');
+      const sheets = [...document.querySelectorAll('link[rel="stylesheet"], style')];
+      return { sameOrigin: new URL(link.href).origin === location.origin, rules: link.sheet.cssRules.length, first: sheets[0] === link };
+    })()`);
+    assert.ok(leafletCss.sameOrigin, 'Leaflet stylesheet is self-hosted');
+    assert.ok(leafletCss.rules > 10, `Leaflet stylesheet loaded: ${leafletCss.rules} rules`);
+    assert.ok(leafletCss.first, 'Leaflet stylesheet comes before the site stylesheet');
 
     // The tiles: CARTO's exact host, keyed when the build had VITE_CARTO_KEY
     // (local builds read it from .env; CI has none and gets the keyless
@@ -195,7 +218,7 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
       ['/experiences', `document.querySelector('main a[href^="/experiences/"]')`],
       ['/experiences/safari-yala', `document.querySelector('main h1')`],
       ['/tours', `document.querySelector('#tours h3')`],
-      // The route map loads Leaflet's stylesheet from unpkg, and the tiles.
+      // The route map loads Leaflet's own stylesheet, and the tiles.
       ['/tours/island-in-7-days', `document.querySelectorAll('[data-route-map] img.leaflet-tile').length > 0`],
       ['/journal/ultimate-ella-guide', `document.querySelector('main article')`],
       ['/about', `document.querySelector('[data-inline-inquiry] form')`],

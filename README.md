@@ -400,7 +400,6 @@ sends. They don't apply under `npm run dev`, where Vite serves the page.
 | --- | --- | --- |
 | `script-src` | `'self'` | our own bundles only: no inline scripts, no `eval` |
 | `style-src` | `'self' 'unsafe-inline'` | our CSS, and the `<style>` the admin's toasts inject |
-| | `https://unpkg.com` | Leaflet's stylesheet, pinned by an integrity hash |
 | `font-src` | `'self'` | our DM Sans files (`src/styles/fonts.css`) |
 | `img-src` | `'self' https://images.unsplash.com` | the seeded photos |
 | | the `R2_PUBLIC_BASE_URL` origin | uploads; read at boot, so a new domain needs no code change |

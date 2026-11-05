@@ -206,7 +206,7 @@ With no number set, the page is pixel-identical to today.
 
 ## Screenshots in the PR
 
-Phone and desktop, in `docs/screenshots/whatsapp-*.png`:
+Phone and desktop, in `docs/screenshots/whatsapp-*.png` (no longer in the repo; last at commit `9978813`):
 
 - the home page with the button;
 - the destination modal;

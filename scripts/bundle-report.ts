@@ -4,8 +4,8 @@
  *
  * "On load" is the entry plus the page's own chunk and everything they import
  * statically. "Map, on demand" is Leaflet's JS, which only the pages with a
- * map fetch, when the map is about to render; its stylesheet (unpkg) comes
- * with it and isn't counted here.
+ * map fetch, when the map is about to render; its stylesheet comes with it and
+ * isn't counted here.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
