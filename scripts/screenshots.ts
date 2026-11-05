@@ -471,7 +471,9 @@ async function main(): Promise<void> {
           }
           if (values.admin) {
             // Signed out first: the last pass signed in, and the login page sends a session on to /admin.
-            await (await chrome.newPage()).send('Network.clearBrowserCookies');
+            const blank = await chrome.newPage();
+            await blank.send('Network.clearBrowserCookies');
+            await closePage(blank);
             const login = await openAdmin(chrome, `${site.url}/admin/login`, viewport, dark);
             await shoot(login, join(out, `admin-login-${suffix}`), true);
             // Its states: a password typed and shown (where there's a toggle), two wrong tries, locked.
@@ -482,12 +484,15 @@ async function main(): Promise<void> {
             await typed.evaluate(`document.querySelector('button[aria-controls="admin-password"]')?.click(), true`);
             await still(typed);
             await shoot(typed, join(out, `admin-login-visible-${suffix}`), true);
+            await closePage(typed);
             const failed = await openAdmin(chrome, `${site.url}/admin/login`, viewport, dark);
             await tryLogin(failed, 'someone@example.test', 2);
             await shoot(failed, join(out, `admin-login-failed-${suffix}`), true);
+            await closePage(failed);
             const locked = await openAdmin(chrome, `${site.url}/admin/login`, viewport, dark);
             await tryLogin(locked, 'locked@example.test', 6);
             await shoot(locked, join(out, `admin-login-locked-${suffix}`), true);
+            await closePage(locked);
             // Otherwise the next pass's tries would reach the per-IP limit (20).
             await clearLoginAttempts(site);
             const status = await login.evaluate<number>(`fetch('/api/auth/login', {
@@ -495,13 +500,13 @@ async function main(): Promise<void> {
               body: JSON.stringify(${JSON.stringify(SHOTS_ADMIN)})
             }).then((r) => r.status)`);
             if (status !== 200) throw new Error(`[${site.label}] admin sign-in failed (${status})`);
+            await closePage(login);
             for (const path of ADMIN_PAGES) {
               const page = await openAdmin(chrome, site.url + path, viewport, dark);
               await shoot(page, join(out, `${slug(path)}-${suffix}`), true);
               await closePage(page);
               console.log(`  ${slug(path)}-${suffix}`);
             }
-            await closePage(login);
           }
           if (states) {
             // The map with a place picked from Quick Jump (its second place), the map in view.
