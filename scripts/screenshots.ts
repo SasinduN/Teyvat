@@ -14,7 +14,8 @@
  * `summary.md` there: identical, or how much differs and where. A PR lists
  * the pages that changed; the author drags those pairs into it on GitHub.
  *
- * `--admin` adds the admin: the login page, then (signed in as a throwaway
+ * `--admin` adds the admin: the login page (empty, a password typed and
+ * shown, after two wrong tries, locked), then (signed in as a throwaway
  * admin created in each scratch database) the dashboard, a collection, two
  * editors, the media library, photo credits, enquiries and settings.
  *
@@ -254,6 +255,47 @@ async function settle(page: Page): Promise<void> {
   await page.evaluate(QUIET);
 }
 
+/** Forgets the scratch database's sign-in failures. */
+async function clearLoginAttempts(site: Site): Promise<void> {
+  const client = new Client({ connectionString: scratchUrl(site.database) });
+  await client.connect();
+  try {
+    await client.query('delete from public.login_attempts');
+  } finally {
+    await client.end();
+  }
+}
+
+/** Replaces a field's text the way typing does, so React sees it. */
+async function typeInto(page: Page, selector: string, text: string): Promise<void> {
+  await page.evaluate(`(document.querySelector('${selector}').focus(), document.querySelector('${selector}').select(), true)`);
+  await page.send('Input.insertText', { text });
+}
+
+/** No focus (no caret blinking), then a still page. */
+async function still(page: Page): Promise<void> {
+  await page.evaluate('(document.activeElement?.blur(), true)');
+  await page.evaluate(QUIET);
+}
+
+/** `times` wrong sign-ins for `email` through the login form, each answered before the next. */
+async function tryLogin(page: Page, email: string, times: number): Promise<void> {
+  await page.evaluate(`(() => {
+    const send = window.fetch;
+    window.__logins = 0;
+    window.fetch = (...args) => send(...args).finally(() => { if (String(args[0]).includes('/api/auth/login')) window.__logins += 1; });
+    return true;
+  })()`);
+  await typeInto(page, '#admin-email', email);
+  for (let i = 1; i <= times; i += 1) {
+    await typeInto(page, '#admin-password', `wrong password ${i}`);
+    await page.evaluate(`document.querySelector('form button[type=submit]').click(), true`);
+    if (!(await waitFor(page, `window.__logins === ${i}`, 10_000))) throw new Error(`sign-in ${i} for ${email} got no answer`);
+    await sleep(200);
+  }
+  await still(page);
+}
+
 async function shoot(page: Page, file: string, fullPage: boolean): Promise<void> {
   const params: Record<string, unknown> = { format: 'jpeg', quality: 60 };
   if (fullPage) {
@@ -373,8 +415,26 @@ async function main(): Promise<void> {
             await shoot(menu, join(out, `state-menu-${suffix}`), false);
           }
           if (values.admin) {
+            // Signed out first: the last pass signed in, and the login page sends a session on to /admin.
+            await (await chrome.newPage()).send('Network.clearBrowserCookies');
             const login = await openAdmin(chrome, `${site.url}/admin/login`, viewport, dark);
             await shoot(login, join(out, `admin-login-${suffix}`), true);
+            // Its states: a password typed and shown (where there's a toggle), two wrong tries, locked.
+            await clearLoginAttempts(site);
+            const typed = await openAdmin(chrome, `${site.url}/admin/login`, viewport, dark);
+            await typeInto(typed, '#admin-email', 'someone@example.test');
+            await typeInto(typed, '#admin-password', 'not the password');
+            await typed.evaluate(`document.querySelector('button[aria-controls="admin-password"]')?.click(), true`);
+            await still(typed);
+            await shoot(typed, join(out, `admin-login-visible-${suffix}`), true);
+            const failed = await openAdmin(chrome, `${site.url}/admin/login`, viewport, dark);
+            await tryLogin(failed, 'someone@example.test', 2);
+            await shoot(failed, join(out, `admin-login-failed-${suffix}`), true);
+            const locked = await openAdmin(chrome, `${site.url}/admin/login`, viewport, dark);
+            await tryLogin(locked, 'locked@example.test', 6);
+            await shoot(locked, join(out, `admin-login-locked-${suffix}`), true);
+            // Otherwise the next pass's tries would reach the per-IP limit (20).
+            await clearLoginAttempts(site);
             const status = await login.evaluate<number>(`fetch('/api/auth/login', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(${JSON.stringify(SHOTS_ADMIN)})

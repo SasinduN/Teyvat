@@ -173,6 +173,12 @@ export interface ApiErrorPayload {
      * by path: `{ "itinerary.2.title": "Each day needs a title." }`.
      */
     fields?: Record<string, string>;
+    /**
+     * A failed `POST /api/auth/login` (401) only, once 3 or fewer remain:
+     * how many more failures this email may make from this IP before sign-in
+     * is paused. The same for an email that is no user.
+     */
+    attemptsLeft?: number;
   };
 }
 
