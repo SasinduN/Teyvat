@@ -9,10 +9,9 @@
  *                                                 scripts, no eval (the build has neither)
  *   style-src    'self' 'unsafe-inline'          our CSS, plus the <style> the admin's
  *                                                 toast library (Sonner) injects at runtime
- *                https://fonts.googleapis.com     the Google Fonts stylesheet (index.html)
  *                https://unpkg.com                Leaflet's stylesheet, pinned by an
  *                                                 integrity hash in index.html
- *   font-src     'self' https://fonts.gstatic.com  the font files that stylesheet loads
+ *   font-src     'self'                          our DM Sans files (src/styles/fonts.css)
  *   img-src      'self' + allowedImageOrigins()   Unsplash and our R2 bucket
  *                https://*.basemaps.cartocdn.com  the map tiles
  *   connect-src  'self'                          the browser only ever calls our /api
@@ -38,8 +37,8 @@ export function contentSecurityPolicy(media: MediaConfig | null): string {
   const directives: Record<string, string[]> = {
     'default-src': ["'self'"],
     'script-src': ["'self'"],
-    'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
-    'font-src': ["'self'", 'https://fonts.gstatic.com'],
+    'style-src': ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+    'font-src': ["'self'"],
     'img-src': ["'self'", ...allowedImageOrigins(media?.publicBaseUrl ?? null), MAP_TILES_SOURCE, OSM_TILES_ORIGIN, 'https://upload.wikimedia.org'],
     'connect-src': ["'self'"],
     'frame-ancestors': ["'none'"],

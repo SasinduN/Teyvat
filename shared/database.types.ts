@@ -272,7 +272,7 @@ export interface SiteSettingsRow extends Timestamps {
   sustainability_url: string | null;
   /** Digits only, e.g. 94771234567 (0008). NULL: the WhatsApp button is hidden. */
   whatsapp_number: string | null;
-  /** A percent of the browser's default: 90, 100, 110 or 120 (0019). */
+  /** A percent of the browser's default: 100, 110 or 120 (0019). */
   text_size: number;
 }
 

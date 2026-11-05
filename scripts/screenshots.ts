@@ -195,7 +195,7 @@ async function waitFor(page: Page, expression: string, ms = 15_000): Promise<boo
   return false;
 }
 
-async function open(chrome: Chrome, url: string, viewport: (typeof VIEWPORTS)[keyof typeof VIEWPORTS], dark: boolean): Promise<Page> {
+async function open(chrome: Chrome, url: string, viewport: { width: number; height: number; mobile: boolean }, dark: boolean): Promise<Page> {
   const page = await chrome.newPage();
   await page.send('Emulation.setDeviceMetricsOverride', { ...viewport, deviceScaleFactor: 1 });
   await page.send('Emulation.setEmulatedMedia', {
@@ -214,7 +214,7 @@ async function open(chrome: Chrome, url: string, viewport: (typeof VIEWPORTS)[ke
 }
 
 /** An admin page (no public route marker): loaded, then still. */
-async function openAdmin(chrome: Chrome, url: string, viewport: (typeof VIEWPORTS)[keyof typeof VIEWPORTS], dark: boolean): Promise<Page> {
+async function openAdmin(chrome: Chrome, url: string, viewport: { width: number; height: number; mobile: boolean }, dark: boolean): Promise<Page> {
   const page = await chrome.newPage();
   await page.send('Emulation.setDeviceMetricsOverride', { ...viewport, deviceScaleFactor: 1 });
   await page.send('Emulation.setEmulatedMedia', {
@@ -277,6 +277,19 @@ async function shoot(page: Page, file: string, fullPage: boolean): Promise<void>
   const { data } = (await page.send('Page.captureScreenshot', params)) as { data: string };
   writeFileSync(file, Buffer.from(data, 'base64'));
 }
+
+/** One element only, at full size, however far down the page it is. */
+async function shootElement(page: Page, file: string, selector: string): Promise<void> {
+  const clip = await page.evaluate<{ x: number; y: number; width: number; height: number; scale: number }>(`(() => {
+    const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();
+    return { x: r.left + scrollX, y: r.top + scrollY, width: r.width, height: r.height, scale: 1 };
+  })()`);
+  const { data } = (await page.send('Page.captureScreenshot', { format: 'jpeg', quality: 60, captureBeyondViewport: true, clip })) as { data: string };
+  writeFileSync(file, Buffer.from(data, 'base64'));
+}
+
+/** A tab is closed once its shot is taken: a full run opens a hundred or more, and this laptop runs out of memory. */
+const closePage = (page: Page) => page.send('Page.close').catch(() => undefined);
 
 /**
  * Each before/after pair: identical (the same bytes: the same pixels encode
@@ -376,6 +389,7 @@ async function main(): Promise<void> {
             const page = await open(chrome, site.url + path, viewport, dark);
             await settle(page);
             await shoot(page, join(out, `${slug(path)}-${suffix}`), true);
+            await closePage(page);
             console.log(`  ${slug(path)}-${suffix}`);
           }
           // The footer on its own, from a page whose footer every page shares.
@@ -384,12 +398,22 @@ async function main(): Promise<void> {
           await foot.evaluate(`document.querySelector('footer').scrollIntoView({ block: 'end', behavior: 'instant' }), true`);
           await foot.evaluate(QUIET);
           await shoot(foot, join(out, `state-footer-${suffix}`), false);
+          // On a phone the footer is taller than the screen: the whole of it, cropped from the page.
+          if (viewport.mobile) await shootElement(foot, join(out, `state-footer-crop-${suffix}`), 'footer');
+          await closePage(foot);
           // Named states: the phone menu, and the enquiry form on a tour.
           if (viewport.mobile) {
             const menu = await open(chrome, site.url + '/', viewport, dark);
             await menu.evaluate(`document.querySelector('header button[aria-label*="menu" i]')?.click(), true`);
             await menu.evaluate(QUIET);
             await shoot(menu, join(out, `state-menu-${suffix}`), false);
+            await closePage(menu);
+          } else {
+            // The header at the narrowest width that keeps its links.
+            const narrow = await open(chrome, site.url + '/about', { width: 1100, height: 700, mobile: false }, dark);
+            await narrow.evaluate(LOADED);
+            await shootElement(narrow, join(out, `state-header-1100${dark ? '-dark' : ''}-${site.label}.jpg`), 'header');
+            await closePage(narrow);
           }
           if (values.admin) {
             const login = await openAdmin(chrome, `${site.url}/admin/login`, viewport, dark);
@@ -402,8 +426,10 @@ async function main(): Promise<void> {
             for (const path of ADMIN_PAGES) {
               const page = await openAdmin(chrome, site.url + path, viewport, dark);
               await shoot(page, join(out, `${slug(path)}-${suffix}`), true);
+              await closePage(page);
               console.log(`  ${slug(path)}-${suffix}`);
             }
+            await closePage(login);
           }
           // The map with a place picked from Quick Jump (its second place), the map in view.
           const map = await open(chrome, `${site.url}/explore`, viewport, dark);
@@ -416,6 +442,7 @@ async function main(): Promise<void> {
           await map.evaluate(`(() => { const box = document.querySelector('#explore-map .leaflet-container')?.closest('.grid'); if (box) window.scrollTo(0, box.getBoundingClientRect().top + scrollY - 100); return true; })()`);
           await map.evaluate(QUIET);
           await shoot(map, join(out, `state-map-${suffix}`), false);
+          await closePage(map);
           // The map's first view (nothing picked), then the category chips scrolled under the header.
           const first = await open(chrome, `${site.url}/explore`, viewport, dark);
           await first.evaluate(`document.getElementById('explore-map')?.scrollIntoView({ block: 'start' }), true`);
@@ -432,12 +459,14 @@ async function main(): Promise<void> {
           })()`);
           await first.evaluate(QUIET);
           await shoot(first, join(out, `state-header-${suffix}`), false);
+          await closePage(first);
           const tour = await open(chrome, `${site.url}/tours/island-in-7-days`, viewport, dark);
           await tour.evaluate(`[...document.querySelectorAll('main button')].find((b) => /enquire|inquire/i.test(b.textContent))?.click(), true`);
           await waitFor(tour, `document.querySelector('[role=dialog] form, .fixed.inset-0 form')`, 5_000);
           await tour.evaluate(LOADED);
           await tour.evaluate(QUIET);
           await shoot(tour, join(out, `state-enquiry-${suffix}`), false);
+          await closePage(tour);
         }
       }
     }

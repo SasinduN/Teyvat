@@ -4,7 +4,7 @@
  * `data-text-size`, and `src/index.css` has a rule for each value. A CHECK in
  * migration 0019 holds the same list.
  */
-export const TEXT_SIZES = [90, 100, 110, 120] as const;
+export const TEXT_SIZES = [100, 110, 120] as const;
 
 export type TextSize = (typeof TEXT_SIZES)[number];
 

@@ -21,7 +21,7 @@ begin
        and conname = 'site_settings_text_size_allowed'
   ) then
     alter table public.site_settings add constraint site_settings_text_size_allowed check (
-      text_size in (90, 100, 110, 120)
+      text_size in (100, 110, 120)
     );
   end if;
 end;

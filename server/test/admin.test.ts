@@ -566,10 +566,10 @@ describe('site settings', () => {
 
   test('any other text size gets a field error and changes nothing', async () => {
     const row = await settings();
-    for (const bad of [0, 80, 95, 100.5, 130, -100, '110', '120%', '', null, true, [120], { size: 120 }]) {
+    for (const bad of [0, 80, 90, 95, 100.5, 130, -100, '110', '120%', '', null, true, [120], { size: 120 }]) {
       const res = await save(row, { text_size: bad });
       assert.equal(res.status, 400, JSON.stringify(bad));
-      assert.match((await errorFields(res)).text_size ?? '', /Choose 90%, 100%, 110%, 120%/, JSON.stringify(bad));
+      assert.match((await errorFields(res)).text_size ?? '', /Choose 100%, 110%, 120%/, JSON.stringify(bad));
     }
     assert.equal((await settings()).text_size, 100);
   });
@@ -583,7 +583,7 @@ describe('site settings', () => {
   });
 
   test('the database refuses any other text size written directly', async () => {
-    for (const bad of [0, 95, 130]) {
+    for (const bad of [0, 90, 95, 130]) {
       await assert.rejects(
         pool.query('update public.site_settings set text_size = $1 where id', [bad]),
         (error: { code?: string }) => error.code === '23514',

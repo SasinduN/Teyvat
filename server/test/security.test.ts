@@ -90,8 +90,8 @@ describe('security headers', () => {
     assert.deepEqual(directives, {
       'default-src': ["'self'"],
       'script-src': ["'self'"],
-      'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
-      'font-src': ["'self'", 'https://fonts.gstatic.com'],
+      'style-src': ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+      'font-src': ["'self'"],
       'img-src': ["'self'", 'https://images.unsplash.com', BASE, 'https://basemaps.cartocdn.com', 'https://tile.openstreetmap.org', 'https://upload.wikimedia.org'],
       'connect-src': ["'self'"],
       'frame-ancestors': ["'none'"],

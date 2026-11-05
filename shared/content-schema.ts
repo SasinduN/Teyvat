@@ -270,7 +270,7 @@ export const SITE_SETTINGS_FIELDS: Field[] = [
     label: 'Text size',
     type: 'textSize',
     span: 2,
-    help: 'For the whole site and this admin panel, from the next page load. At 90%, body text on phones is under 16 px.'
+    help: 'For the whole site and this admin panel, from the next page load.'
   }
 ];
 

@@ -17,7 +17,6 @@
    * style, so it needs nothing from the CSP and there is no flash. A percent
    * keeps the visitor's own browser setting underneath it. 100 needs no rule.
    */
-  :root[data-text-size="90"] { font-size: 90%; }
   :root[data-text-size="110"] { font-size: 110%; }
   :root[data-text-size="120"] { font-size: 120%; }
 
@@ -101,7 +100,6 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
    * the root, so it shows the size chosen whatever is saved now.
    */
   .te-text-size-preview { --preview-scale: 1; display: flex; flex-direction: column; gap: .4em; font-size: calc(16px * var(--preview-scale)); padding: 1.25em; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--background); color: var(--text-primary); }
-  .te-text-size-preview[data-text-size-preview="90"] { --preview-scale: .9; }
   .te-text-size-preview[data-text-size-preview="110"] { --preview-scale: 1.1; }
   .te-text-size-preview[data-text-size-preview="120"] { --preview-scale: 1.2; }
   .te-text-size-preview__label { font-size: .8125em; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-text); }
@@ -415,10 +413,22 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 .te-nav-links { display: none; font-size: .875rem; }
 /* Beside the menu button; between the logo and the links' end once the links show. */
 .te-nav-actions { margin-inline-start: auto; }
-@container te-nav (min-width: 72rem) {
-  .te-nav-links { display: flex; }
+/*
+ * The full header from about 1100 px at 100% and 1280 px at 110% (a little
+ * over 1280 px at 120%, where the menu button stays): tighter links, a compact
+ * Plan Your Trip and smaller theme and search buttons. All in rem, so it
+ * measures the same at every text size. Below this, the menu button. The
+ * threshold holds all nine links (bookings on); `browser-text-size` measures it.
+ */
+@container te-nav (min-width: 62rem) {
+  .te-nav .te-logo { gap: .5rem; }
+  .te-nav-links { display: flex; gap: .625rem; }
   .te-nav-phone-actions { display: none; }
-  .te-nav-actions { margin-inline-start: 0; }
+  .te-nav-actions { margin-inline-start: 0; gap: .25rem; }
+  .te-nav-actions .te-button--icon { width: 2.25rem; height: 2.25rem; min-height: 2.25rem; }
+  .te-nav-actions .te-button--icon > svg { width: 1.125rem; height: 1.125rem; }
+  .te-nav-actions .te-button--primary { min-height: 2.25rem; padding: .375rem .625rem; gap: .25rem; font-size: var(--text-xs); }
+  .te-nav-actions .te-button--primary > svg { width: .875rem; height: .875rem; }
 }
 
 /* Keep all four 44px navigation controls reachable at 320px. Unlayered so

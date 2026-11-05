@@ -195,12 +195,25 @@ describe('type on every page type, in Chrome', { skip, timeout: 6 * 60_000 }, ()
     });
   }
 
-  test('inputs stay at 16 px at every text size, even at 90%', async () => {
+  test('body text on a phone is never under 16 px, at any text size', async () => {
+    try {
+      for (const [textSize, px] of [[100, 16], [110, 17.6], [120, 19.2]]) {
+        await pool.query('update public.site_settings set text_size = $1 where id', [textSize]);
+        await visit('/journal/ultimate-ella-guide', 375);
+        const found = await page.evaluate<number[]>(`[document.body, document.querySelector('.te-prose')].map((el) => parseFloat(getComputedStyle(el).fontSize))`);
+        for (const size of found) assert.ok(Math.abs(size - px) < .01, `${size} px at ${textSize}%, expected ${px}`);
+      }
+    } finally {
+      await pool.query('update public.site_settings set text_size = 100 where id');
+    }
+  });
+
+  test('inputs stay at 16 px at every text size', async () => {
     const inputs = `[...document.querySelectorAll('input, select, textarea')]
       .filter((el) => !['checkbox', 'radio', 'file', 'hidden', 'range'].includes(el.type) && el.getBoundingClientRect().width > 1)
       .map((el) => [el.id || el.name || el.type, parseFloat(getComputedStyle(el).fontSize)])`;
     try {
-      for (const textSize of [90, 100, 120]) {
+      for (const textSize of [100, 110, 120]) {
         await pool.query('update public.site_settings set text_size = $1 where id', [textSize]);
         for (const path of ['/', '/booking', '/about']) {
           await visit(path, 375);

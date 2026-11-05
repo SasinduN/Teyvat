@@ -152,7 +152,7 @@ describe('text size 120% on every page type, in Chrome', { skip, timeout: 9 * 60
     try {
       for (const textSize of [100, 110, 120]) {
         await pool.query('update public.site_settings set text_size = $1 where id', [textSize]);
-        for (const width of [640, 768, 1024, 1180, 1280, 1366, 1440, 1920]) {
+        for (const width of [640, 768, 1024, 1100, 1180, 1280, 1366, 1440, 1920]) {
           await page.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
           await page.send('Page.navigate', { url: `${app.baseUrl}/about` });
           await poll(`document.readyState === 'complete' && document.querySelector('.te-nav .te-logo') && document.querySelector('main h1')`, `/about at ${width}`);
@@ -173,9 +173,50 @@ describe('text size 120% on every page type, in Chrome', { skip, timeout: 9 * 60
           for (let i = 1; i < header.groups.length; i += 1) {
             assert.ok(header.groups[i].left >= header.groups[i - 1].right, `${where}: group ${i} overlaps the one before it`);
           }
-          // The default on a laptop keeps its links.
-          if (textSize === 100 && width >= 1280) assert.ok(header.links, `${where}: the links show`);
+          // A laptop keeps its links, at the default and at 110%.
+          if ((textSize === 100 && width >= 1100) || (textSize === 110 && width >= 1280)) assert.ok(header.links, `${where}: the links show`);
         }
+      }
+    } finally {
+      await pool.query('update public.site_settings set text_size = 120 where id');
+    }
+  });
+
+  test('the full header fits from 1100 px at 100% and 1280 px at 110%; below that, the menu button', async () => {
+    const CASES = [
+      { width: 1100, textSize: 100, links: true },
+      { width: 1280, textSize: 110, links: true },
+      { width: 1024, textSize: 100, links: false },
+      { width: 1180, textSize: 110, links: false }
+    ];
+    try {
+      for (const { width, textSize, links } of CASES) {
+        await pool.query('update public.site_settings set text_size = $1 where id', [textSize]);
+        await page.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
+        await page.send('Page.navigate', { url: `${app.baseUrl}/about` });
+        await poll(`document.readyState === 'complete' && document.querySelector('.te-nav .te-logo') && document.querySelector('main h1')`, `/about at ${width}`);
+        await page.evaluate('document.fonts.ready.then(() => true)');
+        const where = `${width} px at ${textSize}%`;
+        const header = await page.evaluate<{ groups: { left: number; right: number }[]; links: boolean; menu: boolean; clipped: string[]; labels: string[] }>(`(() => {
+          const shown = (el) => getComputedStyle(el).display !== 'none';
+          const row = document.querySelector('.te-nav .te-container > div');
+          return {
+            groups: [...row.children].filter(shown).map((el) => { const r = el.getBoundingClientRect(); return { left: r.left, right: r.right }; }),
+            links: shown(document.querySelector('.te-nav-links')),
+            menu: shown(document.querySelector('.te-nav-phone-actions')),
+            clipped: [...row.querySelectorAll('a, button')].filter((el) => shown(el) && el.scrollWidth > el.clientWidth + 1).map((el) => el.textContent.trim()),
+            labels: [...document.querySelectorAll('.te-nav-link')].map((el) => el.textContent.trim())
+          };
+        })()`);
+        assert.equal(header.links, links, `${where}: the links ${links ? 'show' : 'hand over'}`);
+        assert.equal(header.menu, !links, `${where}: the menu button ${links ? 'goes' : 'shows'}`);
+        assert.ok(header.groups.at(-1)!.right <= width, `${where}: the header ends at ${header.groups.at(-1)!.right}`);
+        for (let i = 1; i < header.groups.length; i += 1) {
+          assert.ok(header.groups[i].left >= header.groups[i - 1].right, `${where}: group ${i} overlaps the one before it`);
+        }
+        assert.deepEqual(header.clipped, [], `${where}: nothing clipped`);
+        // Every link, with bookings on (this suite's app): the most the header ever holds.
+        if (links) assert.ok(header.labels.includes('Book Your Ride'), `${where}: all the links: ${header.labels.join(', ')}`);
       }
     } finally {
       await pool.query('update public.site_settings set text_size = 120 where id');
@@ -278,9 +319,9 @@ describe('the text size setting, in Chrome', { skip, timeout: 3 * 60_000 }, () =
   });
 
   test('the size is there before any script runs (no flash)', async () => {
-    await pool.query('update public.site_settings set text_size = 90 where id');
+    await pool.query('update public.site_settings set text_size = 110 where id');
     const html = await (await fetch(`${app.baseUrl}/tours`)).text();
-    assert.match(html, /<html[^>]* data-text-size="90"/);
+    assert.match(html, /<html[^>]* data-text-size="110"/);
     await pool.query('update public.site_settings set text_size = 120 where id');
   });
 

@@ -61,8 +61,6 @@ Update the Status column when a phase lands.
     importing `'zod'` directly brings back an `eval` probe the CSP reports.
   - A new external host (fonts, tiles, scripts) needs adding to the CSP;
     `server/test/browser-csp.test.ts` fails until it is.
-  - The Google Fonts hosts are still allowed, unused since the fonts moved in
-    house; they can be removed in their own PR.
 - **Type** (`src/styles/tokens.css`, `fonts.css`):
   - DM Sans, self-hosted through `@fontsource/dm-sans`: Latin only, weights
     400, 500, 600 and 700, no italics. Only 400 is preloaded (`index.html`). A
@@ -76,14 +74,17 @@ Update the Status column when a phase lands.
   - Inputs are `--type-input`, never under 16 px at any text size: iPhones
     zoom into smaller ones.
 - **Text size** (Admin → Settings, `site_settings.text_size`, `shared/text-size.ts`):
-  - 90, 100, 110 or 120. Express writes `data-text-size` on `<html>` in every
+  - 100, 110 or 120. Express writes `data-text-size` on `<html>` in every
     page (`injectTextSize`), and a rule in `index.css` sets the root font-size.
     An attribute, not an inline style: no CSP change, no flash.
   - Sizes in rem follow it; so must anything holding text. A fixed height in px
     around text clips at 120%: use `min-h-[…rem]`.
   - The header's links are a container query in rem (`.te-nav-links`), so they
-    hand over to the menu button when they don't fit, at any size. Links added
-    to the header can need a higher threshold: `browser-text-size` measures it.
+    hand over to the menu button when they don't fit, at any size: the full
+    header from about 1100 px at 100% and 1280 px at 110%, with compact
+    buttons. Links added to the header can need a higher threshold:
+    `browser-text-size` measures it.
+  - Body text on phones is never under 16 px: the smallest setting is 100%.
   - `browser-text-size` audits every page type at 120%, three widths, both
     themes (`text-audit.ts`): sideways overflow, clipping, overlaps, cut-off
     placeholders. It measures text rectangles, because `body { overflow-x:
@@ -252,8 +253,8 @@ Agreed, not started. Each one gets its own plan first.
   its description. Tests are never deleted or weakened to get a change
   through. Merge with a merge commit, not a squash: the baselines are
   commits. The redesign's order and rules: `docs/plans/redesign-redo.md`.
-- **One PR open at a time.** Merge it before starting the next. Nobody
-  merges their own PR, and nobody merges on red CI.
+- **One redesign PR open at a time; small fix PRs may be open alongside.**
+  Nobody merges their own PR, and nobody merges on red CI.
 - **Never run the Railway CLI.** It is linked at the home directory to a
   different project (`alluring-warmth`), not Teyvat.
 - **`main` takes changes through pull requests.** Push a branch, open a PR,
