@@ -28,7 +28,7 @@ import { pool } from '../src/db';
 import { injectHead, renderHead, shareImage, summarise, type PageMeta } from '../src/pages/head';
 import { BRAND_NAME } from '../../shared/brand';
 import { markdownText, robotsTxt } from '../src/pages/pages';
-import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
+import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, seedPhotoSet, type RunningApp } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -370,16 +370,28 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
   });
 
   test('destination share previews use the same verified cover as public content despite saved URLs', async () => {
-    for (const image of ['/images/unrelated.jpg', 'http://insecure.example/unrelated.jpg', 'https://media.example/beach.jpg']) {
-      await pool.query(`update public.destinations set image = $1 where id = 'ella'`, [image]);
-      const payload = await (await get(open, '/api/content')).json();
-      const cover = payload.destinations.find((row: { id: string }) => row.id === 'ella').image;
-      assert.match(cover, /^\/assets\/ella-1280-/);
-      const { head: h } = await head(open, '/destinations/ella');
-      assert.equal(metaContent(h, 'og:image'), `${SITE}${cover}`);
-      assert.equal(metaContent(h, 'twitter:image'), `${SITE}${cover}`);
-      assert.equal(metaContent(h, 'twitter:card'), 'summary_large_image');
+    await seedPhotoSet('ella', 'https://r2.test');
+    try {
+      for (const image of ['/images/unrelated.jpg', 'http://insecure.example/unrelated.jpg', 'https://media.example/beach.jpg']) {
+        await pool.query(`update public.destinations set image = $1 where id = 'ella'`, [image]);
+        const payload = await (await get(open, '/api/content')).json();
+        const cover = payload.destinations.find((row: { id: string }) => row.id === 'ella').image;
+        assert.match(cover, /^https:\/\/r2\.test\/assets\/1280-/);
+        const { head: h } = await head(open, '/destinations/ella');
+        assert.equal(metaContent(h, 'og:image'), cover);
+        assert.equal(metaContent(h, 'twitter:image'), cover);
+        assert.equal(metaContent(h, 'twitter:card'), 'summary_large_image');
+      }
+    } finally {
+      await pool.query('delete from public.media where photo_key is not null');
     }
+  });
+
+  test('a pinned destination not in R2 previews the photo its row stores', async () => {
+    await pool.query(`update public.destinations set image = 'https://media.example/beach.jpg' where id = 'ella'`);
+    const { head: h } = await head(open, '/destinations/ella');
+    assert.equal(metaContent(h, 'og:image'), 'https://media.example/beach.jpg');
+    assert.equal(metaContent(h, 'twitter:card'), 'summary_large_image');
   });
 
   test('an admin edit shows in the very next response', async () => {

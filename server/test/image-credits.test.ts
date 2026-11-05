@@ -12,6 +12,7 @@ import { after, before, beforeEach, describe, test } from 'node:test';
 
 import type { ImageCreditItem, SiteContentPayload } from '../../shared/api';
 import type { ImageCreditRow } from '../../shared/image-credits';
+import photographs from '../../shared/travel-photos.json';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { memoryStore } from '../src/media/store';
@@ -25,6 +26,7 @@ import {
   PASSWORD,
   resetAuthTables,
   resetContent,
+  seedPhotoSet,
   sessionTokenFrom,
   withSession,
   type RunningApp
@@ -54,6 +56,7 @@ before(async () => {
 beforeEach(async () => {
   await resetContent();
   await pool.query('truncate public.image_credits');
+  await pool.query('delete from public.media where photo_key is not null');
   const { rows } = await pool.query<{ image: string; gallery: string[] }>(
     `select image, gallery from public.destinations where id = 'ella'`
   );
@@ -86,6 +89,7 @@ const adminFetch = (path: string, init: RequestInit = {}) =>
 describe('GET /api/content: imageCredits', () => {
   test('only credits for photos a published row uses, plain and gallery columns alike', async () => {
     // Curated galleries retain their credits; the pinned cover carries its true credit.
+    await seedPhotoSet('ella', BASE);
     ellaImage = `${BASE}/ella.jpg`;
     galleryImage = `${BASE}/ella-gallery.jpg`;
     await pool.query('update public.destinations set image = $1, gallery = $2 where id = $3', [ellaImage, [galleryImage], 'ella']);
@@ -95,7 +99,7 @@ describe('GET /api/content: imageCredits', () => {
 
     const credits = await content();
     assert.deepEqual(credits.filter(c => [ellaImage, galleryImage].includes(c.url)).map((c) => c.author), ['Gallery Photographer']);
-    assert.ok(credits.some(c => c.url.startsWith('/assets/ella-1280-') && c.author === 'MichaelJames2468'));
+    assert.ok(credits.some(c => c.url.startsWith(`${BASE}/assets/1280-`) && c.author === 'MichaelJames2468'));
     assert.ok(!credits.some(c => c.author === 'Nobody'));
     assert.deepEqual(Object.keys(credits[0]).sort(), ['author', 'license', 'license_url', 'source_url', 'url']);
   });
@@ -108,11 +112,21 @@ describe('GET /api/content: imageCredits', () => {
     assert.equal((await content()).filter(c => c.url === 'https://images.unsplash.com/only-galle.jpg').length, 0);
   });
 
+  test('a pinned cover not in R2 shows the stored photo, with that photo\'s credit', async () => {
+    await credit(ellaImage, 'Stored photo photographer');
+    const payload = await (await fetch(`${app.baseUrl}/api/content`)).json() as SiteContentPayload;
+    const ella = payload.destinations.find(row => row.id === 'ella')!;
+    assert.equal(ella.image, ellaImage);
+    assert.equal(payload.imageCredits.find(c => c.url === ellaImage)?.author, 'Stored photo photographer');
+    assert.ok(!payload.imageCredits.some(c => c.author === 'MichaelJames2468'), 'not the credit of a photo it isn\'t showing');
+  });
+
   test('restored photos have their true credits and exclude superseded seed credits', async () => {
+    for (const { key } of photographs) await seedPhotoSet(key, BASE);
     await credit(ellaImage, 'Superseded stock photographer');
     const payload = await (await fetch(`${app.baseUrl}/api/content`)).json() as SiteContentPayload;
     const ella = payload.destinations.find(row => row.id === 'ella')!;
-    assert.match(ella.image, /^\/assets\/ella-1280-/);
+    assert.ok(ella.image.startsWith(`${BASE}/assets/1280-`), ella.image);
     assert.ok(!payload.imageCredits.some(c => c.url === ellaImage));
     assert.equal(payload.imageCredits.find(c => c.url === ella.image)?.author, 'MichaelJames2468');
     const used = new Set([

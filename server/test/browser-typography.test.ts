@@ -21,7 +21,7 @@ import { after, before, describe, test } from 'node:test';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
-import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
+import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, seedStoredPhotoCredit, type RunningApp } from './helpers';
 import { SCROLL_THROUGH, TEXT_SIZES_ON_PAGE } from './text-audit';
 import { HOOK_TIMEOUT } from './timeouts';
 
@@ -89,6 +89,7 @@ describe('type on every page type, in Chrome', { skip, timeout: 6 * 60_000 }, ()
     migrateTestDatabase();
     await assertConnectedToTestDatabase();
     await resetContent();
+    await seedStoredPhotoCredit();
     app = await listen(createApp({ media: null, bookings: true }));
     chrome = await launchChrome(executable!);
     page = await chrome.newPage();

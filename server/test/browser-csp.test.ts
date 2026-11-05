@@ -115,7 +115,7 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     await pool.end();
   }, HOOK_TIMEOUT);
 
-  test('restored home photos and the Explore map provider load with their credit under CSP', async () => {
+  test('home photos and the Explore map provider load with their credit under CSP', async () => {
     // Scroll the whole page so lazy images (and on /explore, the map's tiles) load.
     const scrollThrough = async () => {
       const height = await page.evaluate<number>('document.body.scrollHeight');
@@ -131,8 +131,8 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     await sleep(800);
     await collect('/ (scrolled)');
     assert.ok(
-      await page.evaluate<boolean>(`[...document.querySelectorAll('img')].some((i) => new URL(i.src).pathname.startsWith('/assets/ella-1280-') && i.complete && i.naturalWidth > 0)`),
-      'the restored local Ella photograph loads under CSP'
+      await page.evaluate<boolean>(`[...document.querySelectorAll('img')].some((i) => new URL(i.src).hostname === 'images.unsplash.com' && i.complete && i.naturalWidth > 0)`),
+      'a stored photo loads under CSP'
     );
 
     // The map lives on /explore.

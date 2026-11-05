@@ -1,8 +1,6 @@
 /**
  * Which photographs are in R2, at which widths (`media.photo_key` and `width`,
- * migration 0020). `shared/public-photos.ts` resolves a photo to these once it
- * has them, so `npm run images:migrate-assets` moves it the moment its rows
- * commit.
+ * migration 0020). `shared/public-photos.ts` resolves a photo to these.
  */
 import type { PoolClient } from 'pg';
 

@@ -20,12 +20,9 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
   let on: RunningApp, off: RunningApp, chrome: Chrome;
   before(async () => {
     migrateTestDatabase(); await assertConnectedToTestDatabase(); await resetContent();
-    // Use the shipped versions of the same photographs in this guarded test DB.
-    // Carousel readiness must not depend on an external Wikimedia request succeeding.
-    await pool.query(`update public.hero_slides set image=case
-      when lower(image) like '%sigiriya%' then '/assets/sigiriya-1280-76f7d2b40a60804b.webp'
-      when lower(image) like '%galle%' then '/assets/galle-1280-0efc885d27415115.webp'
-      else '/assets/ella-1280-0aac7f6297dfbdf1.webp' end || '?qa-carousel=' || id`);
+    // A same-origin image for every slide, each URL its own, in this guarded test DB:
+    // carousel readiness must not depend on an external request succeeding.
+    await pool.query(`update public.hero_slides set image='/images/photo-unavailable.svg?qa-carousel=' || id`);
     await pool.query('update public.site_settings set whatsapp_number=$1 where id', ['94771234567']);
     on = await listen(createApp({ media: null, bookings: true })); off = await listen(createApp({ media: null, bookings: false }));
     chrome = await launchChrome(executable!);

@@ -1,7 +1,6 @@
 import photographs from './travel-photos.json';
-import optimized from './optimized-photos.json';
 
-/** One photograph's files, by width. From `media` once it is in R2 (`npm run images:migrate-assets`). */
+/** One photograph's files in R2, by width. From `media` (`photo_key`, `width`). */
 export interface PhotoVariant {
   width: number;
   url: string;
@@ -30,12 +29,6 @@ const parseSrcSet = (srcSet: string): PhotoVariant[] => srcSet.split(',').map(ca
   return { url, width: parseInt(width, 10) };
 });
 
-/** Every file in public/assets/ for a photograph, as `/assets/…` paths; the upscaled widths too. */
-export function committedVariants(image: string): PhotoVariant[] {
-  const srcSet = (optimized as Record<string, string>)[image];
-  return srcSet ? parseSrcSet(srcSet) : [];
-}
-
 interface PhotoAsset {
   key: string;
   alt: string;
@@ -46,17 +39,14 @@ interface PhotoAsset {
 /** URL aliases describe the same photograph; names never select an unrelated fallback. */
 const assets = new Map<string, PhotoAsset>();
 for (const photo of photographs) {
-  const variants = committedVariants(photo.image);
-  const usable = usableVariants(photo.key, variants);
-  const metadata: PhotoAsset = { key: photo.key, alt: photo.alt, position: photo.position, srcSet: usable.length ? toSrcSet(usable) : undefined };
-  for (const src of [photo.image, photo.original, ...variants.map(v => v.url)]) assets.set(src, metadata);
+  const metadata: PhotoAsset = { key: photo.key, alt: photo.alt, position: photo.position };
+  for (const src of [photo.image, photo.original]) assets.set(src, metadata);
 }
 export const photoAsset = (src: string) => assets.get(src);
 
 /**
  * Teaches this page the R2 URLs from `GET /api/content`, so `photoAsset` knows
- * them as it knows the committed paths. Both keep working: nothing breaks while
- * rows still hold the old URLs.
+ * each photo's alt text, position and `srcset` from its URL.
  */
 export function registerPhotoSets(sets: PhotoSets = {}): void {
   for (const [key, variants] of Object.entries(sets)) {
@@ -72,12 +62,12 @@ export function withoutFullWidth(srcSet: string | undefined): string | undefined
   return srcSet && toSrcSet(parseSrcSet(srcSet).filter(v => v.width !== FULL_WIDTH));
 }
 
-/** A URL's full srcset, whichever kind of URL it is. For the server, which has `sets` to hand. */
+/** A URL's full srcset, if it is in a set. For the server, which has `sets` to hand. */
 export function fullSrcSet(src: string, sets: PhotoSets): string | undefined {
   for (const [key, variants] of Object.entries(sets)) {
     if (variants.some(v => v.url === src)) return toSrcSet(usableVariants(key, variants));
   }
-  return photoAsset(src)?.srcSet;
+  return undefined;
 }
 
 /** Match only a known seed photo, including resized/reordered Unsplash parameters. */

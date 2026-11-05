@@ -22,7 +22,6 @@ import { allowedImageOrigins } from '../shared/image-hosts';
 import { connectionTargetFor, privateHostHint } from '../shared/pg-connection';
 import { r2Config } from '../server/src/env';
 import { auditImages, storedImages } from '../server/src/media/maintenance';
-import { auditAssets, type AssetAudit } from '../server/src/media/migrate-assets';
 
 async function main(): Promise<void> {
   const { values } = parseArgs({ options: { prod: { type: 'boolean', default: false } }, strict: true });
@@ -74,20 +73,6 @@ async function main(): Promise<void> {
       for (const img of blocked) console.log(`  ${img.table}/${img.id}  ${img.column}  ${img.url}`);
       process.exitCode = 2;
     }
-
-    // Whether public/assets/ can go (docs: images:migrate-assets). Rows alone don't
-    // answer that: the code swaps URLs as it reads, so a row on R2 can still show a local file.
-    const assets = await auditAssets(client);
-    const line = ({ table, id, column, url }: AssetAudit['rowsHoldingAssets'][number]) => `  ${table}/${id}  ${column}  ${url}`;
-    console.log(`\npublic/assets/:`);
-    console.log(`  rows holding an /assets/ path: ${assets.rowsHoldingAssets.length}`);
-    console.log(`  rows showing an /assets/ file: ${assets.rowsShowingAssets.length}`);
-    console.log(`  photos the code uses, not in R2: ${assets.photosNotInR2.length}${assets.photosNotInR2.length ? ` (${assets.photosNotInR2.join(', ')})` : ''}`);
-    for (const row of assets.rowsHoldingAssets) console.log(line(row));
-    for (const row of assets.rowsShowingAssets) console.log(line(row));
-    const clean = assets.rowsHoldingAssets.length + assets.rowsShowingAssets.length + assets.photosNotInR2.length === 0;
-    console.log(clean ? 'Result: nothing depends on public/assets/. Safe to remove the files.' : 'Result: public/assets/ is still needed.');
-    if (!clean) process.exitCode = 2;
   } finally {
     await client.end();
   }

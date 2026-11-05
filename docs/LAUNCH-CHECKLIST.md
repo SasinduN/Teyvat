@@ -35,7 +35,7 @@ off in a pull request, so the history shows when each was done.
       **Blocks:** go-live. **Who:** Railway admin.
 - [ ] **4. Remove the public TCP proxy, or decide to keep it.** It exists so
       scripts can reach production from a laptop with `--prod`:
-      `admin:create`, `images:audit`, `images:import`, `images:migrate-assets`, `media:rebase`.
+      `admin:create`, `images:audit`, `images:import`, `media:rebase`.
       Without it, those can't run. Keep it
       until 9 and 16 are done, then decide.
       **Blocks:** reducing what's exposed to the internet. **Who:** Railway

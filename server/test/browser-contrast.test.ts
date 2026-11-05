@@ -24,7 +24,7 @@ import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { findChrome, launchChrome, type Chrome, type Page, saveTheme } from './chrome';
 import { newDecoder, shortfalls } from './contrast-capture';
-import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
+import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, seedStoredPhotoCredit, type RunningApp } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -54,6 +54,7 @@ describe('contrast on every page type, light and dark, in Chrome', { skip, timeo
     migrateTestDatabase();
     await assertConnectedToTestDatabase();
     await resetContent();
+    await seedStoredPhotoCredit();
     app = await listen(createApp({ media: null }));
     chrome = await launchChrome(executable!);
     decoder = await newDecoder(chrome);
