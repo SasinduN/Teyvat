@@ -12,7 +12,7 @@ export const JournalSection: React.FC = () => {
   return (
     <section id="journal" className="te-ed-section">
       <div className="te-container">
-        <SectionHead title="Latest stories" text="Guides, food and places, written from here." />
+        <SectionHead title="Latest stories" text="Guides, food and places around the island." />
 
         <Link to={paths.article(lead.id)} className="te-card te-ed-row te-split">
           <div className="te-ed-photo">

@@ -11,7 +11,7 @@ export function DestinationSpotlight() {
   const firstFour = [...destinations.filter(row => row.featured), ...destinations.filter(row => !row.featured)].slice(0, 4);
   return <section id="discover" aria-label="Places to begin" className="te-home-discover">
     <div className="te-container">
-      <SectionHead title="Where to begin" text="Four places people often start with. There are more on the map." />
+      <SectionHead title="Where to begin" text="Four places to start with. There are more on the map." />
       <div className="home-discover-grid">
         {firstFour.map((destination, index) => <HomeDestinationCard key={destination.id} destination={destination} lead={index === 0} />)}
       </div>

@@ -40,7 +40,7 @@ function RouteList() {
     <section className="te-ed-section" aria-labelledby="home-routes-title" id="home-routes">
       <div className="te-container">
         <h2 id="home-routes-title" className="te-ed-title font-heading">Routes to start from</h2>
-        <p className="te-ed-lead">Every route can change. These are the ones people ask for most.</p>
+        <p className="te-ed-lead">Every route can change to suit your dates and pace.</p>
         <ul className="te-ed-list mt-8">
           {tours.slice(0, 4).map((tour) => (
             <li key={tour.id}>
