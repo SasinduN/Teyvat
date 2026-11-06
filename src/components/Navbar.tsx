@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Search, Menu, X, Compass, ArrowRight } from 'lucide-react';
+import { Search, Menu, X, Compass, ArrowRight, Heart } from 'lucide-react';
 import { useModalFocus } from '@/hooks/useModalFocus';
 import { useFeatures } from '@/hooks/useSiteContent';
 import { activeNavigationTarget } from '@/lib/activeNavigation';
@@ -8,6 +8,8 @@ import { navLinks, paths } from '@shared/site-paths';
 import { Logo } from './Logo';
 import { SiteLink } from './SiteLink';
 import { ThemeToggle } from './ThemeToggle';
+import { WishlistIcon } from './WishlistLink';
+import { useWishlist } from '@/lib/wishlist';
 
 interface NavbarProps {
   onOpenSearch: () => void;
@@ -28,6 +30,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
   const menuRef = useModalFocus(mobileMenuOpen, () => setMobileMenuOpen(false));
   const activeTarget = activeNavigationTarget(location.pathname, location.hash);
   const links = navLinks(useFeatures());
+  const wishlist = useWishlist();
   const phoneActionsRef = useRef<HTMLDivElement>(null);
 
   // A navigation closes the menu, and so does widening until the links fit
@@ -89,6 +92,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
 
             {/* Right Side Buttons */}
             <div className="te-nav-actions hidden sm:flex items-center gap-3">
+              <WishlistIcon onClick={handleLinkClick} />
               <ThemeToggle />
               <button
                 type="button"
@@ -108,6 +112,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
 
             {/* Mobile: the theme, search and the menu */}
             <div ref={phoneActionsRef} className="te-nav-phone-actions flex items-center gap-1.5">
+              <WishlistIcon onClick={handleLinkClick} className="sm:hidden te-wish-icon--phone" />
               <ThemeToggle className="sm:hidden" />
               <SiteLink
                 to={paths.plan}
@@ -188,6 +193,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
               <Compass className="w-5 h-5" aria-hidden="true" />
               <span>Plan Your Journey</span>
             </SiteLink>
+            {wishlist.available && (
+              <SiteLink to={paths.wishlist} onClick={handleLinkClick} className="te-button te-button--secondary w-full py-3.5">
+                <Heart className="w-5 h-5" aria-hidden="true" />
+                <span>Wishlist{wishlist.items.length > 0 ? ` (${wishlist.items.length})` : ''}</span>
+              </SiteLink>
+            )}
           </nav>
 
           <div className="pt-8 border-t border-[var(--border)] text-center text-xs text-[var(--text-secondary)] space-y-1">

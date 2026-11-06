@@ -19,6 +19,8 @@ interface PageHeroProps {
   chips?: React.ReactNode;
   /** Shorter, for the list pages and About. */
   compact?: boolean;
+  /** Controls under the subtitle (Save). */
+  actions?: React.ReactNode;
 }
 
 /**
@@ -26,7 +28,7 @@ interface PageHeroProps {
  * solid fixed Navbar, a breadcrumb, and the page's one `<h1>`. Text sits directly
  * over a directional gradient; badges are plain text without glass.
  */
-export const PageHero: React.FC<PageHeroProps> = ({ image, crumbs, eyebrow, title, subtitle, chips, compact }) => (
+export const PageHero: React.FC<PageHeroProps> = ({ image, crumbs, eyebrow, title, subtitle, chips, compact, actions }) => (
   <section
     className={`te-page-hero relative w-full overflow-hidden bg-[var(--inverse-surface)] ${
       compact ? 'te-page-hero--compact' : 'te-page-hero--detail'
@@ -65,6 +67,7 @@ export const PageHero: React.FC<PageHeroProps> = ({ image, crumbs, eyebrow, titl
         {subtitle && (
           <p className="te-page-description mt-4 text-lg leading-relaxed text-white/85">{subtitle}</p>
         )}
+        {actions && <div className="te-page-hero-actions">{actions}</div>}
       </div>
     </div>
   </section>

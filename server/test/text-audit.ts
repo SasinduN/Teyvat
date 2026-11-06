@@ -85,7 +85,8 @@ export const TEXT_AUDIT = `(() => {
     const isSelect = field.tagName === 'SELECT';
     const words = isSelect ? field.options[field.selectedIndex]?.text ?? '' : field.value ? '' : field.placeholder;
     pen.font = s.fontWeight + ' ' + s.fontSize + ' ' + s.fontFamily;
-    const room = field.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight) - (isSelect ? 20 : 0);
+    // From the rectangle: since Chrome 157 an input's clientWidth already leaves out its padding, unlike every other element's.
+    const room = field.getBoundingClientRect().width - parseFloat(s.borderLeftWidth) - parseFloat(s.borderRightWidth) - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight) - (isSelect ? 20 : 0);
     if (pen.measureText(words).width > room + 1) problems.push('cut off in a field: ' + label(words));
   }
 

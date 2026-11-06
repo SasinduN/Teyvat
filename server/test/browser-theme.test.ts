@@ -41,7 +41,7 @@ const skip = !executable ? 'no Chrome found; set CHROME_PATH to run these' : !bu
 const PAGES = [
   '/', '/explore', '/plan', '/journal', '/destinations', '/destinations/ella', '/experiences',
   '/experiences/safari-yala', '/tours', '/tours/island-in-7-days', '/journal/ultimate-ella-guide',
-  '/about', '/photo-credits', '/unsubscribe', '/nope', '/admin'
+  '/about', '/photo-credits', '/wishlist', '/unsubscribe', '/nope', '/admin'
 ];
 
 /** Runs before anything on each new document: records the theme once parsing ends, and any error. */

@@ -3,6 +3,7 @@ import { HeroChip, PageHero } from '@/components/PageHero';
 import { SectionHead, TourCard } from '@/components/PageCards';
 import { PlanCard } from '@/components/PlanCard';
 import { RouteMap } from '@/components/RouteMap';
+import { SaveButton } from '@/components/SaveButton';
 import { usePageSubject, usePageTitle } from '@/context/PublicSiteContext';
 import { useFeatures, useTours } from '@/hooks/useSiteContent';
 import { pageTitle } from '@shared/page-meta';
@@ -41,6 +42,7 @@ function TourView({ t }: { t: TourPackage }) {
         eyebrow={`${t.category} Tour`}
         title={t.title}
         subtitle={t.subtitle}
+        actions={<SaveButton kind="tour" id={t.id} name={t.title} />}
       />
 
       <section className="py-14 sm:py-20">

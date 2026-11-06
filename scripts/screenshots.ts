@@ -51,13 +51,13 @@ import { Client } from 'pg';
 import { randomBytes } from 'node:crypto';
 
 import { passwords } from '../server/src/auth/passwords';
-import { findChrome, launchChrome, saveTheme, type Chrome, type Page } from '../server/test/chrome';
+import { findChrome, launchChrome, SAMPLE_WISHLIST, saveTheme, saveWishlist, type Chrome, type Page } from '../server/test/chrome';
 
 const ROOT = resolve(import.meta.dirname, '..');
 
 const PAGES = [
   '/', '/explore', '/plan', '/journal', '/destinations', '/destinations/ella', '/experiences', '/experiences/safari-yala', '/tours',
-  '/tours/island-in-7-days', '/journal/ultimate-ella-guide', '/about', '/photo-credits', '/no-such-page'
+  '/tours/island-in-7-days', '/journal/ultimate-ella-guide', '/about', '/photo-credits', '/wishlist', '/no-such-page'
 ];
 const VIEWPORTS = {
   desktop: { width: 1280, height: 900, mobile: false },
@@ -75,6 +75,8 @@ const { values } = parseArgs({
     'text-size': { type: 'string' },
     /** A site's public URL: both versions show that site's R2 photos, as production does. */
     'live-photos': { type: 'string' },
+    /** Every page opens with a saved wishlist, so /wishlist has cards and the header its count. */
+    'saved-wishlist': { type: 'boolean', default: false },
     out: { type: 'string' }
   },
   strict: true
@@ -243,6 +245,7 @@ async function open(chrome: Chrome, url: string, viewport: { width: number; heig
   });
   // The saved choice decides (with nothing saved the site is light, whatever the system).
   await saveTheme(page, dark ? 'dark' : 'light');
+  if (values['saved-wishlist']) await saveWishlist(page, SAMPLE_WISHLIST);
   if (viewport.mobile) await page.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
   await page.send('Page.navigate', { url });
   await waitFor(page, `document.readyState === 'complete' && document.body.dataset.route`);

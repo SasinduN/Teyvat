@@ -329,6 +329,9 @@ the CSP below).
 
 **Privacy (for the privacy policy page):**
 
+- The wishlist stays in the visitor's browser (localStorage). The server never sees it,
+  unless they choose to send it as an enquiry.
+
 - **Collected:** what the visitor types into the form, and when.
 - **Visible to:** signed-in admins only.
 - **Kept:** closed enquiries are deleted 12 months after closing, spam after

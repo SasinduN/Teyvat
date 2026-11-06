@@ -8,9 +8,10 @@ import './test-db';
  * the off state and gains an on state, showing only real reviews.)
  *
  * Every row gets a rating no other text could match, then Chrome walks each public
- * page type and opens the map's side panel. A control proves the check can fail, and
- * the API still carrying the numbers proves the column stayed and the values were there
- * to leak. The source check covers what the walk doesn't open, such as dialogs.
+ * page type and opens the map's side panel. `/api/content` must not carry them at all,
+ * while the database and the admin API keep them, so the column stayed and the values
+ * were there to leak. A control proves the page check can fail. The source check covers
+ * what the walk doesn't open, such as dialogs.
  *
  * The browser half needs `npm run build` and Chrome; skipped otherwise.
  */
@@ -24,7 +25,7 @@ import type { SiteContentPayload } from '../../shared/api';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
-import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
+import { assertConnectedToTestDatabase, createUser, listen, login, migrateTestDatabase, PASSWORD, resetAuthTables, resetContent, sessionTokenFrom, withSession, type RunningApp } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
 
 const ROOT = resolve(import.meta.dirname, '..', '..');
@@ -37,7 +38,7 @@ const EXPERIENCE_RATING = '4.63';
 /** Every public page type. */
 const PAGES = [
   '/', '/destinations', '/destinations/ella', '/experiences', '/experiences/sunrise-ella', '/tours', '/tours/island-in-7-days',
-  '/explore', '/plan', '/journal', '/journal/ultimate-ella-guide', '/about', '/photo-credits', '/no-such-page'
+  '/explore', '/plan', '/journal', '/journal/ultimate-ella-guide', '/about', '/photo-credits', '/wishlist', '/no-such-page'
 ];
 
 /** What the page shows that looks like a rating, in text, labels or icons. */
@@ -115,12 +116,39 @@ describe('no ratings on the public site', () => {
       await page.send('Target.closeTarget', { targetId: targetInfo.targetId }).catch(() => undefined);
     };
 
-    test('the API still carries them, so the column stayed and there is something to leak', async () => {
+    test('the public API carries no rating, anywhere in its payload', async () => {
       const payload = (await (await fetch(`${app.baseUrl}/api/content`)).json()) as SiteContentPayload;
       assert.ok(payload.destinations.length > 0);
-      for (const row of payload.destinations) assert.equal(Number(row.rating), Number(DESTINATION_RATING));
       assert.ok(payload.featuredExperiences.length > 0);
-      for (const row of payload.featuredExperiences) assert.equal(Number(row.rating), Number(EXPERIENCE_RATING));
+      const found: string[] = [];
+      const walk = (value: unknown, path: string): void => {
+        if (Array.isArray(value)) value.forEach((item, i) => walk(item, `${path}[${i}]`));
+        else if (value && typeof value === 'object') {
+          for (const [key, item] of Object.entries(value)) {
+            if (/rating/i.test(key)) found.push(`${path}.${key}`);
+            walk(item, `${path}.${key}`);
+          }
+        }
+      };
+      walk(payload, 'content');
+      assert.deepEqual(found, []);
+    });
+
+    test('the database and the admin API keep them', async () => {
+      const stored = await pool.query<{ rating: string }>('select rating from public.destinations limit 1');
+      assert.equal(Number(stored.rows[0].rating), Number(DESTINATION_RATING));
+
+      await resetAuthTables();
+      await createUser();
+      const token = sessionTokenFrom(await login(app, 'admin@example.test', PASSWORD));
+      assert.ok(token, 'signed in');
+      for (const [table, rating] of [['destinations', DESTINATION_RATING], ['featured_experiences', EXPERIENCE_RATING]] as const) {
+        const res: Response = await fetch(`${app.baseUrl}/api/admin/content/${table}`, { headers: withSession(token) });
+        assert.equal(res.status, 200, table);
+        const rows = (await res.json()) as { rating: number }[];
+        assert.ok(rows.length > 0, table);
+        for (const row of rows) assert.equal(Number(row.rating), Number(rating), table);
+      }
     });
 
     for (const width of [1280, 375]) {

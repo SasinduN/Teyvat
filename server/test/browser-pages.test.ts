@@ -231,7 +231,7 @@ describe('pages and links, in Chrome', { skip, timeout: 4 * 60_000 }, () => {
     for (const path of [
       '/', '/explore', '/plan', '/journal', '/destinations', '/destinations/ella', '/experiences',
       '/experiences/safari-yala', '/tours', '/tours/island-in-7-days', '/journal/ultimate-ella-guide',
-      '/about', '/photo-credits', '/unsubscribe', '/nope'
+      '/about', '/photo-credits', '/wishlist', '/unsubscribe', '/nope'
     ]) {
       const page = await openPage(path);
       const { h1s, repeats } = await page.evaluate<{ h1s: string[]; repeats: string[] }>(`(() => {

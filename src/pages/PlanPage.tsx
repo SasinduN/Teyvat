@@ -1,6 +1,7 @@
 import { PageHero } from '@/components/PageHero';
 import { SiteLink } from '@/components/SiteLink';
 import { TravelPlanner } from '@/components/TravelPlanner';
+import { WishlistTextLink } from '@/components/WishlistLink';
 import { usePageTitle, usePublicSite } from '@/context/PublicSiteContext';
 import { useHeroSlides } from '@/hooks/useSiteContent';
 import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
@@ -38,9 +39,12 @@ export function PlanPage() {
             <p className="my-4 text-[var(--text-secondary)]">
               This is a sample route. Our travel designers check availability and transfers, and adjust the pace with you.
             </p>
-            <SiteLink to={paths.contact} className="te-button te-button--primary">
-              Contact a Travel Designer
-            </SiteLink>
+            <div className="te-ed-actions">
+              <SiteLink to={paths.contact} className="te-button te-button--primary">
+                Contact a Travel Designer
+              </SiteLink>
+              <WishlistTextLink text="See your wishlist" />
+            </div>
           </div>
         </div>
       </section>

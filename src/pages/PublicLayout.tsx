@@ -43,6 +43,7 @@ export function PublicLayout() {
 
   const [inquiryOpen, setInquiryOpen] = useState(false);
   const [inquirySubject, setInquirySubject] = useState('');
+  const [inquiryMessage, setInquiryMessage] = useState<string | undefined>();
   const [searchOpen, setSearchOpen] = useState(false);
   const [pageSubject, setPageSubject] = useState<PageSubject | null>(null);
   /** Whether each modal has been opened yet: mounted from then on. */
@@ -50,8 +51,9 @@ export function PublicLayout() {
   const [searchMounted, setSearchMounted] = useState(false);
 
   const openInquiry = useCallback(
-    (subject?: string) => {
+    (subject?: string, message?: string) => {
       setInquirySubject(subject ?? pageSubject?.inquiry ?? 'General Sri Lanka Trip Inquiry');
+      setInquiryMessage(message);
       setInquiryMounted(true);
       setInquiryOpen(true);
     },
@@ -153,6 +155,7 @@ export function PublicLayout() {
                 isOpen={inquiryOpen}
                 onClose={() => setInquiryOpen(false)}
                 prefilledSubject={inquirySubject}
+                prefilledMessage={inquiryMessage}
               />
             </Suspense>
           </Section>

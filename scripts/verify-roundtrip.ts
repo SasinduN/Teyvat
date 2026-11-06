@@ -266,12 +266,13 @@ console.log('Verifying data -> database row -> mapper round-trip\n');
 // `featured` is a NOT NULL boolean column, so a destination that simply
 // omitted the flag comes back as `false` rather than absent. Both are falsy,
 // and no component reads the field, so rendering is unaffected.
-compare('destinations', DESTINATIONS, destinationRows.map(toDestination), (d) => ({
+// `rating` stays in the row and never reaches the public site (`no-ratings`).
+compare('destinations', DESTINATIONS, destinationRows.map(toDestination), ({ rating: _rating, ...d }) => ({
   ...d,
   featured: d.featured ?? false
 }));
 compare('experience types', EXPERIENCE_CATEGORIES, experienceCategoryRows.map(toExperienceCategory));
-compare('featured experiences', FEATURED_EXPERIENCES, featuredExperienceRows.map(toExperienceItem));
+compare('featured experiences', FEATURED_EXPERIENCES, featuredExperienceRows.map(toExperienceItem), ({ rating: _rating, ...e }) => e);
 compare(
   'tours',
   TOURS,

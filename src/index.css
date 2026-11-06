@@ -432,6 +432,16 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   .te-nav-actions .te-button--primary > svg { width: .875rem; height: .875rem; }
 }
 
+/* The header's wishlist: an icon, and a count at its top corner, with the heart moved clear of it. */
+.te-button.te-wish-icon { position: relative; }
+.te-wish-icon:has(.te-wish-count) svg { transform: translate(-.1875rem, .1875rem); }
+.te-wish-count {
+  position: absolute; top: -.375rem; right: 0; min-width: 1.25rem; height: 1.25rem; padding-inline: .1875rem;
+  display: flex; align-items: center; justify-content: center; border-radius: 999px;
+  background: var(--button-primary-bg); color: var(--button-primary-text);
+  font-size: var(--text-xs); font-weight: 700; line-height: 1;
+}
+
 /* Keep all four 44px navigation controls reachable at 320px. Unlayered so
    the compact spacing overrides the markup's utility gap. */
 @media (max-width: 375px) {
@@ -441,6 +451,21 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   .te-nav .te-logo > div:last-child > div:first-child { font-size: var(--text-xs); }
   .te-nav-phone-actions { gap: .125rem; }
 }
+/*
+ * With the wishlist, a phone's header holds five 44 px controls: closer together, with
+ * the small logo up to 430 px. Below that there's no room, and the phone menu has the
+ * wishlist instead. A container query in rem, so larger text hands over sooner.
+ */
+@media (max-width: 639px) { .te-nav-phone-actions:has(.te-wish-icon--phone) { gap: .125rem; } }
+@media (max-width: 430px) {
+  .te-nav:has(.te-wish-icon--phone) .te-container { width: 100%; padding-inline: .5rem; }
+  .te-nav:has(.te-wish-icon--phone) .te-logo { gap: .25rem; }
+  .te-nav:has(.te-wish-icon--phone) .te-logo svg { width: 20px; height: 20px; }
+  .te-nav:has(.te-wish-icon--phone) .te-logo > div:last-child > div:first-child { font-size: var(--text-xs); }
+}
+@container te-nav (max-width: 21.4rem) { .te-wish-icon--phone { display: none; } }
+/* The narrowest phones at 120%: four won't fit either. The phone menu has Plan Your Journey. */
+@container te-nav (max-width: 16rem) { .te-nav-phone-actions > .te-button--primary { display: none; } }
 .te-hero {
   min-height: 100vh;
   min-height: 100dvh;

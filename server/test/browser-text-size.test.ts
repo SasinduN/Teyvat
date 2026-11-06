@@ -19,7 +19,7 @@ import { after, before, describe, test } from 'node:test';
 
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
-import { findChrome, launchChrome, saveTheme, type Chrome, type Page } from './chrome';
+import { findChrome, launchChrome, SAMPLE_WISHLIST, saveTheme, saveWishlist, type Chrome, type Page } from './chrome';
 import { assertConnectedToTestDatabase, createUser, listen, migrateTestDatabase, PASSWORD, resetAuthTables, resetContent, seedStoredPhotoCredit, type RunningApp } from './helpers';
 import { SCROLL_THROUGH, TEXT_AUDIT } from './text-audit';
 import { HOOK_TIMEOUT } from './timeouts';
@@ -47,6 +47,7 @@ const PAGES = [
   '/booking',
   '/about',
   '/photo-credits',
+  '/wishlist',
   '/no-such-page'
 ];
 const WIDTHS = [375, 768, 1280];
@@ -67,6 +68,8 @@ describe('text size 120% on every page type, in Chrome', { skip, timeout: 9 * 60
     app = await listen(createApp({ media: null, bookings: true }));
     chrome = await launchChrome(executable!);
     page = await chrome.newPage();
+    // The most the header ever holds: the wishlist's count too.
+    await saveWishlist(page, SAMPLE_WISHLIST);
   }, HOOK_TIMEOUT);
 
   after(async () => {

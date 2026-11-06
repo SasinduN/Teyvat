@@ -3,6 +3,8 @@ import React, { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Info, X } from 'lucide-react';
 import { paths } from '@shared/site-paths';
+import type { WishlistKind } from '@shared/wishlist';
+import { SaveButton } from './SaveButton';
 import type { Article, Destination, ExperienceItem, TourPackage } from '@/types';
 
 /** A section heading: the heading and, if it needs one, a line under it. */
@@ -13,13 +15,22 @@ export const SectionHead: React.FC<{ title: string; text?: string }> = ({ title,
   </div>
 );
 
+/** A card with a Save button over its photo: a sibling of the link, because a link can't hold a button. */
+const Saveable: React.FC<{ kind: WishlistKind; id: string; name: string; saveable: boolean; children: React.ReactElement }> = ({ kind, id, name, saveable, children }) =>
+  saveable ? (
+    <div className="te-save-card">
+      {children}
+      <SaveButton kind={kind} id={id} name={name} />
+    </div>
+  ) : children;
+
 /**
  * A destination card. The spotlight (the default) is one link to the page, its
  * caption under the photo; the gallery (/destinations) is the photo-first card
  * that reveals its description and link (DestinationRevealCard).
  */
-export const DestinationCard: React.FC<{ dest: Destination; variant?: 'spotlight' | 'gallery' }> = ({ dest, variant }) =>
-  variant === 'gallery' ? <DestinationRevealCard dest={dest} /> : <DestinationSpotlightCard dest={dest} />;
+export const DestinationCard: React.FC<{ dest: Destination; variant?: 'spotlight' | 'gallery'; saveable?: boolean }> = ({ dest, variant, saveable = true }) =>
+  variant === 'gallery' ? <DestinationRevealCard dest={dest} /> : <DestinationSpotlightCard dest={dest} saveable={saveable} />;
 
 /**
  * Photo first: the region and name over the photo. The description
@@ -45,7 +56,7 @@ export function DestinationRevealCard({ dest, home, sizes }: { dest: Destination
       onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setExpanded(false); }}
       onKeyDown={(event) => {
         if (event.key !== 'Escape') return;
-        event.currentTarget.querySelector<HTMLButtonElement>('button')?.focus();
+        event.currentTarget.querySelector<HTMLButtonElement>('.destination-card__toggle')?.focus();
         setExpanded(false);
         setHovered(false);
         event.stopPropagation();
@@ -62,6 +73,7 @@ export function DestinationRevealCard({ dest, home, sizes }: { dest: Destination
       >
         {revealed ? <X size={18} aria-hidden="true" /> : <Info size={18} aria-hidden="true" />}
       </button>
+      <SaveButton kind="destination" id={dest.id} name={dest.name} />
       <div className="destination-card__content">
         <p className="destination-card__region">{dest.region} Region</p>
         <h3 id={`${id}-title`} className="destination-card__title font-heading">{dest.name}</h3>
@@ -80,42 +92,48 @@ export function DestinationRevealCard({ dest, home, sizes }: { dest: Destination
   );
 }
 
-const DestinationSpotlightCard: React.FC<{ dest: Destination }> = ({ dest }) => (
-  <Link to={paths.destination(dest.id)} className="te-card te-ed-card">
-    <div className="te-ed-photo">
-      <TravelImage src={dest.image} alt={dest.name} sizes="(min-width: 768px) 33vw, 100vw" />
-    </div>
-    <div className="te-ed-card__body">
-      <p className="te-ed-label">{dest.region} region</p>
-      <h3 className="te-ed-card__title font-heading">{dest.name}</h3>
-      <p className="te-ed-card__text">{dest.shortDescription}</p>
-    </div>
-  </Link>
+const DestinationSpotlightCard: React.FC<{ dest: Destination; saveable: boolean }> = ({ dest, saveable }) => (
+  <Saveable kind="destination" id={dest.id} name={dest.name} saveable={saveable}>
+    <Link to={paths.destination(dest.id)} className="te-card te-ed-card">
+      <div className="te-ed-photo">
+        <TravelImage src={dest.image} alt={dest.name} sizes="(min-width: 768px) 33vw, 100vw" />
+      </div>
+      <div className="te-ed-card__body">
+        <p className="te-ed-label">{dest.region} region</p>
+        <h3 className="te-ed-card__title font-heading">{dest.name}</h3>
+        <p className="te-ed-card__text">{dest.shortDescription}</p>
+      </div>
+    </Link>
+  </Saveable>
 );
 
-export const TourCard: React.FC<{ tour: TourPackage }> = ({ tour }) => (
-  <Link to={paths.tour(tour.id)} className="te-card te-ed-card">
-    <div className="te-ed-photo">
-      <TravelImage src={tour.image} alt={tour.title} sizes="(min-width: 768px) 33vw, 100vw" />
-    </div>
-    <div className="te-ed-card__body">
-      <h3 className="te-ed-card__title font-heading">{tour.title}</h3>
-      <p className="te-ed-meta mt-1">{tour.days} days, from ${tour.priceFrom}</p>
-    </div>
-  </Link>
+export const TourCard: React.FC<{ tour: TourPackage; saveable?: boolean }> = ({ tour, saveable = true }) => (
+  <Saveable kind="tour" id={tour.id} name={tour.title} saveable={saveable}>
+    <Link to={paths.tour(tour.id)} className="te-card te-ed-card">
+      <div className="te-ed-photo">
+        <TravelImage src={tour.image} alt={tour.title} sizes="(min-width: 768px) 33vw, 100vw" />
+      </div>
+      <div className="te-ed-card__body">
+        <h3 className="te-ed-card__title font-heading">{tour.title}</h3>
+        <p className="te-ed-meta mt-1">{tour.days} days, from ${tour.priceFrom}</p>
+      </div>
+    </Link>
+  </Saveable>
 );
 
-export const ExperienceCard: React.FC<{ item: ExperienceItem }> = ({ item }) => (
-  <Link to={paths.experience(item.id)} className="te-card te-ed-card">
-    <div className="te-ed-photo">
-      <TravelImage src={item.image} alt={item.title} sizes="(min-width: 768px) 33vw, 100vw" />
-    </div>
-    <div className="te-ed-card__body">
-      <p className="te-ed-label">{item.location}</p>
-      <h3 className="te-ed-card__title font-heading">{item.title}</h3>
-      <p className="te-ed-meta mt-1">{item.duration}</p>
-    </div>
-  </Link>
+export const ExperienceCard: React.FC<{ item: ExperienceItem; saveable?: boolean }> = ({ item, saveable = true }) => (
+  <Saveable kind="experience" id={item.id} name={item.title} saveable={saveable}>
+    <Link to={paths.experience(item.id)} className="te-card te-ed-card">
+      <div className="te-ed-photo">
+        <TravelImage src={item.image} alt={item.title} sizes="(min-width: 768px) 33vw, 100vw" />
+      </div>
+      <div className="te-ed-card__body">
+        <p className="te-ed-label">{item.location}</p>
+        <h3 className="te-ed-card__title font-heading">{item.title}</h3>
+        <p className="te-ed-meta mt-1">{item.duration}</p>
+      </div>
+    </Link>
+  </Saveable>
 );
 
 export const ArticleCard: React.FC<{ art: Article }> = ({ art }) => (

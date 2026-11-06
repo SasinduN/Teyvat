@@ -22,7 +22,7 @@ import { after, before, describe, test } from 'node:test';
 
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
-import { findChrome, launchChrome, type Chrome, type Page, saveTheme } from './chrome';
+import { findChrome, launchChrome, SAMPLE_WISHLIST, type Chrome, type Page, saveTheme, saveWishlist } from './chrome';
 import { newDecoder, shortfalls } from './contrast-capture';
 import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, seedStoredPhotoCredit, type RunningApp } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
@@ -35,15 +35,15 @@ const skip = !executable ? 'no Chrome found; set CHROME_PATH to run these' : !bu
 const PAGES = [
   '/', '/explore', '/plan', '/journal', '/destinations', '/destinations/ella', '/experiences',
   '/experiences/safari-yala', '/tours', '/tours/island-in-7-days', '/journal/ultimate-ella-guide',
-  '/about', '/photo-credits', '/unsubscribe', '/nope'
+  '/about', '/photo-credits', '/wishlist', '/unsubscribe', '/nope'
 ];
 
 /** Not text: the map's tiles and markers. */
 const SKIP = '.leaflet-container';
 
-// `--test-timeout` (60 s) applies to a suite as a whole too, and these 60
+// `--test-timeout` (60 s) applies to a suite as a whole too, and these 64
 // tests take a few minutes together; each test keeps the 60 s limit.
-describe('contrast on every page type, light and dark, in Chrome', { skip, timeout: 8 * 60_000 }, () => {
+describe('contrast on every page type, light and dark, in Chrome', { skip, timeout: 9 * 60_000 }, () => {
   let app: RunningApp;
   let chrome: Chrome;
   let decoder: Page;
@@ -59,6 +59,8 @@ describe('contrast on every page type, light and dark, in Chrome', { skip, timeo
     chrome = await launchChrome(executable!);
     decoder = await newDecoder(chrome);
     page = await chrome.newPage();
+    // So every page has both Save and Saved, and /wishlist has its cards.
+    await saveWishlist(page, SAMPLE_WISHLIST);
   }, HOOK_TIMEOUT);
 
   after(async () => {
