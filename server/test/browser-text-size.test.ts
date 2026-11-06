@@ -64,7 +64,7 @@ describe('text size 120% on every page type, in Chrome', { skip, timeout: 9 * 60
     await assertConnectedToTestDatabase();
     await resetContent();
     await seedStoredPhotoCredit();
-    await pool.query(`update public.site_settings set text_size = 120, whatsapp_number = '94771234567' where id`);
+    await pool.query(`update public.site_settings set text_size = 120, whatsapp_number = '94771236478' where id`);
     app = await listen(createApp({ media: null, bookings: true }));
     chrome = await launchChrome(executable!);
     page = await chrome.newPage();
@@ -189,6 +189,7 @@ describe('text size 120% on every page type, in Chrome', { skip, timeout: 9 * 60
   test('the full header fits from 1100 px at 100% and 1280 px at 110%; below that, the menu button', async () => {
     const CASES = [
       { width: 1100, textSize: 100, links: true },
+      { width: 1280, textSize: 100, links: true },
       { width: 1280, textSize: 110, links: true },
       { width: 1024, textSize: 100, links: false },
       { width: 1180, textSize: 110, links: false }
@@ -201,15 +202,17 @@ describe('text size 120% on every page type, in Chrome', { skip, timeout: 9 * 60
         await poll(`document.readyState === 'complete' && document.querySelector('.te-nav .te-logo') && document.querySelector('main h1')`, `/about at ${width}`);
         await page.evaluate('document.fonts.ready.then(() => true)');
         const where = `${width} px at ${textSize}%`;
-        const header = await page.evaluate<{ groups: { left: number; right: number }[]; links: boolean; menu: boolean; clipped: string[]; labels: string[] }>(`(() => {
+        const header = await page.evaluate<{ groups: { left: number; right: number }[]; links: boolean; menu: boolean; clipped: string[]; labels: string[]; itemGaps: number[] }>(`(() => {
           const shown = (el) => getComputedStyle(el).display !== 'none';
           const row = document.querySelector('.te-nav .te-container > div');
           return {
             groups: [...row.children].filter(shown).map((el) => { const r = el.getBoundingClientRect(); return { left: r.left, right: r.right }; }),
             links: shown(document.querySelector('.te-nav-links')),
             menu: shown(document.querySelector('.te-nav-phone-actions')),
-            clipped: [...row.querySelectorAll('a, button')].filter((el) => shown(el) && el.scrollWidth > el.clientWidth + 1).map((el) => el.textContent.trim()),
-            labels: [...document.querySelectorAll('.te-nav-link')].map((el) => el.textContent.trim())
+            // The wishlist's badge sits outside its button on purpose, unclipped.
+            clipped: [...row.querySelectorAll('a:not(.te-wish-icon), button')].filter((el) => shown(el) && el.scrollWidth > el.clientWidth + 1).map((el) => el.textContent.trim()),
+            labels: [...document.querySelectorAll('.te-nav-link')].map((el) => el.textContent.trim()),
+            itemGaps: [...document.querySelectorAll('.te-nav-links > *')].map((el) => el.getBoundingClientRect()).map((r, i, all) => (i ? r.left - all[i - 1].right : 0)).slice(1)
           };
         })()`);
         assert.equal(header.links, links, `${where}: the links ${links ? 'show' : 'hand over'}`);
@@ -220,7 +223,16 @@ describe('text size 120% on every page type, in Chrome', { skip, timeout: 9 * 60
         }
         assert.deepEqual(header.clipped, [], `${where}: nothing clipped`);
         // Every link, with bookings on (this suite's app): the most the header ever holds.
-        if (links) assert.ok(header.labels.includes('Book Your Ride'), `${where}: all the links: ${header.labels.join(', ')}`);
+        if (links) {
+          assert.ok(header.labels.includes('Book Your Ride'), `${where}: all the links: ${header.labels.join(', ')}`);
+          assert.ok(header.itemGaps.length <= 5, `${where}: at most six top items`);
+          // About 28 to 32 px between the items, in rem like the rest of the header.
+          for (const gap of header.itemGaps) assert.ok(gap >= 27.5 && gap <= 32 * textSize / 100 + 1, `${where}: a gap of ${gap}`);
+          // Room to spare: the links are nowhere near the logo or the buttons.
+          for (let i = 1; i < header.groups.length; i += 1) {
+            assert.ok(header.groups[i].left - header.groups[i - 1].right >= 24, `${where}: only ${header.groups[i].left - header.groups[i - 1].right} px between groups ${i - 1} and ${i}`);
+          }
+        }
       }
     } finally {
       await pool.query('update public.site_settings set text_size = 120 where id');

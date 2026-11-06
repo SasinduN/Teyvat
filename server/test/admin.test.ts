@@ -41,7 +41,7 @@ before(async () => {
 }, HOOK_TIMEOUT);
 
 beforeEach(async () => {
-  await resetContent();
+  await resetContent({ whatsappNumber: null });
 }, HOOK_TIMEOUT);
 
 after(async () => {
@@ -510,13 +510,13 @@ describe('site settings', () => {
   });
 
   test('a WhatsApp number is stored as digits only, and empty saves as NULL', async () => {
-    let res = await save(await settings(), { whatsapp_number: ' +94 (77) 123-4567 ' });
+    let res = await save(await settings(), { whatsapp_number: ' +94 (77) 123-6478 ' });
     assert.equal(res.status, 200);
     const saved = await json(res);
-    assert.equal(saved.whatsapp_number, '94771234567');
+    assert.equal(saved.whatsapp_number, '94771236478');
 
     const content = await (await fetch(`${app.baseUrl}/api/content`)).json();
-    assert.equal(content.siteSettings.whatsapp_number, '94771234567');
+    assert.equal(content.siteSettings.whatsapp_number, '94771236478');
 
     res = await save(saved, { whatsapp_number: '' });
     assert.equal(res.status, 200);
@@ -540,14 +540,14 @@ describe('site settings', () => {
   });
 
   test('the database refuses a bad WhatsApp number written directly', async () => {
-    for (const bad of ['0771234567', '940771234567', '+94771234567', '9477123']) {
+    for (const bad of ['0771234567', '940771234567', '+94771236478', '9477123']) {
       await assert.rejects(
         pool.query('update public.site_settings set whatsapp_number = $1 where id', [bad]),
         (error: { code?: string }) => error.code === '23514',
         bad
       );
     }
-    await pool.query("update public.site_settings set whatsapp_number = '94771234567' where id");
+    await pool.query("update public.site_settings set whatsapp_number = '94771236478' where id");
   });
 
   test('the text size saves, and the next page is served with it', async () => {

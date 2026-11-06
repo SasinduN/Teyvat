@@ -114,6 +114,17 @@ default 5432.
    npm run migrate
    ```
 
+5. Add the local-only data, so the WhatsApp button shows:
+
+   ```bash
+   npm run seed:dev
+   ```
+
+   This sets the WhatsApp number to `94771236478`, which is **fake and only for
+   testing**: it belongs to nobody, so don't message it. It's never in a migration, so
+   it can't reach production, where the number is the one saved in *Admin → Settings*.
+   The tests and `npm run screenshots` use it too; no test opens it.
+
 The test database is migrated by the tests themselves. `npm run dev:server`
 and `npm run dev` then run the site on this data.
 
@@ -160,9 +171,10 @@ npm run build && npm start     # everything on http://localhost:8081
 | `npm test` | All tests (API, database, and headless Chrome), with time limits |
 | `npm run verify:roundtrip` | Proves the database round-trip renders the approved content unchanged |
 | `npm run bundle:report` | After a build: the gzipped JS and CSS each page type loads |
-| `npm run screenshots` | Before/after screenshots of a design change at 1280 px and 375 px (`-- --base origin/main`, `--pages /,/about`, `--dark`), into `docs/screenshots/<branch>/` (git-ignored), with a `summary.md` of which pairs differ. Every page type, the phone menu, the enquiry form and the map with a place picked. `--base b46de13` compares against #12's design. In Git Bash, prefix it with `MSYS_NO_PATHCONV=1` when passing `--pages` `--live-photos <site URL>` uses that site's public R2 photos. |
+| `npm run screenshots` | Before/after screenshots of a design change at 1280 px and 375 px (`-- --base origin/main`, `--pages /,/about`, `--dark`), into `docs/screenshots/<branch>/` (git-ignored), with a `summary.md` of which pairs differ. Every page type, the phone menu, the enquiry form and the map with a place picked. `--base b46de13` compares against #12's design. In Git Bash, prefix it with `MSYS_NO_PATHCONV=1` when passing `--pages` `--live-photos <site URL>` uses that site's public R2 photos. `--header-floating` takes only the twelve pairs for the header, its dropdowns and the floating buttons. |
 | `npm run migrate` | Apply pending migrations (`-- --dry-run` to list them) |
 | `npm run seed:generate` | Regenerate `0002_seed.sql` from `scripts/fixtures/*.ts` |
+| `npm run seed:dev` | Local database only: the fake WhatsApp number, if none is saved |
 | `npm run admin:create` | Create an admin, or `--reset-password` for an existing one (`--prod`) |
 | `npm run images:audit` | Read-only: stored image URLs the CSP would block (`--prod`) |
 | `npm run media:rebase` | Move stored image URLs to a new R2 base (`--from`, `--to`, `--dry-run`, `--prod`) |

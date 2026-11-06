@@ -39,7 +39,8 @@ this file or anywhere else in git.
 | M | Photos in `public/assets/` moved to R2, with `srcset` (A); the files removed once the audit was clean (B) | done (#49, #50) |
 | T | Typography: DM Sans self-hosted, one rem scale, the admin's text size (0019) | done (#47) |
 | E | Editorial, photo-led redesign, stats in Admin → Settings (0021), `docs/reviews/generic-ui-audit.md` | done (#52) |
-| W | Wishlist: saved in the visitor's browser only, `/wishlist`, sent through the enquiry form | open (`feat/wishlist`) |
+| W | Wishlist: saved in the visitor's browser only, `/wishlist`, sent through the enquiry form | done (#53) |
+| H | Header groups (Discover, About), floating buttons that stay on screen, the wishlist's badge, the fake local WhatsApp number | open (`fix/header-floating-buttons`) |
 
 Update the Status column when a phase lands.
 
@@ -183,6 +184,8 @@ Update the Status column when a phase lands.
     the Footer's Navigation list stays the Navbar's links (`browser-pages`). On phones
     the header holds five controls (a smaller logo up to 430 px); with less room than
     21.4rem the icon goes and the phone menu has the wishlist.
+  - The header's badge sits outside the heart, "9+" above 9; the heart fills from 1. Its
+    12 px number is the one thing under the 13 px label floor, by design, in rem like the rest.
   - `/wishlist` is noindex, with no canonical, and isn't in the sitemap or `llms.txt`.
   - `npm run screenshots -- --saved-wishlist` opens every page with a saved list.
 - **Newsletter** (`server/src/routes/newsletter.ts`): the Footer form stores
@@ -221,10 +224,20 @@ Update the Status column when a phase lands.
     link: no widget, no script, no CSP change.
   - Its message links to the page the visitor is on (a tour, destination or
     experience), set by the page with `usePageSubject`.
-  - `FloatingActions` stacks it with the Book Your Ride button. Each one steps
-    aside from whatever it would cover (cards, map controls, form controls,
-    the footer, anything marked `data-keep-clear`), and both hide while a modal
-    dialog is open.
+  - `FloatingActions` stacks it with the Book a ride button. They are always on screen
+    and hide only while a modal dialog is open (the enquiry form, search, the phone menu).
+    Over something a visitor needs (`IMPORTANT`: map controls, slide controls, submit
+    buttons, the footer's last row, `data-keep-clear`, and then every other control) the
+    stack rises smoothly, as a transform (`--te-float-lift`). A link bigger than 160 px both
+    ways (a whole card) isn't an obstacle, and they do float over photos and text: the
+    footer's padding keeps the end of each page clear. `browser-floating-visible` scrolls
+    pages in steps and checks every step.
+  - Labels: always from 768 px; on phones for 5 s after load, and again on stopping within
+    240 px of the top. The icons are 56 px. The pulse is CSS only, off with reduced motion.
+  - **The local number is fake:** `94771236478` (`scripts/fixtures/dev-whatsapp.ts`), set by
+    `npm run seed:dev`, `resetContent()` and the screenshots' scratch databases. Never in a
+    migration or shipped code (`dev-whatsapp.test`). Tests only check the link, never open it;
+    `resetContent({ whatsappNumber: null })` is the no-number case.
 - **Old links:** `/?tour=<id>` and `/?destination=<id>` must keep reaching
   the pages; they are in WhatsApp chats. `HomeRoute` (`src/App.tsx`)
   redirects them in the browser; phase 8b adds the server's 301. Keep both.
@@ -235,6 +248,10 @@ Update the Status column when a phase lands.
     (`shared/site-paths.ts`), and every link is a real `<a href>` (`Link`,
     or `SiteLink` for the nav, which scrolls instead when the target is on
     the current page).
+  - The header is `NAV_ITEMS` in the same file, at most six top items, and the logo is the
+    way home. A group is `NavDropdown`: a button that opens real links (the disclosure
+    pattern, not `role="menu"`; `browser-header-nav`). New guides go inside Discover. On
+    phones each group is a section of the menu, and the Footer's list is all of them, flat.
   - `BrowserRouter`, not the data router: that one adds about 20 KB
     (gzipped) to every page, for scroll restoration we do in
     `src/lib/ScrollRestorer.tsx`.

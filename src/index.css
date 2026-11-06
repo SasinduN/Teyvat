@@ -419,11 +419,12 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
  * over 1280 px at 120%, where the menu button stays): tighter links, a compact
  * Plan Your Trip and smaller theme and search buttons. All in rem, so it
  * measures the same at every text size. Below this, the menu button. The
- * threshold holds all nine links (bookings on); `browser-text-size` measures it.
+ * threshold holds all five items (bookings on) with room to spare;
+ * `browser-text-size` measures it.
  */
 @container te-nav (min-width: 62rem) {
   .te-nav .te-logo { gap: .5rem; }
-  .te-nav-links { display: flex; gap: .625rem; }
+  .te-nav-links { display: flex; gap: 1.75rem; }
   .te-nav-phone-actions { display: none; }
   .te-nav-actions { margin-inline-start: 0; gap: .25rem; }
   .te-nav-actions .te-button--icon { width: 2.25rem; height: 2.25rem; min-height: 2.25rem; }
@@ -432,14 +433,67 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   .te-nav-actions .te-button--primary > svg { width: .875rem; height: .875rem; }
 }
 
-/* The header's wishlist: an icon, and a count at its top corner, with the heart moved clear of it. */
-.te-button.te-wish-icon { position: relative; }
-.te-wish-icon:has(.te-wish-count) svg { transform: translate(-.1875rem, .1875rem); }
+/*
+ * A group in the header (NavDropdown): the same 96% surface and blur as the header, solid
+ * with reduced transparency. Its own colours, because over the home photo the header's are
+ * light. The blur only shows over the home photo: inside the scrolled header's own
+ * backdrop-filter it sees nothing, and at 96% it doesn't need to.
+ */
+.te-nav-group { position: relative; display: inline-flex; }
+.te-nav-trigger { gap: .25rem; padding: 0; border: 0; background: none; cursor: pointer; font: inherit; font-weight: 500; }
+.te-nav-trigger[aria-expanded="true"] > .te-nav-indicator { transform: scaleX(1); }
+.te-nav-chevron { transition: transform 200ms ease; }
+.te-nav-trigger[aria-expanded="true"] > .te-nav-chevron { transform: rotate(180deg); }
+.te-nav-menu {
+  position: absolute; top: calc(100% + .5rem); left: -.75rem; z-index: 1;
+  display: grid; gap: .125rem; min-width: 13rem; padding: .5rem; margin: 0; list-style: none;
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--background); color: var(--text-primary); box-shadow: var(--shadow-card);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .te-nav-menu {
+    background: color-mix(in srgb, var(--background) 96%, transparent);
+    -webkit-backdrop-filter: blur(24px) saturate(112%);
+    backdrop-filter: blur(24px) saturate(112%);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .te-nav-menu { background: var(--background); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+.te-nav-menu[hidden] { display: none; }
+.te-nav-menu-link {
+  display: flex; align-items: center; min-height: 2.75rem; padding: .5rem .75rem; border-radius: var(--radius-sm);
+  color: var(--text-primary); font-weight: 500; white-space: nowrap; transition: background-color 180ms ease, color 180ms ease;
+}
+.te-nav-menu-link:hover { background: var(--border); }
+/* A bar, not a tint: the link's colour only just holds AA on the glass over a dark photo. */
+.te-nav-menu-link[aria-current] { color: var(--text-link); font-weight: 600; box-shadow: inset 3px 0 0 var(--text-link); }
+@media (prefers-reduced-motion: reduce) {
+  .te-nav-chevron, .te-nav-menu-link { transition: none; }
+}
+@media (forced-colors: active) {
+  .te-nav-menu { background: Canvas; color: CanvasText; border-color: CanvasText; }
+  .te-nav-menu-link[aria-current] { outline: 1px solid CanvasText; }
+}
+
+/*
+ * The header's wishlist: a heart, filled once something is saved, and a count outside it at
+ * the top right. Positioned from the heart's middle, so it sits the same on the phone's 44 px
+ * button and the laptop's 36 px one. The button lets it out (`.te-button` clips); its ring is
+ * the header's own colour (`--nav-surface`), so it reads on the glass and over the home photo.
+ */
+.te-nav { --nav-surface: var(--background); }
+.te-nav[data-home="true"][data-scrolled="false"] { --nav-surface: var(--inverse-deep); }
+.te-button.te-wish-icon { position: relative; overflow: visible; }
+.te-wish-icon:has(.te-wish-count) svg { fill: currentColor; }
+.te-nav-actions .te-wish-icon:has(.te-wish-count) { margin-inline-end: .375rem; }
 .te-wish-count {
-  position: absolute; top: -.375rem; right: 0; min-width: 1.25rem; height: 1.25rem; padding-inline: .1875rem;
+  position: absolute; left: calc(50% + .3125rem); bottom: calc(50% + .3125rem);
+  min-width: 1.125rem; height: 1.125rem; padding-inline: .1875rem;
   display: flex; align-items: center; justify-content: center; border-radius: 999px;
-  background: var(--button-primary-bg); color: var(--button-primary-text);
-  font-size: var(--text-xs); font-weight: 700; line-height: 1;
+  background: var(--accent); color: var(--on-accent);
+  box-shadow: 0 0 0 2px var(--nav-surface);
+  font-size: .75rem; font-weight: 700; line-height: 1; pointer-events: none;
 }
 
 /* Keep all four 44px navigation controls reachable at 320px. Unlayered so

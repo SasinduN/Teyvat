@@ -69,7 +69,7 @@ after(async () => {
 const VALID = {
   name: 'Nimali Perera',
   email: 'nimali@example.test',
-  phone: '+94 77 123 4567',
+  phone: '+94 77 123 6478',
   travelers: '2 Adults',
   dates: 'Next 3 Months',
   subject: 'Experience: Safari in Yala',
@@ -314,12 +314,12 @@ describe('CSV export', () => {
   });
 
   test('a phone of only digits, spaces and + - ( ) is written as ="…" text; anything else is escaped', () => {
-    // CSV-quoted, the cell ="+94 77 123 4567" is written "=""+94 77 123 4567""".
-    for (const phone of ['+94 77 123 4567', '(011) 234-5678', '-94 11 2345678', '0771234567']) {
+    // CSV-quoted, the cell ="+94 77 123 6478" is written "=""+94 77 123 6478""".
+    for (const phone of ['+94 77 123 6478', '(011) 234-5678', '-94 11 2345678', '0771234567']) {
       assert.equal(csvCell(phone, { phone: true }), `"=""${phone}"""`, phone);
     }
     // Not a plain phone number: the usual rule. Formula starts get the apostrophe...
-    for (const phone of ['+94 77 123 4567 =1+1', '-2+3;cmd', '@SUM(A1)', '=1+1', '+1 (555) CALL-NOW']) {
+    for (const phone of ['+94 77 123 6478 =1+1', '-2+3;cmd', '@SUM(A1)', '=1+1', '+1 (555) CALL-NOW']) {
       assert.equal(csvCell(phone, { phone: true }), `"'${phone}"`, phone);
     }
     // ...and anything else is written as it is.
@@ -330,7 +330,7 @@ describe('CSV export', () => {
       `"'+94""),HYPERLINK(""http://evil"`
     );
     // The ="…" form is for the phone column only.
-    assert.equal(csvCell('+94 77 123 4567'), `"'+94 77 123 4567"`);
+    assert.equal(csvCell('+94 77 123 6478'), `"'+94 77 123 6478"`);
   });
 
   test('the export: BOM, header, and a stranger’s formula arrives as text', async () => {
@@ -347,7 +347,7 @@ describe('CSV export', () => {
     const [header, line] = text.split('\r\n');
     assert.match(header, /^"Received","Status","Name","Email","Phone"/);
     assert.ok(line.includes(`"'=HYPERLINK(""http://evil.example"",""Click me"")"`), line);
-    assert.ok(line.includes('"=""+94 77 123 4567"""'), line);
+    assert.ok(line.includes('"=""+94 77 123 6478"""'), line);
   });
 
   test('inquiriesCsv on no rows is just the header', () => {

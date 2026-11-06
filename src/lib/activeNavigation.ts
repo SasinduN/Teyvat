@@ -4,10 +4,10 @@ import { navLinks } from '@shared/site-paths';
 const NAV_LINKS = navLinks({ bookings: true });
 
 /**
- * Which Navbar link is the current page: a section link (`/#explore-map`,
- * `/about#contact`) when the URL names that section, otherwise the page or
- * the list a detail page belongs to (`/tours/x` → Tours). Undefined when no
- * link matches.
+ * Which navigation link is the current page: a section link (`/about#contact`)
+ * when the URL names that section, otherwise the page or the list a detail page
+ * belongs to (`/tours/x` → Tours). Undefined when no link matches, as on the home
+ * page, whose link is the logo.
  */
 export function activeNavigationTarget(pathname: string, hash: string): string | undefined {
   const path = pathname.replace(/\/$/, '') || '/';
@@ -16,5 +16,5 @@ export function activeNavigationTarget(pathname: string, hash: string): string |
     return fragment && target === path && hash === `#${fragment}`;
   });
   if (section) return section.to;
-  return NAV_LINKS.filter(link => !link.to.includes('#')).find(link => link.to === '/' ? path === '/' : path === link.to || path.startsWith(`${link.to}/`))?.to;
+  return NAV_LINKS.filter(link => !link.to.includes('#')).find(link => path === link.to || path.startsWith(`${link.to}/`))?.to;
 }

@@ -21,6 +21,7 @@
     "media:rebase": "tsx scripts/media-rebase.ts",
     "test": "node scripts/run-tests.mjs",
     "seed:generate": "tsx scripts/generate-seed.ts",
+    "seed:dev": "tsx scripts/seed-dev.ts",
     "verify:roundtrip": "tsx scripts/verify-roundtrip.ts",
     "bundle:report": "tsx scripts/bundle-report.ts",
     "screenshots": "tsx scripts/screenshots.ts"

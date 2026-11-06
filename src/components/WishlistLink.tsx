@@ -5,7 +5,7 @@ import { useWishlist } from '@/lib/wishlist';
 import { paths } from '@shared/site-paths';
 import { SiteLink } from './SiteLink';
 
-/** The header's wishlist: an icon and a count. Not shown where the browser blocks storage. */
+/** The header's wishlist: a heart, filled once something is saved, and a count ("9+" above 9). Not shown where the browser blocks storage. */
 export function WishlistIcon({ className = '', onClick }: { className?: string; onClick?: () => void }) {
   const { available, items } = useWishlist();
   const { pathname } = useLocation();
@@ -22,7 +22,7 @@ export function WishlistIcon({ className = '', onClick }: { className?: string; 
       data-wishlist-icon
     >
       <Heart className="w-5 h-5" aria-hidden="true" />
-      {items.length > 0 && <span className="te-wish-count" aria-hidden="true">{items.length}</span>}
+      {items.length > 0 && <span className="te-wish-count" aria-hidden="true">{items.length > 9 ? '9+' : items.length}</span>}
     </SiteLink>
   );
 }

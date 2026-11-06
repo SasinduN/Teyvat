@@ -13,7 +13,7 @@ import {
 } from '../../shared/whatsapp';
 
 const ORIGIN = 'https://example.test';
-const NUMBER = '94771234567';
+const NUMBER = '94771236478';
 
 describe('WhatsApp links', () => {
   test('a tour: its name and its page, fully encoded', () => {
@@ -23,7 +23,7 @@ describe('WhatsApp links', () => {
     );
     assert.equal(
       href,
-      'https://wa.me/94771234567?text=' +
+      'https://wa.me/94771236478?text=' +
         "Hi!%20I'm%20interested%20in%20the%20Island%20in%207%20Days%20tour.%20" +
         'https%3A%2F%2Fexample.test%2Ftours%2Fisland-in-7-days'
     );
@@ -40,7 +40,7 @@ describe('WhatsApp links', () => {
     );
     assert.equal(
       href,
-      'https://wa.me/94771234567?text=' +
+      'https://wa.me/94771236478?text=' +
         "Hi!%20I'd%20like%20to%20know%20more%20about%20visiting%20Ella.%20" +
         'https%3A%2F%2Fexample.test%2Fdestinations%2Fella'
     );
@@ -57,7 +57,7 @@ describe('WhatsApp links', () => {
     );
     assert.equal(
       href,
-      'https://wa.me/94771234567?text=' +
+      'https://wa.me/94771236478?text=' +
         "Hi!%20I'm%20interested%20in%20the%20Safari%20in%20Yala%20experience.%20" +
         'https%3A%2F%2Fexample.test%2Fexperiences%2Fsafari-yala'
     );
@@ -66,7 +66,7 @@ describe('WhatsApp links', () => {
   test('anywhere else: the general message, with no link', () => {
     assert.equal(
       whatsappUrl(NUMBER, whatsappMessage({ kind: 'general' }, ORIGIN)),
-      "https://wa.me/94771234567?text=Hi!%20I'd%20like%20help%20planning%20a%20trip%20to%20Sri%20Lanka."
+      "https://wa.me/94771236478?text=Hi!%20I'd%20like%20help%20planning%20a%20trip%20to%20Sri%20Lanka."
     );
   });
 
@@ -83,7 +83,7 @@ describe('WhatsApp links', () => {
   });
 
   test('without a message: the bare number (the admin "Test in WhatsApp" link)', () => {
-    assert.equal(whatsappUrl(NUMBER), 'https://wa.me/94771234567');
+    assert.equal(whatsappUrl(NUMBER), 'https://wa.me/94771236478');
   });
 });
 

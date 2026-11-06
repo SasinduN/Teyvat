@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { Express } from 'express';
 
+import { DEV_WHATSAPP_NUMBER } from '../../scripts/fixtures/dev-whatsapp';
 import { passwords } from '../src/auth/passwords';
 import { SESSION_COOKIE } from '../src/auth/cookies';
 import { pool } from '../src/db';
@@ -110,7 +111,8 @@ let seedSnapshot = false;
  * Puts the content back to the approved baseline: empties the nine content
  * tables (and the tour stops), restores the 0002 seed with 0007's route
  * stops, and resets `site_settings` to its 0001 values as 0004 left them
- * (links NULL), with no WhatsApp number (0008).
+ * (links NULL), with the fake WhatsApp number, so the button is on the page as it
+ * is in production (`whatsappNumber` picks another, or null for none).
  *
  * 0002 writes `tours.route`, which 0007 turned into `tour_stops` and dropped.
  * So the first reset in a process brings the column back, replays 0002 and
@@ -125,7 +127,7 @@ let seedSnapshot = false;
  * it only ever reaches the database `test-db.ts` has already proven is the
  * local test database.
  */
-export async function resetContent(): Promise<void> {
+export async function resetContent(options: { whatsappNumber?: string | null } = {}): Promise<void> {
   await assertConnectedToTestDatabase();
   const tables = [...CONTENT_TABLES, 'tour_stops'];
   // Booking requests reference tours and destinations, so they go too (0014).
@@ -151,9 +153,10 @@ export async function resetContent(): Promise<void> {
             contact_email = 'hello@traveleye.lk',
             instagram_url = null, facebook_url = null, tiktok_url = null, youtube_url = null,
             privacy_url = null, terms_url = null, sustainability_url = null,
-            whatsapp_number = null,
+            whatsapp_number = $1,
             text_size = 100
-      where id`
+      where id`,
+    [options.whatsappNumber === undefined ? DEV_WHATSAPP_NUMBER : options.whatsappNumber]
   );
 }
 

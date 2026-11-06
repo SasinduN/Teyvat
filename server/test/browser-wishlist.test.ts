@@ -289,7 +289,8 @@ describe('the wishlist, in Chrome', { skip, timeout: 8 * 60_000 }, () => {
 
       const page = await open('/destinations', { saved: thirty });
       try {
-        assert.equal(await count(page), '30');
+        assert.equal(await page.evaluate<string>(`${headerIcon}.getAttribute('aria-label')`), 'Wishlist, 30 saved');
+        assert.equal(await count(page), '9+');
         await click(page, save(next));
         assert.equal(await pressed(page, next), 'false', 'not saved');
         assert.equal((await stored(page))!.length, 30);
@@ -311,7 +312,8 @@ describe('the wishlist, in Chrome', { skip, timeout: 8 * 60_000 }, () => {
       const payload = (await (await fetch(`${app.baseUrl}/api/content`)).json()) as SiteContentPayload;
       const page = await open('/wishlist', { saved: payload.destinations.map((row) => ({ kind: 'destination', id: row.id })) });
       try {
-        assert.equal(await count(page), '30');
+        assert.equal(await page.evaluate<string>(`${headerIcon}.getAttribute('aria-label')`), 'Wishlist, 30 saved');
+        assert.equal(await count(page), '9+');
         assert.equal(await page.evaluate<number>(`document.querySelectorAll('[data-wishlist-remove]').length`), 30);
       } finally {
         await page.close();
@@ -458,7 +460,7 @@ describe('the wishlist, in Chrome', { skip, timeout: 8 * 60_000 }, () => {
       const page = await open('/about');
       try {
         const labels = await page.evaluate<string[]>(`[...document.querySelectorAll('.te-nav-links a')].map((a) => a.textContent.trim())`);
-        assert.deepEqual(labels, ['Home', 'Explore', 'Destinations', 'Experiences', 'Tours', 'Journal', 'About', 'Contact']);
+        assert.deepEqual(labels, ['Explore map', 'Destinations', 'Experiences', 'Tours', 'Journal', 'About', 'Contact']);
       } finally {
         await page.close();
       }
@@ -498,6 +500,72 @@ describe('the wishlist, in Chrome', { skip, timeout: 8 * 60_000 }, () => {
         } finally {
           await page.close();
         }
+      }
+    });
+
+    test('the badge: a circle outside the heart, unclipped, bold, in both themes and at 120%', async () => {
+      try {
+        for (const textSize of [120, 100]) {
+          await pool.query('update public.site_settings set text_size = $1 where id', [textSize]);
+          for (const width of [1440, 480]) {
+            for (const theme of ['light', 'dark'] as const) {
+              const page = await open('/about', { saved: [ELLA], width, script: `try { localStorage.setItem('site:theme', '${theme}'); } catch {}` });
+              try {
+                const where = `${textSize}% ${width} px ${theme}`;
+                const badge = await page.evaluate<{ width: number; height: number; size: number; weight: number; overflow: string; heart: { left: number; right: number; top: number; bottom: number }; box: { left: number; right: number; top: number; bottom: number }; fill: string; ring: string; inside: boolean; label: string }>(`(() => {
+                  const icon = ${headerIcon};
+                  const el = icon.querySelector('.te-wish-count');
+                  const s = getComputedStyle(el);
+                  const r = el.getBoundingClientRect();
+                  return {
+                    width: r.width, height: r.height, size: parseFloat(s.fontSize), weight: Number(s.fontWeight),
+                    overflow: getComputedStyle(icon).overflow, heart: icon.querySelector('svg').getBoundingClientRect().toJSON(), box: r.toJSON(),
+                    fill: getComputedStyle(icon.querySelector('svg')).fill, ring: s.boxShadow, label: icon.getAttribute('aria-label'),
+                    inside: r.top >= 0 && r.right <= innerWidth
+                  };
+                })()`);
+                assert.ok(badge.width >= 18 && badge.height >= 18, `${where}: at least 18 px: ${badge.width}x${badge.height}`);
+                assert.equal(badge.overflow, 'visible', `${where}: not clipped`);
+                assert.ok(badge.inside, `${where}: inside the window`);
+                // In rem, as all type is: 12 px at 100%, scaling with the admin's text size.
+                assert.equal(badge.size, 12 * textSize / 100, where);
+                assert.ok(badge.weight >= 700, where);
+                // The heart's glyph sits about a sixth inside its box, so its corner is empty: the badge sits there.
+                const inset = (badge.heart.right - badge.heart.left) / 6;
+                assert.ok(badge.box.bottom <= badge.heart.top + inset * 2 && badge.box.left >= badge.heart.right - inset * 2, `${where}: in the corner, off the heart: ${JSON.stringify(badge)}`);
+                assert.notEqual(badge.fill, 'none', `${where}: the heart fills`);
+                assert.match(badge.ring, /2px/, `${where}: the ring`);
+                assert.equal(badge.label, 'Wishlist, 1 saved', where);
+              } finally {
+                await page.close();
+              }
+            }
+          }
+        }
+      } finally {
+        await pool.query('update public.site_settings set text_size = 100 where id');
+      }
+    });
+
+    test('the badge shows 9+ above 9, the real count stays in the label, and the heart empties at 0', async () => {
+      const content = await (await fetch(`${app.baseUrl}/api/content`)).json() as SiteContentPayload;
+      const ten = content.destinations.slice(0, 10).map((d) => ({ kind: 'destination', id: d.id }));
+      assert.equal(ten.length, 10, 'precondition: ten published destinations');
+      for (const [saved, shown, label] of [[ten.slice(0, 9), '9', 'Wishlist, 9 saved'], [ten, '9+', 'Wishlist, 10 saved']] as const) {
+        const page = await open('/about', { saved: [...saved] });
+        try {
+          assert.equal(await count(page), shown);
+          assert.equal(await page.evaluate<string>(`${headerIcon}.getAttribute('aria-label')`), label);
+          assert.deepEqual(await page.evaluate<string[]>(TEXT_AUDIT), [], shown);
+        } finally {
+          await page.close();
+        }
+      }
+      const empty = await open('/about');
+      try {
+        assert.equal(await empty.evaluate<string>(`getComputedStyle(${headerIcon}.querySelector('svg')).fill`), 'none', 'an outline with nothing saved');
+      } finally {
+        await empty.close();
       }
     });
 
