@@ -35,6 +35,7 @@ const PlanPage = lazy(() => import('@/pages/PlanPage').then((m) => ({ default: m
 const BookingPage = lazy(() => import('@/pages/BookingPage').then((m) => ({ default: m.BookingPage })));
 const JournalPage = lazy(() => import('@/pages/JournalPage').then((m) => ({ default: m.JournalPage })));
 const PhotoCreditsPage = lazy(() => import('@/pages/PhotoCreditsPage').then((m) => ({ default: m.PhotoCreditsPage })));
+const WishlistPage = lazy(() => import('@/pages/WishlistPage').then((m) => ({ default: m.WishlistPage })));
 const UnsubscribePage = lazy(() => import('@/pages/UnsubscribePage').then((m) => ({ default: m.UnsubscribePage })));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
@@ -89,6 +90,7 @@ export function App() {
             <Route path="journal/:slug" element={<ArticlePage />} />
             <Route path="about" element={<AboutPage />} />
             <Route path="photo-credits" element={<PhotoCreditsPage />} />
+            <Route path="wishlist" element={<WishlistPage />} />
             <Route path="unsubscribe" element={<UnsubscribePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>

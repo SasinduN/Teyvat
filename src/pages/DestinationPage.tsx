@@ -5,6 +5,8 @@ import { ExternalLink, Plane } from 'lucide-react';
 import { HeroChip, PageHero } from '@/components/PageHero';
 import { DestinationCard, SectionHead, TourCard } from '@/components/PageCards';
 import { PlanCard } from '@/components/PlanCard';
+import { SaveButton } from '@/components/SaveButton';
+import { WishlistTextLink } from '@/components/WishlistLink';
 import { usePageSubject, usePageTitle } from '@/context/PublicSiteContext';
 import { useDestinations, useTours } from '@/hooks/useSiteContent';
 import { airportTravelTime, googleMapsUrl } from '@/lib/googleMaps';
@@ -51,6 +53,7 @@ function DestinationView({ d }: { d: Destination }) {
         eyebrow={d.province}
         title={d.name}
         subtitle={d.shortDescription}
+        actions={<SaveButton kind="destination" id={d.id} name={d.name} />}
       />
 
       {photos.length > 1 && (
@@ -91,6 +94,7 @@ function DestinationView({ d }: { d: Destination }) {
 
               {/* Google Maps, and the travel time from the airport when set */}
               <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                <WishlistTextLink text="See your wishlist" />
                 <a
                   href={googleMapsUrl(d.latitude, d.longitude)}
                   target="_blank"

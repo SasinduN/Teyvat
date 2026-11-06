@@ -12,8 +12,11 @@ export interface PageSubject {
 }
 
 export interface PublicSiteApi {
-  /** Opens the enquiry modal. Without a subject: the page's, or the general one. */
-  openInquiry: (subject?: string) => void;
+  /**
+   * Opens the enquiry modal. Without a subject: the page's, or the general one. With a
+   * message: the form starts with it (the wishlist), instead of naming the subject.
+   */
+  openInquiry: (subject?: string, message?: string) => void;
   openSearch: () => void;
   /** The WhatsApp link for this page, or null while no number is set. */
   whatsappHref: string | null;

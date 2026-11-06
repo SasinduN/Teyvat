@@ -6,18 +6,20 @@ import { describeError } from '@/lib/errors';
 interface InquiryFormProps {
   /** What the enquiry is about; saved as its subject and quoted in the message. */
   prefilledSubject: string;
+  /** What the message starts as, instead of quoting the subject (the wishlist). */
+  prefilledMessage?: string;
   /** The button after a successful send. */
   onDone: () => void;
   doneLabel?: string;
 }
 
-const blankForm = (subject: string) => ({
+const blankForm = (subject: string, message?: string) => ({
   name: '',
   email: '',
   phone: '',
   travelers: '2 Adults',
   dates: 'Next 3 Months',
-  message: subject ? `I would like to inquire about: ${subject}` : '',
+  message: message ?? (subject ? `I would like to inquire about: ${subject}` : ''),
   website: ''
 });
 
@@ -28,6 +30,7 @@ const blankForm = (subject: string) => ({
  */
 export const InquiryForm: React.FC<InquiryFormProps> = ({
   prefilledSubject,
+  prefilledMessage,
   onDone,
   doneLabel = 'Back to Travel Eye'
 }) => {
@@ -36,7 +39,7 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormdata] = useState(() => blankForm(prefilledSubject));
+  const [formData, setFormdata] = useState(() => blankForm(prefilledSubject, prefilledMessage));
 
   useEffect(() => { if (submitted) successRef.current?.focus(); }, [submitted]);
 
@@ -181,7 +184,7 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
             <div className="space-y-1">
               <label htmlFor={`${id}-message`} className="text-xs font-bold uppercase text-[var(--brand-primary)]">Notes & Specific Requests</label>
               <textarea id={`${id}-message`} name="message" maxLength={5000}
-                rows={3}
+                rows={prefilledMessage ? 8 : 3}
                 placeholder="Tell us about places you want to visit or preferred pace..."
                 value={formData.message}
                 onChange={(e) => setFormdata({ ...formData, message: e.target.value })}

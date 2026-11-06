@@ -184,7 +184,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
       '/', '/destinations', '/destinations?category=Beaches', '/destinations/ella', '/experiences',
       '/experiences/safari-yala', '/tours', '/tours/island-in-7-days', '/journal/ultimate-ella-guide', '/about',
       '/explore', '/explore?mapTour=wild-sri-lanka', '/plan', '/journal',
-      '/photo-credits', '/unsubscribe', '/unsubscribe?token=00000000-0000-4000-8000-000000000000'
+      '/photo-credits', '/wishlist', '/unsubscribe', '/unsubscribe?token=00000000-0000-4000-8000-000000000000'
     ]) {
       const res = await get(closed, path);
       assert.equal(res.status, 200, path);
@@ -301,6 +301,14 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     const slash = await get(closed, '/journal/');
     assert.equal(slash.status, 301);
     assert.equal(slash.headers.get('location'), '/journal');
+
+    // The wishlist: a page, but different for every visitor, so never indexed, even when the site is open.
+    ({ head: h } = await head(open, '/wishlist'));
+    assert.equal(titleOf(h), PAGE_TITLES.wishlist);
+    assert.equal(metaContent(h, 'description'), PAGE_DESCRIPTIONS.wishlist);
+    assert.equal(metaContent(h, 'robots'), 'noindex');
+    assert.equal(canonicalOf(h), null);
+    assert.equal((await get(open, '/wishlist')).headers.get('x-robots-tag'), 'noindex');
 
     ({ head: h } = await head(open, '/photo-credits'));
     assert.equal(titleOf(h), PAGE_TITLES.photoCredits);
@@ -422,6 +430,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     assert.match(res.headers.get('content-type') ?? '', /application\/xml/);
     assert.equal(res.headers.get('cache-control'), 'no-cache');
     const xml = await res.text();
+    assert.ok(!xml.includes('/wishlist'), 'the wishlist is never in the sitemap');
     assert.match(xml, /^<\?xml version="1.0" encoding="UTF-8"\?>\n<urlset xmlns="http:\/\/www.sitemaps.org\/schemas\/sitemap\/0.9">/);
     assert.match(xml, /<\/urlset>\n$/);
 
@@ -455,6 +464,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     assert.match(res.headers.get('content-type') ?? '', /text\/markdown/);
     assert.equal(res.headers.get('cache-control'), 'no-cache');
     const text = await res.text();
+    assert.ok(!text.includes('/wishlist'), 'nor in llms.txt');
 
     assert.ok(text.startsWith(`# ${BRAND_NAME}\n\n> `), 'the brand from shared/brand.ts, then the summary');
     for (const heading of ['## Pages', '## Destinations', '## Experiences', '## Tours', '## Journal']) {

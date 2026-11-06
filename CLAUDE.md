@@ -39,6 +39,7 @@ this file or anywhere else in git.
 | M | Photos in `public/assets/` moved to R2, with `srcset` (A); the files removed once the audit was clean (B) | done (#49, #50) |
 | T | Typography: DM Sans self-hosted, one rem scale, the admin's text size (0019) | done (#47) |
 | E | Editorial, photo-led redesign, stats in Admin → Settings (0021), `docs/reviews/generic-ui-audit.md` | done (#52) |
+| W | Wishlist: saved in the visitor's browser only, `/wishlist`, sent through the enquiry form | open (`feat/wishlist`) |
 
 Update the Status column when a phase lands.
 
@@ -166,6 +167,24 @@ Update the Status column when a phase lands.
     v4's `space-y-*` puts a margin on every child but the last).
   - `server/test/browser-inquiry.test.ts` compares its render against
     `ca26709` (typography).
+- **Wishlist** (`shared/wishlist.ts`, `src/lib/wishlist.ts`, `SaveButton`, `/wishlist`):
+  - Kept only in the visitor's browser (localStorage, `site:wishlist`, at most 30): no
+    account, nothing on the server, no tracking. Only ids are stored. It reaches us
+    only if they send the enquiry, through the same form, validation and honeypot.
+  - `useWishlist().items` leaves out what the site no longer publishes, quietly. Those
+    stay stored until their space is needed, so a republished row comes back.
+  - Where storage is blocked, `available` is false: the buttons, icon and links render
+    nothing, and `/wishlist` explains itself. So `browser-home-baseline`, which renders
+    on a blank page with no storage, can't see the buttons: `browser-wishlist`,
+    `browser-contrast` and `browser-text-size` cover them.
+  - `SaveButton` is a sibling of a card's link, never inside it. It's solid, so it holds
+    AA over any photo. What holds it needs `:empty { display: none }`.
+  - The header's icon is not a nav link, and the Footer's link is in its bottom row:
+    the Footer's Navigation list stays the Navbar's links (`browser-pages`). On phones
+    the header holds five controls (a smaller logo up to 430 px); with less room than
+    21.4rem the icon goes and the phone menu has the wishlist.
+  - `/wishlist` is noindex, with no canonical, and isn't in the sitemap or `llms.txt`.
+  - `npm run screenshots -- --saved-wishlist` opens every page with a saved list.
 - **Newsletter** (`server/src/routes/newsletter.ts`): the Footer form stores
   addresses; nothing sends them yet. Unsubscribing is a POST from the
   `/unsubscribe?token=` page (never a GET) and deletes the row. Its honeypot
@@ -270,6 +289,9 @@ Agreed, not started. Each one gets its own plan first.
   item 9).
 - **Watch `browser-hero-contrast` for flakiness:** one 60 s timeout in a full
   run (#49), then 10/10 twice alone; the cause wasn't found.
+- **The enquiry form moves 1 px after it opens:** the panel sits at a fractional
+  position, and Chrome repaints some rows 1 px apart after the entrance (`browser-inquiry`'s
+  `screenshot()`). Tiny; whole-pixel centring would end it.
 - **Admin drawer focus trap:** the phone drawer in
   `src/admin/components/AdminLayout.tsx` doesn't use `useModalFocus` yet.
 - **The parked WhatsApp flaky test:** `browser-whatsapp`'s phone check ("steps
@@ -323,9 +345,10 @@ Agreed, not started. Each one gets its own plan first.
 
 - **Re-running CI** is allowed only for the known WhatsApp zoom-button flake,
   or for infrastructure failures where the code never ran (Docker pull limits,
-  GitHub billing). Investigate everything else. That includes `browser-inquiry`: it
-  failed once on the laptop with "the baseline differs from itself" (#52), cause
-  unknown. If it fails again, find the cause; don't re-run it.
+  GitHub billing). Investigate everything else. That includes `browser-inquiry`: its
+  "the baseline differs from itself" was a timing race in how Chrome paints the
+  panel, fixed in the wishlist PR (the test's `screenshot()` explains it). If it fails
+  again, find the cause; don't re-run it.
 
 ### Running tests on this laptop
 

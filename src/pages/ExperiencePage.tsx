@@ -3,6 +3,7 @@ import { categoryLabel } from '@/lib/categories';
 import { HeroChip, PageHero } from '@/components/PageHero';
 import { DestinationCard, ExperienceCard, SectionHead } from '@/components/PageCards';
 import { PlanCard } from '@/components/PlanCard';
+import { SaveButton } from '@/components/SaveButton';
 import { usePageSubject, usePageTitle } from '@/context/PublicSiteContext';
 import { useDestinations, useFeaturedExperiences } from '@/hooks/useSiteContent';
 import { pageTitle } from '@shared/page-meta';
@@ -61,6 +62,7 @@ function ExperienceView({ e }: { e: ExperienceItem }) {
         eyebrow={e.location}
         title={e.title}
         subtitle={e.subtitle}
+        actions={<SaveButton kind="experience" id={e.id} name={e.title} />}
       />
 
       <section className="py-14 sm:py-20">

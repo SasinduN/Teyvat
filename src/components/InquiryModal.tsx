@@ -8,12 +8,15 @@ interface InquiryModalProps {
   isOpen: boolean;
   onClose: () => void;
   prefilledSubject?: string;
+  /** What the message starts as, when it's more than the subject (the wishlist). */
+  prefilledMessage?: string;
 }
 
 export const InquiryModal: React.FC<InquiryModalProps> = ({
   isOpen,
   onClose,
-  prefilledSubject = 'General Sri Lanka Trip Inquiry'
+  prefilledSubject = 'General Sri Lanka Trip Inquiry',
+  prefilledMessage
 }) => {
   // Keyboard focus stays in the dialog, the page behind is inert and doesn't
   // scroll, Escape closes, and focus goes back to what opened it.
@@ -50,7 +53,7 @@ export const InquiryModal: React.FC<InquiryModalProps> = ({
             <X className="w-5 h-5" />
           </button>
 
-          <InquiryForm key={prefilledSubject} prefilledSubject={prefilledSubject} onDone={onClose} />
+          <InquiryForm key={prefilledSubject} prefilledSubject={prefilledSubject} prefilledMessage={prefilledMessage} onDone={onClose} />
 
         </motion.div>
       </motion.div>

@@ -48,6 +48,7 @@ const PAGES = [
   '/booking',
   '/about',
   '/photo-credits',
+  '/wishlist',
   '/no-such-page'
 ];
 

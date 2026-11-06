@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PageHero } from '@/components/PageHero';
 import { QuickSearch } from '@/components/QuickSearch';
+import { WishlistTextLink } from '@/components/WishlistLink';
 import { InteractiveMapSection } from '@/components/InteractiveMapSection';
 import { HiddenGemsSection } from '@/components/HiddenGemsSection';
 import { usePageSubject, usePageTitle, usePublicSite } from '@/context/PublicSiteContext';
@@ -91,6 +92,8 @@ export function ExplorePage() {
       <Section name="HiddenGemsSection">
         <HiddenGemsSection onOpenInquiry={openInquiry} />
       </Section>
+
+      <p className="te-container te-wishlist-aside"><WishlistTextLink text="See the places you saved" /></p>
     </>
   );
 }

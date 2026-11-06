@@ -187,6 +187,21 @@ async function launchOnce(executable: string): Promise<Chrome> {
   };
 }
 
+/** A saved list on every document this page loads, as the wishlist stores it. */
+export async function saveWishlist(page: Page, items: { kind: string; id: string }[]): Promise<void> {
+  await page.send('Page.enable');
+  await page.send('Page.addScriptToEvaluateOnNewDocument', {
+    source: `try { localStorage.setItem('site:wishlist', ${JSON.stringify(JSON.stringify(items))}); } catch {}`
+  });
+}
+
+/** Saved items of each kind, from the seed, so a page shows Save and Saved and /wishlist has its groups. */
+export const SAMPLE_WISHLIST = [
+  { kind: 'destination', id: 'ella' },
+  { kind: 'experience', id: 'safari-yala' },
+  { kind: 'tour', id: 'island-in-7-days' }
+];
+
 const themeScripts = new WeakMap<Page, string>();
 
 /**

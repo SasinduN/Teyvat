@@ -28,6 +28,8 @@ export const paths = {
   contact: '/about#contact',
   /** Who took the photos, and their licences (linked from the Footer). */
   photoCredits: '/photo-credits',
+  /** What the visitor saved, kept in their browser. Linked from the Footer; never indexed. */
+  wishlist: '/wishlist',
   /** Not linked from the site: only from newsletter emails (`newsletterUnsubscribeUrl`). */
   unsubscribe: '/unsubscribe'
 } as const;

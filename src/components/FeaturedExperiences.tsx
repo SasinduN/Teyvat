@@ -5,6 +5,7 @@ import { useFeaturedExperiences } from '@/hooks/useSiteContent';
 import { categoryLabel } from '@/lib/categories';
 import { paths } from '@shared/site-paths';
 import { SectionHead } from './PageCards';
+import { SaveButton } from './SaveButton';
 
 /** One lead experience beside its photo, then the rest as simple rows. */
 export const FeaturedExperiences: React.FC = () => {
@@ -15,18 +16,21 @@ export const FeaturedExperiences: React.FC = () => {
       <div className="te-container">
         <SectionHead title="What to do here" text="Hikes, safaris and evenings on the coast. Each one links to the details." />
 
-        <Link to={paths.experience(lead.id)} className="te-card te-ed-row te-split">
-          <div className="te-ed-photo">
-            <TravelImage src={lead.image} alt={lead.title} sizes="(min-width: 900px) 58vw, 100vw" />
-          </div>
-          <div>
-            <p className="te-ed-label">{lead.location}</p>
-            <h3 className="te-ed-card__title font-heading">{lead.title}</h3>
-            <p className="te-ed-card__text">{lead.subtitle}</p>
-            <p className="te-ed-card__text">{lead.description}</p>
-            <p className="te-ed-meta mt-3">{lead.duration}. {categoryLabel(lead.category)}.</p>
-          </div>
-        </Link>
+        <div className="te-save-card">
+          <Link to={paths.experience(lead.id)} className="te-card te-ed-row te-split">
+            <div className="te-ed-photo">
+              <TravelImage src={lead.image} alt={lead.title} sizes="(min-width: 900px) 58vw, 100vw" />
+            </div>
+            <div>
+              <p className="te-ed-label">{lead.location}</p>
+              <h3 className="te-ed-card__title font-heading">{lead.title}</h3>
+              <p className="te-ed-card__text">{lead.subtitle}</p>
+              <p className="te-ed-card__text">{lead.description}</p>
+              <p className="te-ed-meta mt-3">{lead.duration}. {categoryLabel(lead.category)}.</p>
+            </div>
+          </Link>
+          <SaveButton kind="experience" id={lead.id} name={lead.title} />
+        </div>
 
         {rest.length > 0 && (
           <ul className="te-ed-rows">
@@ -43,6 +47,8 @@ export const FeaturedExperiences: React.FC = () => {
                     <p className="te-ed-meta mt-2">{item.duration}</p>
                   </div>
                 </Link>
+                {/* Under the text: the row's photo is too small to hold it. */}
+                <div className="te-save-below"><SaveButton kind="experience" id={item.id} name={item.title} /></div>
               </li>
             ))}
           </ul>

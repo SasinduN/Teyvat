@@ -162,6 +162,40 @@ a.te-ed-card:hover .te-ed-card__title, a.te-ed-row:hover .te-ed-card__title { te
 .te-contact-list a { color: var(--text-link); text-decoration: underline; text-underline-offset: .2em; }
 .te-form-panel { padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--border-strong); border-radius: .5rem; background: var(--surface); }
 
+/*
+ * Save (the wishlist): solid, so it holds AA over any photo. A button beside a card's
+ * link, never inside it. Its note appears under it when the list is full.
+ */
+.te-save-wrap { display: inline-flex; flex-direction: column; align-items: flex-start; gap: .25rem; max-width: 100%; }
+.te-save {
+  display: inline-flex; align-items: center; gap: .375rem; min-height: max(44px, 2.75rem); padding: .375rem .875rem;
+  border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); color: var(--text-primary);
+  font-size: var(--text-sm); font-weight: 600; line-height: 1.2; cursor: pointer; transition: background-color 150ms ease;
+}
+.te-save:hover { background: var(--background-secondary); }
+.te-save[aria-pressed="true"] { border-color: var(--text-primary); }
+.te-save[aria-pressed="true"] svg { fill: currentColor; }
+.te-save__note { padding: .25rem .5rem; border-radius: .375rem; background: var(--surface); color: var(--text-primary); font-size: var(--text-xs); line-height: 1.4; box-shadow: var(--shadow-card); }
+.te-save__note:empty { display: none; }
+/* Over a card's photo. Above the link, so a click on it isn't the link's. */
+.te-save-card { position: relative; min-width: 0; }
+.te-save-card > .te-save-wrap { position: absolute; z-index: 2; top: .5rem; left: .5rem; max-width: calc(100% - 1rem); }
+.destination-card > .te-save-wrap { position: absolute; z-index: 3; top: 1rem; left: 1rem; max-width: calc(100% - 5.5rem); text-shadow: none; }
+/* Under a small row's text, lined up with it. */
+.te-save-below { margin-top: .5rem; margin-inline-start: calc(40% + .6rem); }
+.te-page-hero-actions { margin-top: 1.25rem; }
+/* With storage blocked the buttons render nothing; so must what holds them. */
+.te-save-below:empty, .te-page-hero-actions:empty, .te-wishlist-aside:empty { display: none; }
+
+/* The wishlist's page. */
+.te-wishlist-count { color: var(--brand-primary); font-size: var(--heading-card); font-weight: 700; line-height: 1.25; }
+.te-wishlist-confirm { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .25rem 1rem; color: var(--text-primary); }
+.te-wishlist-grid { display: grid; gap: clamp(1.5rem, 3vw, 2.5rem); }
+@media (min-width: 640px) { .te-wishlist-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .te-wishlist-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.te-wishlist-grid > li { min-width: 0; }
+.te-wishlist-aside { padding-block: 1rem 2.5rem; }
+
 /* Back to top: solid now, on any page. */
 .site .te-scroll-top { border: 1px solid var(--photo-border); border-radius: 999px; background: var(--inverse-surface); color: var(--on-inverse); }
 
@@ -170,4 +204,6 @@ a.te-ed-card:hover .te-ed-card__title, a.te-ed-row:hover .te-ed-card__title { te
   .te-band__copy a { color: LinkText; }
   .site .te-band__copy h2 { color: CanvasText; }
   .site .te-scroll-top { background: ButtonFace; color: ButtonText; border-color: ButtonText; }
+  .te-save, .te-save__note { background: ButtonFace; color: ButtonText; border-color: ButtonText; }
+  .te-wish-count { background: Canvas; color: CanvasText; outline: 1px solid CanvasText; }
 }

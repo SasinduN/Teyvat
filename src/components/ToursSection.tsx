@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useTours } from '@/hooks/useSiteContent';
 import { paths } from '@shared/site-paths';
 import { TourPackage } from '../types';
+import { SaveButton } from './SaveButton';
 
 interface ToursSectionProps {
   onOpenInquiry: (tourTitle: string) => void;
@@ -37,6 +38,7 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
                 <div className="te-ed-actions">
                   <Link to={paths.tour(tour.id)} className="te-button te-button--secondary te-button--sm">View Full Journey</Link>
                   <button type="button" onClick={() => onOpenInquiry(tour.title)} className="te-button te-button--primary te-button--sm">Inquire</button>
+                  <SaveButton kind="tour" id={tour.id} name={tour.title} />
                   {onViewRoute && tour.stops.length > 0 && (
                     <button type="button" onClick={() => onViewRoute(tour)} className="te-ed-link">View route on map</button>
                   )}

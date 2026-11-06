@@ -194,6 +194,8 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     const page=await open('/experiences');
     for(const route of ['/experiences','/destinations','/tours']) {
       await page.send('Page.navigate',{url:on.baseUrl+route});await wait(page,`document.querySelector('main .te-card,main .destination-card')`,route);
+      // Loaded and settled first: shrinking the window from 1920 px while the page still loads can leave the buttons late by more than the 350 ms below (they do step aside). A visitor can't do that.
+      await wait(page,`document.readyState==='complete'&&document.body.dataset.route===${JSON.stringify(route)}`,route);await sleep(500);
       for(const width of [320,375,390,430,768,1024,1280,1440,1920]) {
         await page.send('Emulation.setDeviceMetricsOverride',{width,height:650,deviceScaleFactor:1,mobile:width<768});
         await page.evaluate(`document.querySelector('main .te-card,main .destination-card').scrollIntoView({block:'center',behavior:'instant'}); true`);await sleep(350);

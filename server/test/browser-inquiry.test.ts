@@ -110,8 +110,16 @@ async function bundle(modalImport: string): Promise<string> {
 const WIDTH = 1280;
 const HEIGHT = 900;
 
-/** A fresh page showing one version of the modal, animations finished; returns a PNG. */
-async function screenshot(chrome: Chrome, script: string, css: string, subject?: string): Promise<{ page: Page; png: string }> {
+/**
+ * A fresh page showing one version of the modal, animations finished; returns a PNG.
+ *
+ * The page is repainted from scratch before the picture. The panel sits at a fractional
+ * position (top 100.469), and after its entrance Chrome can paint it two ways: some rows
+ * land 1 px apart, 10362 pixels in all, with the layout itself identical. Which one a
+ * screenshot got depended on its timing, so the baseline sometimes "differed from itself"
+ * (#52, the wishlist PR). Every render now gets the same one; a real change still shows.
+ */
+async function screenshot(chrome: Chrome, script: string, css: string, subject?: string, settleMs = 1500): Promise<{ page: Page; png: string }> {
   const page = await chrome.newPage();
   await page.send('Emulation.setDeviceMetricsOverride', { width: WIDTH, height: HEIGHT, deviceScaleFactor: 1, mobile: false });
   await page.evaluate(`(() => {
@@ -125,7 +133,11 @@ async function screenshot(chrome: Chrome, script: string, css: string, subject?:
   await page.evaluate(`(async () => {
     window.renderModal(${JSON.stringify(subject ?? '')});
     await document.fonts.ready;
-    await new Promise((r) => setTimeout(r, 1500)); // framer-motion's entrance, with room to spare
+    await new Promise((r) => setTimeout(r, ${settleMs})); // framer-motion's entrance, with room to spare
+    document.body.style.display = 'none';
+    void document.body.offsetHeight;
+    document.body.style.display = '';
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 200))));
     return true;
   })()`);
   const { data } = (await page.send('Page.captureScreenshot', { format: 'png' })) as { data: string };
@@ -187,6 +199,15 @@ describe('InquiryModal with the honeypot, in Chrome', { skip }, () => {
   after(async () => {
     await chrome?.close();
   }, HOOK_TIMEOUT);
+
+  test('the picture does not depend on when it is taken', async () => {
+    // The race the repaint above removes: early and late, in the first tab of this Chrome or not.
+    const early = await screenshot(chrome, currentScript, css, undefined, 700);
+    const late = await screenshot(chrome, currentScript, css, undefined, 4500);
+    const diff = await differingPixels(late.page, early.png, late.png);
+    await Promise.all([early, late].map((shot) => shot.page.send('Page.close').catch(() => undefined)));
+    assert.equal(diff, 0, `${diff} pixel(s) differ between an early and a late picture`);
+  });
 
   for (const subject of [undefined, 'Experience: Safari in Yala']) {
     test(`looks identical: no pixel differs by more than 2 levels (${subject ? 'prefilled subject' : 'default subject'})`, async () => {

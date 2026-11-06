@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { BRAND_NAME } from '@shared/brand';
 import { Logo } from './Logo';
 import { useFeatures, useSiteSettings } from '@/hooks/useSiteContent';
+import { useWishlist } from '@/lib/wishlist';
 import { MapPin, Phone, Mail, CheckCircle2, ArrowRight } from 'lucide-react';
 import { API_ROUTES } from '@shared/api';
 import { navLinks, paths } from '@shared/site-paths';
@@ -27,6 +28,7 @@ const Social: React.FC<{ href: string | null | undefined; label: string; classNa
 export const Footer: React.FC = () => {
   const settings = useSiteSettings();
   const links = navLinks(useFeatures());
+  const { available: wishlistAvailable } = useWishlist();
   const [email, setEmail] = useState('');
   /** The spam trap: a person never sees it, so it stays empty. */
   const [website, setWebsite] = useState('');
@@ -189,6 +191,7 @@ export const Footer: React.FC = () => {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-white/80 space-y-2 sm:space-y-0">
           <p>© 2026 {BRAND_NAME} Sri Lanka. All rights reserved.</p>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+            {wishlistAvailable && <Link to={paths.wishlist} className="hover:text-white transition-colors">Wishlist</Link>}
             <Link to={paths.photoCredits} className="hover:text-white transition-colors">Photo Credits</Link>
             <a href={settings.privacyUrl} className="hover:text-white transition-colors">Privacy Policy</a>
             <a href={settings.termsUrl} className="hover:text-white transition-colors">Terms of Service</a>

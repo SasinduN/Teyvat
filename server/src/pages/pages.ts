@@ -159,6 +159,15 @@ export async function resolvePage(path: string, query: URLSearchParams, features
     };
   }
 
+  // Different for every visitor and kept in their browser: a page, but never indexed or in the sitemap.
+  if (path === paths.wishlist) {
+    return {
+      status: 200,
+      noindexHeader: true,
+      meta: { title: PAGE_TITLES.wishlist, description: PAGE_DESCRIPTIONS.wishlist, path: null, image: null, type: 'website', noindex: true }
+    };
+  }
+
   if (path === '/admin' || path.startsWith('/admin/')) {
     return {
       status: 200,
