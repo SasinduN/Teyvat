@@ -69,7 +69,6 @@
   transform: translateY(-50%);
   transition: opacity 200ms ease, visibility 200ms ease, transform 200ms ease;
 }
-.te-floating-chat:hover > .te-floating-label, .te-floating-booking:hover > .te-floating-label { background: var(--surface); }
 /* Phones: collapsed to the icons, unless the visitor is on it. Everywhere else, always showing. */
 @media (max-width: 767px) {
   .te-floating-actions[data-labels="collapsed"] a:not(:hover, :focus-visible) > .te-floating-label {

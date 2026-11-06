@@ -460,18 +460,21 @@ const OPEN_DISCOVER = `[...document.querySelectorAll('.te-nav-trigger')].find((b
 const OPEN_MENU = `document.querySelector('header button[aria-label*="menu" i]')?.click(), true`;
 const SCROLL_DOWN = `window.scrollTo({ top: 1400, behavior: 'instant' }), true`;
 /** Stopping near the top is what brings a phone's labels back, for a few seconds: long enough for the shot. */
-const LABELS_BACK = `window.scrollTo({ top: 1, behavior: 'instant' }), window.scrollTo({ top: 0, behavior: 'instant' }), true`;
+const LABELS_BACK = `new Promise((done) => {
+  window.scrollTo({ top: 5, behavior: 'instant' });
+  requestAnimationFrame(() => requestAnimationFrame(() => { window.scrollTo({ top: 0, behavior: 'instant' }); done(true); }));
+})`;
 const TEN_SAVED = DESTINATIONS.slice(0, 10).map(({ id }) => ({ kind: 'destination', id }));
 
 /** `--header-floating`: twelve pairs. The header's shots are cropped to its row, with room below for the badge. */
-const HEADER_FLOATING: { name: string; path: string; viewport: typeof LAPTOP | typeof PHONE; dark?: boolean; saved?: { kind: string; id: string }[]; action?: string; settleMs?: number; crop?: { height: number; scale?: number } }[] = [
+const HEADER_FLOATING: { name: string; path: string; viewport: typeof LAPTOP | typeof PHONE; dark?: boolean; saved?: { kind: string; id: string }[]; action?: string; settleMs?: number; /** Shoot straight after: the labels only stay for a few seconds. */ quick?: boolean; crop?: { height: number; scale?: number } }[] = [
   { name: 'header-1280', path: '/about', viewport: LAPTOP, crop: { height: 96 } },
   { name: 'header-1100', path: '/about', viewport: { ...LAPTOP, width: 1100 }, crop: { height: 96 } },
   { name: 'dropdown-light', path: '/destinations', viewport: LAPTOP, action: OPEN_DISCOVER, crop: { height: 320 } },
   { name: 'dropdown-dark', path: '/destinations', viewport: LAPTOP, dark: true, action: OPEN_DISCOVER, crop: { height: 320 } },
   { name: 'phone-menu', path: '/destinations', viewport: PHONE, action: OPEN_MENU },
   { name: 'phone-menu-dark', path: '/destinations', viewport: PHONE, dark: true, action: OPEN_MENU },
-  { name: 'buttons-home-top-phone', path: '/', viewport: PHONE, action: LABELS_BACK, settleMs: 700 },
+  { name: 'buttons-home-top-phone', path: '/', viewport: PHONE, action: LABELS_BACK, settleMs: 700, quick: true },
   { name: 'buttons-home-scrolled-phone', path: '/', viewport: PHONE, action: SCROLL_DOWN, settleMs: 900 },
   { name: 'buttons-home-top-desktop', path: '/', viewport: LAPTOP },
   { name: 'buttons-home-scrolled-desktop', path: '/', viewport: LAPTOP, action: SCROLL_DOWN, settleMs: 900 },
@@ -491,7 +494,7 @@ async function shootHeaderFloating(chrome: Chrome, site: Site, out: string): Pro
     await waitFor(page, `document.readyState === 'complete' && document.body.dataset.route`);
     await page.evaluate(LOADED);
     if (shot.action) await page.evaluate(shot.action);
-    await page.evaluate(LOADED);
+    if (!shot.quick) await page.evaluate(LOADED);
     await sleep(shot.settleMs ?? 500);
     const file = join(out, `${shot.name}-${site.label}.jpg`);
     const clip = shot.crop ? { x: 0, y: 0, width: shot.viewport.width, height: shot.crop.height, scale: 1 } : undefined;
