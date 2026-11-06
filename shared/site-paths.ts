@@ -64,21 +64,61 @@ export const LEGACY_HOME_SECTIONS: Readonly<Record<string, string>> = {
   about: paths.about
 };
 
-/** The site's navigation, in order: the Navbar (desktop and mobile) and the Footer. */
-export const NAV_LINKS: ReadonlyArray<{ label: string; to: string }> = [
-  { label: 'Home', to: paths.home },
-  { label: 'Explore', to: paths.explore },
-  { label: 'Destinations', to: paths.destinations },
-  { label: 'Experiences', to: paths.experiences },
+export interface NavLink {
+  label: string;
+  to: string;
+}
+
+/** A top-level item of the header: a link, or a group that opens a dropdown (a section on phones). */
+export type NavItem = NavLink | { label: string; links: ReadonlyArray<NavLink> };
+
+export const isNavGroup = (item: NavItem): item is { label: string; links: ReadonlyArray<NavLink> } => 'links' in item;
+
+/**
+ * The header, in order: at most six items, so they keep their spacing at 1100 px
+ * (`browser-text-size`). The logo is the link home. New guides go inside Discover.
+ */
+const NAV_ITEMS: ReadonlyArray<NavItem> = [
+  {
+    label: 'Discover',
+    links: [
+      { label: 'Explore map', to: paths.explore },
+      { label: 'Destinations', to: paths.destinations },
+      { label: 'Experiences', to: paths.experiences }
+    ]
+  },
   { label: 'Tours', to: paths.tours },
+  { label: 'Book Your Ride', to: paths.booking },
   { label: 'Journal', to: paths.journal },
-  { label: 'About', to: paths.about },
-  { label: 'Contact', to: paths.contact }
+  {
+    label: 'About',
+    links: [
+      { label: 'About', to: paths.about },
+      { label: 'Contact', to: paths.contact }
+    ]
+  }
 ];
 
-/** The ride request link after Tours while bookings are on. */
-export function navLinks(features: { bookings: boolean }): ReadonlyArray<{ label: string; to: string }> {
-  if (!features.bookings) return NAV_LINKS;
-  const at = NAV_LINKS.findIndex((link) => link.to === paths.tours) + 1;
-  return [...NAV_LINKS.slice(0, at), { label: 'Book Your Ride', to: paths.booking }, ...NAV_LINKS.slice(at)];
+/** The header's items: Book Your Ride only while bookings are on. */
+export function navItems(features: { bookings: boolean }): ReadonlyArray<NavItem> {
+  return features.bookings ? NAV_ITEMS : NAV_ITEMS.filter((item) => isNavGroup(item) || item.to !== paths.booking);
+}
+
+/** Every link in the header, flat and in order: the Footer's Navigation list. */
+export function navLinks(features: { bookings: boolean }): ReadonlyArray<NavLink> {
+  return navItems(features).flatMap((item) => (isNavGroup(item) ? item.links : [item]));
+}
+
+/** The flat list with bookings off. */
+export const NAV_LINKS: ReadonlyArray<NavLink> = navLinks({ bookings: false });
+
+/** The phone menu: each group is a section with its heading, and the plain links between them one without. */
+export function navSections(features: { bookings: boolean }): ReadonlyArray<{ label?: string; links: ReadonlyArray<NavLink> }> {
+  const sections: { label?: string; links: NavLink[] }[] = [];
+  for (const item of navItems(features)) {
+    if (isNavGroup(item)) sections.push({ label: item.label, links: [...item.links] });
+    else if (sections.at(-1) && !sections.at(-1)!.label) sections.at(-1)!.links.push(item);
+    else sections.push({ links: [item] });
+  }
+  return sections;
 }

@@ -1,4 +1,7 @@
-/* One viewport anchor. Child visibility never changes their stack slots. */
+/*
+ * The WhatsApp and Book a ride buttons: one fixed stack (FloatingActions.tsx). It rises by
+ * --te-float-lift to clear what it would cover, as a transform, so nothing lays out again.
+ */
 .te-floating-actions {
   position: fixed;
   right: max(1rem, env(safe-area-inset-right));
@@ -11,54 +14,92 @@
   width: max-content;
   max-width: calc(100vw - 2rem);
   pointer-events: none;
+  transform: translateY(calc(-1 * var(--te-float-lift, 0px)));
+  transition: transform 220ms ease;
 }
+/* 56 px on every screen, large enough to recognise. Their labels don't take any layout. */
 .te-floating-booking, .te-floating-chat {
   position: relative;
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 48px;
-  min-width: 48px;
-  max-width: 100%;
+  width: 56px;
+  height: 56px;
   border-radius: 999px;
   pointer-events: auto;
-  visibility: hidden;
-  opacity: 0;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgb(var(--inverse-channels) / .28);
+  transition: background-color 180ms ease, opacity 180ms ease, visibility 180ms ease;
 }
+.te-floating-booking[data-state="hidden"], .te-floating-chat[data-state="hidden"] { opacity: 0; visibility: hidden; }
 .te-floating-booking {
-  gap: .375rem;
-  width: 48px;
-  padding: 0;
   border: 1px solid var(--border);
   background: var(--button-primary-bg);
   color: var(--button-primary-text);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  line-height: 1.25;
-  white-space: nowrap;
-  text-decoration: none;
-  box-shadow: 0 4px 14px rgb(18 56 45 / .16);
-  transition: background-color 180ms ease, transform 180ms ease, padding 180ms ease;
-  animation: te-booking-welcome 600ms ease-out 1;
 }
+.site .te-floating-booking svg.lucide { width: 28px; height: 28px; stroke-width: 2; }
 .te-floating-chat {
-  width: 56px;
-  height: 56px;
-  padding: 14px;
+  isolation: isolate;
   color: #FFFFFF;
   background: #25D366;
   border: 0;
-  box-shadow: none;
-  filter: none;
-  text-shadow: none;
-  animation: none;
-  transition: background-color 180ms ease;
 }
 .te-floating-chat:hover { background: #20BD5A; }
-.te-floating-chat::before, .te-floating-chat::after { content: none; }
-.te-floating-chat svg { flex: none; filter: none; box-shadow: none; }
-.te-floating-booking[data-visible="true"], .te-floating-chat[data-state="shown"] { opacity: 1; visibility: visible; }
+.te-floating-chat svg { flex: none; }
+
+/* The pill beside each button: page surface, page text, in either theme. */
+.te-floating-label {
+  position: absolute;
+  right: calc(100% + .625rem);
+  top: 50%;
+  display: flex;
+  align-items: center;
+  min-height: 2.25rem;
+  padding: .25rem .875rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgb(var(--inverse-channels) / .18);
+  transform: translateY(-50%);
+  transition: opacity 200ms ease, visibility 200ms ease, transform 200ms ease;
+}
+/* Phones: collapsed to the icons, unless the visitor is on it. Everywhere else, always showing. */
+@media (max-width: 767px) {
+  .te-floating-actions[data-labels="collapsed"] a:not(:hover, :focus-visible) > .te-floating-label {
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(.5rem, -50%);
+  }
+}
+
+/* A soft green ring: a few pulses after load, then one every 8 seconds. Never with reduced motion. */
+.te-floating-chat::before, .te-floating-chat::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: #25D366;
+  opacity: 0;
+  pointer-events: none;
+}
+.te-floating-chat::before { animation: te-chat-pulse 1.6s ease-out .4s 3; }
+.te-floating-chat::after { animation: te-chat-pulse-idle 8s ease-out 6s infinite; }
+@keyframes te-chat-pulse {
+  from { opacity: .5; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.45); }
+}
+@keyframes te-chat-pulse-idle {
+  from { opacity: .4; transform: scale(1); }
+  20%, to { opacity: 0; transform: scale(1.4); }
+}
+
 .te-floating-booking:focus-visible, .te-floating-chat:focus-visible {
   outline: 3px solid var(--palette-sky); outline-offset: 3px;
 }
@@ -72,34 +113,33 @@
   box-shadow: none;
   filter: none;
 }
-.te-floating-booking-label, .te-floating-booking-compact, .te-floating-booking-arrow { display: none; }
 @media (min-width: 640px) {
   .te-floating-actions { right: max(1.25rem, env(safe-area-inset-right)); bottom: calc(1.25rem + env(safe-area-inset-bottom)); }
-  .te-floating-booking { width: max-content; padding-inline: .75rem; }
-  .te-floating-booking-compact { display: inline; }
 }
 @media (min-width: 1280px) {
   .te-floating-actions { right: max(1.5rem, env(safe-area-inset-right)); bottom: calc(1.5rem + env(safe-area-inset-bottom)); }
-  .te-floating-booking-label, .te-floating-booking-arrow { display: inline; }
-  .te-floating-booking-compact { display: none; }
 }
-/* Compact predictable state near cards; actual collisions still hide the control. */
-.te-floating-actions[data-compact="true"] .te-floating-booking { width: 48px; padding-inline: 0; }
-.te-floating-actions[data-compact="true"] :is(.te-floating-booking-label, .te-floating-booking-compact, .te-floating-booking-arrow) { display: none; }
+/* A window too short for a column under the header: a row, icons only. */
+@media (max-height: 300px) {
+  .te-floating-actions { flex-direction: row; align-items: center; }
+  .te-floating-label { display: none; }
+}
 @media (hover: hover) {
-  .te-floating-booking:hover { background: var(--button-primary-hover); transform: translateY(-1px); }
+  .te-floating-booking:hover { background: var(--button-primary-hover); }
 }
-@keyframes te-booking-welcome {
-  from { transform: translateY(3px); }
-  to { transform: translateY(0); }
+
+/* The end of every page sits above the stack: its two buttons, their gap and its offset, plus air. */
+.site:has([data-floating-actions] a) footer {
+  padding-bottom: calc(2 * 56px + 12px + 1.5rem + 2rem + env(safe-area-inset-bottom));
 }
+
 @media (prefers-reduced-motion: reduce) {
-  .te-floating-chat { transition: none; }
-  .te-floating-booking { animation: none; transition: none; }
-  .te-floating-booking:hover { transform: none; }
+  .te-floating-actions, .te-floating-chat, .te-floating-booking, .te-floating-label { transition: none; }
+  .te-floating-chat::before, .te-floating-chat::after { content: none; animation: none; }
 }
 @media (forced-colors: active) {
-  .te-floating-booking, .te-floating-chat { border: 1px solid ButtonText; background: ButtonFace; color: ButtonText; }
+  .te-floating-booking, .te-floating-chat { border: 1px solid ButtonText; background: ButtonFace; color: ButtonText; box-shadow: none; }
+  .te-floating-label { background: Canvas; color: CanvasText; border-color: CanvasText; box-shadow: none; }
   .te-floating-booking:focus-visible, .te-floating-chat:focus-visible { outline-color: Highlight; }
   .site .te-floating-chat[data-whatsapp-button]:focus-visible { outline-color: Highlight; }
 }

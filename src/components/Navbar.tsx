@@ -4,8 +4,9 @@ import { Search, Menu, X, Compass, ArrowRight, Heart } from 'lucide-react';
 import { useModalFocus } from '@/hooks/useModalFocus';
 import { useFeatures } from '@/hooks/useSiteContent';
 import { activeNavigationTarget } from '@/lib/activeNavigation';
-import { navLinks, paths } from '@shared/site-paths';
+import { isNavGroup, navItems, navSections, paths } from '@shared/site-paths';
 import { Logo } from './Logo';
+import { NavDropdown } from './NavDropdown';
 import { SiteLink } from './SiteLink';
 import { ThemeToggle } from './ThemeToggle';
 import { WishlistIcon } from './WishlistLink';
@@ -18,9 +19,10 @@ interface NavbarProps {
 /**
  * The header: a solid surface in the page's colours, except over the home
  * page's photo before it scrolls, where it's clear (index.css, `.te-nav`).
- * The current page's link is marked (`aria-current`, an underline). On phones the links
- * open in a solid full-screen menu that holds focus until it closes (Escape,
- * the close button, or a link). No animation library: CSS transitions only.
+ * The current page's link is marked (`aria-current`, an underline), and so is the group
+ * holding it (`NavDropdown`). On phones the groups are sections of a solid full-screen menu
+ * that holds focus until it closes (Escape, the close button, or a link). No animation
+ * library: CSS transitions only.
  */
 export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
   const location = useLocation();
@@ -29,7 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
 
   const menuRef = useModalFocus(mobileMenuOpen, () => setMobileMenuOpen(false));
   const activeTarget = activeNavigationTarget(location.pathname, location.hash);
-  const links = navLinks(useFeatures());
+  const features = useFeatures();
   const wishlist = useWishlist();
   const phoneActionsRef = useRef<HTMLDivElement>(null);
 
@@ -75,19 +77,23 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
             </SiteLink>
 
             {/* Desktop Navigation Links */}
-            <nav className="te-nav-links items-center gap-4" aria-label="Main Navigation">
-              {links.map((link) => (
-                <SiteLink
-                  key={link.to}
-                  to={link.to}
-                  onClick={handleLinkClick}
-                  className="te-nav-link font-medium"
-                  {...current(link.to)}
-                >
-                  {link.label}
-                  <span aria-hidden="true" className="te-nav-indicator" />
-                </SiteLink>
-              ))}
+            <nav className="te-nav-links items-center" aria-label="Main Navigation">
+              {navItems(features).map((item) =>
+                isNavGroup(item) ? (
+                  <NavDropdown key={item.label} label={item.label} links={item.links} activeTarget={activeTarget} />
+                ) : (
+                  <SiteLink
+                    key={item.to}
+                    to={item.to}
+                    onClick={handleLinkClick}
+                    className="te-nav-link font-medium"
+                    {...current(item.to)}
+                  >
+                    {item.label}
+                    <span aria-hidden="true" className="te-nav-indicator" />
+                  </SiteLink>
+                )
+              )}
             </nav>
 
             {/* Right Side Buttons */}
@@ -171,22 +177,28 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
             <X className="w-6 h-6" aria-hidden="true" />
           </button>
           <nav aria-label="Mobile navigation" className="space-y-6">
-            <div className="border-b border-[var(--border)] pb-4">
-              <p className="text-xs uppercase tracking-widest text-[var(--accent-text)] font-semibold mb-2">Navigation</p>
-              <div className="grid grid-cols-1 gap-2">
-                {links.map((link) => (
-                  <SiteLink
-                    key={link.to}
-                    to={link.to}
-                    onClick={handleLinkClick}
-                    className="te-nav-link te-nav-link--mobile flex items-center justify-between text-left py-3 text-lg font-heading font-medium border-b border-[var(--border)]"
-                    {...current(link.to)}
-                  >
-                    <span>{link.label}</span>
-                    <ArrowRight className="w-4 h-4" aria-hidden="true" />
-                  </SiteLink>
-                ))}
-              </div>
+            <div className="space-y-6 pb-2" data-menu-sections>
+              {navSections(features).map((section) => (
+                <div key={section.label ?? section.links[0].to} data-menu-section={section.label ?? ''}>
+                  {section.label && (
+                    <p className="text-xs uppercase tracking-widest text-[var(--accent-text)] font-semibold mb-2">{section.label}</p>
+                  )}
+                  <div className="grid grid-cols-1 gap-2">
+                    {section.links.map((link) => (
+                      <SiteLink
+                        key={link.to}
+                        to={link.to}
+                        onClick={handleLinkClick}
+                        className="te-nav-link te-nav-link--mobile flex items-center justify-between text-left py-3 text-lg font-heading font-medium border-b border-[var(--border)]"
+                        {...current(link.to)}
+                      >
+                        <span>{link.label}</span>
+                        <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                      </SiteLink>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
 
             <SiteLink to={paths.plan} onClick={handleLinkClick} className="te-button te-button--primary w-full py-3.5">

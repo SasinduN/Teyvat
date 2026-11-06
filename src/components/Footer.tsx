@@ -96,7 +96,7 @@ export const Footer: React.FC = () => {
                 <li key={link.to}>
                   <SiteLink
                     to={link.to}
-                    className="hover:text-[var(--accent)] transition-colors capitalize text-left"
+                    className="hover:text-[var(--accent)] transition-colors text-left"
                   >
                     {link.label}
                   </SiteLink>
@@ -188,7 +188,7 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-white/80 space-y-2 sm:space-y-0">
+        <div data-footer-last-row className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-white/80 space-y-2 sm:space-y-0">
           <p>© 2026 {BRAND_NAME} Sri Lanka. All rights reserved.</p>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
             {wishlistAvailable && <Link to={paths.wishlist} className="hover:text-white transition-colors">Wishlist</Link>}

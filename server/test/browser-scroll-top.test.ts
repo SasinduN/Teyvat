@@ -41,9 +41,8 @@ describe('the scroll-to-top button, in Chrome', { skip }, () => {
   }, HOOK_TIMEOUT);
 
   beforeEach(async () => {
+    // With the WhatsApp number, so its button is on the page to stay clear of.
     await resetContent();
-    // A WhatsApp number, so its button is on the page to stay clear of.
-    await pool.query(`update public.site_settings set whatsapp_number = '94771234567' where id`);
   }, HOOK_TIMEOUT);
 
   after(async () => {

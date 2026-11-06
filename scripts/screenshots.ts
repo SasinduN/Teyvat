@@ -20,6 +20,11 @@
  * For a short run (the laptop's memory, a time limit): `--only-dark` skips the
  * light theme and `--no-states` the named states, so a set can go in batches.
  *
+ * `--header-floating` takes only the header, its dropdowns, the phone menu, the floating
+ * buttons and the wishlist's badge, as twelve pairs, and opens with bookings on so the Book
+ * a ride button and its link are there. Both versions show the fake WhatsApp number
+ * (`scripts/fixtures/dev-whatsapp.ts`), in every mode: a local database has no other.
+ *
  * `--admin` adds the admin: the login page (empty, a password typed and
  * shown, after two wrong tries, locked), then (signed in as a throwaway
  * admin created in each scratch database) the dashboard, a collection, two
@@ -52,6 +57,8 @@ import { randomBytes } from 'node:crypto';
 
 import { passwords } from '../server/src/auth/passwords';
 import { findChrome, launchChrome, SAMPLE_WISHLIST, saveTheme, saveWishlist, type Chrome, type Page } from '../server/test/chrome';
+import { DESTINATIONS } from './fixtures/destinations';
+import { DEV_WHATSAPP_NUMBER } from './fixtures/dev-whatsapp';
 
 const ROOT = resolve(import.meta.dirname, '..');
 
@@ -77,6 +84,8 @@ const { values } = parseArgs({
     'live-photos': { type: 'string' },
     /** Every page opens with a saved wishlist, so /wishlist has cards and the header its count. */
     'saved-wishlist': { type: 'boolean', default: false },
+    /** Only the twelve pairs for the header and floating buttons, bookings on. */
+    'header-floating': { type: 'boolean', default: false },
     out: { type: 'string' }
   },
   strict: true
@@ -157,6 +166,16 @@ async function prepare(site: Site): Promise<void> {
   console.log(`\n[${site.label}] build`);
   run('npm', ['run', 'build'], site.dir);
   run('npx', ['tsx', 'scripts/migrate.ts'], site.dir, { ...process.env, DATABASE_URL: db });
+  {
+    // The fake number, so every shot shows the WhatsApp button: in this scratch database only.
+    const client = new Client({ connectionString: db });
+    await client.connect();
+    try {
+      await client.query('update public.site_settings set whatsapp_number = $1 where id', [DEV_WHATSAPP_NUMBER]);
+    } finally {
+      await client.end();
+    }
+  }
   if (livePhotos) {
     const client = new Client({ connectionString: db });
     await client.connect();
@@ -202,7 +221,7 @@ async function prepare(site: Site): Promise<void> {
   // any variable that isn't set, so a deleted R2 key came back and only the base ran without R2.
   for (const key of ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET', 'R2_PUBLIC_BASE_URL', 'RESEND_API_KEY', 'NOTIFY_EMAIL_TO', 'NOTIFY_EMAIL_FROM']) env[key] = '';
   // The same for the switches: as the base would have them.
-  env.BOOKINGS_ENABLED = '';
+  env.BOOKINGS_ENABLED = values['header-floating'] ? 'true' : '';
   // The bucket's public origin, so the CSP lets the photos in. The rest only has to be set: nothing is uploaded.
   if (livePhotos) {
     Object.assign(env, { R2_ACCOUNT_ID: 'screenshots', R2_ACCESS_KEY_ID: 'screenshots', R2_SECRET_ACCESS_KEY: 'screenshots', R2_BUCKET: 'screenshots', R2_PUBLIC_BASE_URL: livePhotos.origin });
@@ -435,6 +454,57 @@ async function compare(chrome: Chrome, out: string): Promise<string> {
 
 const slug = (path: string) => (path === '/' ? 'home' : path.slice(1).replace(/[^a-z0-9]+/gi, '-'));
 
+const LAPTOP = { width: 1280, height: 800, mobile: false };
+const PHONE = { width: 375, height: 812, mobile: true };
+const OPEN_DISCOVER = `[...document.querySelectorAll('.te-nav-trigger')].find((b) => b.textContent.trim() === 'Discover')?.click(), true`;
+const OPEN_MENU = `document.querySelector('header button[aria-label*="menu" i]')?.click(), true`;
+const SCROLL_DOWN = `window.scrollTo({ top: 1400, behavior: 'instant' }), true`;
+/** Stopping near the top is what brings a phone's labels back, for a few seconds: long enough for the shot. */
+const LABELS_BACK = `new Promise((done) => {
+  window.scrollTo({ top: 5, behavior: 'instant' });
+  requestAnimationFrame(() => requestAnimationFrame(() => { window.scrollTo({ top: 0, behavior: 'instant' }); done(true); }));
+})`;
+const TEN_SAVED = DESTINATIONS.slice(0, 10).map(({ id }) => ({ kind: 'destination', id }));
+
+/** `--header-floating`: twelve pairs. The header's shots are cropped to its row, with room below for the badge. */
+const HEADER_FLOATING: { name: string; path: string; viewport: typeof LAPTOP | typeof PHONE; dark?: boolean; saved?: { kind: string; id: string }[]; action?: string; settleMs?: number; /** Shoot straight after: the labels only stay for a few seconds. */ quick?: boolean; crop?: { height: number; scale?: number } }[] = [
+  { name: 'header-1280', path: '/about', viewport: LAPTOP, crop: { height: 96 } },
+  { name: 'header-1100', path: '/about', viewport: { ...LAPTOP, width: 1100 }, crop: { height: 96 } },
+  { name: 'dropdown-light', path: '/destinations', viewport: LAPTOP, action: OPEN_DISCOVER, crop: { height: 320 } },
+  { name: 'dropdown-dark', path: '/destinations', viewport: LAPTOP, dark: true, action: OPEN_DISCOVER, crop: { height: 320 } },
+  { name: 'phone-menu', path: '/destinations', viewport: PHONE, action: OPEN_MENU },
+  { name: 'phone-menu-dark', path: '/destinations', viewport: PHONE, dark: true, action: OPEN_MENU },
+  { name: 'buttons-home-top-phone', path: '/', viewport: PHONE, action: LABELS_BACK, settleMs: 700, quick: true },
+  { name: 'buttons-home-scrolled-phone', path: '/', viewport: PHONE, action: SCROLL_DOWN, settleMs: 900 },
+  { name: 'buttons-home-top-desktop', path: '/', viewport: LAPTOP },
+  { name: 'buttons-home-scrolled-desktop', path: '/', viewport: LAPTOP, action: SCROLL_DOWN, settleMs: 900 },
+  { name: 'badge-1-saved', path: '/about', viewport: LAPTOP, saved: [{ kind: 'destination', id: 'ella' }], crop: { height: 96 } },
+  { name: 'badge-9-plus-saved', path: '/about', viewport: LAPTOP, saved: TEN_SAVED, crop: { height: 96 } }
+];
+
+async function shootHeaderFloating(chrome: Chrome, site: Site, out: string): Promise<void> {
+  for (const shot of HEADER_FLOATING) {
+    const page = await chrome.newPage();
+    await page.send('Emulation.setDeviceMetricsOverride', { ...shot.viewport, deviceScaleFactor: 1 });
+    await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+    await saveTheme(page, shot.dark ? 'dark' : 'light');
+    await saveWishlist(page, shot.saved ?? []);
+    if (shot.viewport.mobile) await page.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    await page.send('Page.navigate', { url: site.url + shot.path });
+    await waitFor(page, `document.readyState === 'complete' && document.body.dataset.route`);
+    await page.evaluate(LOADED);
+    if (shot.action) await page.evaluate(shot.action);
+    if (!shot.quick) await page.evaluate(LOADED);
+    await sleep(shot.settleMs ?? 500);
+    const file = join(out, `${shot.name}-${site.label}.jpg`);
+    const clip = shot.crop ? { x: 0, y: 0, width: shot.viewport.width, height: shot.crop.height, scale: 1 } : undefined;
+    const { data } = (await page.send('Page.captureScreenshot', { format: 'jpeg', quality: 80, ...(clip ? { clip } : {}) })) as { data: string };
+    writeFileSync(file, Buffer.from(data, 'base64'));
+    await closePage(page);
+    console.log(`  ${shot.name}-${site.label}.jpg`);
+  }
+}
+
 async function main(): Promise<void> {
   const executable = findChrome();
   if (!executable) throw new Error('No Chrome found; set CHROME_PATH.');
@@ -468,6 +538,10 @@ async function main(): Promise<void> {
     for (const site of sites) await prepare(site);
     chrome = await launchChrome(executable);
     for (const site of sites) {
+      if (values['header-floating']) {
+        await shootHeaderFloating(chrome, site, out);
+        continue;
+      }
       for (const dark of themes) {
         for (const [name, viewport] of Object.entries(VIEWPORTS)) {
           const suffix = `${name}${dark ? '-dark' : ''}-${site.label}.jpg`;

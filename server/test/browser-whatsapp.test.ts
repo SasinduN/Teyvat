@@ -12,7 +12,8 @@ import './test-db';
  *   - the old `?destination=` and `?tour=` links land on the pages;
  *   - on a phone it never covers the map's zoom buttons or Quick Jump bar,
  *     the home page's slide controls, the pages' main buttons, or an
- *     enquiry form's submit button;
+ *     enquiry form's submit button: it rises above them, staying on screen,
+ *     and it hides only for the modal;
  *   - admin Settings shows "Test in WhatsApp" only once a number is saved.
  *
  * Needs `npm run build` and Chrome; skipped with a message otherwise.
@@ -24,10 +25,12 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { after, before, beforeEach, describe, test } from 'node:test';
 
+import { DEV_WHATSAPP_NUMBER } from '../../scripts/fixtures/dev-whatsapp';
 import { whatsappMessage, whatsappUrl, type WhatsAppContext } from '../../shared/whatsapp';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
+import { COVERED_CONTROLS, LIFT } from './floating';
 import {
   assertConnectedToTestDatabase,
   createUser,
@@ -45,7 +48,7 @@ const executable = findChrome();
 const built = existsSync(join(REPO_ROOT, 'dist', 'index.html'));
 const skip = !executable ? 'no Chrome found; set CHROME_PATH to run these' : !built ? 'no build; run `npm run build` first' : false;
 
-const NUMBER = '94771234567';
+const NUMBER = DEV_WHATSAPP_NUMBER;
 const BUTTON = '[data-whatsapp-button]';
 
 describe('the WhatsApp button, in Chrome', { skip }, () => {
@@ -130,9 +133,11 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     page.evaluate<boolean>(`(() => {
       const button = document.querySelector('${BUTTON}');
       if (button.dataset.state !== 'shown') return false;
-      const b = button.getBoundingClientRect();
       const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();
-      return r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top;
+      return [button, button.querySelector('.te-floating-label')]
+        .filter((el) => getComputedStyle(el).visibility !== 'hidden')
+        .map((el) => el.getBoundingClientRect())
+        .some((b) => r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top);
     })()`);
 
   /** Whether a tap at the middle of `selector` lands on it, not on something above it. */
@@ -244,7 +249,6 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
 
   beforeEach(async () => {
     await resetContent();
-    await setNumber(NUMBER);
   }, HOOK_TIMEOUT);
 
   after(async () => {
@@ -302,7 +306,8 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     await waitFor(page, `document.body.dataset.route === '/experiences/safari-yala'`, 'the experience page');
     await expectHref(page, expected({ kind: 'experience', id: 'safari-yala', title: 'Safari in Yala' }), 'an experience page');
 
-    await follow(page, 'nav', 'Home', '/');
+    await page.evaluate(`document.querySelector('header .te-home-link').click(), true`);
+    await waitFor(page, `document.body.dataset.route === '/' && document.querySelector('main h1')`, 'home');
     await expectHref(page, expected({ kind: 'general' }), 'home again');
 
     // A route on the Explore map (from /tours, redesign PR 3) counts while the map is on screen.
@@ -332,7 +337,7 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     await expectHref(page, expected({ kind: 'general' }), 'an unknown id');
   });
 
-  test('phone: never over the map zoom buttons or Quick Jump bar, shown again once clear', async () => {
+  test('phone: never over the map zoom buttons or Quick Jump bar, on screen all the way', async () => {
     // The map is on /explore since redesign PR 4 trimmed the home page.
     const page = await openPage({ mobile: true, path: '/explore' });
     await page.evaluate(`document.querySelector('#explore-map').scrollIntoView(), true`);
@@ -344,15 +349,16 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     const zoomTop = await page.evaluate<number>(
       `document.querySelector('#explore-map .leaflet-control-zoom').getBoundingClientRect().top + window.scrollY`
     );
-    let hiddenAtLeastOnce = false;
+    let roseAtLeastOnce = false;
     for (let offset = -100; offset <= 900; offset += 20) {
       await page.evaluate(`window.scrollTo(0, ${zoomTop - 844 + offset}), true`);
       await frames(page);
       await explainOnFailure(page, () => expectClearOf(page, '#explore-map .leaflet-control-zoom', `zoom buttons covered at ${offset}`));
       await expectClearOf(page, '#explore-map [data-keep-clear]', `Quick Jump covered at ${offset}`);
-      if (!(await shown(page))) hiddenAtLeastOnce = true;
+      assert.ok(await shown(page), `still shown at ${offset}`);
+      if ((await page.evaluate<number>(LIFT)) > 0) roseAtLeastOnce = true;
     }
-    assert.ok(hiddenAtLeastOnce, 'the button stepped aside somewhere in the sweep');
+    assert.ok(roseAtLeastOnce, 'the button rose somewhere in the sweep');
 
     // With the zoom buttons in the bottom-right corner, they take the tap.
     await page.evaluate(`(() => {
@@ -360,21 +366,22 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
       window.scrollBy(0, r.bottom - (innerHeight - 30));
       return true;
     })()`);
-    await explainOnFailure(page, () => expectShown(page, false, 'steps aside from the zoom buttons'));
+    await explainOnFailure(page, () => expectClearOf(page, '#explore-map .leaflet-control-zoom', 'rises above the zoom buttons'));
+    assert.ok(await shown(page), 'still shown over the map');
     assert.equal(await coveredBy(page, '#explore-map .leaflet-control-zoom-in'), null, 'zoom in takes the tap');
     assert.equal(await coveredBy(page, '#explore-map .leaflet-control-zoom-out'), null, 'zoom out takes the tap');
 
     // Return to a clear area. The QuickSearch submit button is now protected
     // too, so top=0 alone is not necessarily clear on a short phone viewport.
     let restored = false;
-    for (const top of [0, 120, 240, 360, 480]) {
+    for (const top of [0, 120, 240, 360, 480, 600, 720]) {
       await page.evaluate(`window.scrollTo(0, ${top}), true`);
       await frames(page); await sleep(250);
       await expectClearOf(page, '#explore-map .leaflet-control-zoom', 'clear of map zoom');
       await expectClearOf(page, 'form button[type="submit"]', 'clear of search submit');
-      if (await shown(page)) { restored = true; break; }
+      if ((await page.evaluate<number>(LIFT)) === 0) { restored = true; break; }
     }
-    assert.ok(restored, 'back once clear of all protected controls');
+    assert.ok(restored, 'back down once clear of all protected controls');
   });
 
   test("phone: the home page's slide controls each take the tap", async () => {
@@ -385,16 +392,18 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     for (const label of ['Previous featured destination', 'Pause slideshow', 'Next featured destination']) {
       assert.equal(await coveredBy(page, `[aria-label="${label}"]`), null, `${label} takes the tap`);
     }
-    // They're near the bottom right, where the button sits: it steps aside, and comes back below the hero.
-    await explainOnFailure(page, () => expectShown(page, false, 'steps aside from the slide controls'));
+    // They're near the bottom right, where the button sits: it rises above them, and stays on screen.
+    await explainOnFailure(page, () => expectClearOf(page, '[aria-label="Featured destinations"]', 'rises above the slide controls'));
+    assert.ok(await shown(page), 'still shown over the hero');
     await page.evaluate(`document.querySelector('#discover').scrollIntoView(), true`);
-    await expectClearOf(page, '.destination-card,.te-card', 'cards below the hero stay clear');
+    await frames(page);
+    await waitFor(page, `${COVERED_CONTROLS}.length === 0`, 'the controls of the cards below the hero stay clear', 1_500);
   });
 
   test('phone: hidden while the enquiry form is open, so the submit button is clear', async () => {
     const page = await openPage({ mobile: true, path: '/tours' });
     await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
-    await expectClearOf(page, '#tours .te-card', 'precondition: tour cards stay clear');
+    await waitFor(page, `${COVERED_CONTROLS}.length === 0`, "precondition: the tour cards' controls stay clear", 1_500);
 
     await page.evaluate(`[...document.querySelectorAll('#tours button')].find((b) => b.textContent.trim() === 'Inquire').click(), true`);
     await waitFor(page, `document.querySelector('.fixed.inset-0 form button[type=submit]')`, 'the enquiry form');
@@ -452,7 +461,7 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     // Typing doesn't count; saving does. The saved value is digits only.
     await page.evaluate(`(() => {
       const input = document.querySelector('#field-whatsapp_number');
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, '+94 77 123 4567');
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, '+94 77 123 6478');
       input.dispatchEvent(new Event('input', { bubbles: true }));
       return true;
     })()`);

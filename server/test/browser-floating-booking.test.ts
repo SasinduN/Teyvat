@@ -7,6 +7,7 @@ import { after, before, describe, test } from 'node:test';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
+import { COVERED_CONTROLS, LIFT } from './floating';
 import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
 
@@ -23,7 +24,6 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     // A same-origin image for every slide, each URL its own, in this guarded test DB:
     // carousel readiness must not depend on an external request succeeding.
     await pool.query(`update public.hero_slides set image='/images/photo-unavailable.svg?qa-carousel=' || id`);
-    await pool.query('update public.site_settings set whatsapp_number=$1 where id', ['94771234567']);
     on = await listen(createApp({ media: null, bookings: true })); off = await listen(createApp({ media: null, bookings: false }));
     chrome = await launchChrome(executable!);
   }, HOOK_TIMEOUT);
@@ -80,21 +80,22 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     assert.deepEqual(await page.evaluate<string[]>('window.__qaErrors'), []);
   });
 
-  test('nine widths: shared fixed stack, responsive labels, touch targets and 12px WhatsApp gap', async () => {
+  test('nine widths: shared fixed stack, labels, 56px icons and 12px WhatsApp gap', async () => {
     const page = await open('/about');
     await wait(page, shown(CTA), 'CTA'); await sleep(1200);
     for (const width of [320,375,390,430,768,1024,1280,1440,1920]) {
       await page.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 768 });
       await sleep(180); await wait(page, shown(CTA), `${width} CTA`); await wait(page, shown(WA), `${width} WhatsApp`);
-      const geometry = await page.evaluate<{gap:number; right:number; inside:boolean; overflow:boolean; width:number; height:number; text:string; position:string}>(`(() => {const link=document.querySelector('${CTA}'); const a=link.getBoundingClientRect(), b=document.querySelector('${WA}').getBoundingClientRect(); return {gap:b.top-a.bottom,right:a.right-b.right,inside:a.left>=0&&a.right<=innerWidth&&a.top>=0&&b.bottom<=innerHeight,overflow:document.documentElement.scrollWidth>innerWidth,width:a.width,height:a.height,text:[...link.querySelectorAll('span')].filter(s=>s.className.includes('floating-booking-')&&!s.className.includes('content')&&getComputedStyle(s).display!=='none').map(s=>s.textContent).join(''),position:getComputedStyle(document.querySelector('[data-floating-actions]')).position};})()`);
+      const geometry = await page.evaluate<{gap:number; right:number; inside:boolean; overflow:boolean; width:number; height:number; text:string; labelInside:boolean; labelShown:boolean; position:string}>(`(() => {const link=document.querySelector('${CTA}'); const label=link.querySelector('.te-floating-label'); const l=label.getBoundingClientRect(); const a=link.getBoundingClientRect(), b=document.querySelector('${WA}').getBoundingClientRect(); return {gap:b.top-a.bottom,right:a.right-b.right,inside:a.left>=0&&a.right<=innerWidth&&a.top>=0&&b.bottom<=innerHeight,overflow:document.documentElement.scrollWidth>innerWidth,width:a.width,height:a.height,text:label.textContent,labelInside:l.left>=0,labelShown:getComputedStyle(label).visibility==='visible',position:getComputedStyle(document.querySelector('[data-floating-actions]')).position};})()`);
       assert.equal(geometry.overflow,false,`${width} no overflow`); assert.equal(geometry.inside,true,`${width} inside viewport`);
       assert.ok(Math.abs(geometry.gap-12)<=1.1,`${width} gap ${geometry.gap}`); assert.ok(Math.abs(geometry.right)<1,`${width} aligned`);
-      assert.ok(geometry.width>=48&&geometry.height>=48,`${width} touch target`); assert.equal(geometry.position,'fixed');
-      assert.equal(geometry.text,width<640?'':width<1280?'Book Now':'Book Your Ride');
+      assert.ok(geometry.width>=55.9&&geometry.height>=55.9,`${width} icon size`); assert.equal(geometry.position,'fixed');
+      assert.equal(geometry.text,'Book a ride'); assert.ok(geometry.labelInside,`${width} label inside`);
+      if(width>=768) assert.ok(geometry.labelShown,`${width} label always shows`);
       for (const theme of ['light','dark']) {
         await page.evaluate(`document.documentElement.dataset.theme=${JSON.stringify(theme)}; true`);
-        const appearance=await page.evaluate(`(() => {const link=document.querySelector('${WA}'),s=getComputedStyle(link),r=link.getBoundingClientRect(),parent=getComputedStyle(link.parentElement);return {background:s.backgroundColor,color:s.color,shadow:s.boxShadow,filter:s.filter,textShadow:s.textShadow,border:s.borderTopWidth,radius:s.borderTopLeftRadius,animation:s.animationName,icon:getComputedStyle(link.querySelector('svg')).fill,before:getComputedStyle(link,'::before').content,after:getComputedStyle(link,'::after').content,parentShadow:parent.boxShadow,parentFilter:parent.filter,takesTap:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('a')===link};})()`);
-        assert.deepEqual(appearance,{background:'rgb(37, 211, 102)',color:'rgb(255, 255, 255)',shadow:'none',filter:'none',textShadow:'none',border:'0px',radius:'999px',animation:'none',icon:'rgb(255, 255, 255)',before:'none',after:'none',parentShadow:'none',parentFilter:'none',takesTap:true},`${width} ${theme} flat WhatsApp appearance and independent tap`);
+        const appearance=await page.evaluate(`(() => {const link=document.querySelector('${WA}'),s=getComputedStyle(link),r=link.getBoundingClientRect(),parent=getComputedStyle(link.parentElement);return {background:s.backgroundColor,color:s.color,filter:s.filter,textShadow:s.textShadow,border:s.borderTopWidth,radius:s.borderTopLeftRadius,animation:s.animationName,icon:getComputedStyle(link.querySelector('svg')).fill,before:getComputedStyle(link,'::before').animationName,after:getComputedStyle(link,'::after').animationName,parentShadow:parent.boxShadow,parentFilter:parent.filter,takesTap:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('a')===link};})()`);
+        assert.deepEqual(appearance,{background:'rgb(37, 211, 102)',color:'rgb(255, 255, 255)',filter:'none',textShadow:'none',border:'0px',radius:'999px',animation:'none',icon:'rgb(255, 255, 255)',before:'te-chat-pulse',after:'te-chat-pulse-idle',parentShadow:'none',parentFilter:'none',takesTap:true},`${width} ${theme} WhatsApp appearance: its pulse only on the ring, and an independent tap`);
         await page.evaluate(`document.querySelector('${WA}').focus(); true`);
         assert.equal(await page.evaluate<string>(`getComputedStyle(document.querySelector('${WA}')).boxShadow`),'none','focus has no glow');
         assert.ok(await page.evaluate<number>(`parseFloat(getComputedStyle(document.querySelector('${WA}')).outlineWidth)`)>=3,'visible focus outline');
@@ -108,13 +109,15 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
       const shot = await page.send('Page.captureScreenshot', { format:'png' });
       const directory=join(root,'docs/qa-results/content-cleanup'); mkdirSync(directory,{recursive:true}); writeFileSync(join(directory,`cta-${width}.png`),Buffer.from(shot.data as string,'base64'));
     }
-    const before=await page.evaluate<number>(`document.querySelector('[data-floating-actions]').getBoundingClientRect().bottom`);
+    const anchored=`document.querySelector('[data-floating-actions]').getBoundingClientRect().bottom + (${LIFT})`;
+    const before=await page.evaluate<number>(anchored);
     assert.equal(await page.evaluate<boolean>(`(() => {const main=document.querySelector('main');const before=JSON.stringify(main.getBoundingClientRect().toJSON());const link=document.querySelector('${CTA}');link.style.display='none';const after=JSON.stringify(main.getBoundingClientRect().toJSON());link.style.removeProperty('display');return before===after;})()`),true,'floating insertion does not change page geometry');
     await page.evaluate(`scrollTo(0,400); true`); await sleep(300);
-    assert.equal(await page.evaluate<number>(`document.querySelector('[data-floating-actions]').getBoundingClientRect().bottom`),before,'fixed stack during scroll');
+    assert.equal(await page.evaluate<number>(anchored),before,'fixed stack during scroll: only its lift moves');
     await page.send('Emulation.setDeviceMetricsOverride',{width:320,height:240,deviceScaleFactor:1,mobile:true}); await sleep(200);
     assert.equal(await page.evaluate<boolean>(`document.querySelector('${CTA}').getBoundingClientRect().bottom<=innerHeight`),true,'short viewport remains inside');
-    await page.send('Emulation.setDeviceMetricsOverride',{width:320,height:180,deviceScaleFactor:1,mobile:true}); await wait(page,`document.querySelector('${CTA}').dataset.state==='hidden'`,'short viewport avoids navigation');
+    // Too short for a column under the header: a row, still on screen and clear of the navigation.
+    await page.send('Emulation.setDeviceMetricsOverride',{width:320,height:180,deviceScaleFactor:1,mobile:true}); await wait(page,`document.querySelector('${CTA}').dataset.state==='shown' && document.querySelector('${CTA}').getBoundingClientRect().top>=document.querySelector('.te-nav').getBoundingClientRect().bottom && document.querySelector('${WA}').getBoundingClientRect().bottom<=innerHeight`,'short viewport avoids navigation');
   });
 
   test('public routes, light/dark AA contrast, reduced motion and keyboard navigation to the real ride page', async () => {
@@ -134,16 +137,17 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     await page.send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
     assert.equal(await page.evaluate<string>(`getComputedStyle(document.querySelector('${CTA}')).animationName`),'none');
     assert.equal(await page.evaluate<string>(`getComputedStyle(document.querySelector('${WA}')).transitionDuration`),'0s','chat respects reduced motion');
+    const restingShadow=await page.evaluate<string>(`getComputedStyle(document.querySelector('${WA}')).boxShadow`);
     const chatRect=await page.evaluate<{x:number;y:number}>(`(() => {const r=document.querySelector('${WA}').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
     await page.send('Input.dispatchMouseEvent',{type:'mouseMoved',...chatRect});await sleep(200);
-    assert.equal(await page.evaluate<string>(`getComputedStyle(document.querySelector('${WA}')).boxShadow`),'none','hover has no glow');
+    assert.equal(await page.evaluate<string>(`getComputedStyle(document.querySelector('${WA}')).boxShadow`),restingShadow,'hover adds no glow');
     assert.equal(await page.evaluate<string>(`getComputedStyle(document.querySelector('${WA}')).transform`),'none','hover does not scale');
     await page.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});
     await page.evaluate(`document.querySelector('${CTA}').focus(); true`);
     await page.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
     await page.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
     assert.equal(await page.evaluate<boolean>(`document.activeElement===document.querySelector('${WA}')`),true,'Tab reaches independent WhatsApp');
-    assert.match(await page.evaluate<string>(`document.querySelector('${WA}').getAttribute('href')`),/^https:\/\/wa.me\/94771234567\?/);
+    assert.match(await page.evaluate<string>(`document.querySelector('${WA}').getAttribute('href')`),/^https:\/\/wa.me\/94771236478\?/);
     await page.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,modifiers:8});
     await page.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,modifiers:8});
     assert.equal(await page.evaluate<boolean>(`document.activeElement===document.querySelector('${CTA}')`),true,'Shift Tab reaches booking');
@@ -158,13 +162,18 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     assert.equal(await page.evaluate<number>(`document.querySelectorAll('${CTA}').length`),0,'booking trailing slash/query hidden');
   });
 
-  test('steps aside for submit buttons, cookie banners and modal menus, and works without WhatsApp', async () => {
+  test('rises above submit buttons, inputs and cookie banners, hides only for modals, and works without WhatsApp', async () => {
     const page=await open('/about'); await wait(page,shown(CTA),'CTA');
     for(const kind of ['form','input','cookie','modal']) {
       await page.evaluate(`(() => {const box=document.createElement('div');box.id='qa-obstruction';box.style='position:fixed;right:0;bottom:0;width:250px;height:190px;z-index:70';box.innerHTML=${JSON.stringify(kind==='input'?'<form><input aria-label="Important contact input" /></form>':'<form><button type="submit">Important submit</button></form>')}; if(${JSON.stringify(kind)}==='cookie')box.dataset.cookieBanner='';if(${JSON.stringify(kind)}==='modal'){box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');} if(['form','input'].includes(${JSON.stringify(kind)}))box.querySelector('button,input').style='position:absolute;right:20px;bottom:100px;width:200px;height:50px';(${JSON.stringify(kind)}==='input'?document.querySelector('main'):document.body).append(box);return true;})()`);
-      await wait(page,`document.querySelector('${CTA}').dataset.state==='hidden'`,`${kind} protected`);
-      assert.equal(await page.evaluate<number>(`document.querySelector('${CTA}').tabIndex`),-1);
-      await page.evaluate(`document.querySelector('#qa-obstruction').remove(); true`); await wait(page,shown(CTA),'CTA restored');
+      if(kind==='modal'){
+        await wait(page,`document.querySelector('${CTA}').dataset.state==='hidden'`,'modal hides it');
+        assert.equal(await page.evaluate<number>(`document.querySelector('${CTA}').tabIndex`),-1);
+      } else {
+        const target=kind==='cookie'?'#qa-obstruction':'#qa-obstruction button,#qa-obstruction input';
+        await wait(page,`(() => {const t=document.querySelector(${JSON.stringify(target)}).getBoundingClientRect();return [...document.querySelectorAll('[data-floating-actions] a,[data-floating-actions] .te-floating-label')].every(el=>{const r=el.getBoundingClientRect();return r.bottom<=t.top||r.left>=t.right||r.right<=t.left||r.top>=t.bottom;})&&document.querySelector('${CTA}').dataset.state==='shown';})()`,`${kind} protected, and the buttons still shown`);
+      }
+      await page.evaluate(`document.querySelector('#qa-obstruction').remove(); true`); await wait(page,`${shown(CTA)} && ${LIFT}===0`,'CTA back in place');
     }
     await page.send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
     await page.evaluate(`document.querySelector('[aria-label="Open menu"]').click(); true`);
@@ -178,19 +187,19 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     assert.equal(await noWA.evaluate<number>(`document.querySelector('[data-floating-actions]').children.length`),1,'no empty chat placeholder');
   });
 
-  test('whole card collisions transfer focus safely and restore without moving chat', async () => {
-    await pool.query("update public.site_settings set whatsapp_number='94771234567' where id");
+  test('a control arriving under a focused button: the stack rises as one, the focus stays and the control takes the tap', async () => {
+    await pool.query("update public.site_settings set whatsapp_number='94771236478' where id");
     const page=await open('/about'); await wait(page,shown(CTA),'unobstructed booking link');
-    const chatTop=await page.evaluate<number>(`document.querySelector('${WA}').getBoundingClientRect().top`);
-    await page.evaluate(`(() => {const a=document.querySelector('${CTA}');a.focus();const r=a.getBoundingClientRect(),card=document.createElement('article');card.id='qa-card';card.className='te-card';card.style=\`position:fixed;left:\${r.left}px;top:\${r.top}px;width:\${r.width}px;height:\${r.height}px\`;card.innerHTML='<button>Discover Experience</button>';document.body.append(card);return true;})()`);
-    await wait(page,`document.querySelector('${CTA}').inert`,'card protected');
-    assert.equal(await page.evaluate<boolean>(`document.activeElement===document.querySelector('#qa-card button')`),true,'focus moves before hiding');
-    assert.equal(await page.evaluate<number>(`document.querySelector('${CTA}').tabIndex`),-1);
-    assert.equal(await page.evaluate<number>(`document.querySelector('${WA}').getBoundingClientRect().top`),chatTop,'chat slot stays fixed');
-    await page.evaluate(`document.querySelector('#qa-card').remove(); true`);await wait(page,shown(CTA),'restored after card');
+    const gap=`document.querySelector('${WA}').getBoundingClientRect().top-document.querySelector('${CTA}').getBoundingClientRect().bottom`;
+    await page.evaluate(`(() => {const a=document.querySelector('${CTA}');a.focus();const r=a.getBoundingClientRect(),card=document.createElement('article');card.id='qa-card';card.className='te-card';card.style=\`position:fixed;z-index:44;left:\${r.left}px;top:\${r.top}px;width:\${r.width}px;height:\${r.height}px\`;card.innerHTML='<button>Discover</button>';card.firstChild.style.cssText='display:block;width:56px;height:56px;overflow:hidden';document.querySelector('main').append(card);return true;})()`);
+    await wait(page,`${LIFT}>0 && (() => {const r=document.querySelector('#qa-card button').getBoundingClientRect();return Boolean(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('#qa-card'));})()`,'the stack above the control');
+    assert.equal(await page.evaluate<boolean>(`document.activeElement===document.querySelector('${CTA}')`),true,'focus stays on the button');
+    assert.equal(await page.evaluate<boolean>(`document.querySelector('${CTA}').inert`),false,'never out of reach');
+    assert.equal(await page.evaluate<number>(gap),12,'the two move together');
+    await page.evaluate(`document.querySelector('#qa-card').remove(); true`);await wait(page,`${LIFT}===0`,'back down after the control');
   });
 
-  test('scrolling catalogue cards remain unobstructed at nine widths', async () => {
+  test("scrolling catalogue cards: their controls stay unobstructed at nine widths, and the buttons stay", async () => {
     const page=await open('/experiences');
     for(const route of ['/experiences','/destinations','/tours']) {
       await page.send('Page.navigate',{url:on.baseUrl+route});await wait(page,`document.querySelector('main .te-card,main .destination-card')`,route);
@@ -199,8 +208,9 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
       for(const width of [320,375,390,430,768,1024,1280,1440,1920]) {
         await page.send('Emulation.setDeviceMetricsOverride',{width,height:650,deviceScaleFactor:1,mobile:width<768});
         await page.evaluate(`document.querySelector('main .te-card,main .destination-card').scrollIntoView({block:'center',behavior:'instant'}); true`);await sleep(350);
-        const result=await page.evaluate<{overflow:boolean;collisions:string[];touch:boolean}>(`(() => {const overlaps=(a,b)=>b.width>0&&b.height>0&&b.left<a.right&&b.right>a.left&&b.top<a.bottom&&b.bottom>a.top;const floats=[...document.querySelectorAll('[data-floating-actions] a')];const collisions=[];let touch=true;for(const f of floats){const r=f.getBoundingClientRect();touch=touch&&r.width>=44&&r.height>=44;if(f.inert)continue;for(const c of document.querySelectorAll('main .te-card,main .destination-card,main a,main button,main input,main select,main textarea')){if(c.closest('[inert]')||getComputedStyle(c).visibility==='hidden')continue;if(overlaps(r,c.getBoundingClientRect()))collisions.push(c.className||c.tagName);}}return {overflow:document.documentElement.scrollWidth>innerWidth,collisions,touch};})()`);
-        assert.equal(result.overflow,false,route+' '+width);assert.deepEqual(result.collisions,[],route+' '+width);assert.ok(result.touch);
+        // The cards themselves can be under the buttons, which stay on screen: a phone's cards fill its width, so nothing could do both. Every control in them stays clear (COVERED_CONTROLS).
+        const result=await page.evaluate<{overflow:boolean;collisions:string[];touch:boolean;shown:boolean}>(`(() => {const floats=[...document.querySelectorAll('[data-floating-actions] a')];return {overflow:document.documentElement.scrollWidth>innerWidth,collisions:${COVERED_CONTROLS},touch:floats.every(f=>{const r=f.getBoundingClientRect();return r.width>=55.9&&r.height>=55.9;}),shown:floats.every(f=>f.dataset.state==='shown'&&!f.inert)};})()`);
+        assert.equal(result.overflow,false,route+' '+width);assert.deepEqual(result.collisions,[],route+' '+width);assert.ok(result.touch);assert.ok(result.shown,route+' '+width);
       }
     }
   });

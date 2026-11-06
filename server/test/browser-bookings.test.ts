@@ -198,7 +198,7 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
 
   test('ride: validated WhatsApp handoff uses configured number and never submits to admin', async () => {
     await pool.query(`update public.booking_vehicles set passenger_capacity=4, accepting_requests=true where id='car'`);
-    await pool.query(`update public.site_settings set whatsapp_number='94771234567' where id`);
+    await pool.query(`update public.site_settings set whatsapp_number='94771236478' where id`);
     const before = Number((await pool.query('select count(*) from public.bookings')).rows[0].count);
     const page = await openPage(on, '/booking');
     await waitFor(page, `document.querySelector('.ride-form')`, 'ride form');
@@ -224,7 +224,7 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 });
     await waitFor(page, `window.__rideOpened.length === 1`, 'WhatsApp draft');
     const opened = await page.evaluate<{url:string;target:string;features:string}[]>('window.__rideOpened');
-    const url = new URL(opened[0].url); assert.equal(url.origin, 'https://wa.me'); assert.equal(url.pathname, '/94771234567');
+    const url = new URL(opened[0].url); assert.equal(url.origin, 'https://wa.me'); assert.equal(url.pathname, '/94771236478');
     assert.equal(opened[0].target, '_blank'); assert.equal(opened[0].features, 'noopener,noreferrer');
     const message = url.searchParams.get('text')!;
     for (const part of ['Pickup: Matara', 'Drop-off: Galle', '2099-12-20 09:00', '2099-12-21 17:30', 'Return route: Galle → Matara', 'Passengers: 2', 'Vehicle: Car', 'UTC+05:30']) assert.ok(message.includes(part), part);

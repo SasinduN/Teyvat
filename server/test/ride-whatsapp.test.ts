@@ -6,11 +6,11 @@ import { rideWhatsAppUrl } from '../../shared/ride-whatsapp';
 
 const vehicle: BookingVehicle = { id: 'car', name: 'Car', type: 'Car', passengerCapacity: 5, luggageCapacity: 3, acceptingRequests: true };
 const ride = (): RideInput => ({ ...initialRide(), pickup: blankLocation('Matara'), dropoff: blankLocation('Galle'), departureDate: '2099-12-20', departureTime: '09:15', passengers: 2, vehicleId: 'car' });
-const draft = (value = ride()) => new URL(rideWhatsAppUrl('+94 77 123 4567', value, vehicle));
+const draft = (value = ride()) => new URL(rideWhatsAppUrl('+94 77 123 6478', value, vehicle));
 
 test('ride draft uses configured WhatsApp recipient and includes every one-way field', () => {
   const url = draft();
-  assert.equal(url.origin, 'https://wa.me'); assert.equal(url.pathname, '/94771234567');
+  assert.equal(url.origin, 'https://wa.me'); assert.equal(url.pathname, '/94771236478');
   const text = url.searchParams.get('text')!;
   for (const part of ['Pickup: Matara', 'Drop-off: Galle', 'Trip type: One way', '2099-12-20 09:15', 'UTC+05:30', 'Passengers: 2', 'Vehicle: Car', 'confirm the fare and availability']) assert.ok(text.includes(part), part);
   assert.doesNotMatch(text, /Return date|confirmed|Reference:/);
@@ -33,6 +33,6 @@ test('invalid routes, dates and passenger counts cannot bypass ride validation',
 });
 test('capacity, category availability and selected vehicle must be valid', () => {
   assert.throws(() => draft({ ...ride(), passengers: 6 }), /capacity/);
-  assert.throws(() => rideWhatsAppUrl('94771234567', ride(), { ...vehicle, acceptingRequests: false }), /not accepting/);
-  assert.throws(() => rideWhatsAppUrl('94771234567', ride(), { ...vehicle, id: 'suv' }), /supported vehicle/);
+  assert.throws(() => rideWhatsAppUrl('94771236478', ride(), { ...vehicle, acceptingRequests: false }), /not accepting/);
+  assert.throws(() => rideWhatsAppUrl('94771236478', ride(), { ...vehicle, id: 'suv' }), /supported vehicle/);
 });

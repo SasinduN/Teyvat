@@ -99,7 +99,7 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
 
     // A WhatsApp number, so the chat button (public) and "Test in WhatsApp"
     // (admin Settings) are on the pages walked.
-    await pool.query("update public.site_settings set whatsapp_number = '94771234567' where id");
+    await pool.query("update public.site_settings set whatsapp_number = '94771236478' where id");
 
     // An uploaded image in a gallery, so the R2 origin is exercised too.
     await pool.query(

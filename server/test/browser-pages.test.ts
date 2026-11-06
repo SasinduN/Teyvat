@@ -8,7 +8,7 @@ import './test-db';
  *   - the Navbar (desktop and the mobile menu) and the Footer are real links;
  *     cards, search results and journal cards land on their pages;
  *   - a new page opens at the top, and Back returns to the scroll position;
- *   - "Explore" from another page lands on the home map, "Contact" on the
+ *   - "Explore map" from another page lands on its page, "Contact" on the
  *     About page's form;
  *   - focus moves to the new page's <h1> (or the section a hash names), and
  *     document.title follows;
@@ -156,6 +156,11 @@ describe('pages and links, in Chrome', { skip, timeout: 4 * 60_000 }, () => {
       NAV_HREFS,
       'mobile menu'
     );
+    assert.deepEqual(
+      await page.evaluate<string[]>(`[...document.querySelectorAll('[data-menu-section]')].map((s) => s.dataset.menuSection)`),
+      ['Discover', '', 'About'],
+      'the groups are sections of the phone menu'
+    );
     await clickLink(page, '.fixed.inset-0', 'Tours');
     await at(page, '/tours');
     assert.equal(await page.evaluate<number>(`document.querySelectorAll('[aria-label="Close menu"]').length`), 0, 'the menu closed');
@@ -207,10 +212,10 @@ describe('pages and links, in Chrome', { skip, timeout: 4 * 60_000 }, () => {
     await waitFor(page, `Math.abs(scrollY - ${before}) <= 2`, `the tours list back at ${before}`, 5_000);
   });
 
-  test('"Explore" lands on its own page, "Contact" on the About form, focused', async () => {
+  test('"Explore map" lands on its own page, "Contact" on the About form, focused', async () => {
     const page = await openPage('/tours');
     // Redesign PR 3: Explore is a page of its own, opened at the top with focus on its heading.
-    await clickLink(page, 'header nav', 'Explore');
+    await clickLink(page, 'header nav', 'Explore map');
     await at(page, '/explore');
     await waitFor(page, `document.activeElement === document.querySelector('main h1')`, 'focus on the Explore heading', 5_000);
     assert.equal(await page.evaluate<string>('document.activeElement.textContent.trim()'), 'Explore Sri Lanka');
