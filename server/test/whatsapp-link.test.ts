@@ -89,7 +89,7 @@ describe('WhatsApp links', () => {
 
 describe('WhatsApp numbers', () => {
   test('spaces, dashes, dots, brackets and a leading + are stripped', () => {
-    assert.equal(normalizeWhatsAppNumber(' +94 (77) 123-45.67 '), NUMBER);
+    assert.equal(normalizeWhatsAppNumber(' +94 (77) 123-64.78 '), NUMBER);
   });
 
   test('good numbers pass', () => {

@@ -64,8 +64,8 @@ const skip = !executable
  * ones; the rest are measured.
  */
 const SECTIONS: { name: string; baseline: string; props: string; height?: number }[] = [
-  // Typography (ca26709): DM Sans, the rem scale, the link and button sizes (was aee696e, the friend import).
-  { name: 'Navbar', baseline: 'ca26709', props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
+  // Header groups (d999cb4): five top items, Discover and About as dropdowns (was ca26709, typography).
+  { name: 'Navbar', baseline: 'd999cb4', props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
   // The editorial redesign (0bec8db): one large card and three smaller, a plain heading (was aee696e, the friend import).
   { name: 'DestinationSpotlight', baseline: '0bec8db', props: '{ onSelectDestination() {} }' },
   // The editorial redesign (d233e32): a lead row and plain rows (was ca26709, typography).
