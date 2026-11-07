@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { Button, FieldHelp, Input, Textarea } from '@/admin/components/ui';
 import { cn } from '@/utils/cn';
 import { TEXT_SIZES, DEFAULT_TEXT_SIZE } from '@shared/text-size';
+import { MONTH_NAMES, MONTH_NUMBERS, normalizeMonths } from '@shared/best-months';
 
 /* -------------------------------------------------------- string list field */
 
@@ -210,6 +211,49 @@ export const TextSizeField: React.FC<{
     </fieldset>
   );
 };
+
+/* ------------------------------------------------------------ months field */
+
+/** A destination's best months (`shared/best-months.ts`): twelve checkboxes, select all and clear. */
+export const MonthsField: React.FC<{
+  value: number[];
+  onChange: (value: number[]) => void;
+  label: string;
+}> = ({ value, onChange, label }) => (
+  <fieldset className="space-y-3" data-month-picker>
+    <legend className="block text-xs font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]">{label}</legend>
+    <div className="flex flex-wrap gap-2">
+      <Button type="button" variant="secondary" data-months-all onClick={() => onChange(MONTH_NUMBERS)}>Select all</Button>
+      <Button type="button" variant="secondary" data-months-clear onClick={() => onChange([])}>Clear</Button>
+    </div>
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+      {MONTH_NAMES.map((name, i) => {
+        const month = i + 1;
+        const checked = value.includes(month);
+        return (
+          <label
+            key={name}
+            className={cn(
+              'flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-3.5 text-sm font-medium transition-colors',
+              checked
+                ? 'border-[var(--brand-secondary)] bg-[var(--background-secondary)] text-[var(--brand-primary)]'
+                : 'border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text-primary)]'
+            )}
+          >
+            <input
+              type="checkbox"
+              value={month}
+              checked={checked}
+              onChange={() => onChange(checked ? value.filter((m) => m !== month) : normalizeMonths([...value, month]))}
+              className="h-4 w-4 shrink-0 accent-[var(--inverse-raised)]"
+            />
+            {name}
+          </label>
+        );
+      })}
+    </div>
+  </fieldset>
+);
 
 /* -------------------------------------------------------- itinerary field */
 

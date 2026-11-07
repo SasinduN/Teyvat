@@ -134,6 +134,7 @@ const destinationRows: DestinationRow[] = DESTINATIONS.map((d, i) => ({
   image: d.image,
   gallery: list(d.gallery),
   best_time: d.bestTime,
+  best_months: d.bestMonths,
   experiences: list(d.experiences),
   highlights: list(d.highlights),
   rating: d.rating,

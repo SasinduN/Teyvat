@@ -33,7 +33,7 @@ const built = existsSync(join(REPO_ROOT, 'dist', 'index.html'));
 const skip = !executable ? 'no Chrome found; set CHROME_PATH to run these' : !built ? 'no build; run `npm run build` first' : false;
 
 const PAGES = [
-  '/', '/explore', '/plan', '/journal', '/destinations', '/destinations/ella', '/experiences',
+  '/', '/explore', '/plan', '/when-to-go', '/journal', '/destinations', '/destinations/ella', '/experiences',
   '/experiences/safari-yala', '/tours', '/tours/island-in-7-days', '/journal/ultimate-ella-guide',
   '/about', '/photo-credits', '/wishlist', '/unsubscribe', '/nope'
 ];

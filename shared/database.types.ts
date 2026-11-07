@@ -122,6 +122,8 @@ export interface DestinationRow extends Timestamps, Orderable {
   featured: boolean;
   /** Since 0007. Short text such as "~4 h"; NULL when not set. */
   travel_time_from_airport: string | null;
+  /** Since 0022. Months 1 to 12, sorted. Empty: not set (`shared/best-months.ts`). */
+  best_months: number[];
 }
 
 export interface ExperienceCategoryRow extends Timestamps, Orderable {
@@ -278,6 +280,8 @@ export interface SiteSettingsRow extends Timestamps {
   text_size: number;
   /** The stats strip, up to four (0021, `shared/site-stats.ts`). Empty: it is hidden. */
   stats: SiteStat[];
+  /** /when-to-go's explainer: paragraphs separated by a blank line (0022). NULL hides it. */
+  when_to_go_explainer: string | null;
 }
 
 export interface InquiryRow extends Timestamps {

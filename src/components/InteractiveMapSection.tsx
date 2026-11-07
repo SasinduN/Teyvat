@@ -8,7 +8,7 @@ import { matchesTravelTiming } from '@/lib/travelTiming';
 import { loadLeaflet } from '@/lib/leaflet';
 import { addThemedTiles, onThemeChangeWhileMapped } from '@/lib/mapTiles';
 import { tokenValue } from '@/lib/theme';
-import { MAP_CATEGORIES, MAP_CATEGORY_STYLES, markerHtml, routeStopHtml, type MapCategory } from '@/lib/mapMarkers';
+import { MAP_CATEGORIES, MAP_CATEGORY_STYLES, markerHtml, routeStopHtml, SRI_LANKA_BOUNDS, type MapCategory } from '@/lib/mapMarkers';
 import { airportTravelTime, googleMapsUrl } from '@/lib/googleMaps';
 import { categoryLabel } from '@/lib/categories';
 import { Destination, CategoryType, TourPackage } from '../types';
@@ -81,12 +81,6 @@ const LABEL_ZOOM = 9;
 const FIT_MAX_ZOOM = 9;
 /** A route is framed no closer than this. */
 const ROUTE_MAX_ZOOM = 10;
-/**
- * The whole island, Point Pedro and the Jaffna peninsula to Dondra Head, and
- * the islands off Jaffna to the east coast: the "All" view frames this (and
- * any marker outside it). Geography, not content.
- */
-const SRI_LANKA_BOUNDS: [[number, number], [number, number]] = [[5.9, 79.65], [9.84, 81.9]];
 /** A marker's radius on screen (the active one is scaled 1.25), and the gap kept between markers. */
 const MARKER_RADIUS = 16;
 const ACTIVE_RADIUS = 20;

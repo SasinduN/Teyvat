@@ -36,6 +36,7 @@ const PAGES = [
   '/',
   '/explore',
   '/plan',
+  '/when-to-go',
   '/journal',
   '/journal/ultimate-ella-guide',
   '/destinations',

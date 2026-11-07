@@ -38,7 +38,7 @@ const EXPERIENCE_RATING = '4.63';
 /** Every public page type. */
 const PAGES = [
   '/', '/destinations', '/destinations/ella', '/experiences', '/experiences/sunrise-ella', '/tours', '/tours/island-in-7-days',
-  '/explore', '/plan', '/journal', '/journal/ultimate-ella-guide', '/about', '/photo-credits', '/wishlist', '/no-such-page'
+  '/explore', '/plan', '/when-to-go', '/journal', '/journal/ultimate-ella-guide', '/about', '/photo-credits', '/wishlist', '/no-such-page'
 ];
 
 /** What the page shows that looks like a rating, in text, labels or icons. */

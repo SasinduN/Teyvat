@@ -9,6 +9,7 @@ import { type StopDraft, TourStopsField } from '@/admin/components/TourStopsFiel
 import {
   type ItineraryDay,
   ItineraryField,
+  MonthsField,
   StatsField,
   MultiSelectField,
   StringListField,
@@ -42,6 +43,7 @@ const asItinerary = (v: unknown): ItineraryDay[] =>
   Array.isArray(v) ? (v as ItineraryDay[]) : [];
 
 const asStats = (v: unknown): SiteStatDraft[] => (Array.isArray(v) ? (v as SiteStatDraft[]) : []);
+const asMonths = (v: unknown): number[] => (Array.isArray(v) ? v.filter((x): x is number => typeof x === 'number') : []);
 const asStops = (v: unknown): StopDraft[] => (Array.isArray(v) ? (v as StopDraft[]) : []);
 
 /* ------------------------------------------------------------------------- */
@@ -72,8 +74,8 @@ export const RecordForm: React.FC<RecordFormProps> = ({
           key={field.name}
           className={cn('space-y-2', (field.span ?? 1) === 2 && 'sm:col-span-2')}
         >
-          {/* Toggles and the text size carry their own label inside the control. */}
-          {field.type !== 'boolean' && field.type !== 'textSize' &&
+          {/* Toggles, the text size and the months carry their own label inside the control. */}
+          {field.type !== 'boolean' && field.type !== 'textSize' && field.type !== 'months' &&
             (extra ? (
               <div className="flex items-center justify-between gap-3">
                 {label}
@@ -308,6 +310,9 @@ function renderControl(
 
     case 'textSize':
       return <TextSizeField value={typeof value === 'number' ? value : DEFAULT_TEXT_SIZE} label={field.label} onChange={onChange} />;
+
+    case 'months':
+      return <MonthsField value={asMonths(value)} label={field.label} onChange={onChange} />;
 
     case 'stats':
       return <StatsField value={asStats(value)} onChange={onChange} />;

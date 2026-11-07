@@ -17,6 +17,8 @@ export interface Destination {
   image: string;
   gallery?: string[];
   bestTime: string;
+  /** Months 1 to 12. Empty: not set. */
+  bestMonths: number[];
   experiences: string[];
   highlights: string[];
   elevation?: string;
@@ -169,4 +171,6 @@ export interface SiteSettings {
   sustainabilityUrl?: string;
   /** Digits only, e.g. 94771234567. Unset: the WhatsApp button is hidden. */
   whatsappNumber?: string;
+  /** /when-to-go's explainer. Unset: it is hidden. */
+  whenToGoExplainer?: string;
 }

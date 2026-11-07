@@ -25,6 +25,9 @@
  * a ride button and its link are there. Both versions show the fake WhatsApp number
  * (`scripts/fixtures/dev-whatsapp.ts`), in every mode: a local database has no other.
  *
+ * `--when-to-go` takes only the ten pairs for that PR: the page on a phone and a laptop, light and
+ * dark, in January and July, the admin's month picker, and the Discover dropdown.
+ *
  * `--admin` adds the admin: the login page (empty, a password typed and
  * shown, after two wrong tries, locked), then (signed in as a throwaway
  * admin created in each scratch database) the dashboard, a collection, two
@@ -63,7 +66,7 @@ import { DEV_WHATSAPP_NUMBER } from './fixtures/dev-whatsapp';
 const ROOT = resolve(import.meta.dirname, '..');
 
 const PAGES = [
-  '/', '/explore', '/plan', '/journal', '/destinations', '/destinations/ella', '/experiences', '/experiences/safari-yala', '/tours',
+  '/', '/explore', '/plan', '/when-to-go', '/journal', '/destinations', '/destinations/ella', '/experiences', '/experiences/safari-yala', '/tours',
   '/tours/island-in-7-days', '/journal/ultimate-ella-guide', '/about', '/photo-credits', '/wishlist', '/no-such-page'
 ];
 const VIEWPORTS = {
@@ -86,6 +89,8 @@ const { values } = parseArgs({
     'saved-wishlist': { type: 'boolean', default: false },
     /** Only the twelve pairs for the header and floating buttons, bookings on. */
     'header-floating': { type: 'boolean', default: false },
+    /** Only the ten pairs for /when-to-go, its month picker and the Discover dropdown. */
+    'when-to-go': { type: 'boolean', default: false },
     out: { type: 'string' }
   },
   strict: true
@@ -201,7 +206,7 @@ async function prepare(site: Site): Promise<void> {
       await client.end();
     }
   }
-  if (values.admin) {
+  if (values.admin || values['when-to-go']) {
     const client = new Client({ connectionString: db });
     await client.connect();
     try {
@@ -505,6 +510,64 @@ async function shootHeaderFloating(chrome: Chrome, site: Site, out: string): Pro
   }
 }
 
+const SET_MONTH = (month: number) => `(() => {
+  const input = document.querySelector('[data-month-slider] input');
+  if (!input) return true;
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, '${month}');
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+})()`;
+
+/** `--when-to-go`: ten pairs. "Before" the page is a 404, and the form has no picker. */
+const WHEN_TO_GO: { name: string; viewport: typeof LAPTOP | typeof PHONE; dark?: boolean; month?: number; admin?: boolean; dropdown?: boolean }[] = [
+  { name: 'when-to-go-january-desktop', viewport: LAPTOP, month: 1 },
+  { name: 'when-to-go-january-desktop-dark', viewport: LAPTOP, dark: true, month: 1 },
+  { name: 'when-to-go-january-phone', viewport: PHONE, month: 1 },
+  { name: 'when-to-go-january-phone-dark', viewport: PHONE, dark: true, month: 1 },
+  { name: 'when-to-go-july-desktop', viewport: LAPTOP, month: 7 },
+  { name: 'when-to-go-july-phone-dark', viewport: PHONE, dark: true, month: 7 },
+  { name: 'admin-month-picker-desktop', viewport: LAPTOP, admin: true },
+  { name: 'admin-month-picker-phone', viewport: PHONE, admin: true },
+  { name: 'discover-dropdown', viewport: LAPTOP, dropdown: true },
+  { name: 'discover-dropdown-dark', viewport: LAPTOP, dark: true, dropdown: true }
+];
+
+async function shootWhenToGo(chrome: Chrome, site: Site, out: string): Promise<void> {
+  for (const shot of WHEN_TO_GO) {
+    const file = join(out, `${shot.name}-${site.label}.jpg`);
+    if (shot.admin) {
+      const page = await openAdmin(chrome, `${site.url}/admin/login`, shot.viewport, Boolean(shot.dark));
+      const status = await page.evaluate<number>(`fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(${JSON.stringify(SHOTS_ADMIN)})
+      }).then((r) => r.status)`);
+      if (status !== 200) throw new Error(`[${site.label}] admin sign-in failed (${status})`);
+      await page.send('Page.navigate', { url: `${site.url}/admin/destinations/ella` });
+      await waitFor(page, `document.querySelector('#field-best_time')?.value`);
+      await page.evaluate(`(document.querySelector('[data-month-picker]') ?? document.querySelector('#field-best_time')).scrollIntoView({ block: 'center', behavior: 'instant' }), true`);
+      await page.evaluate(QUIET);
+      await shoot(page, file, false);
+      await closePage(page);
+    } else if (shot.dropdown) {
+      const page = await open(chrome, `${site.url}/destinations`, shot.viewport, Boolean(shot.dark));
+      await page.evaluate(OPEN_DISCOVER);
+      await sleep(500);
+      const { data } = (await page.send('Page.captureScreenshot', { format: 'jpeg', quality: 80, clip: { x: 0, y: 0, width: shot.viewport.width, height: 360, scale: 1 } })) as { data: string };
+      writeFileSync(file, Buffer.from(data, 'base64'));
+      await closePage(page);
+    } else {
+      const page = await open(chrome, `${site.url}/when-to-go`, shot.viewport, Boolean(shot.dark));
+      await page.evaluate(SET_MONTH(shot.month!));
+      await settle(page);
+      await waitFor(page, `document.querySelector('[data-season-map] img.leaflet-tile-loaded') || !document.querySelector('[data-season-map]')`, 10_000);
+      await page.evaluate(LOADED);
+      await shoot(page, file, true);
+      await closePage(page);
+    }
+    console.log(`  ${shot.name}-${site.label}.jpg`);
+  }
+}
+
 async function main(): Promise<void> {
   const executable = findChrome();
   if (!executable) throw new Error('No Chrome found; set CHROME_PATH.');
@@ -540,6 +603,10 @@ async function main(): Promise<void> {
     for (const site of sites) {
       if (values['header-floating']) {
         await shootHeaderFloating(chrome, site, out);
+        continue;
+      }
+      if (values['when-to-go']) {
+        await shootWhenToGo(chrome, site, out);
         continue;
       }
       for (const dark of themes) {

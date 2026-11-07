@@ -19,6 +19,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
       'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&q=80&w=800'
     ],
     bestTime: 'December – April',
+    bestMonths: [1, 2, 3, 4, 12],
     experiences: [
       'Nine Arch Bridge Train Watch',
       'Ella Rock Sunrise Hike',
@@ -47,6 +48,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
       'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&q=80&w=800'
     ],
     bestTime: 'January – September',
+    bestMonths: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     experiences: [
       'Sunrise Climb at Pidurangala Rock',
       'Exploring Ancient Water Gardens',
@@ -71,6 +73,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Galle Fort is a living historic fortress jutting into the Indian Ocean. Built first by the Portuguese and fortified by the Dutch in the 17th century, today its enclosed streets are lined with chic artisan boutiques, heritage hotels, gemstone galleries, and oceanfront rampart walks.',
     image: 'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'November – April',
+    bestMonths: [1, 2, 3, 4, 11, 12],
     experiences: [
       'Sunset Rampart Walk',
       'Dutch Reformed Church Tour',
@@ -94,6 +97,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Mirissa is the quintessential tropical paradise on Sri Lanka’s south coast. Famed globally for blue whale sightings in the Indian Ocean, Mirissa boasts tranquil sandy bays, surf points, coconut-fringed hills, and lively beachside seafood barbecues under the stars.',
     image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'November – April',
+    bestMonths: [1, 2, 3, 4, 11, 12],
     experiences: [
       'Blue Whale & Dolphin Safari',
       'Coconut Tree Hill Sunset Photo',
@@ -117,6 +121,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Kandy was the last royal capital of Sri Lankan kings. Set around a peaceful central lake and framed by tropical mountain ridges, it holds the revered Temple of the Sacred Tooth Relic. Kandy comes alive during the Esala Perahera festival with traditional dancers and torchlit processions.',
     image: 'https://images.unsplash.com/photo-1588598198321-9735fd52455b?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'December – April',
+    bestMonths: [1, 2, 3, 4, 12],
     experiences: [
       'Temple of the Tooth Relic Evening Ceremony',
       'Stroll at Royal Botanical Gardens Peradeniya',
@@ -141,6 +146,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Jaffna offers a rich, distinct cultural realm in the far north of Sri Lanka. With intricate Hindu temples like Nallur Kandaswamy, historical Dutch forts, shallow blue lagoons, and delicious unique spicy Jaffna crab curry, it is a fascinating haven for authentic explorers.',
     image: 'https://images.unsplash.com/photo-1608933221980-dfc7dd884fbf?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'January – September',
+    bestMonths: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     experiences: [
       'Nallur Kandaswamy Kovil Blessing',
       'Ferried Day Trip to Delft Island Wild Horses',
@@ -164,6 +170,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Yala National Park is Sri Lanka’s premier wilderness sanctuary. Spanning scrub jungles, brackish lagoons, and coastline, Yala is world-famous for elusive Sri Lankan leopards, wild elephant herds, sloth bears, crocodiles, and over 200 bird species.',
     image: 'https://images.unsplash.com/photo-1549366021-9f761d450615?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'February – July',
+    bestMonths: [2, 3, 4, 5, 6, 7],
     experiences: [
       'Dawn 4x4 Leopard Safari',
       'Elephant Herd Tracking',
@@ -186,6 +193,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Sitting at 1,868 meters elevation, Nuwara Eliya is Sri Lanka’s cool-climate tea capital. Surrounded by terraced Ceylon tea plantations, cascades, golf courses, and Tudor-style colonial villas, it feels like a timeless highland retreat.',
     image: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'February – May',
+    bestMonths: [2, 3, 4, 5],
     experiences: [
       'High Tea at Colonial Grand Hotel',
       'Pedro Tea Factory Processing Tour',
@@ -209,6 +217,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Arugam Bay on the laid-back eastern coast is legendary among international surfers. Known for long point breaks like Main Point and Elephant Rock, Arugam Bay mixes surf culture, beachfront reggae fires, and wildlife safaris in nearby Kumana and Panama.',
     image: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'May – September',
+    bestMonths: [5, 6, 7, 8, 9],
     experiences: [
       'Dawn Surf Session at Main Point',
       'Lagoon Safari at Pottuvil',
@@ -231,6 +240,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Trincomalee boasts one of the world’s finest natural deep-water harbors, tranquil white sand beaches at Nilaveli, vibrant coral reefs at Pigeon Island National Park, and the ancient Koneswaram Hindu Temple perching on Swami Rock cliff.',
     image: 'https://images.unsplash.com/photo-1512100356356-de1b84283e18?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'April – October',
+    bestMonths: [4, 5, 6, 7, 8, 9, 10],
     experiences: [
       'Snorkeling with Blacktip Reef Sharks at Pigeon Island',
       'Koneswaram Temple Cliffside Visit',
@@ -253,6 +263,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Anuradhapura was the spiritual and political cradle of ancient Sri Lankan civilization for over 1,300 years. Spanning vast green parklands, its towering bell-shaped stupas rival the Egyptian pyramids in architectural grandeur.',
     image: 'https://images.unsplash.com/photo-1588598198321-9735fd52455b?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'May – September',
+    bestMonths: [5, 6, 7, 8, 9],
     experiences: [
       'Cycling Among Ancient Stupas',
       'Paying Homage at Jaya Sri Maha Bodhi Tree',
@@ -275,6 +286,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Polonnaruwa succeeded Anuradhapura as Sri Lanka’s medieval capital in the 11th century. Remarkably preserved, its archaeological park contains grand audience halls, royal baths, and the breathtaking Gal Vihara—four monumental Buddha images carved into a single granite wall.',
     image: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'May – September',
+    bestMonths: [5, 6, 7, 8, 9],
     experiences: [
       'Bicycle Tour of Royal Ruins',
       'Gal Vihara Rock Sculpture Admiration',
@@ -297,6 +309,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Udawalawe is Sri Lanka’s top park for observing wild Sri Lankan elephants in their natural habitat. Centered around a vast reservoir, its grassy grasslands allow close-up observations of wild herds, calves playing, waterbirds, and peacocks.',
     image: 'https://images.unsplash.com/photo-1581852017103-68accd5509b6?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'Year-round (Best Dec – May)',
+    bestMonths: [1, 2, 3, 4, 5, 12],
     experiences: [
       'Open Jeep Safari for Elephant Herds',
       'Visiting Udawalawe Elephant Transit Home',
@@ -318,6 +331,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Sitting on a high altitude plateau over 2,100 meters above sea level, Horton Plains National Park is a unique montane ecosystem of cloud forest, dwarf bamboo, and wild sambar deer, culminating at the terrifying drop of World’s End cliff.',
     image: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'January – April (Early mornings)',
+    bestMonths: [1, 2, 3, 4],
     experiences: [
       '9km Loop Trek to World’s End & Baker’s Falls',
       'Spotting Sambar Deer in the Mist',
@@ -340,6 +354,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Weligama (meaning Sandy Village) features a vast sheltered bay with gentle, consistent beach break waves ideal for beginner and intermediate surfers. It is also famous for iconic stilt fishermen perched on wooden poles in the sea.',
     image: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'November – April',
+    bestMonths: [1, 2, 3, 4, 11, 12],
     experiences: [
       'Beginner Surfing Lessons in Weligama Bay',
       'Photographing Traditional Stilt Fishermen',
@@ -362,6 +377,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Dambulla Royal Cave Temple is the largest, best-preserved cave temple complex in Sri Lanka. Dating back to the 1st century BCE, five magnificent caves house century-old statues and colorful frescoes painted directly onto the subterranean rock walls.',
     image: 'https://images.unsplash.com/photo-1588598198321-9735fd52455b?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'Year-round',
+    bestMonths: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
     experiences: [
       'Exploring 5 Illuminated Sacred Rock Caves',
       'Panoramas over Sigiriya Rock from the Summit',
@@ -383,6 +399,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Colombo is a vibrant oceanfront metropolis where colonial British and Dutch architecture stand beside contemporary rooftop bars, bustling Pettah markets, peaceful Buddhist temples on Beira Lake, and oceanfront Galle Face Green promenade.',
     image: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'December – March',
+    bestMonths: [1, 2, 3, 12],
     experiences: [
       'Galle Face Green Sunset Street Food Stroll',
       'Gangaramaya Temple Visit on Beira Lake',
@@ -405,6 +422,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'The Knuckles Conservation Forest is a rugged bio-diverse haven of cloud forests, hidden waterfalls, endemic wildlife, and isolated traditional mountain hamlets. Perfect for serious trekkers wanting untamed nature.',
     image: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'June – September & December – March',
+    bestMonths: [1, 2, 3, 6, 7, 8, 9, 12],
     experiences: [
       'Multi-day Wilderness Trekking',
       'Wild Waterfall Swimming',
@@ -428,6 +446,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Bentota is Sri Lanka’s water sports capital where the tranquil Bentota Ganga river meets the ocean. Known for luxury beachfront resorts, jet-skiing, turtle conservation hatcheries, and Brief Garden designed by Bevis Bawa.',
     image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'November – April',
+    bestMonths: [1, 2, 3, 4, 11, 12],
     experiences: [
       'Madu River Mangrove Safari',
       'Jet Skiing & Banana Boat Watersports',
@@ -450,6 +469,7 @@ export const DESTINATIONS: (Destination & { rating: number })[] = [
     longDescription: 'Perched on a sheer mountain ledge, Haputale offers dramatic views across Sri Lanka’s southern plains. It is home to Lipton’s Seat—where Sir Thomas Lipton surveyed his vast tea empire—and the serene Adisham Monastery.',
     image: 'https://images.unsplash.com/photo-1588598198321-9735fd52455b?auto=format&fit=crop&q=80&w=1200',
     bestTime: 'April – August',
+    bestMonths: [4, 5, 6, 7, 8],
     experiences: [
       'Lipton’s Seat Viewpoint Sunrise Trek',
       'Adisham Benedictine Monastery Visit',

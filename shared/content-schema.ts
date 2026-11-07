@@ -12,6 +12,7 @@
  */
 import { z } from './zod';
 
+import { normalizeMonths } from './best-months';
 import { isTextSize, TEXT_SIZES } from './text-size';
 
 import {
@@ -87,6 +88,8 @@ export type Field =
   | (FieldBase & { type: 'textSize' })
   /** The stats strip (`shared/site-stats.ts`): up to four rows. */
   | (FieldBase & { type: 'stats' })
+  /** Months 1 to 12 (`shared/best-months.ts`): twelve checkboxes, select all and clear. */
+  | (FieldBase & { type: 'months' })
   /**
    * A tour's route stops. Not a column: they live in `public.tour_stops`, and
    * the API writes them alongside the row (see `writableColumns`).
@@ -142,11 +145,12 @@ export const FIELDS_BY_TABLE: Record<ContentTableName, Field[]> = {
     { name: 'long_description', label: 'Long description', type: 'textarea', rows: 5, required: true, span: 2 },
     { name: 'image', label: 'Cover image', type: 'image', folder: 'destinations', required: true, span: 2 },
     { name: 'gallery', label: 'Gallery', type: 'imageList', folder: 'destinations', span: 2, help: 'Optional. Shown inside the destination modal.' },
-    { name: 'best_time', label: 'Best time to visit', type: 'text', required: true, span: 1 },
+    { name: 'best_time', label: 'Best time to visit', type: 'text', required: true, span: 1, help: 'Shown on the page as you write it, e.g. “December – April”.' },
     { name: 'elevation', label: 'Elevation', type: 'text', span: 1, help: 'Optional, e.g. “1,041 m”.' },
     { name: 'travel_time_from_airport', label: 'Travel time from the airport', type: 'text', maxLength: 30, span: 1, help: 'Optional, e.g. “~4 h”. Shown as “~4 h from Colombo airport (CMB)”.' },
     { name: 'rating', label: 'Rating', help: 'Not shown on the public site. Ratings come back only with real reviews.', type: 'number', step: 0.01, min: 0, max: 5, required: true, span: 1 },
     { name: 'featured', label: 'Featured', type: 'boolean', span: 1, help: `Shows the destination in the spotlight. ${SPOTLIGHT_NOTICE}` },
+    { name: 'best_months', label: 'Best months', type: 'months', span: 2, help: 'For the When to go page. With none ticked, its map says “not set” and its lists leave this place out.' },
     { name: 'experiences', label: 'Things to do', type: 'stringList', span: 2, placeholder: 'e.g. Nine Arch Bridge Train Watch' },
     { name: 'highlights', label: 'Highlights', type: 'stringList', span: 2, placeholder: 'e.g. Ella Rock' },
     { name: 'ideal_for', label: 'Ideal for', type: 'stringList', span: 2, placeholder: 'e.g. Hikers' },
@@ -281,6 +285,14 @@ export const SITE_SETTINGS_FIELDS: Field[] = [
     type: 'stats',
     span: 2,
     help: 'Up to four, on the home and About pages. Leave a row empty to remove it; with none, the strip is hidden. Only use numbers you have a source for.'
+  },
+  {
+    name: 'when_to_go_explainer',
+    label: 'When to go: monsoon explainer',
+    type: 'textarea',
+    rows: 12,
+    span: 2,
+    help: 'Shown under the map on the When to go page. Leave a blank line between paragraphs. Leave it empty to hide it.'
   }
 ];
 
@@ -438,6 +450,11 @@ function schemaForField(field: Field, options: SchemaOptions = {}): z.ZodTypeAny
         for (const message of problems) ctx.addIssue({ code: 'custom', message });
         return stats;
       });
+
+    case 'months':
+      return z
+        .array(z.coerce.number().int('Choose months from January to December.').min(1, 'Choose months from January to December.').max(12, 'Choose months from January to December.'))
+        .transform(normalizeMonths);
 
     case 'textSize':
       return z.unknown().refine(isTextSize, { message: `Choose ${TEXT_SIZES.join('%, ')}%.` });

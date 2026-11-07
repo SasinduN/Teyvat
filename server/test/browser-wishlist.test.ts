@@ -460,7 +460,7 @@ describe('the wishlist, in Chrome', { skip, timeout: 8 * 60_000 }, () => {
       const page = await open('/about');
       try {
         const labels = await page.evaluate<string[]>(`[...document.querySelectorAll('.te-nav-links a')].map((a) => a.textContent.trim())`);
-        assert.deepEqual(labels, ['Explore map', 'Destinations', 'Experiences', 'Tours', 'Journal', 'About', 'Contact']);
+        assert.deepEqual(labels, ['Explore map', 'Destinations', 'Experiences', 'When to go', 'Tours', 'Journal', 'About', 'Contact']);
       } finally {
         await page.close();
       }

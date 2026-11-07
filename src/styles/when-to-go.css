@@ -1,0 +1,85 @@
+/*
+ * /when-to-go: the month slider, the suitability markers and their legend, the map's popup.
+ * Tokens only, no hex. The map stays light in both themes, so the marker tokens do too.
+ */
+
+/* Great is filled, OK a lighter fill with a dark bar, Not ideal and Not set are hollow, the
+   last with a dashed ring: the icon, the fill and the ring all differ, as well as the colour. */
+.te-season-disc {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 2rem; height: 2rem; border-radius: 9999px; border: 2px solid var(--white);
+}
+.te-season-disc[data-suitability="great"], [data-suitability="great"] > .te-season-disc { background: var(--season-great-fill); color: var(--season-great-icon); }
+.te-season-disc[data-suitability="ok"], [data-suitability="ok"] > .te-season-disc { background: var(--season-ok-fill); color: var(--season-ok-icon); }
+.te-season-disc[data-suitability="not-ideal"], [data-suitability="not-ideal"] > .te-season-disc { background: var(--season-off-fill); color: var(--season-off-icon); border-color: var(--season-off-icon); }
+.te-season-disc[data-suitability="not-set"], [data-suitability="not-set"] > .te-season-disc { background: var(--season-off-fill); color: var(--season-off-icon); border: 2px dashed var(--season-off-icon); }
+.te-season-disc svg { display: block; }
+.te-season-disc--small { width: 1.5rem; height: 1.5rem; }
+.te-season-disc--small svg { width: .875rem; height: .875rem; }
+/* On the map the marker keeps its fixed size, as on /explore. */
+.te-season-marker .map-marker-disc { width: 32px; height: 32px; }
+
+/* The month. A range input styled in each engine's own terms; everything in rem but the track. */
+.te-month-slider { --thumb: 1.75rem; container-type: inline-size; max-width: 52rem; }
+.te-month-slider__value { color: var(--brand-primary); font-size: var(--heading-section); font-weight: 700; line-height: 1.15; }
+.te-month-slider__input {
+  -webkit-appearance: none; appearance: none;
+  display: block; width: 100%; height: 2.75rem; margin: .25rem 0 0; background: transparent; cursor: pointer;
+}
+.te-month-slider__input::-webkit-slider-runnable-track { height: .375rem; border-radius: 9999px; background: var(--text-secondary); }
+.te-month-slider__input::-moz-range-track { height: .375rem; border-radius: 9999px; background: var(--text-secondary); }
+.te-month-slider__input::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: var(--thumb); height: var(--thumb); margin-top: calc((.375rem - var(--thumb)) / 2);
+  border: 2px solid var(--background); border-radius: 50%; background: var(--button-primary-bg); box-shadow: var(--shadow-card);
+}
+.te-month-slider__input::-moz-range-thumb {
+  width: var(--thumb); height: var(--thumb); box-sizing: border-box;
+  border: 2px solid var(--background); border-radius: 50%; background: var(--button-primary-bg); box-shadow: var(--shadow-card);
+}
+.te-month-slider__input:focus { outline: none; }
+.te-month-slider__input:focus-visible::-webkit-slider-thumb { outline: 3px solid var(--accent-text); outline-offset: 2px; }
+.te-month-slider__input:focus-visible::-moz-range-thumb { outline: 3px solid var(--accent-text); outline-offset: 2px; }
+
+/* Under the thumb's centre at each month. */
+.te-month-slider__ticks { position: relative; height: 1.5rem; }
+.te-month-slider__tick {
+  position: absolute; top: 0; transform: translateX(-50%);
+  left: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--i) / 11);
+  color: var(--text-secondary); font-size: var(--text-xs); line-height: 1.5;
+}
+.te-month-slider__tick[data-current="true"] { color: var(--brand-primary); font-weight: 700; }
+.te-month-slider__tick-long { display: none; }
+@container (min-width: 34rem) {
+  .te-month-slider__tick-long { display: inline; }
+  .te-month-slider__tick-short { display: none; }
+}
+
+.te-season-legend { display: grid; gap: .75rem 1.5rem; margin-block: 1.5rem; }
+@media (min-width: 640px) { .te-season-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.te-season-legend li { display: flex; align-items: center; gap: .625rem; color: var(--text-primary); font-size: var(--text-sm); line-height: 1.4; }
+.te-season-legend strong { font-weight: 700; }
+
+.te-season-map { position: relative; overflow: hidden; height: 30rem; border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--surface); }
+@media (min-width: 1024px) { .te-season-map { height: 40rem; } }
+.te-season-map__canvas { width: 100%; height: 100%; }
+.te-season-map__hint {
+  position: absolute; inset-inline: 1rem; top: 45%; z-index: 30; width: fit-content; margin-inline: auto; padding: .5rem 1rem;
+  border-radius: 9999px; background: var(--inverse-surface); color: var(--white); font-size: var(--text-sm); font-weight: 600; text-align: center; pointer-events: none;
+}
+
+/* The popup. Leaflet's own wrapper is styled for both themes in index.css. */
+.te-season-map .leaflet-popup-content { width: auto !important; min-width: 13.75rem; }
+.te-season-map .leaflet-popup-close-button { color: var(--text-secondary); }
+.te-season-popup { padding: 1rem 2rem 1rem 1rem; font-family: var(--font-sans); }
+.te-season-popup p { margin: 0; }
+.te-season-popup__name { color: var(--brand-primary); font-size: var(--text-base); font-weight: 700; line-height: 1.3; }
+.te-season-popup__status { display: flex; align-items: center; gap: .5rem; margin-top: .5rem !important; color: var(--text-primary); font-size: var(--text-sm); font-weight: 600; }
+.te-season-popup__when { margin-top: .25rem !important; color: var(--text-secondary); font-size: var(--text-sm); }
+.te-season-map .te-season-popup .te-ed-link { color: var(--text-link); font-size: var(--text-sm); }
+
+.te-season-paragraph + .te-season-paragraph { margin-top: 1rem; }
+
+@media (forced-colors: active) {
+  .te-season-disc { forced-color-adjust: none; }
+}

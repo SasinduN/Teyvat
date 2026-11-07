@@ -41,7 +41,8 @@ this file or anywhere else in git.
 | E | Editorial, photo-led redesign, stats in Admin → Settings (0021), `docs/reviews/generic-ui-audit.md` | done (#52) |
 | W | Wishlist: saved in the visitor's browser only, `/wishlist`, sent through the enquiry form | done (#53) |
 | H | Header groups (Discover, About), floating buttons that stay on screen, the wishlist's badge, the fake local WhatsApp number | done (#54) |
-| S | Floating buttons hold still while scrolling, moving only for the hero, map, scroll-to-top and footer | open (`fix/floating-buttons-steady`) |
+| S | Floating buttons hold still while scrolling, moving only for the hero, map, scroll-to-top and footer | done (#55) |
+| G | When to go: best months per destination, a month slider and map on `/when-to-go`, the monsoon explainer (`docs/reviews/when-to-go-sources.md`) | open (`feat/when-to-go`) |
 
 Update the Status column when a phase lands.
 
@@ -189,6 +190,20 @@ Update the Status column when a phase lands.
     12 px number is the one thing under the 13 px label floor, by design, in rem like the rest.
   - `/wishlist` is noindex, with no canonical, and isn't in the sitemap or `llms.txt`.
   - `npm run screenshots -- --saved-wishlist` opens every page with a saved list.
+- **When to go** (`shared/best-months.ts`, `src/pages/WhenToGoPage.tsx`, `SeasonMap`):
+  - `destinations.best_months` (0022) is months 1 to 12, sorted; `best_time` stays the text pages show. Filled from
+    `best_time` only where the whole text is clear: strict on purpose, so "Late November – April" stays empty for an admin.
+  - Great: a best month. OK: next to one (across the new year too). Not ideal: neither. Not set: no months, which stays out
+    of the "best places" lists. Every state has its own icon, fill and ring, and words in the legend and popup: never colour alone.
+  - The slider is a native range input with `aria-valuetext`, opening on this month in `Asia/Colombo`. A new month changes
+    each marker's insides, never the marker, so focus and the view stay.
+  - `SeasonMap` shares Leaflet, the tiles and `SRI_LANKA_BOUNDS` with `InteractiveMapSection`, but none of its filters or panels.
+    The floating buttons already avoid it: `.leaflet-control` is in `AVOID`.
+  - The explainer is `site_settings.when_to_go_explainer`, paragraphs separated by a blank line; empty hides it. Its default names
+    no rainfall figures. A change to it should stay within `docs/reviews/when-to-go-sources.md`, or add to it.
+  - `resetContent()` replays 0022 after 0002 and 0007, because 0002 knows nothing of the column. The fixtures' `bestMonths` must
+    match what 0022 reads from their `bestTime` (`when-to-go.test`).
+  - `npm run screenshots -- --when-to-go --live-photos <site URL>` takes this feature's ten pairs.
 - **Newsletter** (`server/src/routes/newsletter.ts`): the Footer form stores
   addresses; nothing sends them yet. Unsubscribing is a POST from the
   `/unsubscribe?token=` page (never a GET) and deletes the row. Its honeypot
@@ -251,7 +266,7 @@ Update the Status column when a phase lands.
     or `SiteLink` for the nav, which scrolls instead when the target is on
     the current page).
   - The header is `NAV_ITEMS` in the same file, at most six top items, and the logo is the
-    way home. A group is `NavDropdown`: a button that opens real links (the disclosure
+    way home. Discover now holds Explore map, Destinations, Experiences and When to go. A group is `NavDropdown`: a button that opens real links (the disclosure
     pattern, not `role="menu"`; `browser-header-nav`). New guides go inside Discover. On
     phones each group is a section of the menu, and the Footer's list is all of them, flat.
   - `BrowserRouter`, not the data router: that one adds about 20 KB

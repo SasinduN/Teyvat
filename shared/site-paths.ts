@@ -16,6 +16,8 @@ export const paths = {
   bookTour: (id: string) => `/booking?tour=${encodeURIComponent(id)}`,
   /** Every article and the photo stories. */
   journal: '/journal',
+  /** A month slider, the map by suitability, and the monsoons explained. */
+  whenToGo: '/when-to-go',
   destinations: '/destinations',
   destinationsIn: (category: string) => `/destinations?category=${encodeURIComponent(category)}`,
   destination: (id: string) => `/destinations/${encodeURIComponent(id)}`,
@@ -84,7 +86,8 @@ const NAV_ITEMS: ReadonlyArray<NavItem> = [
     links: [
       { label: 'Explore map', to: paths.explore },
       { label: 'Destinations', to: paths.destinations },
-      { label: 'Experiences', to: paths.experiences }
+      { label: 'Experiences', to: paths.experiences },
+      { label: 'When to go', to: paths.whenToGo }
     ]
   },
   { label: 'Tours', to: paths.tours },

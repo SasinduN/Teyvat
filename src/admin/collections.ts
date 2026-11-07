@@ -80,6 +80,7 @@ export const COLLECTIONS: CollectionDef[] = [
       image: '',
       gallery: [],
       best_time: '',
+      best_months: [],
       elevation: '',
       travel_time_from_airport: '',
       rating: 4.8,
