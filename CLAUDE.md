@@ -40,7 +40,8 @@ this file or anywhere else in git.
 | T | Typography: DM Sans self-hosted, one rem scale, the admin's text size (0019) | done (#47) |
 | E | Editorial, photo-led redesign, stats in Admin → Settings (0021), `docs/reviews/generic-ui-audit.md` | done (#52) |
 | W | Wishlist: saved in the visitor's browser only, `/wishlist`, sent through the enquiry form | done (#53) |
-| H | Header groups (Discover, About), floating buttons that stay on screen, the wishlist's badge, the fake local WhatsApp number | open (`fix/header-floating-buttons`) |
+| H | Header groups (Discover, About), floating buttons that stay on screen, the wishlist's badge, the fake local WhatsApp number | done (#54) |
+| S | Floating buttons hold still while scrolling, moving only for the hero, map, scroll-to-top and footer | open (`fix/floating-buttons-steady`) |
 
 Update the Status column when a phase lands.
 
@@ -224,14 +225,15 @@ Update the Status column when a phase lands.
     link: no widget, no script, no CSP change.
   - Its message links to the page the visitor is on (a tour, destination or
     experience), set by the page with `usePageSubject`.
-  - `FloatingActions` stacks it with the Book a ride button. They are always on screen
-    and hide only while a modal dialog is open (the enquiry form, search, the phone menu).
-    Over something a visitor needs (`IMPORTANT`: map controls, slide controls, submit
-    buttons, the footer's last row, `data-keep-clear`, and then every other control) the
-    stack rises smoothly, as a transform (`--te-float-lift`). A link bigger than 160 px both
-    ways (a whole card) isn't an obstacle, and they do float over photos and text: the
-    footer's padding keeps the end of each page clear. `browser-floating-visible` scrolls
-    pages in steps and checks every step.
+  - `FloatingActions` stacks it with the Book a ride button, always on screen; they hide
+    only while a modal dialog is open (the enquiry form, search, the phone menu).
+  - **They hold still while the page scrolls.** Cards, links and buttons pass underneath
+    (dodging every row looked broken, #54). 150 ms after the scroll stops they look once, and
+    move in one 280 ms ease-out (`--te-float-lift`, no animation with reduced motion), only for
+    `AVOID`: the hero's slide controls, the map's controls and Quick Jump, scroll-to-top, the
+    footer's last row. Rising takes 16 px extra and coming down needs that room, so a boundary
+    can't flip them. Don't add anything that scrolls away to `AVOID`. The footer's padding
+    keeps the end of each page clear. `browser-floating-visible` counts the moves.
   - Labels: always from 768 px; on phones for 5 s after load, and again on stopping within
     240 px of the top. The icons are 56 px. The pulse is CSS only, off with reduced motion.
   - **The local number is fake:** `94771236478` (`scripts/fixtures/dev-whatsapp.ts`), set by

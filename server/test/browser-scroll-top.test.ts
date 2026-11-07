@@ -29,7 +29,7 @@ const skip = !executable ? 'no Chrome found; set CHROME_PATH to run these' : !bu
 const TOP = '[data-scroll-top]';
 const WHATSAPP = '[data-whatsapp-button]';
 
-describe('the scroll-to-top button, in Chrome', { skip }, () => {
+describe('the scroll-to-top button, in Chrome', { skip, timeout: 3 * 60_000 }, () => {
   let app: RunningApp;
   let chrome: Chrome;
 
@@ -122,6 +122,28 @@ describe('the scroll-to-top button, in Chrome', { skip }, () => {
       await poll(page, HIDDEN, 'hidden again at the top');
     });
   }
+
+  test("phone: once the page stops, never over a card's Save button, and back when it's clear", async () => {
+    const page = await openPage('/destinations', true);
+    await still(page);
+
+    let shownAtLeastOnce = false;
+    let hiddenForSave = false;
+    for (let y = 900; y < 3000; y += 90) {
+      await page.evaluate(`window.scrollTo(0, ${y}), true`);
+      await sleep(180);
+      await still(page);
+      const onSave = await page.evaluate<boolean>(overlaps('[data-save]'));
+      if (await page.evaluate<boolean>(SHOWN)) {
+        shownAtLeastOnce = true;
+        assert.equal(onSave, false, `over a Save button at ${y}`);
+      } else if (onSave) {
+        hiddenForSave = true;
+      }
+    }
+    assert.ok(shownAtLeastOnce, 'precondition: shown somewhere in the sweep');
+    assert.ok(hiddenForSave, 'precondition: a Save button came under it somewhere');
+  });
 
   test('phone: hidden while the enquiry form is open, back once it closes', async () => {
     const page = await openPage('/tours', true);

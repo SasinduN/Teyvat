@@ -10,10 +10,10 @@ import './test-db';
  *     destination, tour or experience page, a tour route while the Explore
  *     map is on screen, or nothing in particular;
  *   - the old `?destination=` and `?tour=` links land on the pages;
- *   - on a phone it never covers the map's zoom buttons or Quick Jump bar,
- *     the home page's slide controls, the pages' main buttons, or an
- *     enquiry form's submit button: it rises above them, staying on screen,
- *     and it hides only for the modal;
+ *   - on a phone, once the page stops, it's never on the map's zoom buttons or Quick Jump
+ *     bar or the home page's slide controls: it rises above them, staying on screen;
+ *   - it hides only for the modal, so an enquiry form's submit button is clear;
+ *   - a page's main buttons pass under it, and can always be scrolled clear of it;
  *   - admin Settings shows "Test in WhatsApp" only once a number is saved.
  *
  * Needs `npm run build` and Chrome; skipped with a message otherwise.
@@ -30,7 +30,7 @@ import { whatsappMessage, whatsappUrl, type WhatsAppContext } from '../../shared
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
-import { COVERED_CONTROLS, LIFT } from './floating';
+import { LIFT } from './floating';
 import {
   assertConnectedToTestDatabase,
   createUser,
@@ -396,14 +396,12 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     await explainOnFailure(page, () => expectClearOf(page, '[aria-label="Featured destinations"]', 'rises above the slide controls'));
     assert.ok(await shown(page), 'still shown over the hero');
     await page.evaluate(`document.querySelector('#discover').scrollIntoView(), true`);
-    await frames(page);
-    await waitFor(page, `${COVERED_CONTROLS}.length === 0`, 'the controls of the cards below the hero stay clear', 1_500);
+    await waitFor(page, `${LIFT} === 0`, 'back in its place below the hero, whatever cards pass under it', 2_000);
   });
 
   test('phone: hidden while the enquiry form is open, so the submit button is clear', async () => {
     const page = await openPage({ mobile: true, path: '/tours' });
     await page.evaluate(`document.querySelector('#tours').scrollIntoView(), true`);
-    await waitFor(page, `${COVERED_CONTROLS}.length === 0`, "precondition: the tour cards' controls stay clear", 1_500);
 
     await page.evaluate(`[...document.querySelectorAll('#tours button')].find((b) => b.textContent.trim() === 'Inquire').click(), true`);
     await waitFor(page, `document.querySelector('.fixed.inset-0 form button[type=submit]')`, 'the enquiry form');
@@ -415,31 +413,31 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
   });
 
   /**
-   * Sweeps the page's scroll so `selector` passes through the bottom of the
-   * viewport, where the button sits; it must never cover it, and it must take
-   * the tap where they would meet.
+   * `selector` passes through the bottom of the viewport, where the button sits: it holds its
+   * place, and the control passes under it. Scrolled clear, the control takes the tap.
    */
-  async function sweepPast(page: Page, selector: string, what: string): Promise<void> {
+  async function passesUnder(page: Page, selector: string, what: string): Promise<void> {
     const top = await page.evaluate<number>(`document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect().top + scrollY`);
-    for (let offset = -120; offset <= 160; offset += 20) {
+    for (let offset = -120; offset <= 160; offset += 40) {
       await page.evaluate(`window.scrollTo(0, ${top - 844 + offset}), true`);
-      await frames(page);
-      await expectClearOf(page, selector, `${what} covered at ${offset}`);
+      await sleep(500);
+      assert.equal(await page.evaluate<number>(LIFT), 0, `${what} at ${offset}: no dodging`);
+      assert.ok(await shown(page), `${what} at ${offset}: still shown`);
     }
-    await page.evaluate(`document.querySelector(${JSON.stringify(selector)}).scrollIntoView({ block: 'end' }), true`);
+    await page.evaluate(`document.querySelector(${JSON.stringify(selector)}).scrollIntoView({ block: 'center' }), true`);
     await frames(page);
-    assert.equal(await coveredBy(page, selector), null, `${what} takes the tap`);
+    assert.equal(await coveredBy(page, selector), null, `${what} takes the tap once scrolled clear`);
   }
 
-  test("phone: clear of the pages' main buttons and the About page's form", async () => {
+  test("phone: the pages' main buttons and the About page's form pass under it, and can be scrolled clear", async () => {
     let page = await openPage({ mobile: true, path: '/destinations/ella' });
-    await sweepPast(page, 'main [data-keep-clear]', 'Plan A Trip to Ella');
+    await passesUnder(page, 'main [data-keep-clear]', 'Plan A Trip to Ella');
 
     page = await openPage({ mobile: true, path: '/tours/island-in-7-days' });
-    await sweepPast(page, 'main [data-keep-clear]', 'Book / Inquire This Tour');
+    await passesUnder(page, 'main [data-keep-clear]', 'Book / Inquire This Tour');
 
     page = await openPage({ mobile: true, path: '/about' });
-    await sweepPast(page, 'main form button[type=submit]', "the About page's submit button");
+    await passesUnder(page, 'main form button[type=submit]', "the About page's submit button");
   });
 
   test('admin Settings: "Test in WhatsApp" only once a number is saved', async () => {
