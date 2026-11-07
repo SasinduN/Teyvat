@@ -583,7 +583,9 @@ describe('/when-to-go, in Chrome', { skip, timeout: 8 * 60_000 }, () => {
       await page.send('Page.enable');
       await page.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 500 });
       await page.send('Page.navigate', { url: `${app.baseUrl}/admin/login` });
-      await poll(page, `document.querySelector('#admin-email')`, 'the login page');
+      // Every tab shares cookies, so after the first sign-in this page finds a session and
+      // moves on to /admin: the form is there only for a moment, and a slow poll can miss it.
+      await poll(page, `document.querySelector('#admin-email') || location.pathname === '/admin'`, 'the login page or the admin');
       assert.equal(await page.evaluate<number>(`fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'admin@example.test', password: ${JSON.stringify(PASSWORD)} }) }).then((r) => r.status)`), 200);
       await page.send('Page.navigate', { url: app.baseUrl + path });
       await poll(page, ready, path);
