@@ -13,6 +13,7 @@ import {
   Compass,
   Gem,
   Images,
+  Landmark,
   MapPin,
   Newspaper,
   Route,
@@ -47,6 +48,13 @@ export interface CollectionDef {
   imageField?: string;
   /** A short extra column in the list view. */
   metaField?: string;
+  /**
+   * A column the list can be filtered by, and that a new record starts with when the
+   * list is filtered (`/new?destination_id=…`). Attractions: by destination.
+   */
+  filterBy?: { field: string; table: 'destinations'; label: string };
+  /** A map under the latitude and longitude fields: a click sets both. */
+  locationPicker?: boolean;
   fields: Field[];
   /** Values for a brand-new record. */
   defaults: Record<string, unknown>;
@@ -89,6 +97,35 @@ export const COLLECTIONS: CollectionDef[] = [
       highlights: [],
       ideal_for: [],
       published: true
+    }
+  },
+
+  {
+    slug: 'attractions',
+    table: 'attractions',
+    label: 'Attractions',
+    singular: 'Attraction',
+    description: 'Places near a destination: the “Nearby” cards on its page, and the small markers on the maps.',
+    icon: Landmark,
+    titleField: 'name',
+    subtitleField: 'short_description',
+    imageField: 'image',
+    metaField: 'destination_id',
+    filterBy: { field: 'destination_id', table: 'destinations', label: 'Destination' },
+    locationPicker: true,
+    fields: FIELDS_BY_TABLE.attractions,
+    defaults: {
+      name: '',
+      id: '',
+      destination_id: '',
+      category: 'Culture',
+      short_description: '',
+      latitude: '',
+      longitude: '',
+      image: '',
+      best_months: [],
+      // A draft until someone has checked it.
+      published: false
     }
   },
 

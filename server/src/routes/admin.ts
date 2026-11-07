@@ -147,6 +147,23 @@ async function holdOurImages(
   }
 }
 
+const NO_SUCH_DESTINATION = 'That destination no longer exists. Choose another.';
+
+/**
+ * An attraction's destination must exist. `for key share` holds it for the rest of the
+ * write, so a delete of that destination waits for this save, then takes the
+ * attraction with it (on delete cascade).
+ */
+async function refuseMissingDestination(
+  client: PoolClient,
+  table: ContentTableName,
+  values: Record<string, unknown>
+): Promise<void> {
+  if (table !== 'attractions') return;
+  const { rowCount } = await client.query('select 1 from public.destinations where id = $1 for key share', [values.destination_id]);
+  if (!rowCount) throw new ApiError('bad_request', NO_SUCH_DESTINATION, { destination_id: NO_SUCH_DESTINATION });
+}
+
 /** The image allow-list for this app: Unsplash, plus R2 when uploads are set up. */
 function imageOriginsFor(req: Request): string[] {
   return allowedImageOrigins(mediaOf(req)?.publicBaseUrl ?? null);
@@ -260,6 +277,7 @@ adminRouter.post(
 
     const row = await withTransaction(async (client) => {
       await holdOurImages(client, req, table, values);
+      await refuseMissingDestination(client, table, values);
 
       // New rows go to the end of the list.
       const { rows } = await client.query(
@@ -306,6 +324,7 @@ adminRouter.put(
         await keepOneHeroSlide(client, id);
       }
       await holdOurImages(client, req, table, values);
+      await refuseMissingDestination(client, table, values);
 
       const { rows } = await client.query(
         `update public.${table}

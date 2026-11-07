@@ -36,6 +36,7 @@ export function useSiteContent(): SiteContentResult {
 /* One per content collection, named for the constant each component used.  */
 
 export const useDestinations = () => useSiteContent().content.destinations;
+export const useAttractions = () => useSiteContent().content.attractions;
 export const useExperienceCategories = () => useSiteContent().content.experienceCategories;
 export const useFeaturedExperiences = () => useSiteContent().content.featuredExperiences;
 export const useTours = () => useSiteContent().content.tours;

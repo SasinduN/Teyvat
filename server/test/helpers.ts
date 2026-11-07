@@ -63,6 +63,8 @@ export async function resetAuthTables(): Promise<void> {
 
 const CONTENT_TABLES = [
   'destinations',
+  // After destinations: each references one.
+  'attractions',
   'experience_categories',
   'featured_experiences',
   'tours',
@@ -108,9 +110,10 @@ const SEED_SCHEMA = 'test_seed';
 let seedSnapshot = false;
 
 /**
- * Puts the content back to the approved baseline: empties the nine content
+ * Puts the content back to the approved baseline: empties the ten content
  * tables (and the tour stops), restores the 0002 seed with 0007's route
- * stops, and resets `site_settings` to its 0001 values as 0004 left them
+ * stops and Galle's four attractions (`insertTestAttractions`), and resets
+ * `site_settings` to its 0001 values as 0004 left them
  * (links NULL), with the fake WhatsApp number, so the button is on the page as it
  * is in production (`whatsappNumber` picks another, or null for none).
  *
@@ -130,8 +133,9 @@ let seedSnapshot = false;
 export async function resetContent(options: { whatsappNumber?: string | null } = {}): Promise<void> {
   await assertConnectedToTestDatabase();
   const tables = [...CONTENT_TABLES, 'tour_stops'];
-  // Booking requests reference tours and destinations, so they go too (0014).
-  const bookings = ['booking_notifications', 'booking_history', 'bookings'];
+  // Booking requests reference tours and destinations, so they go too (0014), and so
+  // does content:import's record of what it wrote (0023).
+  const bookings = ['booking_notifications', 'booking_history', 'bookings', 'content_imports'];
   await pool.query(`truncate ${[...bookings, ...tables].map((t) => `public.${t}`).join(', ')}`);
   if (seedSnapshot) {
     // Parents first: tour_stops references tours and destinations.
@@ -144,6 +148,7 @@ export async function resetContent(options: { whatsappNumber?: string | null } =
     await pool.query(migration('0007_tour_stops.sql'));
     // Best months come from best_time, which 0002 just wrote (0002 knows nothing of the column).
     await pool.query(migration('0022_when_to_go.sql'));
+    await insertTestAttractions();
     await pool.query(`drop schema if exists ${SEED_SCHEMA} cascade; create schema ${SEED_SCHEMA}`);
     for (const t of tables) await pool.query(`create table ${SEED_SCHEMA}.${t} as table public.${t}`);
     seedSnapshot = true;
@@ -160,6 +165,27 @@ export async function resetContent(options: { whatsappNumber?: string | null } =
       where id`,
     [options.whatsappNumber === undefined ? DEV_WHATSAPP_NUMBER : options.whatsappNumber]
   );
+}
+
+/** Galle's, as researched, published and without photos: the seed (0002) has no attractions. */
+export const TEST_ATTRACTION_IDS = ['jungle-beach', 'japanese-peace-pagoda', 'unawatuna-beach', 'dalawella-beach'] as const;
+
+/**
+ * Attractions for every test: Galle's four from `scripts/content/places.json`, published,
+ * so /destinations/galle has its Nearby section and the maps have markers to show.
+ */
+async function insertTestAttractions(): Promise<void> {
+  const places = JSON.parse(readFileSync(resolve(REPO_ROOT, 'scripts/content/places.json'), 'utf8')) as {
+    attractions: { id: string; destination_id: string; name: string; category: string; short_description: string; latitude: number; longitude: number; best_months: number[] }[];
+  };
+  for (const [i, id] of TEST_ATTRACTION_IDS.entries()) {
+    const a = places.attractions.find((row) => row.id === id)!;
+    await pool.query(
+      `insert into public.attractions (id, destination_id, name, category, short_description, latitude, longitude, image, best_months, sort_order, published)
+       values ($1, 'galle', $2, $3, $4, $5, $6, null, $7, $8, true)`,
+      [a.id, a.name, a.category, a.short_description, a.latitude, a.longitude, a.best_months, i]
+    );
+  }
 }
 
 export interface RunningApp {

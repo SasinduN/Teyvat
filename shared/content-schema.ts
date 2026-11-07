@@ -91,6 +91,11 @@ export type Field =
   /** Months 1 to 12 (`shared/best-months.ts`): twelve checkboxes, select all and clear. */
   | (FieldBase & { type: 'months' })
   /**
+   * The id of a row in another table, chosen from a list of its rows. That the row
+   * exists is the API's check (it answers with the field), as for a tour stop.
+   */
+  | (FieldBase & { type: 'reference'; table: 'destinations' })
+  /**
    * A tour's route stops. Not a column: they live in `public.tour_stops`, and
    * the API writes them alongside the row (see `writableColumns`).
    */
@@ -155,6 +160,19 @@ export const FIELDS_BY_TABLE: Record<ContentTableName, Field[]> = {
     { name: 'highlights', label: 'Highlights', type: 'stringList', span: 2, placeholder: 'e.g. Ella Rock' },
     { name: 'ideal_for', label: 'Ideal for', type: 'stringList', span: 2, placeholder: 'e.g. Hikers' },
     publishedField
+  ],
+
+  attractions: [
+    { name: 'name', label: 'Name', type: 'text', required: true, span: 1 },
+    idField,
+    { name: 'destination_id', label: 'Destination', type: 'reference', table: 'destinations', required: true, span: 1, help: 'The page it is listed on. Deleting that destination deletes this attraction too.' },
+    { name: 'category', label: 'Category', type: 'select', options: CATEGORY_OPTIONS, required: true, span: 1 },
+    { name: 'short_description', label: 'Short description', type: 'textarea', rows: 3, maxLength: 300, required: true, span: 2, help: 'One or two plain sentences, from a source you can name. No “best”, “most” or “stunning”.' },
+    { name: 'latitude', label: 'Latitude', type: 'number', step: 0.00001, min: TOUR_STOP_BOUNDS.lat.min, max: TOUR_STOP_BOUNDS.lat.max, required: true, span: 1 },
+    { name: 'longitude', label: 'Longitude', type: 'number', step: 0.00001, min: TOUR_STOP_BOUNDS.lng.min, max: TOUR_STOP_BOUNDS.lng.max, required: true, span: 1, help: 'Or click the map below. Check the spot against OpenStreetMap.' },
+    { name: 'image', label: 'Photo', type: 'image', folder: 'attractions', span: 2, help: 'Optional. Only a photo you may use, with its credit in Photo credits; without one, the card shows a plain placeholder.' },
+    { name: 'best_months', label: 'Best months', type: 'months', span: 2, help: 'Optional, and only where a source says so.' },
+    { ...publishedField, help: 'Shown only while its destination is published too.' }
   ],
 
   experience_categories: [
@@ -366,15 +384,17 @@ function schemaForField(field: Field, options: SchemaOptions = {}): z.ZodTypeAny
             .transform((v) => (v ? v : null));
     }
 
-    case 'textarea':
+    case 'textarea': {
+      const max = field.maxLength ?? 5000;
       return field.required
-        ? z.string().trim().min(1, `${field.label} is required.`).max(5000, 'Keep it under 5000 characters.')
+        ? z.string().trim().min(1, `${field.label} is required.`).max(max, `Keep it under ${max} characters.`)
         : z
             .string()
             .trim()
-            .max(5000, 'Keep it under 5000 characters.')
+            .max(max, `Keep it under ${max} characters.`)
             .nullable()
             .transform((v) => (v ? v : null));
+    }
 
     case 'number': {
       let n = z.coerce.number({ error: `${field.label} must be a number.` });
@@ -404,7 +424,16 @@ function schemaForField(field: Field, options: SchemaOptions = {}): z.ZodTypeAny
       return z.boolean();
 
     case 'image':
-      return imageUrl(`${field.label} must be an https:// image URL.`, options);
+      // An optional image left empty is "none": NULL, so the page shows its placeholder.
+      return field.required
+        ? imageUrl(`${field.label} must be an https:// image URL.`, options)
+        : z
+            .union([z.literal(''), z.null(), z.undefined()])
+            .transform(() => null)
+            .or(imageUrl(`${field.label} must be an https:// image URL, or be left empty.`, options));
+
+    case 'reference':
+      return z.string().trim().min(1, `Choose a ${field.label.toLowerCase()}.`);
 
     case 'imageList':
       return z

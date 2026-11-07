@@ -6,7 +6,7 @@
 
 export const WISHLIST_MAX = 30;
 
-export const WISHLIST_KINDS = ['destination', 'experience', 'tour'] as const;
+export const WISHLIST_KINDS = ['destination', 'attraction', 'experience', 'tour'] as const;
 export type WishlistKind = (typeof WISHLIST_KINDS)[number];
 
 export interface WishlistItem {

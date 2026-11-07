@@ -28,6 +28,21 @@ export interface Destination {
   travelTimeFromAirport?: string;
 }
 
+/** A place near a destination: on its page ("Nearby") and, zoomed in, on the maps. */
+export interface Attraction {
+  id: string;
+  destinationId: string;
+  name: string;
+  category: Exclude<CategoryType, 'All'>;
+  shortDescription: string;
+  latitude: number;
+  longitude: number;
+  /** Unset: the card shows a placeholder. */
+  image?: string;
+  /** Months 1 to 12. Empty: not set. */
+  bestMonths: number[];
+}
+
 export interface ExperienceItem {
   id: string;
   title: string;

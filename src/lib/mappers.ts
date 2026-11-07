@@ -9,6 +9,7 @@
  */
 import type {
   Article,
+  Attraction,
   Destination,
   ExperienceItem,
   HeroSlide,
@@ -21,6 +22,7 @@ import type {
 } from '@/types';
 import type {
   ArticleRow,
+  AttractionRow,
   ExperienceCategoryRow,
   HeroSlideRow,
   HiddenGemRow,
@@ -87,6 +89,18 @@ export const toDestination = (r: PublicDestinationRow): Destination => ({
   idealFor: r.ideal_for,
   featured: r.featured,
   travelTimeFromAirport: opt(r.travel_time_from_airport)
+});
+
+export const toAttraction = (r: AttractionRow): Attraction => ({
+  id: r.id,
+  destinationId: r.destination_id,
+  name: r.name,
+  category: r.category,
+  shortDescription: r.short_description,
+  latitude: r.latitude,
+  longitude: r.longitude,
+  image: opt(r.image) || undefined,
+  bestMonths: r.best_months
 });
 
 export const toExperienceCategory = (r: ExperienceCategoryRow): ExperienceCategory => ({

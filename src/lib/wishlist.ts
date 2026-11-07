@@ -94,15 +94,17 @@ export interface Wishlist {
 export function useWishlist(): Wishlist {
   const stored = useSyncExternalStore(subscribe, snapshot);
   const canStore = useSyncExternalStore(subscribe, isStorageAvailable);
-  const { destinations, featuredExperiences, tours } = useSiteContent().content;
+  const { destinations, attractions, featuredExperiences, tours } = useSiteContent().content;
 
   const live = useMemo(() => {
     const keys = new Set<string>();
     for (const row of destinations) keys.add(`destination:${row.id}`);
+    // Only those whose destination is published too: the site doesn't show the others.
+    for (const row of attractions) keys.add(`attraction:${row.id}`);
     for (const row of featuredExperiences) keys.add(`experience:${row.id}`);
     for (const row of tours) keys.add(`tour:${row.id}`);
     return keys;
-  }, [destinations, featuredExperiences, tours]);
+  }, [destinations, attractions, featuredExperiences, tours]);
 
   const isLive = useCallback((item: WishlistItem) => live.has(`${item.kind}:${item.id}`), [live]);
 

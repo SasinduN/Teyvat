@@ -5,7 +5,7 @@ import { PageHero } from '@/components/PageHero';
 import { SeasonMap } from '@/components/SeasonMap';
 import { WishlistTextLink } from '@/components/WishlistLink';
 import { usePageTitle } from '@/context/PublicSiteContext';
-import { useDestinations, useSiteSettings } from '@/hooks/useSiteContent';
+import { useAttractions, useDestinations, useSiteSettings } from '@/hooks/useSiteContent';
 import { SEASON_ICON_PATHS } from '@/lib/mapMarkers';
 import {
   explainerParagraphs,
@@ -84,6 +84,7 @@ function PlaceGrid({ places }: { places: Destination[] }) {
 export function WhenToGoPage() {
   usePageTitle(PAGE_TITLES.whenToGo);
   const destinations = useDestinations();
+  const attractions = useAttractions();
   const { whenToGoExplainer } = useSiteSettings();
   const [month, setMonth] = useState(() => monthInColombo());
 
@@ -121,10 +122,16 @@ export function WhenToGoPage() {
                 <span><strong>{SUITABILITY_LABELS[value]}:</strong> {SUITABILITY_MEANINGS[value]}</span>
               </li>
             ))}
+            {attractions.length > 0 && (
+              <li data-legend="attraction">
+                <span className="attraction-key" aria-hidden="true" />
+                <span><strong>Nearby attraction:</strong> zoom in, or open a place, to see them</span>
+              </li>
+            )}
           </ul>
 
           <Section name="SeasonMap">
-            <SeasonMap destinations={destinations} month={month} />
+            <SeasonMap destinations={destinations} attractions={attractions} month={month} />
           </Section>
         </div>
       </section>

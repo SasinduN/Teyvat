@@ -178,31 +178,73 @@ export function seasonPopupHtml(place: { name: string; bestTime: string; href: s
  * stay on it, and only those that would hide each other shift. The same every time.
  */
 export function spreadApart(points: readonly { x: number; y: number }[], distance: number): { x: number; y: number }[] {
+  return spreadByRank(points.map((p) => ({ ...p, r: distance / 2, rank: 0 })), 0);
+}
+
+/**
+ * Markers of different sizes and ranks pushed apart until none overlaps another (by
+ * `gap` or more): of two that touch, the lower rank moves (an attraction for a
+ * destination), and two of one rank share the move. The same every time.
+ */
+export function spreadByRank(points: readonly { x: number; y: number; r: number; rank: number }[], gap: number): { x: number; y: number }[] {
   const out = points.map((p) => ({ ...p }));
   for (let pass = 0; pass < 40; pass += 1) {
     let moved = false;
     for (let i = 0; i < out.length; i += 1) {
       for (let j = i + 1; j < out.length; j += 1) {
-        let dx = out[j].x - out[i].x;
-        let dy = out[j].y - out[i].y;
+        const a = out[i];
+        const b = out[j];
+        let dx = b.x - a.x;
+        let dy = b.y - a.y;
         let d = Math.hypot(dx, dy);
-        if (d >= distance) continue;
+        const min = a.r + b.r + gap;
+        if (d >= min) continue;
         if (d < 0.01) {
           dx = Math.cos(j * 2.4);
           dy = Math.sin(j * 2.4);
           d = 1;
         }
-        const push = (distance - d) / 2;
-        out[i].x -= (dx / d) * push;
-        out[i].y -= (dy / d) * push;
-        out[j].x += (dx / d) * push;
-        out[j].y += (dy / d) * push;
+        const push = min - d;
+        // How much of the move is a's: none if it outranks b, all if b outranks it.
+        const share = a.rank > b.rank ? 0 : a.rank < b.rank ? 1 : 0.5;
+        a.x -= (dx / d) * push * share;
+        a.y -= (dy / d) * push * share;
+        b.x += (dx / d) * push * (1 - share);
+        b.y += (dy / d) * push * (1 - share);
         moved = true;
       }
     }
     if (!moved) break;
   }
-  return out;
+  return out.map(({ x, y }) => ({ x, y }));
+}
+
+/** An attraction marker's radius on screen (22 px across), and the zoom from which all show. */
+export const ATTRACTION_RADIUS = 11;
+export const ATTRACTION_ZOOM = 10;
+
+/**
+ * A nearby attraction on a map: a small diamond, so by its shape it can't be taken for
+ * a destination (a disc) or a route stop (a numbered disc). Its name shows on hover and
+ * focus, and in its popup.
+ */
+export function attractionMarkerHtml(name: string): string {
+  return `
+    <div class="attraction-marker">
+      <div class="attraction-marker__shape" aria-hidden="true"></div>
+      <div class="map-marker-label">${escapeHtml(name)}</div>
+    </div>`;
+}
+
+/** Its popup: the name, what kind of place it is, where, and a link to its destination's page. */
+export function attractionPopupHtml(place: { name: string; category: string; text: string; destination: string; distance: string; href: string }): string {
+  return `
+    <div class="te-attraction-popup" data-attraction-popup>
+      <p class="te-attraction-popup__name">${escapeHtml(place.name)}</p>
+      <p class="te-attraction-popup__meta">${escapeHtml(place.category)}. Near ${escapeHtml(place.destination)}, ${escapeHtml(place.distance)}</p>
+      <p class="te-attraction-popup__text">${escapeHtml(place.text)}</p>
+      <a class="te-ed-link" href="${escapeHtml(place.href)}">Explore ${escapeHtml(place.destination)}</a>
+    </div>`;
 }
 
 /**

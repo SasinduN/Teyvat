@@ -21,6 +21,10 @@ export const paths = {
   destinations: '/destinations',
   destinationsIn: (category: string) => `/destinations?category=${encodeURIComponent(category)}`,
   destination: (id: string) => `/destinations/${encodeURIComponent(id)}`,
+  /** An attraction's card on its destination's page (search results, map popups). */
+  attraction: (destinationId: string, id: string) => `/destinations/${encodeURIComponent(destinationId)}#attraction-${encodeURIComponent(id)}`,
+  /** A destination picked on the Explore map, its nearby attractions shown ("View on map"). */
+  destinationOnMap: (id: string) => `/explore?place=${encodeURIComponent(id)}#explore-map`,
   experiences: '/experiences',
   experience: (id: string) => `/experiences/${encodeURIComponent(id)}`,
   tours: '/tours',

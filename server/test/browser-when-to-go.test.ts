@@ -305,7 +305,8 @@ describe('/when-to-go, in Chrome', { skip, timeout: 8 * 60_000 }, () => {
     const page = await openPage('/when-to-go');
     try {
       await setMonth(page, JANUARY);
-      const legend = await page.evaluate<Record<string, { text: string; icon: string; fill: string; ring: string }>>(`Object.fromEntries([...document.querySelectorAll('[data-season-legend] li')].map((li) => {
+      // The four states; the legend's last line, for nearby attractions (0023), is checked below.
+      const legend = await page.evaluate<Record<string, { text: string; icon: string; fill: string; ring: string }>>(`Object.fromEntries([...document.querySelectorAll('[data-season-legend] li:not([data-legend="attraction"])')].map((li) => {
         const disc = li.querySelector('.te-season-disc');
         const s = getComputedStyle(disc);
         return [li.dataset.legend, { text: li.textContent, icon: disc.querySelector('svg').innerHTML, fill: s.backgroundColor, ring: s.borderStyle + ' ' + s.borderColor }];
@@ -317,6 +318,11 @@ describe('/when-to-go, in Chrome', { skip, timeout: 8 * 60_000 }, () => {
       assert.match(legend['not-set'].text, /^Not set/);
       assert.equal(new Set(Object.values(legend).map((l) => l.icon)).size, 4, 'four different icons');
       assert.equal(new Set(Object.values(legend).map((l) => `${l.fill} ${l.ring}`)).size, 4, 'four different looks');
+      // Attractions: a shape of their own (a diamond, not a disc) and words.
+      assert.deepEqual(
+        await page.evaluate(`[...document.querySelectorAll('[data-season-legend] li')].slice(-1).map((li) => [li.dataset.legend, Boolean(li.querySelector('.attraction-key')), /^Nearby attraction/.test(li.textContent.trim())])`),
+        [['attraction', true, true]]
+      );
 
       // The map draws the legend's icon, and says the same in words, for a screen reader and in the popup.
       const onMap = await page.evaluate<Record<string, { icon: string; label: string }>>(`Object.fromEntries(['ella', 'arugam-bay', 'kandy'].map((id) => {

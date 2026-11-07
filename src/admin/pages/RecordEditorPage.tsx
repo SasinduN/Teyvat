@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -59,15 +59,20 @@ export const RecordEditorPage: React.FC = () => {
 
   const { control, handleSubmit, reset, watch, setValue, setError, formState } = form;
 
+  // A new record from a filtered list starts in that filter (an attraction, its destination).
+  const [searchParams] = useSearchParams();
+  const filterField = collection?.filterBy?.field;
+  const prefill = filterField ? searchParams.get(filterField) : null;
+
   // Populate the form once the record arrives.
   useEffect(() => {
     if (!collection) return;
     if (isNew) {
-      reset({ ...collection.defaults });
+      reset({ ...collection.defaults, ...(filterField && prefill ? { [filterField]: prefill } : {}) });
     } else if (existing.data) {
       reset({ ...collection.defaults, ...(existing.data as unknown as FormValues) });
     }
-  }, [collection, isNew, existing.data, reset]);
+  }, [collection, isNew, existing.data, reset, filterField, prefill]);
 
   /**
    * While creating, keep the slug in step with the title — until the user
@@ -96,7 +101,7 @@ export const RecordEditorPage: React.FC = () => {
       const { id: _slug, ...rest } = values;
       return updateRow(collection.table, id, rest as never, loaded.updated_at);
     },
-    onSuccess: () => {
+    onSuccess: (_row, values) => {
       if (!collection) return;
       void qc.invalidateQueries({ queryKey: queryKeys.admin.collection(collection.table) });
       void qc.invalidateQueries({ queryKey: queryKeys.admin.counts });
@@ -104,7 +109,9 @@ export const RecordEditorPage: React.FC = () => {
       void qc.invalidateQueries({ queryKey: queryKeys.siteContent });
 
       toast.success(isNew ? `${collection.singular} created` : 'Changes saved');
-      navigate(`/admin/${collection.slug}`);
+      // Back to the list, filtered as this record is (an attraction: its destination's).
+      const filterValue = filterField ? values[filterField] : undefined;
+      navigate(`/admin/${collection.slug}${filterField && typeof filterValue === 'string' && filterValue ? `?${filterField}=${encodeURIComponent(filterValue)}` : ''}`);
     },
     onError: (e) => {
       if (e instanceof ApiRequestError && e.fields) {
@@ -214,6 +221,7 @@ export const RecordEditorPage: React.FC = () => {
               control={control}
               errors={formState.errors}
               lockSlug={!isNew}
+              locationPicker={collection.locationPicker}
             />
           </Card>
 
