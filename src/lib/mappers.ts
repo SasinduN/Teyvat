@@ -80,6 +80,7 @@ export const toDestination = (r: PublicDestinationRow): Destination => ({
   // `undefined` keeps the shape identical to the approved demo.
   gallery: r.gallery.length > 0 ? r.gallery : undefined,
   bestTime: r.best_time,
+  bestMonths: r.best_months,
   experiences: r.experiences,
   highlights: r.highlights,
   elevation: opt(r.elevation),
@@ -197,7 +198,8 @@ export const toSiteSettings = (r: PublicSiteSettings): SiteSettings => ({
   termsUrl: r.terms_url ?? undefined,
   sustainabilityUrl: r.sustainability_url ?? undefined,
   whatsappNumber: r.whatsapp_number ?? undefined,
-  stats: r.stats ?? []
+  stats: r.stats ?? [],
+  whenToGoExplainer: r.when_to_go_explainer ?? undefined
 });
 
 export const toImageCredit = (r: PublicImageCredit): ImageCredit => ({

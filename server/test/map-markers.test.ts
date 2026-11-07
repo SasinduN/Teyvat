@@ -10,7 +10,11 @@ import {
   MAP_CATEGORY_STYLES,
   markerCategory,
   markerHtml,
-  markerStyle
+  markerStyle,
+  SEASON_ICON_PATHS,
+  seasonMarkerHtml,
+  seasonPopupHtml,
+  spreadApart
 } from '../../src/lib/mapMarkers';
 
 /** WCAG contrast ratio between two #rrggbb colours. */
@@ -24,6 +28,35 @@ function contrast(a: string, b: string): number {
   const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 }
+
+describe('/when-to-go markers', () => {
+  test('each state has its own icon, and its name and text are escaped', () => {
+    assert.equal(new Set(Object.values(SEASON_ICON_PATHS).map((paths) => paths.join())).size, 4);
+    const html = seasonMarkerHtml('Galle <Fort> & "Bay"', 'great');
+    assert.ok(html.includes('data-suitability="great"'));
+    assert.ok(html.includes('Galle &lt;Fort&gt; &amp; &quot;Bay&quot;'));
+    assert.ok(html.includes(SEASON_ICON_PATHS.great[0]));
+    const popup = seasonPopupHtml({ name: 'A<b>', bestTime: 'May <i>', href: '/destinations/a' }, 'ok', 3);
+    assert.ok(popup.includes('OK in March'));
+    assert.ok(popup.includes('Best time: May &lt;i&gt;'));
+    assert.ok(!popup.includes('<b>') && !popup.includes('<i>'));
+    const unset = seasonPopupHtml({ name: 'A', bestTime: 'Dry season', href: '/destinations/a' }, 'not-set', 3);
+    assert.ok(unset.includes('Not set'));
+    assert.ok(!unset.includes('Dry season'), 'no best time for a place with no months');
+  });
+
+  test('spreadApart moves only what would overlap, the same way every time', () => {
+    const far = [{ x: 0, y: 0 }, { x: 100, y: 0 }];
+    assert.deepEqual(spreadApart(far, 36), far);
+    const close = spreadApart([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 200, y: 0 }], 36);
+    assert.ok(Math.hypot(close[1].x - close[0].x, close[1].y - close[0].y) >= 35.99);
+    assert.deepEqual(close[2], { x: 200, y: 0 });
+    const onOneSpot = [{ x: 5, y: 5 }, { x: 5, y: 5 }, { x: 5, y: 5 }];
+    const spread = spreadApart(onOneSpot, 36);
+    assert.deepEqual(spread, spreadApart(onOneSpot, 36));
+    assert.ok(Math.hypot(spread[1].x - spread[0].x, spread[1].y - spread[0].y) >= 35.99);
+  });
+});
 
 describe('map markers', () => {
   test("the FIRST category in a destination's list decides its marker", () => {

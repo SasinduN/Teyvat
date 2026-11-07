@@ -234,7 +234,7 @@ describe('pages and links, in Chrome', { skip, timeout: 4 * 60_000 }, () => {
   test('every page has one <h1>, and no other heading repeats it', async () => {
     const problems: string[] = [];
     for (const path of [
-      '/', '/explore', '/plan', '/journal', '/destinations', '/destinations/ella', '/experiences',
+      '/', '/explore', '/plan', '/when-to-go', '/journal', '/destinations', '/destinations/ella', '/experiences',
       '/experiences/safari-yala', '/tours', '/tours/island-in-7-days', '/journal/ultimate-ella-guide',
       '/about', '/photo-credits', '/wishlist', '/unsubscribe', '/nope'
     ]) {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import { PageHero } from '@/components/PageHero';
 import { QuickSearch } from '@/components/QuickSearch';
 import { WishlistTextLink } from '@/components/WishlistLink';
@@ -93,7 +94,10 @@ export function ExplorePage() {
         <HiddenGemsSection onOpenInquiry={openInquiry} />
       </Section>
 
-      <p className="te-container te-wishlist-aside"><WishlistTextLink text="See the places you saved" /></p>
+      <p className="te-container te-wishlist-aside te-ed-actions">
+        <WishlistTextLink text="See the places you saved" />
+        <Link to={paths.whenToGo} className="te-ed-link" data-when-to-go-link>See when to go <ArrowRight aria-hidden="true" /></Link>
+      </p>
     </>
   );
 }

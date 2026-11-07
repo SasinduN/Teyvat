@@ -226,6 +226,7 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
       // Redesign PR 3's pages; /explore's map tiles and Leaflet stylesheet once scrolled to.
       ['/explore', `document.querySelector('#explore-map')`],
       ['/plan', `document.querySelector('#planner form')`],
+      ['/when-to-go', `document.querySelector('[data-season-map]')`],
       ['/journal', `document.querySelector('main a[href^="/journal/"]')`],
       ['/unsubscribe?token=00000000-0000-4000-8000-000000000000', `document.querySelector('[data-unsubscribe] button')`],
       ['/no-such-page', `document.querySelector('[data-not-found]')`]

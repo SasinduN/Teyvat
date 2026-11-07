@@ -183,7 +183,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     for (const path of [
       '/', '/destinations', '/destinations?category=Beaches', '/destinations/ella', '/experiences',
       '/experiences/safari-yala', '/tours', '/tours/island-in-7-days', '/journal/ultimate-ella-guide', '/about',
-      '/explore', '/explore?mapTour=wild-sri-lanka', '/plan', '/journal',
+      '/explore', '/explore?mapTour=wild-sri-lanka', '/plan', '/journal', '/when-to-go',
       '/photo-credits', '/wishlist', '/unsubscribe', '/unsubscribe?token=00000000-0000-4000-8000-000000000000'
     ]) {
       const res = await get(closed, path);
@@ -436,7 +436,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
 
     const locs = [...xml.matchAll(/<loc>([^<]*)<\/loc>/g)].map((m) => m[1]);
     for (const loc of locs) assert.ok(loc.startsWith(`${SITE}/`), loc);
-    for (const path of ['/', '/destinations', '/experiences', '/tours', '/about', '/photo-credits', '/explore', '/plan', '/journal']) {
+    for (const path of ['/', '/destinations', '/experiences', '/tours', '/about', '/photo-credits', '/explore', '/plan', '/journal', '/when-to-go']) {
       assert.ok(locs.includes(`${SITE}${path}`), path);
     }
     assert.ok(!locs.some((l) => l.includes('/unsubscribe')), 'never the unsubscribe page');
@@ -444,7 +444,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     const count = async (table: string) =>
       (await pool.query(`select count(*)::int as n from public.${table} where published`)).rows[0].n as number;
     const rows = (await count('destinations')) + (await count('featured_experiences')) + (await count('tours')) + (await count('articles'));
-    assert.equal(locs.length, 9 + rows, 'the fixed pages plus every published row');
+    assert.equal(locs.length, 10 + rows, 'the fixed pages plus every published row');
     assert.ok(!locs.includes(`${SITE}/destinations/galle`), 'not the unpublished one');
     assert.ok(!locs.some((l) => l.includes('?')), 'no filtered lists');
     assert.match(xml, new RegExp(`<url><loc>${SITE}/destinations/ella</loc><lastmod>\\d{4}-\\d{2}-\\d{2}</lastmod></url>`));
@@ -473,13 +473,13 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
 
     const links = [...text.matchAll(/\]\(([^)\s]+)\)/g)].map((m) => m[1]);
     for (const link of links) assert.ok(link.startsWith(`${SITE}/`), link);
-    for (const path of ['/', '/explore', '/destinations', '/experiences', '/tours', '/plan', '/journal', '/about', '/photo-credits']) {
+    for (const path of ['/', '/explore', '/destinations', '/experiences', '/tours', '/plan', '/when-to-go', '/journal', '/about', '/photo-credits']) {
       assert.ok(links.includes(`${SITE}${path}`), path);
     }
     const count = async (table: string) =>
       (await pool.query(`select count(*)::int as n from public.${table} where published`)).rows[0].n as number;
     const rows = (await count('destinations')) + (await count('featured_experiences')) + (await count('tours')) + (await count('articles'));
-    assert.equal(links.length, 9 + rows, 'the fixed pages plus every published row');
+    assert.equal(links.length, 10 + rows, 'the fixed pages plus every published row');
     assert.ok(links.includes(`${SITE}/destinations/ella`));
     assert.ok(!links.includes(`${SITE}/destinations/galle`), 'not the unpublished one');
     assert.ok(!links.some((l) => /\/admin|\/api\/|\/unsubscribe/.test(l)), 'never the admin, the API or the unsubscribe page');

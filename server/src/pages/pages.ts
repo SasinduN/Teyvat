@@ -100,6 +100,11 @@ const FIXED_PAGES: Record<string, () => Promise<[string, string, string | null]>
   ],
   [paths.plan]: async () => [PAGE_TITLES.plan, PAGE_DESCRIPTIONS.plan, await firstImage('hero_slides')],
   [paths.journal]: async () => [PAGE_TITLES.journal, PAGE_DESCRIPTIONS.journal, await firstImage('articles')],
+  [paths.whenToGo]: async () => [
+    PAGE_TITLES.whenToGo,
+    PAGE_DESCRIPTIONS.whenToGo,
+    (await firstImage('destinations', 'published and featured')) ?? (await firstImage('destinations'))
+  ],
   [paths.photoCredits]: async () => [PAGE_TITLES.photoCredits, PAGE_DESCRIPTIONS.photoCredits, await firstImage('hero_slides')]
 };
 
@@ -277,6 +282,7 @@ export async function llmsTxt(origin: string): Promise<string> {
     item(pageName(PAGE_TITLES.experiences), paths.experiences, PAGE_DESCRIPTIONS.experiences),
     item(pageName(PAGE_TITLES.tours), paths.tours, PAGE_DESCRIPTIONS.tours),
     item(pageName(PAGE_TITLES.plan), paths.plan, PAGE_DESCRIPTIONS.plan),
+    item(pageName(PAGE_TITLES.whenToGo), paths.whenToGo, PAGE_DESCRIPTIONS.whenToGo),
     item(pageName(PAGE_TITLES.journal), paths.journal, PAGE_DESCRIPTIONS.journal),
     item(pageName(PAGE_TITLES.about), paths.about, PAGE_DESCRIPTIONS.about),
     item(pageName(PAGE_TITLES.photoCredits), paths.photoCredits, PAGE_DESCRIPTIONS.photoCredits)

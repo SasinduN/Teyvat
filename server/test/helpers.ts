@@ -117,7 +117,7 @@ let seedSnapshot = false;
  * 0002 writes `tours.route`, which 0007 turned into `tour_stops` and dropped.
  * So the first reset in a process brings the column back, replays 0002 and
  * then 0007 (converting the routes exactly as on deploy, and proving 0007
- * still re-runs), and copies the result into the `test_seed` schema. Every
+ * still re-runs) and 0022, and copies the result into the `test_seed` schema. Every
  * later reset copies it back from there, without altering any table: each
  * add-and-drop of `tours.route` used up one of the table's 1,600 column
  * slots for good, and a long-used test database ran out. The schema itself is
@@ -142,6 +142,8 @@ export async function resetContent(options: { whatsappNumber?: string | null } =
     await pool.query(`alter table public.tours add column route text[] not null default '{}'`);
     await pool.query(migration('0002_seed.sql'));
     await pool.query(migration('0007_tour_stops.sql'));
+    // Best months come from best_time, which 0002 just wrote (0002 knows nothing of the column).
+    await pool.query(migration('0022_when_to_go.sql'));
     await pool.query(`drop schema if exists ${SEED_SCHEMA} cascade; create schema ${SEED_SCHEMA}`);
     for (const t of tables) await pool.query(`create table ${SEED_SCHEMA}.${t} as table public.${t}`);
     seedSnapshot = true;

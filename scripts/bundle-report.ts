@@ -28,6 +28,7 @@ const PAGES: [string, string, boolean][] = [
   ['Home', 'src/pages/HomePage.tsx', false],
   ['Explore', 'src/pages/ExplorePage.tsx', true],
   ['Plan', 'src/pages/PlanPage.tsx', false],
+  ['When to go', 'src/pages/WhenToGoPage.tsx', true],
   ['Journal', 'src/pages/JournalPage.tsx', false],
   ['Destinations list', 'src/pages/DestinationsPage.tsx', false],
   ['Destination', 'src/pages/DestinationPage.tsx', false],
@@ -39,6 +40,7 @@ const PAGES: [string, string, boolean][] = [
   ['Booking', 'src/pages/BookingPage.tsx', false],
   ['About', 'src/pages/AboutPage.tsx', false],
   ['Photo credits', 'src/pages/PhotoCreditsPage.tsx', false],
+  ['Wishlist', 'src/pages/WishlistPage.tsx', false],
   ['Unsubscribe', 'src/pages/UnsubscribePage.tsx', false],
   ['404', 'src/pages/NotFoundPage.tsx', false],
   ['Admin', 'src/admin/AdminApp.tsx', false]

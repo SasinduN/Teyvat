@@ -27,6 +27,7 @@
 | `0019_site_settings_text_size.sql` | `site_settings.text_size` (100, 110 or 120; the default is 100, today's size) |
 | `0020_media_photo_sets.sql` | `media.photo_key` and `width`: one photograph at several widths, for `srcset` |
 | `0021_site_stats_plain_copy.sql` | `site_settings.stats` (up to four); plainer seed copy, replacing only text still equal to the seed |
+| `0022_when_to_go.sql` | `destinations.best_months`, filled from `best_time` where the text is clear; `site_settings.when_to_go_explainer`, with its fact-checked default (`docs/reviews/when-to-go-sources.md`) |
 
 **Where the rules live.** There is no row-level security: every connection is
 the API's single database role. Rules are enforced in two layers:
@@ -87,6 +88,7 @@ and optional chaining. `npm run verify:roundtrip` asserts this.
 | `image` | `text` | `image` | an image URL: Unsplash or our R2 bucket (`shared/image-hosts.ts`) |
 | `gallery` | `text[]` | `gallery?` | empty array → `undefined` |
 | `best_time` | `text` | `bestTime` | |
+| `best_months` | `integer[]` | `bestMonths` | since 0022. Months 1 to 12, sorted; CHECK allows nothing else. Empty: not set, so `/when-to-go` says so on its map and leaves it out of its lists |
 | `experiences` | `text[]` | `experiences` | |
 | `highlights` | `text[]` | `highlights` | |
 | `rating` | `numeric(3,2)` | `rating` | `CHECK` 0–5; holds `4.95` |
@@ -269,8 +271,8 @@ can't be empty.
 
 ## `site_settings` (exactly one row)
 
-The Footer's contact details and links, the WhatsApp button's number, and the
-site's text size.
+The Footer's contact details and links, the WhatsApp button's number, the
+site's text size, its stats strip, and the `/when-to-go` explainer.
 The CHECK on `id` (always `true`) is what makes it single.
 
 | Column | Type | Notes |
@@ -281,6 +283,7 @@ The CHECK on `id` (always `true`) is what makes it single.
 | `instagram_url`, `facebook_url`, `tiktok_url`, `youtube_url`, `privacy_url`, `terms_url`, `sustainability_url` | `text` NULL | NULL (the Footer renders the link without an `href`) or `https://…`, ≤ 500 chars |
 | `whatsapp_number` | `text` NULL | since 0008. NULL (the WhatsApp button is hidden) or digits only, international format without `+`: 8–15 digits, not starting `0` or `940`, e.g. `94771234567`. The admin form strips spaces, dashes and a leading `+` (`shared/whatsapp.ts`) |
 | `text_size` | `smallint` | since 0019. 100 (the default), 110 or 120: a percent of the browser's default. Express writes it on `<html>` as `data-text-size`; `src/index.css` makes it the root font-size. Not in `GET /api/content` |
+| `when_to_go_explainer` | `text` NULL | since 0022. The monsoon explainer on `/when-to-go`: paragraphs separated by a blank line. NULL or empty hides it |
 
 `GET /api/content` exposes only the columns in `PUBLIC_SITE_SETTINGS_COLUMNS`
 (`shared/api.ts`), so a setting added later is private until someone adds it

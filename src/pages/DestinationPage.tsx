@@ -1,7 +1,7 @@
 import { TravelImage } from '@/components/TravelImage';
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { ExternalLink, Plane } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
+import { ArrowRight, ExternalLink, Plane } from 'lucide-react';
 import { HeroChip, PageHero } from '@/components/PageHero';
 import { DestinationCard, SectionHead, TourCard } from '@/components/PageCards';
 import { PlanCard } from '@/components/PlanCard';
@@ -87,7 +87,11 @@ function DestinationView({ d }: { d: Destination }) {
 
             <div>
               <dl className="te-facts">
-                <div><dt>Best season</dt><dd>{d.bestTime}</dd></div>
+                <div>
+                  <dt>Best season</dt>
+                  <dd>{d.bestTime}</dd>
+                  <dd><Link to={paths.whenToGo} className="te-ed-link" data-when-to-go-link>See when to go <ArrowRight aria-hidden="true" /></Link></dd>
+                </div>
                 <div><dt>Elevation or terrain</dt><dd>{d.elevation || d.region}</dd></div>
                 <div><dt>Good for</dt><dd>{d.idealFor.join(', ')}</dd></div>
               </dl>

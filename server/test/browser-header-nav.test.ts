@@ -121,7 +121,7 @@ describe('the header groups', { skip, timeout: 4 * 60_000 }, () => {
       assert.ok(await page.evaluate<boolean>(`${isClosed('Discover')} && ${isClosed('About')}`), 'closed at first');
       await clickAt(page, trigger('Discover'));
       await poll(page, isOpen('Discover'), 'open on click', 2_000);
-      assert.deepEqual(await page.evaluate<string[]>(`[...${menuOf('Discover')}.querySelectorAll('a')].map((a) => a.textContent.trim())`), ['Explore map', 'Destinations', 'Experiences']);
+      assert.deepEqual(await page.evaluate<string[]>(`[...${menuOf('Discover')}.querySelectorAll('a')].map((a) => a.textContent.trim())`), ['Explore map', 'Destinations', 'Experiences', 'When to go']);
       await clickAt(page, trigger('Discover'));
       await poll(page, isClosed('Discover'), 'closed on a second click', 2_000);
 
@@ -162,18 +162,18 @@ describe('the header groups', { skip, timeout: 4 * 60_000 }, () => {
       await press(page, 'ArrowDown');
       assert.equal(await page.evaluate<string>(focused), 'Destinations');
       await press(page, 'End');
-      assert.equal(await page.evaluate<string>(focused), 'Experiences');
+      assert.equal(await page.evaluate<string>(focused), 'When to go');
       await press(page, 'ArrowDown');
       assert.equal(await page.evaluate<string>(focused), 'Explore map', 'it wraps');
       await press(page, 'ArrowUp');
-      assert.equal(await page.evaluate<string>(focused), 'Experiences', 'and back');
+      assert.equal(await page.evaluate<string>(focused), 'When to go', 'and back');
       await press(page, 'Home');
       assert.equal(await page.evaluate<string>(focused), 'Explore map');
       await press(page, 'Escape');
       await poll(page, `${isClosed('Discover')} && ${focused} === 'Discover'`, 'Escape from a link: back on the button', 2_000);
 
       await press(page, 'ArrowUp');
-      await poll(page, `${isOpen('Discover')} && ${focused} === 'Experiences'`, 'ArrowUp opens, on the last link', 2_000);
+      await poll(page, `${isOpen('Discover')} && ${focused} === 'When to go'`, 'ArrowUp opens, on the last link', 2_000);
       await press(page, 'Tab');
       await poll(page, isClosed('Discover'), 'tabbing out closes it', 2_000);
       assert.equal(await page.evaluate<string>(focused), 'Tours', 'and goes on to the next item');
@@ -202,6 +202,7 @@ describe('the header groups', { skip, timeout: 4 * 60_000 }, () => {
       ['/destinations', ['Discover'], [['Destinations', 'page']]],
       ['/destinations/ella', ['Discover'], [['Destinations', 'page']]],
       ['/experiences/safari-yala', ['Discover'], [['Experiences', 'page']]],
+      ['/when-to-go', ['Discover'], [['When to go', 'page']]],
       ['/tours', [], [['Tours', 'page']]],
       ['/journal', [], [['Journal', 'page']]],
       ['/booking', [], [['Book Your Ride', 'page']]],
@@ -292,7 +293,7 @@ describe('the header groups', { skip, timeout: 4 * 60_000 }, () => {
         links: [...s.querySelectorAll('a')].map((a) => a.textContent.trim())
       }))`);
       assert.deepEqual(sections, [
-        { heading: 'Discover', links: ['Explore map', 'Destinations', 'Experiences'] },
+        { heading: 'Discover', links: ['Explore map', 'Destinations', 'Experiences', 'When to go'] },
         { heading: '', links: ['Tours', 'Book Your Ride', 'Journal'] },
         { heading: 'About', links: ['About', 'Contact'] }
       ]);

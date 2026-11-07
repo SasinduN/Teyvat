@@ -155,6 +155,13 @@
   --photo-link: var(--palette-sky);
   --photo-badge-bg: rgb(var(--photo-channels) / .72);
   --photo-border: rgb(var(--pearl-channels) / .22);
+  /* /when-to-go's markers: on the map's light tiles in both themes, so the same in both. */
+  --season-great-fill: var(--palette-deep-emerald);
+  --season-great-icon: var(--palette-white);
+  --season-ok-fill: var(--palette-champagne-gold);
+  --season-ok-icon: var(--palette-charcoal-ink);
+  --season-off-fill: var(--palette-white);
+  --season-off-icon: var(--palette-secondary-text);
 }
 
 /*

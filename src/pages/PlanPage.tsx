@@ -1,3 +1,5 @@
+import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { PageHero } from '@/components/PageHero';
 import { SiteLink } from '@/components/SiteLink';
 import { TravelPlanner } from '@/components/TravelPlanner';
@@ -44,6 +46,7 @@ export function PlanPage() {
                 Contact a Travel Designer
               </SiteLink>
               <WishlistTextLink text="See your wishlist" />
+              <Link to={paths.whenToGo} className="te-ed-link" data-when-to-go-link>See when to go <ArrowRight aria-hidden="true" /></Link>
             </div>
           </div>
         </div>

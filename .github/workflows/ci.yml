@@ -22,7 +22,9 @@ permissions:
 jobs:
   checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # Catches a hang the test runner's own limits don't (60 s a test, 10 min a file:
+    # scripts/run-tests.mjs). The tests alone took 24 min in November 2026, so 25 stopped passing runs.
+    timeout-minutes: 35
 
     services:
       postgres:
