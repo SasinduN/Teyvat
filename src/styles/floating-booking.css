@@ -1,6 +1,7 @@
 /*
- * The WhatsApp and Book a ride buttons: one fixed stack (FloatingActions.tsx). It rises by
- * --te-float-lift to clear what it would cover, as a transform, so nothing lays out again.
+ * The WhatsApp and Book a ride buttons: one fixed stack (FloatingActions.tsx). Once the page has
+ * stopped scrolling, it rises by --te-float-lift to clear what it would cover, in one move, as a
+ * transform, so nothing lays out again.
  */
 .te-floating-actions {
   position: fixed;
@@ -15,7 +16,7 @@
   max-width: calc(100vw - 2rem);
   pointer-events: none;
   transform: translateY(calc(-1 * var(--te-float-lift, 0px)));
-  transition: transform 220ms ease;
+  transition: transform 280ms ease-out;
 }
 /* 56 px on every screen, large enough to recognise. Their labels don't take any layout. */
 .te-floating-booking, .te-floating-chat {

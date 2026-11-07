@@ -7,7 +7,7 @@ import { after, before, describe, test } from 'node:test';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
-import { COVERED_CONTROLS, LIFT } from './floating';
+import { COVERED, LIFT } from './floating';
 import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
 
@@ -162,16 +162,17 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     assert.equal(await page.evaluate<number>(`document.querySelectorAll('${CTA}').length`),0,'booking trailing slash/query hidden');
   });
 
-  test('rises above submit buttons, inputs and cookie banners, hides only for modals, and works without WhatsApp', async () => {
+  test('holds its place over forms that scroll away, hides only for modals, and works without WhatsApp', async () => {
     const page=await open('/about'); await wait(page,shown(CTA),'CTA');
-    for(const kind of ['form','input','cookie','modal']) {
+    for(const kind of ['form','input','modal']) {
       await page.evaluate(`(() => {const box=document.createElement('div');box.id='qa-obstruction';box.style='position:fixed;right:0;bottom:0;width:250px;height:190px;z-index:70';box.innerHTML=${JSON.stringify(kind==='input'?'<form><input aria-label="Important contact input" /></form>':'<form><button type="submit">Important submit</button></form>')}; if(${JSON.stringify(kind)}==='cookie')box.dataset.cookieBanner='';if(${JSON.stringify(kind)}==='modal'){box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');} if(['form','input'].includes(${JSON.stringify(kind)}))box.querySelector('button,input').style='position:absolute;right:20px;bottom:100px;width:200px;height:50px';(${JSON.stringify(kind)}==='input'?document.querySelector('main'):document.body).append(box);return true;})()`);
       if(kind==='modal'){
         await wait(page,`document.querySelector('${CTA}').dataset.state==='hidden'`,'modal hides it');
         assert.equal(await page.evaluate<number>(`document.querySelector('${CTA}').tabIndex`),-1);
       } else {
-        const target=kind==='cookie'?'#qa-obstruction':'#qa-obstruction button,#qa-obstruction input';
-        await wait(page,`(() => {const t=document.querySelector(${JSON.stringify(target)}).getBoundingClientRect();return [...document.querySelectorAll('[data-floating-actions] a,[data-floating-actions] .te-floating-label')].every(el=>{const r=el.getBoundingClientRect();return r.bottom<=t.top||r.left>=t.right||r.right<=t.left||r.top>=t.bottom;})&&document.querySelector('${CTA}').dataset.state==='shown';})()`,`${kind} protected, and the buttons still shown`);
+        await sleep(500);
+        assert.equal(await page.evaluate<number>(LIFT),0,`${kind}: no dodging`);
+        assert.equal(await page.evaluate<string>(`document.querySelector('${CTA}').dataset.state`),'shown',`${kind}: still shown`);
       }
       await page.evaluate(`document.querySelector('#qa-obstruction').remove(); true`); await wait(page,`${shown(CTA)} && ${LIFT}===0`,'CTA back in place');
     }
@@ -187,19 +188,21 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     assert.equal(await noWA.evaluate<number>(`document.querySelector('[data-floating-actions]').children.length`),1,'no empty chat placeholder');
   });
 
-  test('a control arriving under a focused button: the stack rises as one, the focus stays and the control takes the tap', async () => {
+  test('something it does move for arriving under a focused button: the stack rises as one, the focus stays', async () => {
     await pool.query("update public.site_settings set whatsapp_number='94771236478' where id");
     const page=await open('/about'); await wait(page,shown(CTA),'unobstructed booking link');
     const gap=`document.querySelector('${WA}').getBoundingClientRect().top-document.querySelector('${CTA}').getBoundingClientRect().bottom`;
-    await page.evaluate(`(() => {const a=document.querySelector('${CTA}');a.focus();const r=a.getBoundingClientRect(),card=document.createElement('article');card.id='qa-card';card.className='te-card';card.style=\`position:fixed;z-index:44;left:\${r.left}px;top:\${r.top}px;width:\${r.width}px;height:\${r.height}px\`;card.innerHTML='<button>Discover</button>';card.firstChild.style.cssText='display:block;width:56px;height:56px;overflow:hidden';document.querySelector('main').append(card);return true;})()`);
-    await wait(page,`${LIFT}>0 && (() => {const r=document.querySelector('#qa-card button').getBoundingClientRect();return Boolean(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('#qa-card'));})()`,'the stack above the control');
+    await page.evaluate(`(() => {const a=document.querySelector('${CTA}');a.focus();const r=a.getBoundingClientRect(),box=document.createElement('div');box.id='qa-avoid';box.className='te-hero-controls';box.style.cssText=\`position:fixed;z-index:44;left:\${r.left}px;top:\${r.top}px;width:\${r.width}px;height:\${r.height}px\`;document.body.append(box);return true;})()`);
+    await wait(page,`${LIFT}>100`,'the stack above it');
+    await sleep(350);
+    assert.deepEqual(await page.evaluate<string[]>(COVERED),[],'clear of it');
     assert.equal(await page.evaluate<boolean>(`document.activeElement===document.querySelector('${CTA}')`),true,'focus stays on the button');
     assert.equal(await page.evaluate<boolean>(`document.querySelector('${CTA}').inert`),false,'never out of reach');
     assert.equal(await page.evaluate<number>(gap),12,'the two move together');
-    await page.evaluate(`document.querySelector('#qa-card').remove(); true`);await wait(page,`${LIFT}===0`,'back down after the control');
+    await page.evaluate(`document.querySelector('#qa-avoid').remove(); true`);await wait(page,`${LIFT}===0`,'back down after it');
   });
 
-  test("scrolling catalogue cards: their controls stay unobstructed at nine widths, and the buttons stay", async () => {
+  test("scrolling catalogue cards: at nine widths the buttons hold their place, shown, and the page never overflows", async () => {
     const page=await open('/experiences');
     for(const route of ['/experiences','/destinations','/tours']) {
       await page.send('Page.navigate',{url:on.baseUrl+route});await wait(page,`document.querySelector('main .te-card,main .destination-card')`,route);
@@ -208,9 +211,10 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
       for(const width of [320,375,390,430,768,1024,1280,1440,1920]) {
         await page.send('Emulation.setDeviceMetricsOverride',{width,height:650,deviceScaleFactor:1,mobile:width<768});
         await page.evaluate(`document.querySelector('main .te-card,main .destination-card').scrollIntoView({block:'center',behavior:'instant'}); true`);await sleep(350);
-        // The cards themselves can be under the buttons, which stay on screen: a phone's cards fill its width, so nothing could do both. Every control in them stays clear (COVERED_CONTROLS).
-        const result=await page.evaluate<{overflow:boolean;collisions:string[];touch:boolean;shown:boolean}>(`(() => {const floats=[...document.querySelectorAll('[data-floating-actions] a')];return {overflow:document.documentElement.scrollWidth>innerWidth,collisions:${COVERED_CONTROLS},touch:floats.every(f=>{const r=f.getBoundingClientRect();return r.width>=55.9&&r.height>=55.9;}),shown:floats.every(f=>f.dataset.state==='shown'&&!f.inert)};})()`);
-        assert.equal(result.overflow,false,route+' '+width);assert.deepEqual(result.collisions,[],route+' '+width);assert.ok(result.touch);assert.ok(result.shown,route+' '+width);
+        await sleep(400);
+        // The cards pass under the buttons, as under any floating button: they scroll away.
+        const result=await page.evaluate<{overflow:boolean;lift:number;touch:boolean;shown:boolean}>(`(() => {const floats=[...document.querySelectorAll('[data-floating-actions] a')];return {overflow:document.documentElement.scrollWidth>innerWidth,lift:${LIFT},touch:floats.every(f=>{const r=f.getBoundingClientRect();return r.width>=55.9&&r.height>=55.9;}),shown:floats.every(f=>f.dataset.state==='shown'&&!f.inert)};})()`);
+        assert.equal(result.overflow,false,route+' '+width);assert.equal(result.lift,0,route+' '+width);assert.ok(result.touch);assert.ok(result.shown,route+' '+width);
       }
     }
   });

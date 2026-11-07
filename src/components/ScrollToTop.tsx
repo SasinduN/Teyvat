@@ -10,12 +10,19 @@ import { focusPageHeading } from '@/lib/routeFocus';
  */
 const KEEP_CLEAR = '.leaflet-control-zoom, [data-keep-clear], [data-whatsapp-button], [data-floating-booking]';
 
+/**
+ * Save buttons sit at the left of every card, under this button's corner as the page scrolls.
+ * Looked for only once the page stops, so it doesn't flicker along a list.
+ */
+const SAVE = '[data-save]';
+const SCROLL_QUIET_MS = 150;
+
 /** Breathing room around the button, in px. */
 const MARGIN = 8;
 
-function overlapsKeepClear(button: HTMLElement): boolean {
+function overlapsAny(button: HTMLElement, selector: string): boolean {
   const b = button.getBoundingClientRect();
-  for (const el of document.querySelectorAll(KEEP_CLEAR)) {
+  for (const el of document.querySelectorAll(selector)) {
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) continue;
     if (r.left < b.right + MARGIN && r.right > b.left - MARGIN && r.top < b.bottom + MARGIN && r.bottom > b.top - MARGIN) {
@@ -28,8 +35,8 @@ function overlapsKeepClear(button: HTMLElement): boolean {
 /**
  * "Back to top", bottom left (the WhatsApp button is bottom right). Shown
  * once the visitor is more than a screen down, and hidden while `hidden`
- * (the enquiry or search modal is open) or while it would cover a
- * keep-clear target.
+ * (the enquiry or search modal is open), while it would cover a keep-clear
+ * target, or when the page has stopped with it over a Save button.
  *
  * It looks again on every scroll and resize, and also when something moves
  * or changes size without a scroll (map tiles or images loading above a
@@ -45,14 +52,24 @@ export function ScrollToTop({ hidden = false }: { hidden?: boolean }) {
   const ref = useRef<HTMLButtonElement>(null);
   const [scrolledDown, setScrolledDown] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  const [overSave, setOverSave] = useState(false);
 
   useEffect(() => {
     const button = ref.current;
     if (!button) return;
 
+    let scrolling = false;
+    let quiet = 0;
     const check = () => {
       setScrolledDown(window.scrollY > window.innerHeight);
-      setBlocked(overlapsKeepClear(button));
+      setBlocked(overlapsAny(button, KEEP_CLEAR));
+      if (!scrolling) setOverSave(overlapsAny(button, SAVE));
+    };
+    const onScroll = () => {
+      scrolling = true;
+      window.clearTimeout(quiet);
+      quiet = window.setTimeout(() => { scrolling = false; check(); }, SCROLL_QUIET_MS);
+      check();
     };
 
     const watched = new WeakSet<Element>();
@@ -97,12 +114,13 @@ export function ScrollToTop({ hidden = false }: { hidden?: boolean }) {
     watchCorner();
     watchTargets();
     check();
-    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onResize);
     mutations.observe(document.body, { childList: true, subtree: true });
 
     return () => {
-      window.removeEventListener('scroll', check);
+      window.clearTimeout(quiet);
+      window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
       resizes.disconnect();
       corner?.disconnect();
@@ -110,7 +128,7 @@ export function ScrollToTop({ hidden = false }: { hidden?: boolean }) {
     };
   }, []);
 
-  const visible = scrolledDown && !blocked && !hidden;
+  const visible = scrolledDown && !blocked && !overSave && !hidden;
 
   const toTop = () => {
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
