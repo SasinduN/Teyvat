@@ -5,13 +5,16 @@ import './test-db';
 /**
  * The WhatsApp and Book a ride buttons never disappear, on the real built site:
  *
- *   - scrolling each page in steps, top to bottom, at 375 and 1280 px, both buttons are
- *     visible and take a tap at every step, and they cover no control;
+ *   - during a continuous scroll they don't move at all, on four pages at 375 and 1280 px;
+ *   - scrolling in steps with stops, they move only a few times in the whole page, and only
+ *     in the zones of the hero, the map and the footer; at every step they're visible and
+ *     take a tap, and once stopped they're on none of those things or scroll-to-top;
+ *   - they move in one smooth transition once the page has stopped, without one for reduced motion;
  *   - they hide only for a modal: the enquiry form, search, the phone menu;
  *   - the labels: always on a laptop; on a phone for a few seconds, then back when the
  *     visitor stops near the top. The icons stay 56 px;
  *   - the pulse is CSS only, a few times and then every 8 s, and stops with reduced motion;
- *   - the end of every page sits above the buttons;
+ *   - the end of every page sits above the buttons, and its links take a tap;
  *   - the WhatsApp link is the international format, and goes with the number.
  *
  * Nothing here presses the WhatsApp button: "clickable" is a hit test, so no test opens the
@@ -27,7 +30,7 @@ import { DEV_WHATSAPP_NUMBER } from '../../scripts/fixtures/dev-whatsapp';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { findChrome, launchChrome, saveTheme, type Chrome, type Page } from './chrome';
-import { BUTTON_STATES, COVERED_CONTROLS, LIFT } from './floating';
+import { BUTTON_STATES, COVERED, LIFT, SCROLL_CONTINUOUSLY, TARGET_LIFT } from './floating';
 import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
 import { TEXT_AUDIT } from './text-audit';
 import { HOOK_TIMEOUT } from './timeouts';
@@ -90,45 +93,74 @@ describe('the floating buttons stay', { skip, timeout: 8 * 60_000 }, () => {
     await Promise.all(open.splice(0).map((page) => page.send('Page.close').catch(() => undefined)));
   };
 
-  /** One still moment: both buttons, seen and taking the tap, and nothing under them. Polls past the stack's 220 ms rise. */
-  async function assertStays(page: Page, where: string): Promise<void> {
+  /** Both buttons seen and taking a tap, right now: true at every step, moving or not. */
+  async function assertVisible(page: Page, where: string): Promise<void> {
     const states = await page.evaluate<ButtonState[]>(BUTTON_STATES);
     assert.equal(states.length, 2, `${where}: both buttons on the page`);
     for (const state of states) {
       assert.ok(state.shown, `${where}: ${state.name} hidden`);
       assert.ok(state.onScreen, `${where}: ${state.name} off screen`);
+      assert.ok(state.clickable, `${where}: ${state.name} under ${state.on}`);
       // A moving transform can read a hair under.
       assert.ok(state.width >= 55.9 && state.height >= 55.9, `${where}: ${state.name} is ${state.width}x${state.height}`);
     }
-    const until = Date.now() + 1_000;
-    for (;;) {
-      const now = await page.evaluate<ButtonState[]>(BUTTON_STATES);
-      const covered = await page.evaluate<string[]>(COVERED_CONTROLS);
-      const blocked = now.filter((state) => !state.clickable).map((state) => `${state.name} under ${state.on}`);
-      if ((covered.length === 0 && blocked.length === 0) || Date.now() > until) {
-        assert.deepEqual(blocked, [], `${where}: a tap reaches each button`);
-        assert.deepEqual(covered, [], `${where}: controls covered`);
-        return;
-      }
-      await sleep(40);
-    }
   }
 
-  for (const path of ['/', '/explore', '/tours', '/destinations/ella']) {
+  /** Until the stack has looked (the quiet time) and arrived (its transition). */
+  const SETTLE_MS = 150 + 280 + 120;
+
+  /**
+   * The scroll positions, in the page, where each thing the buttons move for can be on screen:
+   * only there may they move. `pad` is one step's slack, since they look only once stopped.
+   */
+  const ZONES = (pad: number) => `[...document.querySelectorAll('.te-hero-controls, .leaflet-control, #explore-map [data-keep-clear], [data-footer-last-row]')]
+    .map((el) => el.getBoundingClientRect())
+    .filter((r) => r.width > 0)
+    .map((r) => [r.top + scrollY - innerHeight - ${pad}, r.bottom + scrollY + ${pad}])`;
+
+  for (const path of ['/tours', '/destinations', '/', '/destinations/ella']) {
     for (const width of [375, 1280]) {
-      test(`${path} at ${width} px: visible and clickable at every step of the page`, async () => {
+      test(`${path} at ${width} px: not one move during a continuous scroll`, async () => {
         try {
           const page = await openPage(path, width);
+          await sleep(SETTLE_MS);
+          const { seen, frames } = await page.evaluate<{ seen: { top: number; scrollY: number }[]; frames: number }>(SCROLL_CONTINUOUSLY(width < 500 ? 14 : 20));
+          assert.ok(frames > 30, `a real scroll: ${frames} frames`);
+          assert.equal(seen.length, 1, `the button moved during the scroll: ${JSON.stringify(seen)}`);
+          await assertVisible(page, 'at the end of the scroll');
+        } finally {
+          await closeAll();
+        }
+      });
+
+      test(`${path} at ${width} px: stepping with stops, a few moves, only by the hero, map or footer; visible at every step, covering nothing`, async () => {
+        try {
+          const page = await openPage(path, width);
+          await sleep(SETTLE_MS);
+          const step = width < 500 ? 180 : 260;
+          const moves: { from: number; to: number; scrollY: number }[] = [];
+          let lift = await page.evaluate<number>(TARGET_LIFT);
           let steps = 0;
-          for (let y = 0; ; y += width < 500 ? 180 : 260) {
+          for (let y = step; ; y += step) {
             await page.evaluate(`window.scrollTo(0, ${y}), true`);
-            await page.evaluate(`new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true))))`);
+            await assertVisible(page, `${path} at ${width} px, just scrolled to ${y}`);
+            await sleep(SETTLE_MS);
             const at = await page.evaluate<{ y: number; bottom: boolean }>(`({ y: Math.round(scrollY), bottom: scrollY + innerHeight >= document.documentElement.scrollHeight - 1 })`);
-            await assertStays(page, `${path} at ${width} px, scrolled to ${at.y}`);
+            const where = `${path} at ${width} px, stopped at ${at.y}`;
+            await assertVisible(page, where);
+            assert.deepEqual(await page.evaluate<string[]>(COVERED), [], `${where}: covering`);
+            const now = await page.evaluate<number>(TARGET_LIFT);
+            if (now !== lift) { moves.push({ from: lift, to: now, scrollY: at.y }); lift = now; }
             steps += 1;
             if (at.bottom) break;
           }
           assert.ok(steps >= 3, `the whole page, in ${steps} steps`);
+          assert.ok(moves.length <= 6, `at most a few moves in the page: ${JSON.stringify(moves)}`);
+          const zones = await page.evaluate<[number, number][]>(ZONES(step));
+          for (const move of moves) {
+            assert.ok(zones.some(([a, b]) => move.scrollY >= a && move.scrollY <= b), `a move outside the hero, map and footer: ${JSON.stringify(move)} ${JSON.stringify(zones)}`);
+          }
+          console.log(`  ${path} at ${width} px: ${steps} stops, ${moves.length} moves ${JSON.stringify(moves)}`);
           assert.equal(await page.evaluate<boolean>(`document.documentElement.scrollWidth > innerWidth`), false, 'no sideways scroll');
         } finally {
           await closeAll();
@@ -137,23 +169,99 @@ describe('the floating buttons stay', { skip, timeout: 8 * 60_000 }, () => {
     }
   }
 
-  test('they rise smoothly over what matters, and come back down', async () => {
+  test('/explore: clear of the zoom buttons and Quick Jump while the map is on screen, and gone with it', async () => {
     try {
-      const page = await openPage('/about', 1280);
-      await poll(page, `${LIFT} === 0`, 'the stack at rest');
-      assert.match(await page.evaluate<string>(`getComputedStyle(document.querySelector('${STACK}')).transitionProperty`), /transform/, 'a transition, not a jump');
-      await page.evaluate(`(() => {
-        const box = document.createElement('div');
-        box.id = 'qa-keep-clear';
-        box.setAttribute('data-keep-clear', '');
-        box.style.cssText = 'position:fixed;right:0;bottom:0;width:320px;height:90px';
-        document.body.append(box);
-        return true;
-      })()`);
-      await poll(page, `${LIFT} > 60`, 'the stack above the target', 2_000);
-      await assertStays(page, 'over a keep-clear target');
-      await page.evaluate(`document.querySelector('#qa-keep-clear').remove(), true`);
-      await poll(page, `${LIFT} === 0`, 'the stack back down', 2_000);
+      for (const width of [375, 1280]) {
+        const page = await openPage('/explore', width);
+        await page.evaluate(`document.querySelector('#explore-map').scrollIntoView({ block: 'end' }), true`);
+        await poll(page, `document.querySelector('#explore-map .leaflet-control-zoom')`, 'the map');
+        await sleep(SETTLE_MS);
+        const top = await page.evaluate<number>(`document.querySelector('#explore-map').getBoundingClientRect().top + scrollY`);
+        const height = await page.evaluate<number>(`document.querySelector('#explore-map').offsetHeight`);
+        for (let y = top - 600; y <= top + height + 100; y += 90) {
+          await page.evaluate(`window.scrollTo(0, ${y}), true`);
+          await sleep(SETTLE_MS);
+          await assertVisible(page, `${width} px at ${y}`);
+          assert.deepEqual(await page.evaluate<string[]>(COVERED), [], `${width} px at ${y}: covering`);
+        }
+      }
+    } finally {
+      await closeAll();
+    }
+  });
+
+  test('home: above the slide arrows, and back down below the hero, in one smooth move after the scroll', async () => {
+    try {
+      for (const width of [375, 1280]) {
+        const page = await openPage('/', width);
+        await poll(page, `document.querySelector('.te-hero-controls')`, 'the slide controls');
+        await poll(page, `${TARGET_LIFT} > 0`, 'above the arrows at the top', 3_000);
+        const style = await page.evaluate<{ duration: string; easing: string }>(`(() => { const s = getComputedStyle(document.querySelector('${STACK}')); return { duration: s.transitionDuration, easing: s.transitionTimingFunction }; })()`);
+        assert.equal(style.duration, '0.28s');
+        assert.equal(style.easing, 'ease-out');
+        await sleep(SETTLE_MS);
+        assert.deepEqual(await page.evaluate<string[]>(COVERED), [], `${width} px: on the arrows`);
+
+        // Still lifted right after the scroll ends, inside the quiet time; down only after it.
+        await page.evaluate(`window.scrollTo(0, innerHeight * 1.5), true`);
+        assert.ok((await page.evaluate<number>(TARGET_LIFT)) > 0, 'no move as the scroll lands');
+        await poll(page, `${TARGET_LIFT} === 0`, 'back down once stopped', 2_000);
+        const moving = await page.evaluate<boolean>(`document.querySelector('${STACK}').getAnimations().some((a) => a.transitionProperty === 'transform')`);
+        assert.ok(moving, 'a transition carries it');
+        await sleep(SETTLE_MS);
+        assert.equal(await page.evaluate<number>(LIFT), 0);
+      }
+    } finally {
+      await closeAll();
+    }
+  });
+
+  test('stopped right at a boundary, it stays: a few pixels up and down never flip it', async () => {
+    try {
+      const page = await openPage('/', 375);
+      await poll(page, `${TARGET_LIFT} > 0`, 'above the arrows');
+      await sleep(SETTLE_MS);
+      // Walk down until it has just come down: the arrows are just above the buttons.
+      let y = 0;
+      while ((await page.evaluate<number>(TARGET_LIFT)) > 0 && y < 2000) {
+        y += 20;
+        await page.evaluate(`window.scrollTo(0, ${y}), true`);
+        await sleep(SETTLE_MS);
+      }
+      assert.equal(await page.evaluate<number>(TARGET_LIFT), 0, 'precondition: it came down');
+      const lifts: number[] = [];
+      for (const nudge of [-6, 0, -6, 0, -6, 0]) {
+        await page.evaluate(`window.scrollTo(0, ${y + nudge}), true`);
+        await sleep(SETTLE_MS);
+        lifts.push(await page.evaluate<number>(TARGET_LIFT));
+      }
+      assert.ok(new Set(lifts).size === 1, `it flipped: ${lifts}`);
+    } finally {
+      await closeAll();
+    }
+  });
+
+  test('reduced motion: it moves with no animation', async () => {
+    try {
+      const page = await openPage('/', 375, { reducedMotion: true });
+      await poll(page, `${TARGET_LIFT} > 0`, 'above the arrows');
+      assert.equal(await page.evaluate<string>(`getComputedStyle(document.querySelector('${STACK}')).transitionDuration`), '0s');
+      await page.evaluate(`window.scrollTo(0, innerHeight * 1.5), true`);
+      await poll(page, `${TARGET_LIFT} === 0`, 'down once stopped', 2_000);
+      assert.equal(await page.evaluate<number>(LIFT), 0, 'there at once');
+    } finally {
+      await closeAll();
+    }
+  });
+
+  test('phone: two 56 px icons and a 12 px gap, in the narrowest column they can', async () => {
+    try {
+      const page = await openPage('/about', 375);
+      await poll(page, `document.querySelector('${STACK} .te-floating-label') && getComputedStyle(document.querySelector('${STACK} .te-floating-label')).visibility === 'hidden'`, 'the labels collapsed', 8_000);
+      const size = await page.evaluate<{ width: number; height: number; right: number }>(`(() => { const r = document.querySelector('${STACK}').getBoundingClientRect(); return { width: r.width, height: r.height, right: innerWidth - r.right }; })()`);
+      assert.equal(size.width, 56);
+      assert.equal(size.height, 56 + 12 + 56);
+      assert.ok(size.right <= 16, `${size.right} px from the edge`);
     } finally {
       await closeAll();
     }
@@ -291,6 +399,8 @@ describe('the floating buttons stay', { skip, timeout: 8 * 60_000 }, () => {
             return [...document.querySelectorAll('${STACK} a')].every((a) => a.getBoundingClientRect().top >= row.bottom);
           })()`);
           assert.ok(clear, `${path} at ${width} px: the footer's last row is above the buttons`);
+          const blocked = await page.evaluate<string[]>(`[...document.querySelectorAll('[data-footer-last-row] a')].filter((a) => a.getAttribute('href')).filter((a) => { const r = a.getBoundingClientRect(); return !document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.closest('a')?.isSameNode(a); }).map((a) => a.textContent)`);
+          assert.deepEqual(blocked, [], `${path} at ${width} px: the legal links take a tap`);
           await page.send('Page.close').catch(() => undefined);
         }
       }
