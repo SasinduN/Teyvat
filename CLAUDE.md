@@ -43,7 +43,7 @@ this file or anywhere else in git.
 | H | Header groups (Discover, About), floating buttons that stay on screen, the wishlist's badge, the fake local WhatsApp number | done (#54) |
 | S | Floating buttons hold still while scrolling, moving only for the hero, map, scroll-to-top and footer | done (#55) |
 | G | When to go: best months per destination, a month slider and map on `/when-to-go`, the monsoon explainer (`docs/reviews/when-to-go-sources.md`) | done (#56) |
-| N | Nearby attractions: `attractions` (0023), the Nearby cards, small map markers, search, the wishlist; six new destinations and 30 attractions researched, imported as drafts by `npm run content:import` (`docs/reviews/places-sources.md`) | open (`feat/nearby-attractions`) |
+| N | Nearby attractions: `attractions` (0023), the Nearby cards, small map markers, search, the wishlist; six new destinations and 30 attractions researched, imported as drafts by `npm run content:import` (`docs/reviews/places-sources.md`) | done (#57) |
 
 Update the Status column when a phase lands.
 
@@ -480,7 +480,12 @@ Agreed, not started. Each one gets its own plan first.
 
 ## Checks
 
-CI runs all of these on every pull request and every push to `main`.
+CI runs all of these on every pull request and every push to `main`, except
+when only Markdown changed (top-level `*.md`, or `docs/` outside
+`docs/screenshots/`): then the `checks` job runs and passes without them, so the
+required status still reports. Don't replace that with a workflow `paths-ignore`:
+a required check that never reports blocks the merge. A newer push to a pull
+request cancels its older run; runs on `main` are never cancelled.
 
 - `npm run typecheck`
 - `npm run build`

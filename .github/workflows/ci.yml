@@ -2,6 +2,11 @@
 # the full test suite (API, database, headless Chrome) against a real
 # PostgreSQL. `main` requires this job ("checks") to pass, and Railway's
 # "Wait for CI" holds each deploy until it has.
+#
+# Docs-only changes skip the heavy steps, but the job itself always runs and
+# passes, so the required "checks" status still reports. (A workflow-level
+# `paths-ignore` would leave that required check waiting forever, blocking the
+# merge.) What counts as docs is decided in the "Docs only?" step below.
 name: CI
 
 on:
@@ -11,10 +16,12 @@ on:
   # Everything else is checked through its pull request, once per update.
   pull_request:
 
-# A newer push to the same branch cancels the run it replaces.
+# One run at a time per pull request (or per branch for pushes). A newer push to a
+# pull request cancels the run it replaces. On main nothing is cancelled: each merge
+# is a deploy that "Wait for CI" holds for its own run, and merges are one at a time.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -23,8 +30,10 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     # Catches a hang the test runner's own limits don't (60 s a test, 10 min a file:
-    # scripts/run-tests.mjs). The tests alone took 24 min in November 2026, so 25 stopped passing runs.
-    timeout-minutes: 35
+    # scripts/run-tests.mjs). The tests took about 26 min in November 2026 on the public
+    # repo's 4-core runner; a private repo's ubuntu-latest has 2 cores, so the suite is
+    # expected to run longer there.
+    timeout-minutes: 50
 
     services:
       postgres:
@@ -53,17 +62,60 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # The visual test compares InquiryModal against an older commit.
+          # The visual test compares InquiryModal against an older commit, and
+          # "Docs only?" compares this commit with the one before it.
           fetch-depth: 0
 
+      # Docs only: every changed file is Markdown at the top level (README.md,
+      # CLAUDE.md) or under docs/, except docs/screenshots/ (no-committed-images
+      # guards that folder, so a change there runs everything). A pull request is
+      # judged by its whole diff (its merge commit against the base), a push to main
+      # by everything since the previous push. Anything unclear runs every check.
+      - name: Docs only?
+        id: changes
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then from=HEAD^1; else from="$BEFORE"; fi
+          if ! files=$(git diff --name-only "$from" HEAD 2>/dev/null) || [ -z "$files" ]; then
+            echo "Can't tell what changed, so every check runs."
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          code=false
+          while IFS= read -r f; do
+            case "$f" in
+              docs/screenshots/*) code=true ;;
+              docs/*) ;;
+              */*) code=true ;;
+              *.md) ;;
+              *) code=true ;;
+            esac
+          done <<< "$files"
+          echo "$(printf '%s\n' "$files" | wc -l) files changed; code=$code"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Docs-only change, so the checks below are skipped
+        if: steps.changes.outputs.code != 'true'
+        run: echo "Only documentation changed. Typecheck, build, verify:roundtrip and the tests are skipped."
+
+      # ~/.npm is cached, keyed on package-lock.json (npm ci took 4 s with it).
+      # Chrome needs no cache: the tests use the runner image's /usr/bin/google-chrome.
       - uses: actions/setup-node@v4
+        if: steps.changes.outputs.code == 'true'
         with:
           node-version: 22
           cache: npm
 
-      - run: npm ci
-      - run: npm run typecheck
+      - if: steps.changes.outputs.code == 'true'
+        run: npm ci
+      - if: steps.changes.outputs.code == 'true'
+        run: npm run typecheck
       # Before the tests: the browser tests load the built client.
-      - run: npm run build
-      - run: npm run verify:roundtrip
-      - run: npm test
+      - if: steps.changes.outputs.code == 'true'
+        run: npm run build
+      - if: steps.changes.outputs.code == 'true'
+        run: npm run verify:roundtrip
+      - if: steps.changes.outputs.code == 'true'
+        run: npm test
