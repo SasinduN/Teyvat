@@ -1,17 +1,29 @@
 import { TravelImage } from '@/components/TravelImage';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useDestinations } from '@/hooks/useSiteContent';
-import { Link } from 'react-router-dom';
+import { useAttractions, useDestinations } from '@/hooks/useSiteContent';
+import { Link, useNavigate } from 'react-router-dom';
 import { paths } from '@shared/site-paths';
+import { distanceKm, distanceLabel } from '@shared/geo';
 import { matchesTravelTiming } from '@/lib/travelTiming';
 import { loadLeaflet } from '@/lib/leaflet';
 import { addThemedTiles, onThemeChangeWhileMapped } from '@/lib/mapTiles';
 import { tokenValue } from '@/lib/theme';
-import { MAP_CATEGORIES, MAP_CATEGORY_STYLES, markerHtml, routeStopHtml, SRI_LANKA_BOUNDS, type MapCategory } from '@/lib/mapMarkers';
+import {
+  ATTRACTION_RADIUS,
+  ATTRACTION_ZOOM,
+  attractionMarkerHtml,
+  attractionPopupHtml,
+  MAP_CATEGORIES,
+  MAP_CATEGORY_STYLES,
+  markerHtml,
+  routeStopHtml,
+  SRI_LANKA_BOUNDS,
+  type MapCategory
+} from '@/lib/mapMarkers';
 import { airportTravelTime, googleMapsUrl } from '@/lib/googleMaps';
 import { categoryLabel } from '@/lib/categories';
-import { Destination, CategoryType, TourPackage } from '../types';
+import { Attraction, Destination, CategoryType, TourPackage } from '../types';
 import {
   MapPin,
   ChevronRight,
@@ -41,6 +53,8 @@ interface InteractiveMapSectionProps {
   routeTour?: TourPackage | null;
   /** Leaves route mode (the chip's ✕, Escape, or choosing a filter). */
   onClearRoute?: () => void;
+  /** A destination to pick and fly to once the map is up ("View on map", `?place=`). */
+  focusPlaceId?: string | null;
 }
 
 /** The legend's icons: the same Lucide icons the markers draw (src/lib/mapMarkers.ts). */
@@ -72,6 +86,10 @@ const MapLegendList: React.FC<{ id?: string; className: string }> = ({ id, class
         </li>
       );
     })}
+    <li className="flex items-center gap-1.5 text-xs text-[var(--text-primary)]/75" data-legend="attraction">
+      <span className="attraction-key" aria-hidden="true" />
+      Nearby attraction
+    </li>
   </ul>
 );
 
@@ -81,6 +99,8 @@ const LABEL_ZOOM = 9;
 const FIT_MAX_ZOOM = 9;
 /** A route is framed no closer than this. */
 const ROUTE_MAX_ZOOM = 10;
+/** A picked place's attractions show from this zoom (picking one flies to 9.5). */
+const PICKED_ATTRACTION_ZOOM = 9;
 /** A marker's radius on screen (the active one is scaled 1.25), and the gap kept between markers. */
 const MARKER_RADIUS = 16;
 const ACTIVE_RADIUS = 20;
@@ -126,9 +146,18 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
   selectedTimingFromParent = 'Anytime',
   searchRequestId = 0,
   routeTour = null,
-  onClearRoute
+  onClearRoute,
+  focusPlaceId = null
 }) => {
   const DESTINATIONS = useDestinations();
+  const ATTRACTIONS = useAttractions();
+  const navigate = useNavigate();
+  /** Attraction markers by id, with each one's own place; drawn only while visible (`syncAttractionsRef`). */
+  const attractionMarkersRef = useRef<Map<string, { marker: any; home: [number, number]; attraction: Attraction }>>(new Map());
+  const attractionLayerRef = useRef<any>(null);
+  const syncAttractionsRef = useRef<() => void>(() => {});
+  /** Whether the active place is the visitor's choice (a marker, Quick Jump, "View on map"), not the opening default. */
+  const pickedRef = useRef(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryType | 'All'>('All');
   const [activeDest, setActiveDest] = useState<Destination | null>(
     DESTINATIONS.find((d) => d.id === 'ella') || DESTINATIONS[0]
@@ -185,6 +214,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
   /** Picks a place (a marker or Quick Jump) and flies to it: from then on the view is the visitor's. */
   const flyToPlace = (dest: Destination) => {
     setActiveDest(dest);
+    pickedRef.current = true;
     const map = mapInstanceRef.current;
     if (!map) return;
     programmaticMoveRef.current = true;
@@ -348,6 +378,8 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
         const syncZoom = () => {
           container.classList.toggle('map-labels-on', map.getZoom() >= LABEL_ZOOM);
           container.dataset.zoom = String(map.getZoom());
+          // Attractions come and go with the zoom (before the move's spread, at 'moveend').
+          syncAttractionsRef.current();
         };
         map.on('zoomend', syncZoom);
         syncZoom();
@@ -392,6 +424,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
         leafletRef.current = L;
         mapInstanceRef.current = map;
         markersGroupRef.current = L.layerGroup().addTo(map);
+        attractionLayerRef.current = L.layerGroup().addTo(map);
         setMapReady(true);
       } catch (err) {
         console.error('Failed to initialize Leaflet map:', err);
@@ -474,6 +507,106 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
     });
     spreadMarkersRef.current();
   }, [mapReady, activeDest, filteredDestinations]);
+
+  /**
+   * Nearby attractions: a small diamond each, for the published attractions of the
+   * places the filters show. Built here, drawn only while `syncAttractionsRef` says so.
+   * A click opens a popup linking to its destination; it never picks or moves the map.
+   */
+  useEffect(() => {
+    const L = leafletRef.current;
+    const layer = attractionLayerRef.current;
+    if (!mapReady || !L || !layer) return;
+    layer.clearLayers();
+    attractionMarkersRef.current.clear();
+    const shown = new Map(filteredDestinations.map((d) => [d.id, d]));
+    for (const attraction of ATTRACTIONS) {
+      const parent = shown.get(attraction.destinationId);
+      if (!parent) continue;
+      const marker = L.marker([attraction.latitude, attraction.longitude], {
+        icon: L.divIcon({
+          html: attractionMarkerHtml(attraction.name),
+          className: 'attraction-leaflet-marker',
+          iconSize: [ATTRACTION_RADIUS * 2, ATTRACTION_RADIUS * 2],
+          iconAnchor: [ATTRACTION_RADIUS, ATTRACTION_RADIUS]
+        }),
+        // Tab reaches it while it shows; Enter (or Space) opens its popup.
+        keyboard: true,
+        zIndexOffset: -100
+      });
+      const popup = document.createElement('div');
+      popup.innerHTML = attractionPopupHtml({
+        name: attraction.name,
+        category: categoryLabel(attraction.category),
+        text: attraction.shortDescription,
+        destination: parent.name,
+        distance: distanceLabel(distanceKm(parent, attraction)),
+        href: paths.attraction(parent.id, attraction.id)
+      });
+      // A real link that stays inside the app, unless the visitor asks for a new tab.
+      popup.addEventListener('click', (event) => {
+        const link = (event.target as Element).closest('a');
+        if (!link || event.metaKey || event.ctrlKey || event.shiftKey) return;
+        event.preventDefault();
+        navigate(link.getAttribute('href')!);
+      });
+      popup.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        event.stopPropagation();
+        marker.closePopup();
+        marker.getElement()?.focus();
+      });
+      marker.bindPopup(popup, { maxWidth: 280, minWidth: 200, autoPanPadding: [16, 16] });
+      // From the keyboard, the popup's link comes next, and Escape comes back.
+      marker.on('popupopen', () => {
+        if (marker.getElement()?.matches(':focus-visible')) popup.querySelector('a')?.focus();
+      });
+      marker.on('add', () => {
+        const el = marker.getElement();
+        if (!el || el.dataset.attraction) return;
+        el.dataset.attraction = attraction.id;
+        el.setAttribute('aria-label', `${attraction.name}, near ${parent.name}`);
+        el.addEventListener('keydown', (event) => {
+          if (event.key !== ' ') return;
+          event.preventDefault();
+          marker.openPopup();
+        });
+      });
+      attractionMarkersRef.current.set(attraction.id, { marker, home: [attraction.latitude, attraction.longitude], attraction });
+    }
+    syncAttractionsRef.current();
+    spreadMarkersRef.current();
+  }, [mapReady, ATTRACTIONS, filteredDestinations, navigate]);
+
+  /**
+   * Which attractions show: all of them from zoom 10, and before that only those of
+   * the place the visitor picked, once the map is close enough to tell them apart.
+   * Never over a tour's route. So the island view stays as it was.
+   */
+  syncAttractionsRef.current = () => {
+    const map = mapInstanceRef.current;
+    const layer = attractionLayerRef.current;
+    if (!map || !layer) return;
+    const zoom = map.getZoom();
+    let count = 0;
+    attractionMarkersRef.current.forEach(({ marker, attraction }) => {
+      const picked = pickedRef.current && attraction.destinationId === activeDest?.id && zoom >= PICKED_ATTRACTION_ZOOM;
+      const visible = !routeTour && (zoom >= ATTRACTION_ZOOM || picked);
+      if (visible) count += 1;
+      if (visible && !layer.hasLayer(marker)) layer.addLayer(marker);
+      if (!visible && layer.hasLayer(marker)) {
+        marker.closePopup();
+        layer.removeLayer(marker);
+      }
+    });
+    if (mapContainerRef.current) mapContainerRef.current.dataset.attractions = String(count);
+  };
+
+  useEffect(() => {
+    if (!mapReady) return;
+    syncAttractionsRef.current();
+    spreadMarkersRef.current();
+  }, [mapReady, activeDest, routeTour]);
 
   /**
    * The padding that keeps framed markers clear of everything drawn on the
@@ -589,13 +722,22 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
     const safe = userMovedRef.current ? null : safePaddingRef.current;
     const activeId = activeDest?.id;
 
-    const items: { marker: any; home: [number, number]; active: boolean; r: number; x: number; y: number; clamp: boolean }[] = [];
+    // Rank decides who moves where two touch: the active place never, a destination for
+    // it, an attraction for either.
+    const items: { marker: any; home: [number, number]; active: boolean; r: number; rank: number; x: number; y: number; clamp: boolean }[] = [];
+    const inSafeArea = (p: { x: number; y: number }) =>
+      Boolean(safe && p.x >= safe.left && p.x <= size.x - safe.right && p.y >= safe.top && p.y <= size.y - safe.bottom);
     markersByIdRef.current.forEach((marker, id) => {
       const home = markerHomesRef.current.get(id);
       if (!home) return;
       const p = map.latLngToContainerPoint(home);
-      const clamp = Boolean(safe && p.x >= safe.left && p.x <= size.x - safe.right && p.y >= safe.top && p.y <= size.y - safe.bottom);
-      items.push({ marker, home, active: id === activeId, r: id === activeId ? ACTIVE_RADIUS : MARKER_RADIUS, x: p.x, y: p.y, clamp });
+      const active = id === activeId;
+      items.push({ marker, home, active, r: active ? ACTIVE_RADIUS : MARKER_RADIUS, rank: active ? 3 : 2, x: p.x, y: p.y, clamp: inSafeArea(p) });
+    });
+    attractionMarkersRef.current.forEach(({ marker, home }) => {
+      if (!attractionLayerRef.current?.hasLayer(marker)) return;
+      const p = map.latLngToContainerPoint(home);
+      items.push({ marker, home, active: false, r: ATTRACTION_RADIUS, rank: 1, x: p.x, y: p.y, clamp: inSafeArea(p) });
     });
     const active = items.find((it) => it.active);
     const labelEl: HTMLElement | null | undefined = active?.marker.getElement()?.querySelector('.map-marker-label');
@@ -620,7 +762,7 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
             d = 1;
           }
           const push = min - d;
-          const share = a.active ? 0 : b.active ? 1 : 0.5;
+          const share = a.rank > b.rank ? 0 : a.rank < b.rank ? 1 : 0.5;
           a.x -= (dx / d) * push * share;
           a.y -= (dy / d) * push * share;
           b.x += (dx / d) * push * (1 - share);
@@ -703,6 +845,17 @@ export const InteractiveMapSection: React.FC<InteractiveMapSectionProps> = ({
     fitCurrent(firstFitDoneRef.current);
     firstFitDoneRef.current = true;
   }, [mapReady, selectedCategory, selectedTimingFromParent, filteredDestinations, routeTour]);
+
+  // "View on map" on a destination's page: pick that place and fly to it, so its
+  // attractions show. After the first fit above, so the fit doesn't undo it.
+  const focusedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!mapReady || !focusPlaceId || focusedRef.current === focusPlaceId) return;
+    const dest = DESTINATIONS.find((d) => d.id === focusPlaceId);
+    if (!dest) return;
+    focusedRef.current = focusPlaceId;
+    flyToPlace(dest);
+  }, [mapReady, focusPlaceId, DESTINATIONS]);
 
   // Route mode: the tour's numbered stops, joined in order by a dashed line,
   // framed to fit. Waits for the map, so a route picked before it loaded is

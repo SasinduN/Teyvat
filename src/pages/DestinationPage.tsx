@@ -3,12 +3,12 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowRight, ExternalLink, Plane } from 'lucide-react';
 import { HeroChip, PageHero } from '@/components/PageHero';
-import { DestinationCard, SectionHead, TourCard } from '@/components/PageCards';
+import { AttractionCard, DestinationCard, SectionHead, TourCard } from '@/components/PageCards';
 import { PlanCard } from '@/components/PlanCard';
 import { SaveButton } from '@/components/SaveButton';
 import { WishlistTextLink } from '@/components/WishlistLink';
 import { usePageSubject, usePageTitle } from '@/context/PublicSiteContext';
-import { useDestinations, useTours } from '@/hooks/useSiteContent';
+import { useAttractions, useDestinations, useTours } from '@/hooks/useSiteContent';
 import { airportTravelTime, googleMapsUrl } from '@/lib/googleMaps';
 import { pageTitle } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
@@ -30,6 +30,7 @@ function DestinationView({ d }: { d: Destination }) {
   usePageSubject({ inquiry: d.name, whatsapp: { kind: 'destination', id: d.id, name: d.name } });
   const all = useDestinations();
   const tours = useTours();
+  const nearby = useAttractions().filter((a) => a.destinationId === d.id);
   const [photo, setPhoto] = useState(d.image);
 
   const photos = [d.image, ...(d.gallery ?? [])];
@@ -89,11 +90,12 @@ function DestinationView({ d }: { d: Destination }) {
               <dl className="te-facts">
                 <div>
                   <dt>Best season</dt>
-                  <dd>{d.bestTime}</dd>
+                  {/* A new place may not have one yet: the link still says where to look. */}
+                  {d.bestTime && <dd>{d.bestTime}</dd>}
                   <dd><Link to={paths.whenToGo} className="te-ed-link" data-when-to-go-link>See when to go <ArrowRight aria-hidden="true" /></Link></dd>
                 </div>
                 <div><dt>Elevation or terrain</dt><dd>{d.elevation || d.region}</dd></div>
-                <div><dt>Good for</dt><dd>{d.idealFor.join(', ')}</dd></div>
+                {d.idealFor.length > 0 && <div><dt>Good for</dt><dd>{d.idealFor.join(', ')}</dd></div>}
               </dl>
 
               {/* Google Maps, and the travel time from the airport when set */}
@@ -154,6 +156,31 @@ function DestinationView({ d }: { d: Destination }) {
         </div>
       </section>
 
+      {nearby.length > 0 && (
+        <Section name="Nearby">
+          <section className="py-16 sm:py-20" aria-labelledby="nearby-heading" data-nearby>
+            <div className="te-container">
+              <div className="te-section-header te-ed-head">
+                <h2 id="nearby-heading" className="te-ed-title font-heading">Nearby attractions</h2>
+              </div>
+              <p className="te-nearby-intro">
+                Distances are in a straight line from {d.name}; the road is longer.{' '}
+                <Link to={paths.destinationOnMap(d.id)} className="te-ed-link" data-nearby-map-link>
+                  View on map <ArrowRight aria-hidden="true" />
+                </Link>
+              </p>
+              <ul className="te-nearby-grid">
+                {nearby.map((a) => (
+                  <li key={a.id}>
+                    <AttractionCard attraction={a} from={d} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        </Section>
+      )}
+
       {through.length > 0 && (
         <Section name="ToursThrough">
           <section className="bg-[var(--background-secondary)] py-16 sm:py-20">
@@ -173,7 +200,7 @@ function DestinationView({ d }: { d: Destination }) {
         <Section name="MoreDestinations">
           <section className="py-16 sm:py-20">
             <div className="te-container">
-              <SectionHead title="Nearby and similar places" />
+              <SectionHead title="Similar places" />
               <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                 {more.map((x) => (
                   <DestinationCard key={x.id} dest={x} />

@@ -6,6 +6,7 @@ import type { Field } from '@/admin/collections';
 import { FieldHelp, FieldLabel, Input, Select, Textarea } from '@/admin/components/ui';
 import { ImageListPicker, ImagePicker } from '@/admin/components/ImagePicker';
 import { type StopDraft, TourStopsField } from '@/admin/components/TourStopsField';
+import { LocationPicker, ReferenceSelect } from '@/admin/components/AttractionFields';
 import {
   type ItineraryDay,
   ItineraryField,
@@ -29,6 +30,8 @@ interface RecordFormProps {
   lockSlug: boolean;
   /** Something small to show at the end of a field's label row, by field name. */
   labelExtras?: Partial<Record<string, React.ReactNode>>;
+  /** A map after the longitude field, setting the latitude and longitude (attractions). */
+  locationPicker?: boolean;
 }
 
 /* ---------------------------------------------------- coercion for display */
@@ -53,10 +56,11 @@ export const RecordForm: React.FC<RecordFormProps> = ({
   control,
   errors,
   lockSlug,
-  labelExtras
+  labelExtras,
+  locationPicker
 }) => (
   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-    {fields.map((field) => {
+    {fields.flatMap((field) => {
       const error = errors[field.name];
       // The stops editor shows each row's messages on the row itself; only a
       // message about the whole list ("Add at least one stop.") goes below.
@@ -69,7 +73,7 @@ export const RecordForm: React.FC<RecordFormProps> = ({
         </FieldLabel>
       );
 
-      return (
+      const cell = (
         <div
           key={field.name}
           className={cn('space-y-2', (field.span ?? 1) === 2 && 'sm:col-span-2')}
@@ -103,6 +107,9 @@ export const RecordForm: React.FC<RecordFormProps> = ({
           {field.help && !message && <FieldHelp>{field.help}</FieldHelp>}
         </div>
       );
+      return locationPicker && field.name === 'longitude'
+        ? [cell, <div key="location-picker" className="sm:col-span-2"><LocationPicker control={control} /></div>]
+        : [cell];
     })}
   </div>
 );
@@ -332,5 +339,8 @@ function renderControl(
 
     case 'tourStops':
       return <TourStopsField value={asStops(value)} onChange={onChange} errors={error} />;
+
+    case 'reference':
+      return <ReferenceSelect id={id} value={asString(value)} invalid={invalid} onBlur={onBlur} onChange={onChange} />;
   }
 }

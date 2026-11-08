@@ -179,6 +179,7 @@ npm run build && npm start     # everything on http://localhost:8081
 | `npm run images:audit` | Read-only: stored image URLs the CSP would block (`--prod`) |
 | `npm run media:rebase` | Move stored image URLs to a new R2 base (`--from`, `--to`, `--dry-run`, `--prod`) |
 | `npm run images:import` | Copy the Wikimedia photos the content uses into R2 and repoint rows and credits (`--dry-run`, `--prod`) |
+| `npm run content:import` | Researched destinations and attractions (`scripts/content/places.json`) into the database as drafts, photos to R2 with credits; never overwrites an admin's edit (`--dry-run`, `--prod`, `--skip-photos`) |
 
 These four use the local database. **`--prod`** runs one against production
 instead: it reads `PROD_DATABASE_URL` (the Postgres service's
@@ -304,6 +305,12 @@ the CSP below).
   `Retry-After`. Run `-- --dry-run` first; it's safe to re-run. Since
   migration 0013 the CSP no longer allows Wikimedia, and any row still on a
   0010 Wikimedia photo is back on its seed photo.
+- **`npm run content:import`** writes `scripts/content/places.json` (sources:
+  `docs/reviews/places-sources.md`) as unpublished drafts, each photo downloaded from Commons the
+  same polite way, put in R2 and credited. It records what it wrote in `content_imports` and
+  updates a row only while nobody has saved it since, so an edit in the admin is never
+  overwritten and a row deleted there isn't created again. Run `-- --dry-run` first; it's safe to
+  re-run. For a local database with no R2, `-- --skip-photos`.
 
 ### Newsletter
 
@@ -465,7 +472,7 @@ point-in-time recovery).
   no `sslmode`: its traffic never leaves Railway's private network. It logs a
   warning at start-up if given anything else.
 - The scripts that reach production from a laptop with `--prod`
-  (`admin:create`, `images:audit`, `images:import`, `media:rebase`) read
+  (`admin:create`, `images:audit`, `images:import`, `content:import`, `media:rebase`) read
   `PROD_DATABASE_URL`: the Postgres service's `DATABASE_PUBLIC_URL` with
   `?sslmode=require`. That is encrypted but not authenticated, because
   Railway's proxy certificate is self-signed.

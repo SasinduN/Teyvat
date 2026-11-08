@@ -126,6 +126,24 @@ export interface DestinationRow extends Timestamps, Orderable {
   best_months: number[];
 }
 
+/**
+ * Since 0023. A place near a destination, shown on its page and the maps, only while
+ * both are published. A draft until published (the column's default is false).
+ */
+export interface AttractionRow extends Timestamps, Orderable {
+  id: string;
+  destination_id: string;
+  name: string;
+  category: StoredCategory;
+  short_description: string;
+  latitude: number;
+  longitude: number;
+  /** An R2 photo, credited in image_credits; NULL shows a placeholder. */
+  image: string | null;
+  /** Months 1 to 12, sorted, only where a source supports them. Empty: not set. */
+  best_months: number[];
+}
+
 export interface ExperienceCategoryRow extends Timestamps, Orderable {
   id: string;
   title: string;
@@ -326,6 +344,7 @@ export type Update<T> = Partial<Omit<T, 'id' | Generated>>;
  */
 export interface ContentTables {
   destinations: DestinationRow;
+  attractions: AttractionRow;
   experience_categories: ExperienceCategoryRow;
   featured_experiences: FeaturedExperienceRow;
   tours: TourRow;
@@ -341,6 +360,7 @@ export type ContentTableName = keyof ContentTables;
 /** Every content table, in admin-menu order. Also the API's table allow-list. */
 export const CONTENT_TABLE_NAMES = [
   'destinations',
+  'attractions',
   'experience_categories',
   'featured_experiences',
   'tours',

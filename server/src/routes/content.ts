@@ -15,6 +15,7 @@ import {
 } from '../../../shared/api';
 import type {
   ArticleRow,
+  AttractionRow,
   DestinationRow,
   ExperienceCategoryRow,
   FeaturedExperienceRow,
@@ -87,6 +88,20 @@ async function selectSiteSettings(): Promise<PublicSiteSettings> {
   return rows[0];
 }
 
+/**
+ * Attractions show only while they and their destination are both published: an
+ * unpublished destination takes its attractions off the site with it.
+ */
+async function selectPublishedAttractions(): Promise<AttractionRow[]> {
+  const { rows } = await pool.query<AttractionRow>(
+    `select a.* from public.attractions a
+       join public.destinations d on d.id = a.destination_id
+      where a.published and d.published
+      order by a.sort_order asc, a.id asc`
+  );
+  return rows;
+}
+
 /** The public rows carry no rating: see `PublicDestinationRow` in shared/api.ts. */
 function withoutRating<T extends { rating: number }>({ rating: _rating, ...row }: T): Omit<T, 'rating'> {
   return row;
@@ -111,7 +126,8 @@ contentRouter.get(
       pillars,
       siteSettings,
       stopsByTour,
-      imageCredits
+      imageCredits,
+      attractions
     ] = await Promise.all([
       selectPublished<DestinationRow>('destinations'),
       selectPublished<ExperienceCategoryRow>('experience_categories'),
@@ -124,13 +140,15 @@ contentRouter.get(
       selectPublished<PillarRow>('pillars'),
       selectSiteSettings(),
       publicStopsByTour(pool),
-      publicImageCredits(pool)
+      publicImageCredits(pool),
+      selectPublishedAttractions()
     ]);
     const photoSets = await loadPhotoSets(pool);
     const { resolvedPhoto, publicPhoto, publicGallery, photoStoryLocation, photoStoryCopy } = photoResolver(photoSets);
 
     const payload: SiteContentPayload = {
       destinations: destinations.map(withoutRating),
+      attractions,
       experienceCategories,
       featuredExperiences: featuredExperiences.map(withoutRating),
       // Each tour carries its route stops, resolved, so the client joins nothing.
@@ -164,8 +182,11 @@ contentRouter.get(
       }
     }
     for (const row of payload.destinations) row.gallery = publicGallery(row.id, row.gallery).map(resolvedPhoto);
+    // An attraction's photo is its own upload (or none): only an R2 set to resolve.
+    for (const row of payload.attractions) if (row.image) row.image = resolvedPhoto(row.image);
     const used = new Set(photoCollections.flatMap(([, rows]) => rows.map(row => row.image)));
     for (const row of payload.destinations) for (const image of row.gallery) used.add(image);
+    for (const row of payload.attractions) if (row.image) used.add(row.image);
     payload.imageCredits = payload.imageCredits
       .map(credit => ({ ...credit, url: resolvedPhoto(credit.url) }))
       .filter(credit => used.has(credit.url));

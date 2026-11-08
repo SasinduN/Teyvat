@@ -5,6 +5,7 @@
 @import "./styles/cards.css";
 @import "./styles/home-destinations.css";
 @import "./styles/editorial.css";
+@import "./styles/attractions.css";
 
 @layer base {
   :root {

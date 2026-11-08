@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -25,8 +25,10 @@ import {
   Card,
   EmptyState,
   ErrorNote,
+  FieldLabel,
   Input,
   PageHeader,
+  Select,
   Spinner
 } from '@/admin/components/ui';
 import { cn } from '@/utils/cn';
@@ -111,17 +113,44 @@ export const CollectionPage: React.FC = () => {
     onError: (e) => toast.error(describeError(e))
   });
 
-  const filtered = useMemo(() => {
-    if (!rows || !collection) return rows;
-    const term = search.trim().toLowerCase();
-    if (!term) return rows;
+  // Attractions: the list by destination, kept in the URL so the form can come back to it.
+  const filterBy = collection?.filterBy;
+  const [params, setParams] = useSearchParams();
+  const filterValue = filterBy ? (params.get(filterBy.field) ?? '') : '';
+  const destinations = useQuery({
+    queryKey: queryKeys.admin.collection('destinations'),
+    queryFn: () => listRows('destinations') as Promise<unknown> as Promise<Row[]>,
+    enabled: Boolean(filterBy)
+  });
+  const destinationName = useMemo(
+    () => new Map((destinations.data ?? []).map((d) => [d.id, String(d.name ?? d.id)])),
+    [destinations.data]
+  );
+  // Destinations: how many attractions each would take with it if deleted.
+  const attractions = useQuery({
+    queryKey: queryKeys.admin.collection('attractions'),
+    queryFn: () => listRows('attractions') as Promise<unknown> as Promise<Row[]>,
+    enabled: collection?.table === 'destinations'
+  });
+  const attractionsOf = (id: string) => (attractions.data ?? []).filter((a) => a.destination_id === id).length;
 
-    return rows.filter((r) =>
+  /** The rows the filter shows, in their order: reordering moves a row past its neighbour here. */
+  const inFilter = useMemo(
+    () => (rows && filterBy && filterValue ? rows.filter((r) => r[filterBy.field] === filterValue) : rows),
+    [rows, filterBy, filterValue]
+  );
+
+  const filtered = useMemo(() => {
+    if (!inFilter || !collection) return inFilter;
+    const term = search.trim().toLowerCase();
+    if (!term) return inFilter;
+
+    return inFilter.filter((r) =>
       [collection.titleField, collection.subtitleField, collection.metaField, 'id']
         .filter(Boolean)
         .some((f) => String(r[f as string] ?? '').toLowerCase().includes(term))
     );
-  }, [rows, search, collection]);
+  }, [inFilter, search, collection]);
 
   /**
    * Destinations: which featured rows the public spotlight actually shows. It
@@ -156,14 +185,22 @@ export const CollectionPage: React.FC = () => {
     (reorder.isPending && reorder.variables?.movedId) ||
     null;
 
-  const handleMove = (index: number, delta: number) => {
-    if (!rows) return;
-    const target = index + delta;
-    if (target < 0 || target >= rows.length) return;
+  /**
+   * Swaps a row with its neighbour in the list as shown (filtered or not). The two trade
+   * places in the whole table's order and nothing else moves, so the API still gets every
+   * row, as it requires.
+   */
+  const handleMove = (row: Row, delta: number) => {
+    if (!rows || !inFilter) return;
+    const at = inFilter.indexOf(row);
+    const other = inFilter[at + delta];
+    if (at < 0 || !other) return;
 
     const next = [...rows];
-    [next[index], next[target]] = [next[target], next[index]];
-    reorder.mutate({ ids: next.map((r) => r.id), movedId: rows[index].id });
+    const i = rows.indexOf(row);
+    const j = rows.indexOf(other);
+    [next[i], next[j]] = [next[j], next[i]];
+    reorder.mutate({ ids: next.map((r) => r.id), movedId: row.id });
   };
 
   const searching = search.trim().length > 0;
@@ -174,11 +211,39 @@ export const CollectionPage: React.FC = () => {
         title={collection.label}
         description={collection.description}
         actions={
-          <Link to={`/admin/${collection.slug}/new`}>
+          <Link to={`/admin/${collection.slug}/new${filterBy && filterValue ? `?${filterBy.field}=${encodeURIComponent(filterValue)}` : ''}`}>
             <Button icon={Plus}>New {collection.singular}</Button>
           </Link>
         }
       />
+
+      {filterBy && (
+        <div className="mb-4 max-w-sm space-y-2">
+          <FieldLabel htmlFor="collection-filter">{filterBy.label}</FieldLabel>
+          <Select
+            id="collection-filter"
+            value={filterValue}
+            data-collection-filter
+            onChange={(e) =>
+              setParams((previous) => {
+                const next = new URLSearchParams(previous);
+                if (e.target.value) next.set(filterBy.field, e.target.value);
+                else next.delete(filterBy.field);
+                return next;
+              }, { replace: true })
+            }
+          >
+            <option value="">All destinations</option>
+            {[...(destinations.data ?? [])]
+              .sort((a, b) => String(a.name).localeCompare(String(b.name)))
+              .map((d) => (
+                <option key={d.id} value={d.id}>
+                  {String(d.name)}{d.published ? '' : ' (draft)'}
+                </option>
+              ))}
+          </Select>
+        </div>
+      )}
 
       {collection.table === 'destinations' && (
         <p className="-mt-2 mb-4 text-xs font-medium text-[var(--brand-primary)]">
@@ -214,19 +279,24 @@ export const CollectionPage: React.FC = () => {
 
           <Card className="divide-y divide-[var(--border-strong)]/45 overflow-hidden">
             {filtered?.length === 0 ? (
-              <EmptyState icon={Search} title="Nothing matches that search" />
+              <EmptyState
+                icon={Search}
+                title={searching ? 'Nothing matches that search' : `No ${collection.label.toLowerCase()} for this ${filterBy?.label.toLowerCase() ?? 'filter'} yet`}
+              />
             ) : (
               filtered?.map((row) => {
-                const index = rows.indexOf(row);
+                const index = inFilter?.indexOf(row) ?? -1;
+                const shown = inFilter?.length ?? 0;
                 const image = collection.imageField ? row[collection.imageField] : undefined;
                 const keepsHero = row.id === lastPublishedHeroId;
                 const title = String(row[collection.titleField] ?? row.id);
                 const subtitle = collection.subtitleField
                   ? String(row[collection.subtitleField] ?? '')
                   : '';
-                const meta = collection.metaField
-                  ? String(row[collection.metaField] ?? '')
-                  : '';
+                const metaValue = collection.metaField ? String(row[collection.metaField] ?? '') : '';
+                // An attraction's destination by name, once the names have loaded.
+                const meta = filterBy && collection.metaField === filterBy.field ? (destinationName.get(metaValue) ?? metaValue) : metaValue;
+                const cascade = collection.table === 'destinations' ? attractionsOf(row.id) : 0;
                 const isBusy = busyId === row.id;
 
                 return (
@@ -241,15 +311,15 @@ export const CollectionPage: React.FC = () => {
                     <div className="hidden shrink-0 flex-col gap-0.5 sm:flex">
                       <MoveButton
                         label="Move up"
-                        disabled={searching || index === 0 || isBusy}
-                        onClick={() => handleMove(index, -1)}
+                        disabled={searching || index <= 0 || isBusy}
+                        onClick={() => handleMove(row, -1)}
                       >
                         <ArrowUp className="h-3.5 w-3.5" />
                       </MoveButton>
                       <MoveButton
                         label="Move down"
-                        disabled={searching || index === rows.length - 1 || isBusy}
-                        onClick={() => handleMove(index, 1)}
+                        disabled={searching || index < 0 || index === shown - 1 || isBusy}
+                        onClick={() => handleMove(row, 1)}
                       >
                         <ArrowDown className="h-3.5 w-3.5" />
                       </MoveButton>
@@ -293,6 +363,11 @@ export const CollectionPage: React.FC = () => {
                     <div className="flex shrink-0 items-center gap-1">
                       {confirmId === row.id ? (
                         <>
+                          {cascade > 0 && (
+                            <span className="max-w-[14rem] text-xs font-medium text-[var(--danger)]" data-cascade-warning>
+                              Also deletes its {cascade} {cascade === 1 ? 'attraction' : 'attractions'}.
+                            </span>
+                          )}
                           <Button
                             variant="danger"
                             className="px-3 py-2"

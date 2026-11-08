@@ -18,6 +18,9 @@ import { Section } from './Section';
 /**
  * `/explore`: the quick search, the interactive map and the hidden gems.
  *
+ * "View on map" on a destination's page comes here as `?place=<destination id>`: the
+ * map picks that place and flies to it, so its nearby attractions show.
+ *
  * "View route on map" on /tours comes here as `?mapTour=<tour id>`; the
  * route stays on the map until the visitor clears it or picks a filter
  * (which also drops the parameter). While a route is on the map in view, the
@@ -87,6 +90,7 @@ export function ExplorePage() {
           searchRequestId={requestId}
           routeTour={routeTour}
           onClearRoute={clearRoute}
+          focusPlaceId={params.get('place')}
         />
       </Section>
 

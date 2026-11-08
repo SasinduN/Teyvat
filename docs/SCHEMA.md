@@ -28,6 +28,7 @@
 | `0020_media_photo_sets.sql` | `media.photo_key` and `width`: one photograph at several widths, for `srcset` |
 | `0021_site_stats_plain_copy.sql` | `site_settings.stats` (up to four); plainer seed copy, replacing only text still equal to the seed |
 | `0022_when_to_go.sql` | `destinations.best_months`, filled from `best_time` where the text is clear; `site_settings.when_to_go_explainer`, with its fact-checked default (`docs/reviews/when-to-go-sources.md`) |
+| `0023_attractions.sql` | `attractions` (places near a destination, drafts by default) and `content_imports` (what `npm run content:import` wrote, so it never overwrites an admin's edit) |
 
 **Where the rules live.** There is no row-level security: every connection is
 the API's single database role. Rules are enforced in two layers:
@@ -96,6 +97,33 @@ and optional chaining. `npm run verify:roundtrip` asserts this.
 | `ideal_for` | `text[]` | `idealFor` | |
 | `featured` | `boolean` | `featured?` | `NOT NULL DEFAULT false`; `DestinationSpotlight` shows the first 6 featured rows by `sort_order` |
 | `travel_time_from_airport` | `text` NULL | `travelTimeFromAirport?` | since 0007; 1–30 chars, e.g. `"~4 h"`, shown as "~4 h from Colombo airport (CMB)" |
+
+## `attractions` → `Attraction` (since 0023; none in the seed)
+
+Places near a destination: the "Nearby attractions" cards on its page, small diamond markers on `/explore` and
+`/when-to-go`, search results and wishlist items. `GET /api/content` returns one only while it **and
+its destination** are published.
+
+| Column | Type | Domain field | Notes |
+| --- | --- | --- | --- |
+| `id` | `text` PK | `id` | |
+| `destination_id` | `text` | `destinationId` | FK to `destinations`, `on delete cascade`: deleting a destination deletes its attractions (the admin says how many first) |
+| `name` | `text` | `name` | 1–300 chars |
+| `category` | `text` | `category` | one of the destination categories (`is_category_array(array[category])`) |
+| `short_description` | `text` | `shortDescription` | 1–300 chars: one or two plain sentences |
+| `latitude` | `double precision` | `latitude` | `CHECK` 5.5–10 (the island, as tour stops) |
+| `longitude` | `double precision` | `longitude` | `CHECK` 79.3–82.1 |
+| `image` | `text` NULL | `image?` | `https://` or NULL; NULL shows a placeholder. Credited in `image_credits` |
+| `best_months` | `integer[]` | `bestMonths` | months 1–12, sorted; only where a source supports them |
+| `published` | `boolean` | | `DEFAULT false`: a draft until someone checks it |
+
+## `content_imports` (since 0023)
+
+One row per destination or attraction `npm run content:import` created: `table_name`, `row_id`,
+`content_hash` (what it wrote) and `row_updated_at` (the row's `updated_at` right after). A later run
+updates a row only while its `updated_at` is still `row_updated_at`, so an admin's save (publishing
+included) is never overwritten, and a row with a record but no row (deleted in the admin) isn't
+created again. Rows the import didn't create have no record and are left alone.
 
 ## `experience_categories` → `ExperienceCategory` (6 rows)
 

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useDestinations } from '@/hooks/useSiteContent';
+import { useAttractions, useDestinations } from '@/hooks/useSiteContent';
 import { useModalFocus } from '@/hooks/useModalFocus';
 import { paths } from '@shared/site-paths';
 
@@ -19,6 +19,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   // Hooks must run on every render — the `isOpen` early-return lives below
   // them, otherwise opening the modal changes the hook count and React throws.
   const DESTINATIONS = useDestinations();
+  const ATTRACTIONS = useAttractions();
   const [searchTerm, setSearchTerm] = useState('');
   // Keyboard focus stays in the dialog (starting in the search field), the
   // page behind is inert and doesn't scroll, Escape closes, and focus goes
@@ -27,9 +28,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 
   if (!isOpen) return null;
 
+  const term = searchTerm.trim().toLowerCase();
   const filtered = DESTINATIONS.filter((d) => {
-    if (!searchTerm.trim()) return true;
-    const term = searchTerm.trim().toLowerCase();
+    if (!term) return true;
     return (
       d.name.toLowerCase().includes(term) ||
       d.region.toLowerCase().includes(term) ||
@@ -37,6 +38,22 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       d.category.some((c) => c.toLowerCase().includes(term))
     );
   });
+  // Attractions only once there's something to match, after the destinations: by their
+  // name, kind, description, or the place they're near.
+  const byId = new Map(DESTINATIONS.map((d) => [d.id, d]));
+  const nearby = term
+    ? ATTRACTIONS.flatMap((a) => {
+        const near = byId.get(a.destinationId);
+        if (!near) return [];
+        const matches =
+          a.name.toLowerCase().includes(term) ||
+          a.category.toLowerCase().includes(term) ||
+          a.shortDescription.toLowerCase().includes(term) ||
+          near.name.toLowerCase().includes(term);
+        return matches ? [{ a, near }] : [];
+      })
+    : [];
+  const count = filtered.length + nearby.length;
 
   return (
     <AnimatePresence>
@@ -83,7 +100,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           {/* Search Suggestions */}
           <div>
             <span role="status" className="text-xs font-bold uppercase tracking-widest text-[var(--brand-primary)] block mb-3">
-              {searchTerm ? `Matching Locations (${filtered.length})` : 'Featured Sri Lanka Destinations'}
+              {searchTerm ? `Matching Locations (${count})` : 'Featured Sri Lanka Destinations'}
             </span>
 
             <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
@@ -117,7 +134,36 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                 </Link>
               ))}
 
-              {filtered.length === 0 && (
+              {nearby.map(({ a, near }) => (
+                <Link
+                  key={`attraction-${a.id}`}
+                  to={paths.attraction(near.id, a.id)}
+                  onClick={onClose}
+                  data-search-attraction={a.id}
+                  className="p-3.5 rounded-2xl bg-[var(--background)] hover:bg-[var(--background-secondary)] border border-[var(--border-strong)]/30 flex items-center justify-between cursor-pointer transition-colors group"
+                >
+                  <div className="flex min-w-0 items-center space-x-3">
+                    {a.image ? (
+                      <TravelImage src={a.image} alt={a.name} className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                    ) : (
+                      <span className="te-nearby-placeholder w-12 h-12 rounded-xl shrink-0" aria-hidden="true" />
+                    )}
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="font-heading font-bold text-[var(--brand-primary)] text-base">{a.name}</h4>
+                        <span className="text-xs bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)] px-2 py-0.5 rounded-full font-semibold">
+                          Near {near.name}
+                        </span>
+                      </div>
+                      <p className="text-sm text-[var(--text-primary)]/70 line-clamp-1">{a.shortDescription}</p>
+                    </div>
+                  </div>
+
+                  <ArrowRight className="w-4 h-4 text-[var(--brand-primary)] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                </Link>
+              ))}
+
+              {count === 0 && (
                 <div className="text-center py-8 text-sm text-[var(--text-secondary)]">
                   No locations found matching “{searchTerm}”. Try searching for “Ella”, “Beaches”, or “Yala”.
                 </div>

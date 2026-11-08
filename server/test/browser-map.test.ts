@@ -227,13 +227,18 @@ describe('the map, in Chrome', { skip }, () => {
     assert.equal(markers.find((m) => m.name === 'Ella')?.category, 'Mountains');
 
     const legend = await page.evaluate<Array<{ name: string; background: string }>>(`
-      [...document.querySelectorAll('#explore-map [data-legend]')].map((li) => ({
+      [...document.querySelectorAll('#explore-map [data-legend]:not([data-legend="attraction"])')].map((li) => ({
         name: li.dataset.legend,
         background: getComputedStyle(li.querySelector('span')).backgroundColor
       }))`);
     assert.deepEqual(
       legend,
       (Object.keys(MAP_CATEGORY_STYLES) as MapCategory[]).map((name) => ({ name, background: rgb(MAP_CATEGORY_STYLES[name].color) }))
+    );
+    // And, last, the nearby attractions' diamond, in words too (0023).
+    assert.deepEqual(
+      await page.evaluate(`[...document.querySelectorAll('#explore-map [data-legend]')].slice(-1).map((li) => [li.dataset.legend, li.textContent.trim(), Boolean(li.querySelector('.attraction-key'))])`),
+      [['attraction', 'Nearby attraction', true]]
     );
   });
 
@@ -265,7 +270,7 @@ describe('the map, in Chrome', { skip }, () => {
     assert.ok(zoomedOpacities.every((o) => o === '1'), 'every name shows at zoom 9+');
   });
 
-  test('4. phones: a Key button opens the legend (all seven), Escape and a tap outside close it', async () => {
+  test('4. phones: a Key button opens the legend (all seven, and the attractions’), Escape and a tap outside close it', async () => {
     const page = await openMap({ mobile: true });
     const key = `[...document.querySelectorAll('#explore-map button')].find((b) => b.textContent.trim() === 'Key')`;
     const state = () =>
@@ -283,7 +288,7 @@ describe('the map, in Chrome', { skip }, () => {
 
     await page.evaluate(`(${key}).click(), true`);
     await sleep(150);
-    assert.deepEqual(await state(), { visible: true, expanded: 'true', entries: Object.keys(MAP_CATEGORY_STYLES) });
+    assert.deepEqual(await state(), { visible: true, expanded: 'true', entries: [...Object.keys(MAP_CATEGORY_STYLES), 'attraction'] });
 
     await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
     await sleep(150);
@@ -342,9 +347,10 @@ describe('the map, in Chrome', { skip }, () => {
         ['the zoom buttons', box(map.querySelector('.leaflet-control-zoom'))]
       ];
       const overlap = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+      // A place's disc; a picked place's attractions (0023) are 22 px diamonds, taken as round too.
       const markers = [...map.querySelectorAll('.leaflet-marker-icon')].map((m) => ({
         name: m.getAttribute('aria-label'),
-        disc: box(m.querySelector('.map-marker-disc')),
+        disc: box(m.querySelector('.map-marker-disc') ?? m),
         label: m.querySelector('.map-marker.is-active') ? box(m.querySelector('.map-marker-label')) : null
       }));
       const frame = box(map);

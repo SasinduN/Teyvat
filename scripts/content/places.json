@@ -1,0 +1,898 @@
+{
+  "checked": "2026-11-08",
+  "destinations": [
+    {
+      "id": "hiriketiya",
+      "name": "Hiriketiya",
+      "region": "South",
+      "province": "Southern Province",
+      "latitude": 5.96236,
+      "longitude": 80.7075,
+      "category": [
+        "Beaches",
+        "Adventure"
+      ],
+      "short_description": "A small bay just east of Dikwella, known among surfers.",
+      "long_description": "Hiriketiya is a small bay on the south coast, just east of the town of Dikwella. It is known among tourists and surfers. Within a few kilometres are Blue Beach Island at Nilwella, the Hummanaya blowhole at Kudawella and the Wewurukannala temple.",
+      "best_time": "December – March",
+      "best_months": [
+        1,
+        2,
+        3,
+        12
+      ],
+      "photo": null,
+      "osm": "https://www.openstreetmap.org/relation/13329574",
+      "season_source": "https://www.roughguides.com/sri-lanka/when-to-go/",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Dikwella",
+        "https://www.openstreetmap.org/relation/13329574",
+        "https://www.openstreetmap.org/way/1181982750"
+      ]
+    },
+    {
+      "id": "tangalle",
+      "name": "Tangalle",
+      "region": "South",
+      "province": "Southern Province",
+      "latitude": 6.02508,
+      "longitude": 80.79493,
+      "category": [
+        "Beaches"
+      ],
+      "short_description": "A south coast town with a row of sandy bays.",
+      "long_description": "Tangalle is a town on the south coast, about 35 km east of Matara. Its coast is a row of sandy bays, Goyambokka among them. The turtle beach at Rekawa, the Mulkirigala rock temple and the Kalametiya bird sanctuary are all within reach.",
+      "best_time": "December – March",
+      "best_months": [
+        1,
+        2,
+        3,
+        12
+      ],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Tangalle_-_Badia.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Tangalle_-_Badia.jpg/1280px-Tangalle_-_Badia.jpg",
+        "width": 1280,
+        "author": "Josep Renalias Lohen11",
+        "license": "CC BY 4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/node/51216347",
+      "season_source": "https://www.roughguides.com/sri-lanka/when-to-go/",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Tangalle",
+        "https://en.wikipedia.org/wiki/List_of_beaches_in_Sri_Lanka",
+        "https://www.openstreetmap.org/node/51216347"
+      ]
+    },
+    {
+      "id": "matara",
+      "name": "Matara",
+      "region": "South",
+      "province": "Southern Province",
+      "latitude": 5.947822,
+      "longitude": 80.5482919,
+      "category": [
+        "Culture",
+        "Beaches"
+      ],
+      "short_description": "A south coast city with two Dutch forts and a shrine on an island off its beach.",
+      "long_description": "Matara is a city on the south coast, about 160 km from Colombo. The Dutch built two forts here: the Matara fort and the Star Fort. Polhena beach is just west of the city, and the lighthouse on Dondra Head, at the southern tip of the island, is a few kilometres east.",
+      "best_time": "December – March",
+      "best_months": [
+        1,
+        2,
+        3,
+        12
+      ],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Matara_beach.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Matara_beach.jpg/1280px-Matara_beach.jpg",
+        "width": 1280,
+        "author": "Kalana wasuka",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/node/3639539242",
+      "season_source": "https://www.roughguides.com/sri-lanka/when-to-go/",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Matara,_Sri_Lanka",
+        "https://en.wikivoyage.org/wiki/Matara",
+        "https://www.openstreetmap.org/node/3639539242"
+      ]
+    },
+    {
+      "id": "hikkaduwa",
+      "name": "Hikkaduwa",
+      "region": "South",
+      "province": "Southern Province",
+      "latitude": 6.14075,
+      "longitude": 80.10282,
+      "category": [
+        "Beaches",
+        "Adventure"
+      ],
+      "short_description": "A beach town on the south-west coast, with a marine national park and surf.",
+      "long_description": "Hikkaduwa is a beach town on the south-west coast, about 20 km north of Galle. Part of its shore is a marine national park with a coral reef, and turtles are often seen at Turtle Beach, at the northern end. It is also a surfing town.",
+      "best_time": "December – March",
+      "best_months": [
+        1,
+        2,
+        3,
+        12
+      ],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Hikkaduwa_beach.JPG",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Hikkaduwa_beach.JPG/1280px-Hikkaduwa_beach.JPG",
+        "width": 1280,
+        "author": "Krankman",
+        "license": "CC BY 3.0",
+        "license_url": "https://creativecommons.org/licenses/by/3.0"
+      },
+      "osm": "https://www.openstreetmap.org/way/1153417683",
+      "season_source": "https://www.roughguides.com/sri-lanka/when-to-go/",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Hikkaduwa",
+        "https://en.wikivoyage.org/wiki/Hikkaduwa",
+        "https://www.openstreetmap.org/way/1153417683"
+      ]
+    },
+    {
+      "id": "tissamaharama",
+      "name": "Tissamaharama",
+      "region": "South",
+      "province": "Southern Province",
+      "latitude": 6.27707,
+      "longitude": 81.28928,
+      "category": [
+        "Wildlife",
+        "Culture"
+      ],
+      "short_description": "A town beside an ancient reservoir, close to Yala, Bundala and Kataragama.",
+      "long_description": "Tissamaharama is a town in the south-east, in Hambantota District. It grew around an ancient Buddhist monastery, whose large stupa still stands, beside the Tissa Wewa reservoir. Safaris to Yala leave from here, and Bundala National Park and the temples of Kataragama are close by.",
+      "best_time": "",
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Tissamaharama_Dagoba,_0648.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Tissamaharama_Dagoba%2C_0648.jpg/1280px-Tissamaharama_Dagoba%2C_0648.jpg",
+        "width": 1280,
+        "author": "Michael Gunther",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/node/1723384697",
+      "season_source": null,
+      "sources": [
+        "https://en.wikipedia.org/wiki/Tissamaharama",
+        "https://en.wikipedia.org/wiki/Tissamaharama_Raja_Maha_Vihara",
+        "https://en.wikivoyage.org/wiki/Tissamaharama",
+        "https://www.openstreetmap.org/node/1723384697"
+      ]
+    },
+    {
+      "id": "sinharaja",
+      "name": "Sinharaja Forest Reserve",
+      "region": "South",
+      "province": "Sabaragamuwa/Southern Province",
+      "latitude": 6.40105,
+      "longitude": 80.50264,
+      "category": [
+        "Wildlife",
+        "Adventure"
+      ],
+      "short_description": "A protected rainforest and UNESCO World Heritage Site, home to many plants and animals found only in Sri Lanka.",
+      "long_description": "Sinharaja is a protected rainforest in the south-west, spread over Sabaragamuwa and Southern provinces, and a UNESCO World Heritage Site. Many of its plants and animals are found only in Sri Lanka. Visitors go in with a licensed guide; the main entrances are at Kudawa and Pitadeniya.",
+      "best_time": "December – early April, August – September",
+      "best_months": [
+        1,
+        2,
+        3,
+        4,
+        8,
+        9,
+        12
+      ],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Sinharaja_Forest_Sri_Lanka.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Sinharaja_Forest_Sri_Lanka.jpg/1280px-Sinharaja_Forest_Sri_Lanka.jpg",
+        "width": 1280,
+        "author": "Ruchira159",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/relation/6012712",
+      "season_source": "https://en.wikivoyage.org/wiki/Sinharaja_Forest_Reserve",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Sinharaja_Forest_Reserve",
+        "https://en.wikivoyage.org/wiki/Sinharaja_Forest_Reserve",
+        "https://www.openstreetmap.org/relation/6012712"
+      ]
+    }
+  ],
+  "attractions": [
+    {
+      "id": "blue-beach-island",
+      "destination_id": "hiriketiya",
+      "name": "Blue Beach Island",
+      "category": "Beaches",
+      "short_description": "A small rocky island just off the beach at Nilwella, a short way east of Hiriketiya.",
+      "latitude": 5.96081,
+      "longitude": 80.71974,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Blue_beach_island_nilwella.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Blue_beach_island_nilwella.jpg/1280px-Blue_beach_island_nilwella.jpg",
+        "width": 1280,
+        "author": "Weranga Rajapaksha",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/node/11595481269",
+      "sources": [
+        "https://www.openstreetmap.org/node/11595481269",
+        "https://commons.wikimedia.org/wiki/File:Blue_beach_island_nilwella.jpg"
+      ]
+    },
+    {
+      "id": "hummanaya-blowhole",
+      "destination_id": "hiriketiya",
+      "name": "Hummanaya Blowhole",
+      "category": "Hidden Gems",
+      "short_description": "A blowhole at Kudawella, where sea water rushing through an underwater cave is forced up through the rock. Its name comes from the \"hoo\" sound it makes.",
+      "latitude": 5.97762,
+      "longitude": 80.73873,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Hummanaya.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Hummanaya.jpg/1280px-Hummanaya.jpg",
+        "width": 1280,
+        "author": "Thilanka Kasunjith",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/node/917949443",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Hummanaya",
+        "https://www.openstreetmap.org/node/917949443"
+      ]
+    },
+    {
+      "id": "wewurukannala-vihara",
+      "destination_id": "hiriketiya",
+      "name": "Wewurukannala Vihara",
+      "category": "Culture",
+      "short_description": "A Buddhist temple in Dikwella with a large seated Buddha statue.",
+      "latitude": 5.97691,
+      "longitude": 80.69905,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Wewurukannala_Vihara_(25787824492).jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Wewurukannala_Vihara_%2825787824492%29.jpg/1280px-Wewurukannala_Vihara_%2825787824492%29.jpg",
+        "width": 1280,
+        "author": "Eleleleven from Bielefeld, Deutschland",
+        "license": "CC BY-SA 2.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/2.0"
+      },
+      "osm": "https://www.openstreetmap.org/way/1006310931",
+      "sources": [
+        "https://www.openstreetmap.org/way/1006310931",
+        "https://en.wikipedia.org/wiki/List_of_the_tallest_statues_in_Sri_Lanka"
+      ]
+    },
+    {
+      "id": "goyambokka-beach",
+      "destination_id": "tangalle",
+      "name": "Goyambokka",
+      "category": "Beaches",
+      "short_description": "A small sandy bay just west of Tangalle town, one of several along this stretch of coast.",
+      "latitude": 6.00914,
+      "longitude": 80.78054,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Goyambokka_Beach,_Tangalle,_Sri_Lanka.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Goyambokka_Beach%2C_Tangalle%2C_Sri_Lanka.jpg/1280px-Goyambokka_Beach%2C_Tangalle%2C_Sri_Lanka.jpg",
+        "width": 1280,
+        "author": "Satdeep Gill",
+        "license": "CC BY 4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/relation/5886130",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Tangalle",
+        "https://www.openstreetmap.org/relation/5886130"
+      ]
+    },
+    {
+      "id": "mulkirigala-rock-temple",
+      "destination_id": "tangalle",
+      "name": "Mulkirigala Rock Temple",
+      "category": "Culture",
+      "short_description": "A Buddhist temple on a rock about 200 m high, with cave temples, murals and a reclining Buddha at different levels on the way up.",
+      "latitude": 6.12305,
+      "longitude": 80.73638,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Mulkirigala_temple_3.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Mulkirigala_temple_3.jpg/1280px-Mulkirigala_temple_3.jpg",
+        "width": 1280,
+        "author": "L Manju",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/node/1841305525",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Mulkirigala_Raja_Maha_Vihara",
+        "https://en.wikipedia.org/wiki/Tangalle",
+        "https://www.openstreetmap.org/node/1841305525"
+      ]
+    },
+    {
+      "id": "rekawa-turtle-beach",
+      "destination_id": "tangalle",
+      "name": "Rekawa turtle beach",
+      "category": "Wildlife",
+      "short_description": "A beach east of Tangalle where sea turtles come ashore at night to lay their eggs. A conservation project protects the nests and runs turtle watching.",
+      "latitude": 6.0504,
+      "longitude": 80.866,
+      "best_months": [],
+      "photo": null,
+      "osm": "https://www.openstreetmap.org/way/1554548435",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Tangalle",
+        "https://www.openstreetmap.org/way/1554548435",
+        "https://www.openstreetmap.org/relation/5892245"
+      ]
+    },
+    {
+      "id": "kalametiya",
+      "destination_id": "tangalle",
+      "name": "Kalametiya",
+      "category": "Wildlife",
+      "short_description": "A coastal lagoon and wetland east of Tangalle, protected as a bird sanctuary.",
+      "latitude": 6.08044,
+      "longitude": 80.934,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Kalametiya_Bird_Sanctuary_Reflections.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Kalametiya_Bird_Sanctuary_Reflections.jpg/1280px-Kalametiya_Bird_Sanctuary_Reflections.jpg",
+        "width": 1280,
+        "author": "Peter Addor",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/node/10572932216",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Tangalle",
+        "https://en.wikivoyage.org/wiki/Tangalle",
+        "https://www.openstreetmap.org/node/10572932216"
+      ]
+    },
+    {
+      "id": "ussangoda",
+      "destination_id": "tangalle",
+      "name": "Ussangoda",
+      "category": "Hidden Gems",
+      "short_description": "A national park on raised ground by the sea, its red soil covered only with grass and low shrubs, unlike the land around it.",
+      "latitude": 6.09711,
+      "longitude": 80.98562,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Ussangoda_beach.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Ussangoda_beach.jpg/1280px-Ussangoda_beach.jpg",
+        "width": 1280,
+        "author": "R.M.S. Ratnayake",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/relation/5926094",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Ussangoda_National_Park",
+        "https://www.openstreetmap.org/relation/5926094"
+      ]
+    },
+    {
+      "id": "dondra-head-lighthouse",
+      "destination_id": "matara",
+      "name": "Dondra Head lighthouse",
+      "category": "Culture",
+      "short_description": "The lighthouse on Dondra Head, at the southern tip of Sri Lanka, completed in 1890.",
+      "latitude": 5.92124,
+      "longitude": 80.59403,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Dondra_Head_lighthouse.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Dondra_Head_lighthouse.jpg/1280px-Dondra_Head_lighthouse.jpg",
+        "width": 1280,
+        "author": "Charaka Ranasinghe",
+        "license": "CC BY 2.0",
+        "license_url": "https://creativecommons.org/licenses/by/2.0"
+      },
+      "osm": "https://www.openstreetmap.org/way/1160894723",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Dondra_Head_Lighthouse",
+        "https://en.wikivoyage.org/wiki/Matara",
+        "https://www.openstreetmap.org/way/1160894723"
+      ]
+    },
+    {
+      "id": "matara-star-fort",
+      "destination_id": "matara",
+      "name": "Matara Star Fort",
+      "category": "Culture",
+      "short_description": "A small star-shaped fort the Dutch built in 1765 on the east bank of the Nilwala River, with a moat around it.",
+      "latitude": 5.94829,
+      "longitude": 80.54866,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Dutch_Star_Fort,_Matara_0691.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Dutch_Star_Fort%2C_Matara_0691.jpg/1280px-Dutch_Star_Fort%2C_Matara_0691.jpg",
+        "width": 1280,
+        "author": "Michael Gunther",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/relation/5391832",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Star_Fort,_Matara",
+        "https://www.openstreetmap.org/relation/5391832"
+      ]
+    },
+    {
+      "id": "paravi-duwa",
+      "destination_id": "matara",
+      "name": "Paravi Duwa",
+      "category": "Culture",
+      "short_description": "A Buddhist shrine on a small island just off Matara’s beach.",
+      "latitude": 5.94151,
+      "longitude": 80.54919,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:%E0%B6%B4%E0%B6%BB%E0%B7%80%E0%B7%92_%E0%B6%AF%E0%B7%96%E0%B7%80_%E0%B7%80%E0%B7%92%E0%B7%84%E0%B7%8F%E0%B6%BB%E0%B7%83%E0%B7%8A%E0%B6%AE%E0%B7%8F%E0%B6%B1%E0%B6%BA_-_Paravi_Duwa_Temple.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/%E0%B6%B4%E0%B6%BB%E0%B7%80%E0%B7%92_%E0%B6%AF%E0%B7%96%E0%B7%80_%E0%B7%80%E0%B7%92%E0%B7%84%E0%B7%8F%E0%B6%BB%E0%B7%83%E0%B7%8A%E0%B6%AE%E0%B7%8F%E0%B6%B1%E0%B6%BA_-_Paravi_Duwa_Temple.jpg/1280px-%E0%B6%B4%E0%B6%BB%E0%B7%80%E0%B7%92_%E0%B6%AF%E0%B7%96%E0%B7%80_%E0%B7%80%E0%B7%92%E0%B7%84%E0%B7%8F%E0%B6%BB%E0%B7%83%E0%B7%8A%E0%B6%AE%E0%B7%8F%E0%B6%B1%E0%B6%BA_-_Paravi_Duwa_Temple.jpg",
+        "width": 1280,
+        "author": "Nisal Senanayaka",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/way/1157028833",
+      "sources": [
+        "https://www.openstreetmap.org/way/1157028833",
+        "https://commons.wikimedia.org/wiki/File:%E0%B6%B4%E0%B6%BB%E0%B7%80%E0%B7%92_%E0%B6%AF%E0%B7%96%E0%B7%80_%E0%B7%80%E0%B7%92%E0%B7%84%E0%B7%8F%E0%B6%BB%E0%B7%83%E0%B7%8A%E0%B6%AE%E0%B7%8F%E0%B6%B1%E0%B6%BA_-_Paravi_Duwa_Temple.jpg"
+      ]
+    },
+    {
+      "id": "polhena-beach",
+      "destination_id": "matara",
+      "name": "Polhena",
+      "category": "Beaches",
+      "short_description": "A beach just west of Matara where turtles are often seen close to the shore.",
+      "latitude": 5.93619,
+      "longitude": 80.52589,
+      "best_months": [],
+      "photo": null,
+      "osm": "https://www.openstreetmap.org/way/170181121",
+      "sources": [
+        "https://en.wikivoyage.org/wiki/Matara",
+        "https://www.openstreetmap.org/way/170181121"
+      ]
+    },
+    {
+      "id": "coconut-tree-hill",
+      "destination_id": "mirissa",
+      "name": "Coconut Tree Hill",
+      "category": "Beaches",
+      "short_description": "A red laterite headland planted with coconut palms, at the east end of Mirissa. The land is privately owned.",
+      "latitude": 5.93925,
+      "longitude": 80.46828,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Coconut_tree_hills.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Coconut_tree_hills.jpg/1280px-Coconut_tree_hills.jpg",
+        "width": 1280,
+        "author": "Swanthika",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/node/5764539554",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Coconut_Tree_Hill",
+        "https://www.openstreetmap.org/node/5764539554"
+      ]
+    },
+    {
+      "id": "parrot-rock",
+      "destination_id": "mirissa",
+      "name": "Parrot Rock",
+      "category": "Beaches",
+      "short_description": "A rocky islet just off Mirissa beach, with a viewpoint on top that people climb to watch the sunset.",
+      "latitude": 5.94162,
+      "longitude": 80.46225,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Parrot_Rock_Bridge_in_Mirissa_Sri_Lanka.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Parrot_Rock_Bridge_in_Mirissa_Sri_Lanka.jpg/1280px-Parrot_Rock_Bridge_in_Mirissa_Sri_Lanka.jpg",
+        "width": 1280,
+        "author": "Icaptures84",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/way/229404799",
+      "sources": [
+        "https://www.openstreetmap.org/way/229404799",
+        "https://www.openstreetmap.org/node/2380090550",
+        "https://commons.wikimedia.org/wiki/File:People_watching_sunset_from_the_Parrot_Rock_in_Mirissa_2023-03-12.jpg"
+      ]
+    },
+    {
+      "id": "secret-beach-mirissa",
+      "destination_id": "mirissa",
+      "name": "Secret Beach",
+      "category": "Beaches",
+      "short_description": "A small beach on the headland west of Mirissa bay, away from the main beach.",
+      "latitude": 5.94351,
+      "longitude": 80.45023,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Secret_Beach,_Mirissa_2023-03-09-1.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Secret_Beach%2C_Mirissa_2023-03-09-1.jpg/1280px-Secret_Beach%2C_Mirissa_2023-03-09-1.jpg",
+        "width": 1280,
+        "author": "Alexey Komarov",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/way/573467082",
+      "sources": [
+        "https://www.openstreetmap.org/way/573467082"
+      ]
+    },
+    {
+      "id": "taprobane-island",
+      "destination_id": "weligama",
+      "name": "Taprobane Island",
+      "category": "Culture",
+      "short_description": "A private island with one villa, just off Weligama. Count de Mauny built the villa after he came across the island around 1925.",
+      "latitude": 5.96793,
+      "longitude": 80.42578,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Weligama_Island.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Weligama_Island.jpg/1280px-Weligama_Island.jpg",
+        "width": 1280,
+        "author": "Rovin Shanila",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/way/392614558",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Taprobane_Island_(Weligama)",
+        "https://en.wikipedia.org/wiki/Weligama",
+        "https://www.openstreetmap.org/way/392614558"
+      ]
+    },
+    {
+      "id": "stilt-fishermen",
+      "destination_id": "weligama",
+      "name": "Stilt fishermen",
+      "category": "Culture",
+      "short_description": "Fishermen perched on poles set in the shallows, fishing with rods, along the coast between Koggala and Ahangama.",
+      "latitude": 5.9848,
+      "longitude": 80.3299,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Fishermen_practicing_traditional_stilt_fishing_near_Galle,_southern_Sri_Lanka,_20260207_1419_9448.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Fishermen_practicing_traditional_stilt_fishing_near_Galle%2C_southern_Sri_Lanka%2C_20260207_1419_9448.jpg/1280px-Fishermen_practicing_traditional_stilt_fishing_near_Galle%2C_southern_Sri_Lanka%2C_20260207_1419_9448.jpg",
+        "width": 1280,
+        "author": "Jakub Hałun",
+        "license": "CC BY 4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0"
+      },
+      "osm": null,
+      "sources": [
+        "https://en.wikivoyage.org/wiki/Ahangama",
+        "https://en.wikipedia.org/wiki/Koggala_Lagoon",
+        "https://commons.wikimedia.org/wiki/Category:Stilt_fishing_in_Sri_Lanka"
+      ]
+    },
+    {
+      "id": "koggala-lake",
+      "destination_id": "weligama",
+      "name": "Koggala Lake",
+      "category": "Wildlife",
+      "short_description": "A coastal lagoon near Koggala with eight small islands and mangroves along its shores.",
+      "latitude": 6.00237,
+      "longitude": 80.33194,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Lake_Koggala.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Lake_Koggala.jpg/1280px-Lake_Koggala.jpg",
+        "width": 1280,
+        "author": "Richtr Jan",
+        "license": "CC BY 4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/relation/1412092",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Koggala_Lagoon",
+        "https://www.openstreetmap.org/relation/1412092"
+      ]
+    },
+    {
+      "id": "handunugoda-tea-estate",
+      "destination_id": "weligama",
+      "name": "Handunugoda Tea Estate",
+      "category": "Food",
+      "short_description": "A tea estate inland from Koggala that shows visitors round its grounds and tea factory, with tea to taste.",
+      "latitude": 6.01364,
+      "longitude": 80.36418,
+      "best_months": [],
+      "photo": null,
+      "osm": "https://www.openstreetmap.org/way/1030601255",
+      "sources": [
+        "https://en.wikivoyage.org/wiki/Unawatuna",
+        "https://www.openstreetmap.org/way/1030601255"
+      ]
+    },
+    {
+      "id": "jungle-beach",
+      "destination_id": "galle",
+      "name": "Jungle Beach",
+      "category": "Beaches",
+      "short_description": "A small beach below the wooded Rumassala hill, reached by boat, by tuk-tuk from Unawatuna, or on foot from the Peace Pagoda road.",
+      "latitude": 6.01872,
+      "longitude": 80.23888,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Unawatuna_Jungle_beach_(Roomassala).jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Unawatuna_Jungle_beach_%28Roomassala%29.jpg/1280px-Unawatuna_Jungle_beach_%28Roomassala%29.jpg",
+        "width": 1280,
+        "author": "Rambukwelladk",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/relation/7371234",
+      "sources": [
+        "https://en.wikivoyage.org/wiki/Unawatuna",
+        "https://www.openstreetmap.org/relation/7371234"
+      ]
+    },
+    {
+      "id": "japanese-peace-pagoda",
+      "destination_id": "galle",
+      "name": "Japanese Peace Pagoda",
+      "category": "Culture",
+      "short_description": "A white peace pagoda on Rumassala hill above Unawatuna, one of those built by the Japanese Buddhist order Nipponzan-Myōhōji.",
+      "latitude": 6.01587,
+      "longitude": 80.23781,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Peace_Pagoda,_Unawatuna_1.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Peace_Pagoda%2C_Unawatuna_1.jpg/1280px-Peace_Pagoda%2C_Unawatuna_1.jpg",
+        "width": 1280,
+        "author": "L Manju",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/way/431413175",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Peace_Pagoda",
+        "https://en.wikivoyage.org/wiki/Unawatuna",
+        "https://www.openstreetmap.org/way/431413175"
+      ]
+    },
+    {
+      "id": "unawatuna-beach",
+      "destination_id": "galle",
+      "name": "Unawatuna",
+      "category": "Beaches",
+      "short_description": "A bay with a sandy beach about 5 km south-east of Galle, known for its beach and corals.",
+      "latitude": 6.00817,
+      "longitude": 80.24437,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Unawatuna.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Unawatuna.jpg/1280px-Unawatuna.jpg",
+        "width": 1280,
+        "author": "Bernard Gagnon",
+        "license": "CC BY-SA 3.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/3.0"
+      },
+      "osm": "https://www.openstreetmap.org/way/303723769",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Unawatuna",
+        "https://www.openstreetmap.org/way/303723769"
+      ]
+    },
+    {
+      "id": "dalawella-beach",
+      "destination_id": "galle",
+      "name": "Dalawella",
+      "category": "Beaches",
+      "short_description": "A beach just east of Unawatuna, with rocks a short way offshore.",
+      "latitude": 6.00172,
+      "longitude": 80.25896,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:White_sands_of_Dalawella.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/White_sands_of_Dalawella.jpg/1280px-White_sands_of_Dalawella.jpg",
+        "width": 1280,
+        "author": "Umeshani Wickramanayake",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/way/481558086",
+      "sources": [
+        "https://www.openstreetmap.org/way/481558086"
+      ]
+    },
+    {
+      "id": "hikkaduwa-reef",
+      "destination_id": "hikkaduwa",
+      "name": "Hikkaduwa reef and turtles",
+      "category": "Wildlife",
+      "short_description": "A marine national park just off the beach, with a coral reef to snorkel over and turtles often seen near the shore. Touching the coral and feeding the turtles are both banned.",
+      "latitude": 6.13472,
+      "longitude": 80.09974,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Hikkaduwa_under_water.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Hikkaduwa_under_water.jpg/1280px-Hikkaduwa_under_water.jpg",
+        "width": 1280,
+        "author": "Janindu wijesoorya",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/way/195275709",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Hikkaduwa_National_Park",
+        "https://en.wikipedia.org/wiki/Hikkaduwa",
+        "https://en.wikivoyage.org/wiki/Hikkaduwa",
+        "https://www.openstreetmap.org/way/195275709"
+      ]
+    },
+    {
+      "id": "madu-river",
+      "destination_id": "hikkaduwa",
+      "name": "Madu River",
+      "category": "Wildlife",
+      "short_description": "A wide estuary at Balapitiya, scattered with small mangrove-covered islands, explored by boat.",
+      "latitude": 6.28287,
+      "longitude": 80.05803,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Kothduwa_Island_in_Madu_Ganga.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Kothduwa_Island_in_Madu_Ganga.jpg/1280px-Kothduwa_Island_in_Madu_Ganga.jpg",
+        "width": 1280,
+        "author": "Knthabrew",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/relation/2034083",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Madu_Ganga",
+        "https://en.wikivoyage.org/wiki/Galle",
+        "https://en.wikivoyage.org/wiki/Hikkaduwa",
+        "https://www.openstreetmap.org/relation/2034083"
+      ]
+    },
+    {
+      "id": "bundala-national-park",
+      "destination_id": "tissamaharama",
+      "name": "Bundala National Park",
+      "category": "Wildlife",
+      "short_description": "A national park of lagoons and coastal scrub where migratory water birds, flamingos among them, spend the winter.",
+      "latitude": 6.20986,
+      "longitude": 81.22518,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Shammas_01.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Shammas_01.jpg/1280px-Shammas_01.jpg",
+        "width": 1280,
+        "author": "Sham11as",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/relation/5407631",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Bundala_National_Park",
+        "https://en.wikivoyage.org/wiki/Bundala_National_Park",
+        "https://www.openstreetmap.org/relation/5407631"
+      ]
+    },
+    {
+      "id": "tissa-wewa",
+      "destination_id": "tissamaharama",
+      "name": "Tissa Wewa",
+      "category": "Wildlife",
+      "short_description": "An ancient reservoir beside the town, with wetlands around it. There are crocodiles, so stay out of the water.",
+      "latitude": 6.29148,
+      "longitude": 81.28458,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Tissa_Lake_Sri_Lanka.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Tissa_Lake_Sri_Lanka.jpg/1280px-Tissa_Lake_Sri_Lanka.jpg",
+        "width": 1280,
+        "author": "Kasuni Amarasinghe",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/relation/5457149",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Tissamaharama_Raja_Maha_Vihara",
+        "https://en.wikivoyage.org/wiki/Tissamaharama",
+        "https://www.openstreetmap.org/relation/5457149"
+      ]
+    },
+    {
+      "id": "kirinda",
+      "destination_id": "tissamaharama",
+      "name": "Kirinda",
+      "category": "Culture",
+      "short_description": "A Buddhist temple on a rock at Kirinda, a fishing village on the coast south-east of Tissamaharama.",
+      "latitude": 6.21389,
+      "longitude": 81.3348,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Kirinda_temple_.Srilanka.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Kirinda_temple_.Srilanka.jpg/1280px-Kirinda_temple_.Srilanka.jpg",
+        "width": 1280,
+        "author": "Sarala Gamage",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/node/1727709341",
+      "sources": [
+        "https://www.openstreetmap.org/node/1727709341",
+        "https://commons.wikimedia.org/wiki/File:Kirinda_temple_.Srilanka.jpg"
+      ]
+    },
+    {
+      "id": "kataragama",
+      "destination_id": "tissamaharama",
+      "name": "Kataragama",
+      "category": "Culture",
+      "short_description": "A temple complex visited by Buddhists, Hindus and Muslims, with shrines to the god Kataragama (Murugan), a mosque and the Kiri Vehera stupa.",
+      "latitude": 6.4185,
+      "longitude": 81.33328,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Maha_Devale_shrine_in_Kataragama,_0656.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Maha_Devale_shrine_in_Kataragama%2C_0656.jpg/1280px-Maha_Devale_shrine_in_Kataragama%2C_0656.jpg",
+        "width": 1280,
+        "author": "Michael Gunther",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/way/320361590",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Kataragama_temple",
+        "https://en.wikivoyage.org/wiki/Kataragama",
+        "https://www.openstreetmap.org/way/320361590",
+        "https://www.openstreetmap.org/way/317502746"
+      ]
+    },
+    {
+      "id": "kanneliya-forest",
+      "destination_id": "sinharaja",
+      "name": "Kanneliya",
+      "category": "Wildlife",
+      "short_description": "A rainforest reserve north of Galle, part of a UNESCO biosphere reserve, with a nature trail and the Naranga Ella waterfall.",
+      "latitude": 6.23655,
+      "longitude": 80.37986,
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Kanneliya_rain_forest.jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Kanneliya_rain_forest.jpg/1280px-Kanneliya_rain_forest.jpg",
+        "width": 1280,
+        "author": "Asith costa",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+      },
+      "osm": "https://www.openstreetmap.org/relation/9343842",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Kanneliya–Dediyagala–Nakiyadeniya",
+        "https://en.wikivoyage.org/wiki/Galle",
+        "https://www.openstreetmap.org/relation/9343842"
+      ]
+    }
+  ]
+}

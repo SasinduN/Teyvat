@@ -8,7 +8,7 @@
  *     runs.
  *   - Production from a laptop goes only through `PROD_DATABASE_URL`, only in
  *     the scripts that need it (admin:create, images:audit, images:import,
- *     media:rebase), only with `--prod`, and only after the target's host is
+ *     content:import, media:rebase), only with `--prod`, and only after the target's host is
  *     printed and typed back.
  */
 import { createInterface } from 'node:readline/promises';

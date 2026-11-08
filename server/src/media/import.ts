@@ -129,6 +129,21 @@ class Downloader {
   }
 }
 
+/**
+ * The same polite downloader, for `npm run content:import`'s photos: one request at a
+ * time with a pause between, `Retry-After` honoured, 10 MB at most.
+ */
+export function createDownloader(options: ImportOptions = {}): { get(url: string): Promise<{ bytes: Uint8Array } | { reason: string }> } {
+  return new Downloader({
+    fetch: options.fetch ?? fetch,
+    sleep: options.sleep ?? defaultSleep,
+    minIntervalMs: options.minIntervalMs ?? 2000,
+    maxTries: options.maxTries ?? 5,
+    backoffMs: options.backoffMs ?? 5000,
+    log: options.log ?? (() => undefined)
+  });
+}
+
 /** Rewrites every image column holding exactly `from` to `to`; returns the rows changed. */
 async function repoint(db: Queryable, from: string, to: string): Promise<number> {
   let rows = 0;
@@ -154,14 +169,7 @@ export async function importWikimediaImages(
   options: ImportOptions = {}
 ): Promise<ImportOutcome[]> {
   const log = options.log ?? (() => undefined);
-  const downloader = new Downloader({
-    fetch: options.fetch ?? fetch,
-    sleep: options.sleep ?? defaultSleep,
-    minIntervalMs: options.minIntervalMs ?? 2000,
-    maxTries: options.maxTries ?? 5,
-    backoffMs: options.backoffMs ?? 5000,
-    log
-  });
+  const downloader = createDownloader({ ...options, log });
 
   const outcomes: ImportOutcome[] = [];
   const urls = [...(await wikimediaImagesInUse(db)).keys()];

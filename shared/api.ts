@@ -10,6 +10,7 @@
  */
 import type {
   ArticleRow,
+  AttractionRow,
   DestinationRow,
   ExperienceCategoryRow,
   FeaturedExperienceRow,
@@ -82,6 +83,8 @@ export type AdminTourRow = TourRow & { stops: TourStopInput[] };
 
 export interface SiteContentPayload {
   destinations: PublicDestinationRow[];
+  /** Published attractions of published destinations only (since 0023). */
+  attractions: AttractionRow[];
   experienceCategories: ExperienceCategoryRow[];
   featuredExperiences: PublicFeaturedExperienceRow[];
   tours: PublicTourRow[];

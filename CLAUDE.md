@@ -42,7 +42,8 @@ this file or anywhere else in git.
 | W | Wishlist: saved in the visitor's browser only, `/wishlist`, sent through the enquiry form | done (#53) |
 | H | Header groups (Discover, About), floating buttons that stay on screen, the wishlist's badge, the fake local WhatsApp number | done (#54) |
 | S | Floating buttons hold still while scrolling, moving only for the hero, map, scroll-to-top and footer | done (#55) |
-| G | When to go: best months per destination, a month slider and map on `/when-to-go`, the monsoon explainer (`docs/reviews/when-to-go-sources.md`) | open (`feat/when-to-go`) |
+| G | When to go: best months per destination, a month slider and map on `/when-to-go`, the monsoon explainer (`docs/reviews/when-to-go-sources.md`) | done (#56) |
+| N | Nearby attractions: `attractions` (0023), the Nearby cards, small map markers, search, the wishlist; six new destinations and 30 attractions researched, imported as drafts by `npm run content:import` (`docs/reviews/places-sources.md`) | open (`feat/nearby-attractions`) |
 
 Update the Status column when a phase lands.
 
@@ -204,6 +205,25 @@ Update the Status column when a phase lands.
   - `resetContent()` replays 0022 after 0002 and 0007, because 0002 knows nothing of the column. The fixtures' `bestMonths` must
     match what 0022 reads from their `bestTime` (`when-to-go.test`).
   - `npm run screenshots -- --when-to-go --live-photos <site URL>` takes this feature's ten pairs.
+- **Nearby attractions** (0023, `shared/geo.ts`, `AttractionCard`, `src/styles/attractions.css`):
+  - Each belongs to one destination (deleting it deletes them; the admin says how many first). Public only
+    while it and its destination are published: `GET /api/content` joins them. New rows are drafts.
+  - On a destination's page, "Nearby attractions" (the other destinations below are "Similar places"): cards that aren't links (an attraction has no page), with a Save
+    button, a placeholder without a photo, and "About N km away", a straight line (`distanceLabel`); the page
+    says the road is longer. Search results and map popups link to the card, `#attraction-<id>`.
+  - On the maps, small diamonds (never a disc, so never taken for a destination): on `/explore` from zoom 10,
+    or a picked place's from 9 (`?place=<id>`, "View on map"); on `/when-to-go` from zoom 10, or a place's own
+    while its popup is open. The island view has none. They step aside for destination markers
+    (`spreadByRank`), and their names show on hover and focus only.
+  - The admin: a list by destination (`?destination_id=`, kept after a save), a map under the coordinates (a
+    click or a drag sets them; its height is on a wrapper, since `.leaflet-container`'s rules beat Tailwind's),
+    and reordering that swaps two rows within the filter.
+  - `npm run content:import` (`server/src/content-import.ts`) writes `scripts/content/places.json` as drafts.
+    It updates only rows it created and nobody has saved since (`content_imports`), leaves the seed's and the
+    admin's alone, and never re-creates a deleted one. Photos go to R2 with their Commons credit, once. Every
+    fact and photo: `docs/reviews/places-sources.md`; a change to the file should stay within it.
+  - The tests' content has Galle's four attractions, published, without photos (`resetContent`).
+  - `npm run screenshots -- --attractions --live-photos <site URL>` takes this feature's ten pairs.
 - **Newsletter** (`server/src/routes/newsletter.ts`): the Footer form stores
   addresses; nothing sends them yet. Unsubscribing is a POST from the
   `/unsubscribe?token=` page (never a GET) and deletes the row. Its honeypot
@@ -401,7 +421,7 @@ Agreed, not started. Each one gets its own plan first.
   `NODE_ENV=production` (`shared/database-target.ts`).
 - **Production only through `PROD_DATABASE_URL` with `--prod`,** after the host
   is typed back (`admin:create`, `images:audit`, `images:import`,
-  `media:rebase`). Never run anything against production without asking.
+  `content:import`, `media:rebase`). Never run anything against production without asking.
 - **Never read, print or copy `.env`'s contents,** and never copy `.env` into a
   worktree.
 - **Never run the Railway CLI.** It is linked at the home directory to a

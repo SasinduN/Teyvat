@@ -1,0 +1,148 @@
+/*
+ * Nearby attractions: the small diamond markers on /explore, /when-to-go and the admin's
+ * location map, their popup, and the "Nearby attractions" cards on a destination's page. Imported
+ * by index.css, like the other shared styles: about 3 KB.
+ *
+ * The marker is a diamond, smaller than a destination's disc, so it reads as something
+ * else by its shape, whatever the colours (destinations and months are discs; route
+ * stops are numbered discs). Tokens only, as everywhere.
+ */
+.attraction-leaflet-marker {
+  background: none;
+  border: none;
+}
+.attraction-marker {
+  position: relative;
+  width: 22px;
+  height: 22px;
+}
+.attraction-marker__shape {
+  position: absolute;
+  inset: 3px;
+  transform: rotate(45deg);
+  border-radius: 3px;
+  background: var(--surface);
+  border: 2px solid var(--brand-primary);
+  box-shadow: 0 0 0 2px var(--white), 0 3px 8px rgb(var(--inverse-channels) / .3);
+  transition: transform .2s ease;
+}
+.attraction-marker__shape::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 1px;
+  background: var(--brand-primary);
+}
+.attraction-leaflet-marker:hover .attraction-marker__shape {
+  transform: rotate(45deg) scale(1.15);
+}
+.attraction-leaflet-marker:focus {
+  outline: none;
+}
+.attraction-leaflet-marker:focus-visible .attraction-marker__shape {
+  box-shadow: 0 0 0 2px var(--white), 0 0 0 5px var(--accent);
+}
+/* Its name: on hover and focus only, even where every destination's name shows
+   (`.map-labels-on`), so a zoomed-in map stays readable. */
+.attraction-marker .map-marker-label {
+  top: 26px;
+}
+.map-labels-on .attraction-marker .map-marker-label {
+  opacity: 0;
+}
+.attraction-leaflet-marker:hover .attraction-marker .map-marker-label,
+.attraction-leaflet-marker:focus-visible .attraction-marker .map-marker-label {
+  opacity: 1;
+}
+
+/* The legend's sample: the same diamond, smaller. */
+.attraction-key {
+  display: inline-block;
+  width: .7rem;
+  height: .7rem;
+  flex-shrink: 0;
+  margin-inline: .15rem;
+  transform: rotate(45deg);
+  border-radius: 2px;
+  background: var(--surface);
+  border: 2px solid var(--brand-primary);
+  box-shadow: inset 0 0 0 2px var(--surface), inset 0 0 0 5px var(--brand-primary);
+}
+
+/* As /when-to-go's popups: padded clear of the close button, its link the link colour. */
+.te-attraction-popup {
+  display: grid;
+  gap: .25rem;
+  padding: 1rem 2rem 1rem 1rem;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+.te-attraction-popup .te-ed-link {
+  color: var(--text-link);
+  font-size: var(--text-sm);
+}
+.te-attraction-popup__name {
+  margin: 0;
+  color: var(--brand-primary);
+  font-weight: 700;
+  font-size: var(--text-base);
+  line-height: 1.3;
+}
+.te-attraction-popup__meta {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+.te-attraction-popup__text {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+/* "Nearby attractions": the cards on a destination's page. */
+.te-nearby-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: 2rem 1.5rem;
+}
+.te-nearby-card {
+  scroll-margin-top: 7rem;
+}
+.te-nearby-card .te-ed-photo {
+  display: grid;
+  place-items: center;
+}
+/* No photo: a plain panel with the map's diamond, so the card and its marker match. */
+.te-nearby-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background: var(--background-secondary);
+}
+.te-nearby-placeholder::before {
+  content: '';
+  width: 1.75rem;
+  height: 1.75rem;
+  transform: rotate(45deg);
+  border-radius: 4px;
+  border: 2px solid var(--border-strong);
+  box-shadow: inset 0 0 0 5px var(--background-secondary), inset 0 0 0 14px var(--border-strong);
+}
+.te-nearby-distance {
+  margin-top: .5rem;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+.te-nearby-intro {
+  margin-top: -.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+}
+/* A card arrived at from search or a map popup (its #attraction-… hash). */
+.te-nearby-card:target .te-ed-card__title {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: .15em;
+  text-underline-offset: .2em;
+}

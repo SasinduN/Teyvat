@@ -2,10 +2,12 @@ import { TravelImage } from '@/components/TravelImage';
 import React, { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Info, X } from 'lucide-react';
+import { distanceKm, distanceLabel } from '@shared/geo';
 import { paths } from '@shared/site-paths';
 import type { WishlistKind } from '@shared/wishlist';
+import { categoryLabel } from '@/lib/categories';
 import { SaveButton } from './SaveButton';
-import type { Article, Destination, ExperienceItem, TourPackage } from '@/types';
+import type { Article, Attraction, Destination, ExperienceItem, TourPackage } from '@/types';
 
 /** A section heading: the heading and, if it needs one, a line under it. */
 export const SectionHead: React.FC<{ title: string; text?: string }> = ({ title, text }) => (
@@ -106,6 +108,39 @@ const DestinationSpotlightCard: React.FC<{ dest: Destination; saveable: boolean 
     </Link>
   </Saveable>
 );
+
+/**
+ * A nearby attraction: its photo (or a plain placeholder), category, name and a line or
+ * two. On its destination's page (`from`) it says how far it is in a straight line; on
+ * the wishlist (`near`) it names that destination and links to it. Not a link itself: an
+ * attraction has no page of its own. Its id is the target of search and map links.
+ */
+export const AttractionCard: React.FC<{ attraction: Attraction; from?: Destination; near?: Destination; saveable?: boolean }> = ({ attraction: a, from, near, saveable = true }) => (
+  <Saveable kind="attraction" id={a.id} name={a.name} saveable={saveable}>
+    <article id={`attraction-${a.id}`} className="te-ed-card te-nearby-card" aria-labelledby={`attraction-${a.id}-name`} data-attraction-card={a.id}>
+      <div className="te-ed-photo">
+        {a.image ? (
+          <TravelImage src={a.image} alt={a.name} loading="lazy" decoding="async" sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw" />
+        ) : (
+          <span className="te-nearby-placeholder" aria-hidden="true" data-attraction-placeholder />
+        )}
+      </div>
+      <div className="te-ed-card__body">
+        <p className="te-ed-label">{categoryLabel(a.category)}</p>
+        <h3 id={`attraction-${a.id}-name`} className="te-ed-card__title font-heading">{a.name}</h3>
+        <p className="te-ed-card__text">{a.shortDescription}</p>
+        {from && <p className="te-nearby-distance" data-distance>{capitalise(distanceLabel(distanceKm(from, a)))}</p>}
+        {near && (
+          <p className="te-nearby-distance">
+            Near <Link to={paths.attraction(near.id, a.id)} className="te-ed-link">{near.name}</Link>
+          </p>
+        )}
+      </div>
+    </article>
+  </Saveable>
+);
+
+const capitalise = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 export const TourCard: React.FC<{ tour: TourPackage; saveable?: boolean }> = ({ tour, saveable = true }) => (
   <Saveable kind="tour" id={tour.id} name={tour.title} saveable={saveable}>

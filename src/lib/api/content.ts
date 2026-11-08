@@ -9,6 +9,7 @@ import { API_ROUTES, type SiteContentPayload, type SiteFeatures } from '@shared/
 import { registerPhotoSets } from '@shared/photo-assets';
 import {
   toArticle,
+  toAttraction,
   toDestination,
   toExperienceCategory,
   toExperienceItem,
@@ -24,6 +25,7 @@ import {
 import { getJson } from '@/lib/api/http';
 import type {
   Article,
+  Attraction,
   Destination,
   ExperienceItem,
   HeroSlide,
@@ -38,6 +40,8 @@ import type {
 /** Everything the public site renders, fetched once at boot. */
 export interface SiteContent {
   destinations: Destination[];
+  /** Only those whose destination is published too. */
+  attractions: Attraction[];
   experienceCategories: ExperienceCategory[];
   featuredExperiences: ExperienceItem[];
   tours: TourPackage[];
@@ -58,6 +62,7 @@ export interface SiteContent {
  */
 export const EMPTY_CONTENT: SiteContent = {
   destinations: [],
+  attractions: [],
   experienceCategories: [],
   featuredExperiences: [],
   tours: [],
@@ -90,6 +95,7 @@ export async function fetchSiteContent(): Promise<SiteContent> {
 
   return {
     destinations: payload.destinations.map(toDestination),
+    attractions: payload.attractions.map(toAttraction),
     experienceCategories: payload.experienceCategories.map(toExperienceCategory),
     featuredExperiences: payload.featuredExperiences.map(toExperienceItem),
     tours: payload.tours.map(toTourPackage),

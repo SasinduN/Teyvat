@@ -28,6 +28,12 @@
  * `--when-to-go` takes only the ten pairs for that PR: the page on a phone and a laptop, light and
  * dark, in January and July, the admin's month picker, and the Discover dropdown.
  *
+ * `--attractions` takes only the ten pairs for nearby attractions: Galle's page with its Nearby
+ * cards, the Explore map after "View on map", and the admin's list and form. The "after" scratch
+ * database gets `npm run content:import -- --skip-photos`, its attractions of published places
+ * published there only: so the cards show their placeholder (no R2 here, and the CSP keeps
+ * Commons out), as production will until the import's photos are in.
+ *
  * `--admin` adds the admin: the login page (empty, a password typed and
  * shown, after two wrong tries, locked), then (signed in as a throwaway
  * admin created in each scratch database) the dashboard, a collection, two
@@ -91,6 +97,8 @@ const { values } = parseArgs({
     'header-floating': { type: 'boolean', default: false },
     /** Only the ten pairs for /when-to-go, its month picker and the Discover dropdown. */
     'when-to-go': { type: 'boolean', default: false },
+    /** Only the ten pairs for nearby attractions: Galle's page, the map, the admin. */
+    attractions: { type: 'boolean', default: false },
     out: { type: 'string' }
   },
   strict: true
@@ -197,6 +205,18 @@ async function prepare(site: Site): Promise<void> {
       await client.end();
     }
   }
+  if (site.label === 'after' && values.attractions) {
+    // The researched places as drafts, without photos; then, in this scratch database only,
+    // published where their destination is, so Galle's page and the map have them.
+    run('npx', ['tsx', 'scripts/content-import.ts', '--skip-photos'], site.dir, { ...process.env, DATABASE_URL: db });
+    const client = new Client({ connectionString: db });
+    await client.connect();
+    try {
+      await client.query(`update public.attractions a set published = true from public.destinations d where d.id = a.destination_id and d.published`);
+    } finally {
+      await client.end();
+    }
+  }
   if (site.label === 'after' && values['text-size']) {
     const client = new Client({ connectionString: db });
     await client.connect();
@@ -206,7 +226,7 @@ async function prepare(site: Site): Promise<void> {
       await client.end();
     }
   }
-  if (values.admin || values['when-to-go']) {
+  if (values.admin || values['when-to-go'] || values.attractions) {
     const client = new Client({ connectionString: db });
     await client.connect();
     try {
@@ -568,6 +588,58 @@ async function shootWhenToGo(chrome: Chrome, site: Site, out: string): Promise<v
   }
 }
 
+/** `--attractions`: ten pairs. "Before" there is no Nearby section, no attraction on the map, and no admin page for them (it goes to the dashboard). */
+const ATTRACTIONS: { name: string; viewport: typeof LAPTOP | typeof PHONE; dark?: boolean; kind: 'page' | 'map' | 'list' | 'form' }[] = [
+  { name: 'destination-galle-desktop', viewport: LAPTOP, kind: 'page' },
+  { name: 'destination-galle-desktop-dark', viewport: LAPTOP, dark: true, kind: 'page' },
+  { name: 'destination-galle-phone', viewport: PHONE, kind: 'page' },
+  { name: 'destination-galle-phone-dark', viewport: PHONE, dark: true, kind: 'page' },
+  { name: 'explore-view-on-map-galle-desktop', viewport: LAPTOP, kind: 'map' },
+  { name: 'explore-view-on-map-galle-desktop-dark', viewport: LAPTOP, dark: true, kind: 'map' },
+  { name: 'explore-view-on-map-galle-phone-dark', viewport: PHONE, dark: true, kind: 'map' },
+  { name: 'admin-attractions-galle-desktop', viewport: LAPTOP, kind: 'list' },
+  { name: 'admin-attraction-form-desktop', viewport: LAPTOP, kind: 'form' },
+  { name: 'admin-attraction-form-phone', viewport: PHONE, kind: 'form' }
+];
+
+async function shootAttractions(chrome: Chrome, site: Site, out: string): Promise<void> {
+  for (const shot of ATTRACTIONS) {
+    const file = join(out, `${shot.name}-${site.label}.jpg`);
+    if (shot.kind === 'page') {
+      const page = await open(chrome, `${site.url}/destinations/galle`, shot.viewport, Boolean(shot.dark));
+      await settle(page);
+      await shoot(page, file, true);
+      await closePage(page);
+    } else if (shot.kind === 'map') {
+      const page = await open(chrome, `${site.url}/explore?place=galle#explore-map`, shot.viewport, Boolean(shot.dark));
+      await page.evaluate(`document.getElementById('explore-map')?.scrollIntoView({ block: 'start' }), true`);
+      await waitFor(page, `document.querySelector('#explore-map .leaflet-marker-icon') && document.querySelector('#explore-map img.leaflet-tile-loaded')`, 10_000);
+      // "After", the place is picked and the map has flown in: its attractions show.
+      await waitFor(page, `document.querySelector('#explore-map .attraction-leaflet-marker')`, 5_000);
+      await page.evaluate(LOADED);
+      await page.evaluate(`(() => { const box = document.querySelector('#explore-map .leaflet-container')?.closest('.grid'); if (box) window.scrollTo(0, box.getBoundingClientRect().top + scrollY - 100); return true; })()`);
+      await page.evaluate(QUIET);
+      await shoot(page, file, false);
+      await closePage(page);
+    } else {
+      const page = await openAdmin(chrome, `${site.url}/admin/login`, shot.viewport, Boolean(shot.dark));
+      const status = await page.evaluate<number>(`fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(${JSON.stringify(SHOTS_ADMIN)})
+      }).then((r) => r.status)`);
+      if (status !== 200) throw new Error(`[${site.label}] admin sign-in failed (${status})`);
+      const path = shot.kind === 'list' ? '/admin/attractions?destination_id=galle' : '/admin/attractions/jungle-beach';
+      await page.send('Page.navigate', { url: site.url + path });
+      await waitFor(page, shot.kind === 'list' ? `document.querySelectorAll('main .font-mono').length > 0` : `document.querySelector('[data-location-map] img.leaflet-tile-loaded') || location.pathname === '/admin'`, 10_000);
+      await page.evaluate(LOADED);
+      await page.evaluate(QUIET);
+      await shoot(page, file, true);
+      await closePage(page);
+    }
+    console.log(`  ${shot.name}-${site.label}.jpg`);
+  }
+}
+
 async function main(): Promise<void> {
   const executable = findChrome();
   if (!executable) throw new Error('No Chrome found; set CHROME_PATH.');
@@ -607,6 +679,10 @@ async function main(): Promise<void> {
       }
       if (values['when-to-go']) {
         await shootWhenToGo(chrome, site, out);
+        continue;
+      }
+      if (values.attractions) {
+        await shootAttractions(chrome, site, out);
         continue;
       }
       for (const dark of themes) {

@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { DestinationCard, ExperienceCard, TourCard } from '@/components/PageCards';
+import { AttractionCard, DestinationCard, ExperienceCard, TourCard } from '@/components/PageCards';
 import { PageHero } from '@/components/PageHero';
 import { usePageTitle, usePublicSite } from '@/context/PublicSiteContext';
-import { useDestinations, useFeaturedExperiences, useHeroSlides, useTours } from '@/hooks/useSiteContent';
+import { useAttractions, useDestinations, useFeaturedExperiences, useHeroSlides, useTours } from '@/hooks/useSiteContent';
 import { focusPageHeading } from '@/lib/routeFocus';
 import { useWishlist } from '@/lib/wishlist';
 import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
@@ -24,6 +24,7 @@ export function WishlistPage() {
   const { openInquiry } = usePublicSite();
   const slides = useHeroSlides();
   const destinations = useDestinations();
+  const attractions = useAttractions();
   const experiences = useFeaturedExperiences();
   const tours = useTours();
 
@@ -33,6 +34,13 @@ export function WishlistPage() {
 
   const has = (kind: WishlistItem['kind'], id: string) => items.some((item) => item.kind === kind && item.id === id);
   const savedDestinations = destinations.filter((row) => has('destination', row.id));
+  const byId = new Map(destinations.map((row) => [row.id, row]));
+  const savedAttractions = attractions
+    .filter((row) => has('attraction', row.id))
+    .flatMap((row) => {
+      const near = byId.get(row.destinationId);
+      return near ? [{ row, near }] : [];
+    });
   const savedExperiences = experiences.filter((row) => has('experience', row.id));
   const savedTours = tours.filter((row) => has('tour', row.id));
 
@@ -67,6 +75,7 @@ export function WishlistPage() {
       wishlistSubject(items.length),
       wishlistMessage([
         { heading: 'Destinations', names: savedDestinations.map((row) => row.name) },
+        { heading: 'Nearby attractions', names: savedAttractions.map(({ row, near }) => `${row.name} (near ${near.name})`) },
         { heading: 'Experiences', names: savedExperiences.map((row) => row.title) },
         { heading: 'Tours', names: savedTours.map((row) => row.title) }
       ])
@@ -158,6 +167,22 @@ export function WishlistPage() {
                     <li key={row.id}>
                       <DestinationCard dest={row} saveable={false} />
                       {removeButton({ kind: 'destination', id: row.id }, row.name)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+          )}
+
+          {savedAttractions.length > 0 && (
+            <section className="te-ed-section" data-wishlist-group="attraction">
+              <div className="te-container">
+                <h2 className="te-ed-title font-heading mb-6">Nearby attractions</h2>
+                <ul className="te-wishlist-grid">
+                  {savedAttractions.map(({ row, near }) => (
+                    <li key={row.id}>
+                      <AttractionCard attraction={row} near={near} saveable={false} />
+                      {removeButton({ kind: 'attraction', id: row.id }, row.name)}
                     </li>
                   ))}
                 </ul>
