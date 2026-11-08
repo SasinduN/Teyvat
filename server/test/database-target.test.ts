@@ -35,7 +35,7 @@ function run(entry: string, env: Record<string, string>) {
 describe('which database a process may use', () => {
   test('local means this machine', () => {
     for (const url of [LOCAL, 'postgresql://u:p@127.0.0.1:5433/x', 'postgresql://u:p@[::1]:5433/x']) assert.equal(isLocalDatabase(url), true, url);
-    for (const url of [REMOTE, 'postgresql://u:p@tramway.proxy.rlwy.net:13289/railway', 'postgres.railway.internal', 'not a url']) {
+    for (const url of [REMOTE, 'postgresql://u:p@example.proxy.rlwy.net:12345/railway', 'postgres.railway.internal', 'not a url']) {
       assert.equal(isLocalDatabase(url), false, url);
     }
   });

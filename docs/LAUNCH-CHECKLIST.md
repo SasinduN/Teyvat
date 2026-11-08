@@ -24,22 +24,29 @@ off in a pull request, so the history shows when each was done.
       Backups should show PITR on, with a restorable range. Rehearse one
       restore to a fork ([`RESTORE.md`](RESTORE.md)).
       **Blocks:** any recovery from data loss. **Who:** Railway admin.
-- [ ] **2. Rotate the Postgres password.** It was exposed during setup (read
-      into a local tool session, kept in `.env`, sent over the public proxy).
-      Rotate it in Railway, check the API service's `DATABASE_URL` reference
-      still resolves, and update `PROD_DATABASE_URL` in `.env`.
+- [ ] **2. Rotate the Postgres password (address was public; password exposed earlier).**
+      The password was exposed during setup (read into a local tool session,
+      kept in `.env`, sent over the public proxy), and the proxy's address was
+      in a test file in this repo while it was public (replaced in #58; still in
+      the history). Follow [`runbooks/rotate-postgres-password.md`](runbooks/rotate-postgres-password.md):
+      change it in Postgres, then the Postgres service's variables, redeploy the
+      API service, check `/api/health`, and update `PROD_DATABASE_URL` in `.env`.
       **Blocks:** go-live. **Who:** Railway admin.
 - [ ] **3. `DATABASE_URL` on the API service is the internal reference**
       (`${{Postgres.DATABASE_URL}}`, a `*.railway.internal` host), so database
       traffic stays on Railway's private network.
       **Blocks:** go-live. **Who:** Railway admin.
-- [ ] **4. Remove the public TCP proxy, or decide to keep it.** It exists so
-      scripts can reach production from a laptop with `--prod`:
-      `admin:create`, `images:audit`, `images:import`, `media:rebase`.
-      Without it, those can't run. Keep it
-      until 9 and 16 are done, then decide.
+- [ ] **4. Disable the Postgres TCP proxy when not running --prod scripts; update
+      PROD_DATABASE_URL when re-enabled.** The proxy exists only so scripts can
+      reach production from a laptop with `--prod`: `admin:create`,
+      `images:audit`, `images:import`, `content:import`, `media:rebase`. The site
+      doesn't use it (item 3). Turn it on (Railway → Postgres → Settings →
+      Networking) just before such a run and off straight after. Railway's docs
+      don't say whether a re-added proxy keeps its domain and port, so each time
+      it's re-enabled, copy the new `DATABASE_PUBLIC_URL` into `PROD_DATABASE_URL`
+      in `.env` (with `?sslmode=require`).
       **Blocks:** reducing what's exposed to the internet. **Who:** Railway
-      admin + owner.
+      admin.
 - [ ] **5. Match CI's Postgres version to production.** Read the major
       version in Railway (or from `npm run migrate -- --dry-run`, which prints
       it) and set the same in `.github/workflows/ci.yml` (`public.ecr.aws/docker/library/postgres:18` today).
@@ -195,4 +202,5 @@ off in a pull request, so the history shows when each was done.
 - **Never run `db/migrations/0002_seed.sql` by hand** against production. It
   overwrites every admin edit to the seeded rows.
 - **No secrets in git.** `.env` stays ignored (`git check-ignore -v .env`).
-  The repository is public.
+  The repository was public until it was made private: treat anything in its
+  history as published.

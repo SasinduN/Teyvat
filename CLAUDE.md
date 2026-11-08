@@ -7,6 +7,7 @@ origin. The move off Supabase is finished (phases 1–7). Setup and commands are
 in `README.md`; the schema is in `docs/SCHEMA.md`.
 
 - **Restore:** `docs/RESTORE.md`.
+- **Rotate the Postgres password:** `docs/runbooks/rotate-postgres-password.md`.
 - **What's left before go-live:** `docs/LAUNCH-CHECKLIST.md` (decisions only
   people can make).
 
@@ -329,6 +330,12 @@ Update the Status column when a phase lands.
 
 Agreed, not started. Each one gets its own plan first.
 
+- **Rotate the Postgres password (address was public; password exposed earlier).**
+  Sasindu does it in Railway, following `docs/runbooks/rotate-postgres-password.md`
+  (launch checklist item 2). Never from here: no Railway CLI, nothing against production.
+- **Disable the Postgres TCP proxy when not running --prod scripts; update
+  PROD_DATABASE_URL when re-enabled** (launch checklist item 4). A `--prod` script that
+  can't connect most likely means the proxy is off, or came back with a new address.
 - **TripAdvisor reviews section:** real reviews only. Ratings come back with it,
   and not before: the seeded `rating` columns stay in the database and the admin API,
   and are neither shown nor in `/api/content` (`no-ratings`).
@@ -429,7 +436,8 @@ Agreed, not started. Each one gets its own plan first.
 - **`db/migrations/0002_seed.sql` is an upsert.** Never run it by hand against
   production. It overwrites admin edits.
 - **Rotate the Postgres password before go-live.** It is on the launch
-  checklist (`docs/LAUNCH-CHECKLIST.md`), with everything else before launch.
+  checklist (`docs/LAUNCH-CHECKLIST.md`, item 2), with everything else before launch;
+  the steps are `docs/runbooks/rotate-postgres-password.md`.
 
 ### Security and design
 
