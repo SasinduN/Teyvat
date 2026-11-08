@@ -161,7 +161,7 @@ function DestinationView({ d }: { d: Destination }) {
           <section className="py-16 sm:py-20" aria-labelledby="nearby-heading" data-nearby>
             <div className="te-container">
               <div className="te-section-header te-ed-head">
-                <h2 id="nearby-heading" className="te-ed-title font-heading">Nearby</h2>
+                <h2 id="nearby-heading" className="te-ed-title font-heading">Nearby attractions</h2>
               </div>
               <p className="te-nearby-intro">
                 Distances are in a straight line from {d.name}; the road is longer.{' '}
@@ -200,7 +200,7 @@ function DestinationView({ d }: { d: Destination }) {
         <Section name="MoreDestinations">
           <section className="py-16 sm:py-20">
             <div className="te-container">
-              <SectionHead title="Nearby and similar places" />
+              <SectionHead title="Similar places" />
               <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                 {more.map((x) => (
                   <DestinationCard key={x.id} dest={x} />

@@ -4,7 +4,7 @@ import './test-db';
 /**
  * Nearby attractions on the real built site, in Chrome:
  *
- *   - a destination's "Nearby" cards: name, kind, text, "About N km away" (straight line), a
+ *   - a destination's "Nearby attractions" cards: name, kind, text, "About N km away" (straight line), a
  *     placeholder without a photo, a Save button, "View on map"; one h1; none for a place without any;
  *   - only published attractions of published destinations;
  *   - the wishlist: saved from a card, its own group on /wishlist, named in the enquiry;
@@ -129,7 +129,11 @@ describe('nearby attractions, in Chrome', { skip, timeout: 8 * 60_000 }, () => {
     const page = await openPage('/destinations/galle');
     try {
       assert.equal(await page.evaluate<number>(`document.querySelectorAll('h1').length`), 1);
-      assert.equal(await page.evaluate<string>(`document.querySelector('#nearby-heading').textContent`), 'Nearby');
+      assert.equal(await page.evaluate<string>(`document.querySelector('#nearby-heading').textContent`), 'Nearby attractions');
+      // The older section of other destinations is "Similar places", so no two headings both say "Nearby".
+      const headings = await page.evaluate<string[]>(`[...document.querySelectorAll('main h2')].map((h) => h.textContent.trim())`);
+      assert.ok(headings.includes('Similar places'), `the other destinations' heading: ${headings.join(' | ')}`);
+      assert.deepEqual(headings.filter((h) => /nearby/i.test(h)), ['Nearby attractions']);
       const cards = await page.evaluate<{ id: string; name: string; label: string; distance: string; placeholder: boolean; tag: string; save: string | null }[]>(`${CARDS}.map((c) => ({
         id: c.dataset.attractionCard,
         name: c.querySelector('h3').textContent,

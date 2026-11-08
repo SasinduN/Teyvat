@@ -100,7 +100,7 @@ and optional chaining. `npm run verify:roundtrip` asserts this.
 
 ## `attractions` → `Attraction` (since 0023; none in the seed)
 
-Places near a destination: the "Nearby" cards on its page, small diamond markers on `/explore` and
+Places near a destination: the "Nearby attractions" cards on its page, small diamond markers on `/explore` and
 `/when-to-go`, search results and wishlist items. `GET /api/content` returns one only while it **and
 its destination** are published.
 

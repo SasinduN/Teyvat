@@ -1,6 +1,6 @@
 /*
  * Nearby attractions: the small diamond markers on /explore, /when-to-go and the admin's
- * location map, their popup, and the "Nearby" cards on a destination's page. Imported
+ * location map, their popup, and the "Nearby attractions" cards on a destination's page. Imported
  * by index.css, like the other shared styles: about 3 KB.
  *
  * The marker is a diamond, smaller than a destination's disc, so it reads as something
@@ -99,7 +99,7 @@
   line-height: 1.5;
 }
 
-/* "Nearby": the cards on a destination's page. */
+/* "Nearby attractions": the cards on a destination's page. */
 .te-nearby-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));

@@ -208,7 +208,7 @@ Update the Status column when a phase lands.
 - **Nearby attractions** (0023, `shared/geo.ts`, `AttractionCard`, `src/styles/attractions.css`):
   - Each belongs to one destination (deleting it deletes them; the admin says how many first). Public only
     while it and its destination are published: `GET /api/content` joins them. New rows are drafts.
-  - On a destination's page, "Nearby": cards that aren't links (an attraction has no page), with a Save
+  - On a destination's page, "Nearby attractions" (the other destinations below are "Similar places"): cards that aren't links (an attraction has no page), with a Save
     button, a placeholder without a photo, and "About N km away", a straight line (`distanceLabel`); the page
     says the road is longer. Search results and map popups link to the card, `#attraction-<id>`.
   - On the maps, small diamonds (never a disc, so never taken for a destination): on `/explore` from zoom 10,

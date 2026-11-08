@@ -28,7 +28,7 @@ export interface Destination {
   travelTimeFromAirport?: string;
 }
 
-/** A place near a destination: on its page ("Nearby") and, zoomed in, on the maps. */
+/** A place near a destination: on its page ("Nearby attractions") and, zoomed in, on the maps. */
 export interface Attraction {
   id: string;
   destinationId: string;
