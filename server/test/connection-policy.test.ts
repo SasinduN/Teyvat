@@ -9,7 +9,7 @@ import { test } from 'node:test';
 
 import { connectionTargetFor, isRailwayInternal } from '../../shared/pg-connection';
 
-const remote = (mode: string) => `postgresql://u:p@tramway.proxy.rlwy.net:12345/railway?sslmode=${mode}&uselibpqcompat=true`;
+const remote = (mode: string) => `postgresql://u:p@example.proxy.rlwy.net:12345/railway?sslmode=${mode}&uselibpqcompat=true`;
 
 test('no sslmode, or disable: no TLS', () => {
   assert.equal(connectionTargetFor('postgresql://u:p@postgres.railway.internal:5432/railway').ssl, false);

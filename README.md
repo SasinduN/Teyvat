@@ -524,5 +524,13 @@ Don't set `PORT`; Railway injects it.
 4. the full test suite, against a PostgreSQL service container, with Chrome
    for the browser tests.
 
+A change that touches only Markdown (`README.md`, `CLAUDE.md`, `docs/`, but not
+`docs/screenshots/`) skips those four steps; the `checks` job still runs and passes,
+so merging isn't blocked. A newer push to a pull request cancels its older run.
+
 `main` takes changes through pull requests, which must pass CI, and Railway's
 *Wait for CI* holds each deploy until it has passed.
+
+## Licence
+
+Proprietary: all rights reserved. See [LICENSE](LICENSE); no use without written permission.

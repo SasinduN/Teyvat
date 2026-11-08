@@ -7,6 +7,7 @@ origin. The move off Supabase is finished (phases 1–7). Setup and commands are
 in `README.md`; the schema is in `docs/SCHEMA.md`.
 
 - **Restore:** `docs/RESTORE.md`.
+- **Rotate the Postgres password:** `docs/runbooks/rotate-postgres-password.md`.
 - **What's left before go-live:** `docs/LAUNCH-CHECKLIST.md` (decisions only
   people can make).
 
@@ -43,7 +44,7 @@ this file or anywhere else in git.
 | H | Header groups (Discover, About), floating buttons that stay on screen, the wishlist's badge, the fake local WhatsApp number | done (#54) |
 | S | Floating buttons hold still while scrolling, moving only for the hero, map, scroll-to-top and footer | done (#55) |
 | G | When to go: best months per destination, a month slider and map on `/when-to-go`, the monsoon explainer (`docs/reviews/when-to-go-sources.md`) | done (#56) |
-| N | Nearby attractions: `attractions` (0023), the Nearby cards, small map markers, search, the wishlist; six new destinations and 30 attractions researched, imported as drafts by `npm run content:import` (`docs/reviews/places-sources.md`) | open (`feat/nearby-attractions`) |
+| N | Nearby attractions: `attractions` (0023), the Nearby cards, small map markers, search, the wishlist; six new destinations and 30 attractions researched, imported as drafts by `npm run content:import` (`docs/reviews/places-sources.md`) | done (#57) |
 
 Update the Status column when a phase lands.
 
@@ -329,6 +330,12 @@ Update the Status column when a phase lands.
 
 Agreed, not started. Each one gets its own plan first.
 
+- **Rotate the Postgres password (address was public; password exposed earlier).**
+  Sasindu does it in Railway, following `docs/runbooks/rotate-postgres-password.md`
+  (launch checklist item 2). Never from here: no Railway CLI, nothing against production.
+- **Disable the Postgres TCP proxy when not running --prod scripts; update
+  PROD_DATABASE_URL when re-enabled** (launch checklist item 4). A `--prod` script that
+  can't connect most likely means the proxy is off, or came back with a new address.
 - **TripAdvisor reviews section:** real reviews only. Ratings come back with it,
   and not before: the seeded `rating` columns stay in the database and the admin API,
   and are neither shown nor in `/api/content` (`no-ratings`).
@@ -429,7 +436,8 @@ Agreed, not started. Each one gets its own plan first.
 - **`db/migrations/0002_seed.sql` is an upsert.** Never run it by hand against
   production. It overwrites admin edits.
 - **Rotate the Postgres password before go-live.** It is on the launch
-  checklist (`docs/LAUNCH-CHECKLIST.md`), with everything else before launch.
+  checklist (`docs/LAUNCH-CHECKLIST.md`, item 2), with everything else before launch;
+  the steps are `docs/runbooks/rotate-postgres-password.md`.
 
 ### Security and design
 
@@ -480,7 +488,12 @@ Agreed, not started. Each one gets its own plan first.
 
 ## Checks
 
-CI runs all of these on every pull request and every push to `main`.
+CI runs all of these on every pull request and every push to `main`, except
+when only Markdown changed (top-level `*.md`, or `docs/` outside
+`docs/screenshots/`): then the `checks` job runs and passes without them, so the
+required status still reports. Don't replace that with a workflow `paths-ignore`:
+a required check that never reports blocks the merge. A newer push to a pull
+request cancels its older run; runs on `main` are never cancelled.
 
 - `npm run typecheck`
 - `npm run build`
