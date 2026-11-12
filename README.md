@@ -30,6 +30,7 @@ Zod · Express 5 · PostgreSQL · Cloudflare R2 · Resend.
 
 - [`docs/SCHEMA.md`](docs/SCHEMA.md): every table.
 - [`docs/RESTORE.md`](docs/RESTORE.md): recovering the database.
+- [`docs/runbooks/restore-from-backup.md`](docs/runbooks/restore-from-backup.md): a `db:backup` dump, and putting it back.
 - [`docs/LAUNCH-CHECKLIST.md`](docs/LAUNCH-CHECKLIST.md): what's left before
   go-live.
 - [`CLAUDE.md`](CLAUDE.md): working rules for this repo.
@@ -173,6 +174,7 @@ npm run build && npm start     # everything on http://localhost:8081
 | `npm run bundle:report` | After a build: the gzipped JS and CSS each page type loads |
 | `npm run screenshots` | Before/after screenshots of a design change at 1280 px and 375 px (`-- --base origin/main`, `--pages /,/about`, `--dark`), into `docs/screenshots/<branch>/` (git-ignored), with a `summary.md` of which pairs differ. Every page type, the phone menu, the enquiry form and the map with a place picked. `--base b46de13` compares against #12's design. In Git Bash, prefix it with `MSYS_NO_PATHCONV=1` when passing `--pages` `--live-photos <site URL>` uses that site's public R2 photos. `--header-floating` takes only the twelve pairs for the header, its dropdowns and the floating buttons. |
 | `npm run migrate` | Apply pending migrations (`-- --dry-run` to list them) |
+| `npm run db:backup` | A full `pg_dump` (custom format) to `backups/<date>-<time>.dump`, git-ignored; prints its size and table count. Read-only (`--prod`). Restoring: [`docs/runbooks/restore-from-backup.md`](docs/runbooks/restore-from-backup.md) |
 | `npm run seed:generate` | Regenerate `0002_seed.sql` from `scripts/fixtures/*.ts` |
 | `npm run seed:dev` | Local database only: the fake WhatsApp number, if none is saved |
 | `npm run admin:create` | Create an admin, or `--reset-password` for an existing one (`--prod`) |

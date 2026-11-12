@@ -18,6 +18,7 @@
     "migrate": "tsx scripts/migrate.ts",
     "admin:create": "tsx scripts/create-admin.ts",
     "images:audit": "tsx scripts/images-audit.ts",
+    "db:backup": "tsx scripts/db-backup.ts",
     "images:import": "tsx scripts/images-import.ts",
     "content:import": "tsx scripts/content-import.ts",
     "media:rebase": "tsx scripts/media-rebase.ts",

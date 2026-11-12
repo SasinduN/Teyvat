@@ -49,3 +49,9 @@ docs/reviews/*/
 
 # Design screenshots (npm run screenshots): attached to PRs on GitHub, never committed.
 docs/screenshots/
+
+# Database backups (npm run db:backup): production data, never committed.
+# no-committed-backups.test.ts fails if anything here is tracked.
+/backups/
+*.dump
+*.dump.partial

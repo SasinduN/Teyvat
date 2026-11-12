@@ -6,7 +6,8 @@ Railway Postgres, with images on Cloudflare R2. Both are served from one
 origin. The move off Supabase is finished (phases 1–7). Setup and commands are
 in `README.md`; the schema is in `docs/SCHEMA.md`.
 
-- **Restore:** `docs/RESTORE.md`.
+- **Restore:** `docs/RESTORE.md` (Railway PITR); from a `npm run db:backup` dump,
+  `docs/runbooks/restore-from-backup.md`.
 - **Rotate the Postgres password:** `docs/runbooks/rotate-postgres-password.md`.
 - **What's left before go-live:** `docs/LAUNCH-CHECKLIST.md` (decisions only
   people can make).
@@ -431,6 +432,11 @@ Agreed, not started. Each one gets its own plan first.
   `content:import`, `media:rebase`). Never run anything against production without asking.
 - **Never read, print or copy `.env`'s contents,** and never copy `.env` into a
   worktree.
+- **`npm run db:backup -- --prod` is read-only** (the same typed host check) and
+  writes `backups/`, which is git-ignored: dumps hold password hashes and
+  enquiries, and `no-committed-backups` fails if one is ever tracked. It never
+  prints the URL or password (libpq's variables, redacted output), and refuses
+  if the local pg_dump is older than the server.
 - **Never run the Railway CLI.** It is linked at the home directory to a
   different project (`alluring-warmth`), not Teyvat.
 - **`db/migrations/0002_seed.sql` is an upsert.** Never run it by hand against
