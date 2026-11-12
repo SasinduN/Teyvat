@@ -22,6 +22,10 @@ import { useInquiryCounts, useUnreadTitle } from '@/admin/useInquiryCounts';
 import { PageCrash } from '@/admin/components/PageCrash';
 import { ErrorBoundary } from '@/lib/ErrorBoundary';
 import { cn } from '@/utils/cn';
+import { documentBrand } from '@/lib/brand';
+
+/** The brand as the server wrote it into this page (the admin doesn't load content). */
+const brand = documentBrand();
 
 const NavItem: React.FC<{
   to: string;
@@ -82,7 +86,7 @@ export const AdminLayout: React.FC = () => {
   const sidebar = (
     <div className="flex h-full flex-col bg-[var(--inverse-surface)] p-4">
       <div className="mb-6 px-2 pt-2">
-        <div className="font-heading text-lg font-bold text-white">Travel Eye</div>
+        <div className="font-heading text-lg font-bold text-white">{brand.name}</div>
         <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-text)]">
           Content Admin
         </div>
@@ -178,7 +182,7 @@ export const AdminLayout: React.FC = () => {
             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
           <span className="font-heading text-base font-bold text-[var(--brand-primary)]">
-            Travel Eye Admin
+            {brand.name} Admin
           </span>
         </div>
 

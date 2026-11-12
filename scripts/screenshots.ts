@@ -34,6 +34,11 @@
  * published there only: so the cards show their placeholder (no R2 here, and the CSP keeps
  * Commons out), as production will until the import's photos are in.
  *
+ * `--brand` takes only the ten pairs for the rebrand: the header and footer, the home hero, the
+ * phone menu, the admin's sign-in, light and dark, phone and laptop, and an email preview: the
+ * new-enquiry email each version would send (subject, sender name, text), from its own
+ * `composeEmail`, drawn as a plain message card.
+ *
  * `--admin` adds the admin: the login page (empty, a password typed and
  * shown, after two wrong tries, locked), then (signed in as a throwaway
  * admin created in each scratch database) the dashboard, a collection, two
@@ -47,7 +52,7 @@
  *
  * The scratch databases are created on TEST_DATABASE_URL's server (the same
  * guards as the tests: localhost, an explicit port), named
- * `teyvat_shots_{base,head}_test`, and dropped afterwards. Nothing touches
+ * `site_shots_{base,head}_test`, and dropped afterwards. Nothing touches
  * DATABASE_URL, production, or the test database itself. Pages are rendered
  * from the seeded content, with no R2 and no email.
  */
@@ -57,7 +62,8 @@ import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 
 import { Client } from 'pg';
@@ -99,6 +105,8 @@ const { values } = parseArgs({
     'when-to-go': { type: 'boolean', default: false },
     /** Only the ten pairs for nearby attractions: Galle's page, the map, the admin. */
     attractions: { type: 'boolean', default: false },
+    /** Only the ten pairs for the rebrand: header, footer, hero, phone menu, admin sign-in, an email. */
+    brand: { type: 'boolean', default: false },
     out: { type: 'string' }
   },
   strict: true
@@ -640,6 +648,104 @@ async function shootAttractions(chrome: Chrome, site: Site, out: string): Promis
   }
 }
 
+/** `--brand`: ten pairs. */
+const BRAND_SHOTS: { name: string; viewport: typeof LAPTOP | typeof PHONE; dark?: boolean; kind: 'header' | 'footer' | 'hero' | 'menu' | 'login' | 'email' }[] = [
+  { name: 'brand-header-desktop', viewport: LAPTOP, kind: 'header' },
+  { name: 'brand-header-desktop-dark', viewport: LAPTOP, dark: true, kind: 'header' },
+  { name: 'brand-footer-desktop', viewport: LAPTOP, kind: 'footer' },
+  { name: 'brand-footer-phone-dark', viewport: PHONE, dark: true, kind: 'footer' },
+  { name: 'brand-home-hero-desktop', viewport: LAPTOP, kind: 'hero' },
+  { name: 'brand-home-hero-phone-dark', viewport: PHONE, dark: true, kind: 'hero' },
+  { name: 'brand-phone-menu', viewport: PHONE, kind: 'menu' },
+  { name: 'brand-phone-menu-dark', viewport: PHONE, dark: true, kind: 'menu' },
+  { name: 'brand-admin-login-desktop', viewport: LAPTOP, kind: 'login' },
+  { name: 'brand-email-preview', viewport: LAPTOP, kind: 'email' }
+];
+
+/**
+ * The new-enquiry email this version sends, as JSON: its own `composeEmail` and test sender,
+ * run in its own checkout. The address is the configured one in both; only the name may differ.
+ */
+function emailOf(site: Site): { from: string; subject: string; text: string } {
+  const at = (path: string) => JSON.stringify(pathToFileURL(join(site.dir, path)).href);
+  const script = join(mkdtempSync(join(tmpdir(), 'site-email-')), 'email.mts');
+  writeFileSync(
+    script,
+    `const notify = await import(${at('server/src/inquiries/notify.ts')});
+     const env = await import(${at('server/src/env.ts')});
+     const email = notify.composeEmail(2, 'https://www.example.com');
+     let from = env.RESEND_TEST_SENDER;
+     if (email.senderName) from = (await import(${at('shared/brand.ts')})).emailSender(from, { name: email.senderName });
+     console.log(JSON.stringify({ from, subject: email.subject, text: email.text }));`
+  );
+  try {
+    const out = execFileSync(process.execPath, ['--import', 'tsx', script], {
+      cwd: site.dir,
+      encoding: 'utf8',
+      env: { ...process.env, RESEND_API_KEY: '', NOTIFY_EMAIL_TO: '' }
+    });
+    return JSON.parse(out.trim().split('\n').at(-1)!);
+  } finally {
+    rmSync(dirname(script), { recursive: true, force: true });
+  }
+}
+
+const escapeForHtml = (text: string) => text.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
+async function shootBrand(chrome: Chrome, site: Site, out: string): Promise<void> {
+  for (const shot of BRAND_SHOTS) {
+    const file = join(out, `${shot.name}-${site.label}.jpg`);
+    const dark = Boolean(shot.dark);
+    if (shot.kind === 'header') {
+      const page = await open(chrome, `${site.url}/about`, shot.viewport, dark);
+      await page.evaluate(LOADED);
+      await shootElement(page, file, 'header');
+      await closePage(page);
+    } else if (shot.kind === 'footer') {
+      const page = await open(chrome, `${site.url}/about`, shot.viewport, dark);
+      await settle(page);
+      await shootElement(page, file, 'footer');
+      await closePage(page);
+    } else if (shot.kind === 'hero') {
+      const page = await open(chrome, `${site.url}/`, shot.viewport, dark);
+      await settle(page);
+      await page.evaluate('window.scrollTo(0, 0), true');
+      await page.evaluate(QUIET);
+      await shoot(page, file, false);
+      await closePage(page);
+    } else if (shot.kind === 'menu') {
+      const page = await open(chrome, `${site.url}/`, shot.viewport, dark);
+      await page.evaluate(`document.querySelector('header button[aria-label*="menu" i]')?.click(), true`);
+      await page.evaluate(QUIET);
+      await shoot(page, file, false);
+      await closePage(page);
+    } else if (shot.kind === 'login') {
+      const blank = await chrome.newPage();
+      await blank.send('Network.clearBrowserCookies');
+      await closePage(blank);
+      const page = await openAdmin(chrome, `${site.url}/admin/login`, shot.viewport, dark);
+      await shoot(page, file, true);
+      await closePage(page);
+    } else {
+      const email = emailOf(site);
+      const html = `<!doctype html><meta charset="utf-8"><body style="margin:0;background:#eef0ec;font:16px/1.5 system-ui,sans-serif;color:#1d2321">
+        <div style="max-width:760px;margin:40px auto;background:#fff;border:1px solid #d5d9d2;border-radius:12px;padding:28px 32px">
+          <div style="font-size:13px;color:#5b625e">From</div><div style="font-weight:600;margin-bottom:12px">${escapeForHtml(email.from)}</div>
+          <div style="font-size:13px;color:#5b625e">Subject</div><div style="font-weight:700;font-size:20px;margin-bottom:20px">${escapeForHtml(email.subject)}</div>
+          <div style="white-space:pre-wrap;border-top:1px solid #e3e6e1;padding-top:20px">${escapeForHtml(email.text)}</div>
+        </div></body>`;
+      const page = await chrome.newPage();
+      await page.send('Page.enable');
+      await page.send('Emulation.setDeviceMetricsOverride', { width: shot.viewport.width, height: 520, deviceScaleFactor: 1, mobile: false });
+      await page.send('Page.navigate', { url: `data:text/html;base64,${Buffer.from(html).toString('base64')}` });
+      await sleep(500);
+      await shoot(page, file, false);
+      await closePage(page);
+    }
+    console.log(`  ${shot.name}-${site.label}.jpg`);
+  }
+}
+
 async function main(): Promise<void> {
   const executable = findChrome();
   if (!executable) throw new Error('No Chrome found; set CHROME_PATH.');
@@ -658,15 +764,15 @@ async function main(): Promise<void> {
   const themes = values['only-dark'] ? [true] : values.dark ? [false, true] : [false];
   const states = !values['no-states'];
 
-  const worktree = mkdtempSync(join(tmpdir(), 'teyvat-shots-'));
+  const worktree = mkdtempSync(join(tmpdir(), 'site-shots-'));
   rmSync(worktree, { recursive: true });
   run('git', ['worktree', 'add', '--detach', worktree, values.base!], ROOT);
   // The base shares this checkout's dependencies (a junction on Windows).
   symlinkSync(join(ROOT, 'node_modules'), join(worktree, 'node_modules'), 'junction');
 
   const sites: Site[] = [
-    { label: 'before', dir: worktree, database: 'teyvat_shots_base_test' },
-    { label: 'after', dir: ROOT, database: 'teyvat_shots_head_test' }
+    { label: 'before', dir: worktree, database: 'site_shots_base_test' },
+    { label: 'after', dir: ROOT, database: 'site_shots_head_test' }
   ];
   let chrome: Chrome | undefined;
   try {
@@ -683,6 +789,10 @@ async function main(): Promise<void> {
       }
       if (values.attractions) {
         await shootAttractions(chrome, site, out);
+        continue;
+      }
+      if (values.brand) {
+        await shootBrand(chrome, site, out);
         continue;
       }
       for (const dark of themes) {

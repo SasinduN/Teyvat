@@ -3,11 +3,11 @@ import { Mail, MapPin, MessageCircle, Phone } from 'lucide-react';
 import { PageHero } from '@/components/PageHero';
 import { IntroSection } from '@/components/IntroSection';
 import { StatStrip } from '@/components/StatStrip';
-import { WhyTravelEye } from '@/components/WhyTravelEye';
+import { WhyUs } from '@/components/WhyUs';
 import { InquiryForm } from '@/components/InquiryForm';
 import { usePageTitle, usePublicSite } from '@/context/PublicSiteContext';
 import { useHeroSlides, useSiteSettings } from '@/hooks/useSiteContent';
-import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
+import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
@@ -17,7 +17,7 @@ import { Section } from './Section';
  * form, inline. The Navbar's "Contact" comes here.
  */
 export function AboutPage() {
-  usePageTitle(PAGE_TITLES.about);
+  usePageTitle(PAGE_NAMES.about);
   const settings = useSiteSettings();
   const slides = useHeroSlides();
   const { whatsappHref } = usePublicSite();
@@ -42,8 +42,8 @@ export function AboutPage() {
         <StatStrip />
       </Section>
 
-      <Section name="WhyTravelEye">
-        <WhyTravelEye />
+      <Section name="WhyUs">
+        <WhyUs />
       </Section>
 
       <section id="contact" className="te-ed-section">

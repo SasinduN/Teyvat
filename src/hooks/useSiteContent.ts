@@ -46,6 +46,8 @@ export const usePhotoStories = () => useSiteContent().content.photoStories;
 export const useHeroSlides = () => useSiteContent().content.heroSlides;
 export const usePillars = () => useSiteContent().content.pillars;
 export const useSiteSettings = () => useSiteContent().content.siteSettings;
+/** The brand: `shared/brand.ts` with the admin's settings on top. */
+export const useBrand = () => useSiteContent().content.siteSettings.brand;
 export const useImageCredits = () => useSiteContent().content.imageCredits;
 /** What the server has switched on (bookings). Off until content has loaded. */
 export const useFeatures = () => useSiteContent().content.features;

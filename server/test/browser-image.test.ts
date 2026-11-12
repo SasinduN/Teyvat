@@ -19,13 +19,13 @@ import { HOOK_TIMEOUT } from './timeouts';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const executable = findChrome();
 
-/** `src/lib/media.ts` as a script, exposed on `window.teyvatMedia`. */
+/** `src/lib/media.ts` as a script, exposed on `window.siteMedia`. */
 async function bundleMediaModule(): Promise<string> {
   const result = await build({
     entryPoints: [resolve(REPO_ROOT, 'src/lib/media.ts')],
     bundle: true,
     format: 'iife',
-    globalName: 'teyvatMedia',
+    globalName: 'siteMedia',
     platform: 'browser',
     target: 'es2022',
     write: false,
@@ -138,7 +138,7 @@ describe('prepareImage in Chrome', { skip: executable ? false : 'no Chrome found
       // "rotate 90 degrees clockwise to view": a portrait photo, red on top.
       const photo = t.withOrientation(await t.halvesJpeg(60, 40), 6);
 
-      const out = await teyvatMedia.prepareImage(photo);
+      const out = await siteMedia.prepareImage(photo);
       return {
         stored: await t.jpegStoredSize(photo),
         width: out.width, height: out.height, type: out.blob.type,
@@ -163,7 +163,7 @@ describe('prepareImage in Chrome', { skip: executable ? false : 'no Chrome found
   test('control: the same photo without EXIF stays landscape, red on the left', async () => {
     const result = await page.evaluate<{ width: number; height: number; left: number[]; right: number[] }>(`(async () => {
       const photo = new Blob([await t.halvesJpeg(60, 40)], { type: 'image/jpeg' });
-      const out = await teyvatMedia.prepareImage(photo);
+      const out = await siteMedia.prepareImage(photo);
       return {
         width: out.width, height: out.height,
         left: await t.pixel(out.blob, 0.15, 0.5),
@@ -181,7 +181,7 @@ describe('prepareImage in Chrome', { skip: executable ? false : 'no Chrome found
       heic.set([0, 0, 0, 24, ...'ftypheic'].map((c) => typeof c === 'string' ? c.charCodeAt(0) : c));
       heic.set([...'mif1heic'].map((c) => c.charCodeAt(0)), 16);
       try {
-        await teyvatMedia.prepareImage(new Blob([heic], { type: 'image/heic' }));
+        await siteMedia.prepareImage(new Blob([heic], { type: 'image/heic' }));
         return 'uploaded';
       } catch (e) {
         return e.name + ': ' + e.message;
@@ -194,7 +194,7 @@ describe('prepareImage in Chrome', { skip: executable ? false : 'no Chrome found
   test('a 48 MP photo comes out at most 2000 px wide, as a real image', async () => {
     const result = await page.evaluate<{ width: number; height: number; centre: number[]; type: string }>(`(async () => {
       const photo = await t.solidJpeg(8000, 6000);
-      const out = await teyvatMedia.prepareImage(photo);
+      const out = await siteMedia.prepareImage(photo);
       return { width: out.width, height: out.height, type: out.blob.type, centre: await t.pixel(out.blob, 0.5, 0.5) };
     })()`);
     assert.deepEqual([result.width, result.height], [2000, 1500]);
@@ -206,7 +206,7 @@ describe('prepareImage in Chrome', { skip: executable ? false : 'no Chrome found
   test('with a tight canvas limit, a large photo is scaled to fit it, never blank', async () => {
     const result = await page.evaluate<{ width: number; height: number; centre: number[] }>(`(async () => {
       const photo = await t.solidJpeg(8000, 6000);
-      const out = await teyvatMedia.prepareImage(photo, { maxArea: 1000000 });
+      const out = await siteMedia.prepareImage(photo, { maxArea: 1000000 });
       return { width: out.width, height: out.height, centre: await t.pixel(out.blob, 0.5, 0.5) };
     })()`);
     assert.ok(result.width * result.height <= 1_000_000, `${result.width}x${result.height}`);
@@ -217,7 +217,7 @@ describe('prepareImage in Chrome', { skip: executable ? false : 'no Chrome found
   test('SVG and unknown files are refused before anything is decoded', async () => {
     const messages = await page.evaluate<string[]>(`(async () => {
       const attempt = async (blob) => {
-        try { await teyvatMedia.prepareImage(blob); return 'uploaded'; }
+        try { await siteMedia.prepareImage(blob); return 'uploaded'; }
         catch (e) { return e.message; }
       };
       return [

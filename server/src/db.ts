@@ -30,7 +30,7 @@ if (isProduction && !isRailwayInternal(env.DATABASE_URL)) {
 export const pool = new pg.Pool({
   connectionString: target.connectionString,
   ssl: target.ssl,
-  application_name: 'teyvat-api',
+  application_name: 'site-api',
 
   /**
    * Railway's Postgres allows a bounded number of connections, and every

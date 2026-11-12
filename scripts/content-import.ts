@@ -50,7 +50,7 @@ async function main(): Promise<void> {
   }
 
   const target = connectionTargetFor(url);
-  const client = new Client({ connectionString: target.connectionString, ssl: target.ssl, application_name: 'teyvat-content-import' });
+  const client = new Client({ connectionString: target.connectionString, ssl: target.ssl, application_name: 'site-content-import' });
   await client.connect();
   try {
     const { rows } = await client.query<{ db: string }>('select current_database() as db');

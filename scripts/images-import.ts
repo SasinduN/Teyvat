@@ -44,7 +44,7 @@ async function main(): Promise<void> {
   const client = new Client({
     connectionString: target.connectionString,
     ssl: target.ssl,
-    application_name: 'teyvat-images-import'
+    application_name: 'site-images-import'
   });
   await client.connect();
 

@@ -128,7 +128,13 @@ export const PUBLIC_SITE_SETTINGS_COLUMNS = [
   // Public by nature: it is in every WhatsApp link the button opens.
   'whatsapp_number',
   'stats',
-  'when_to_go_explainer'
+  'when_to_go_explainer',
+  // The brand: in every page's title anyway.
+  'brand_name',
+  'brand_short_name',
+  'brand_tagline',
+  'brand_legal_name',
+  'hero_headline'
 ] as const satisfies readonly (keyof SiteSettingsRow)[];
 
 export type PublicSiteSettings = Pick<

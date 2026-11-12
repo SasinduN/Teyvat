@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Teyvat: the Travel Eye Sri Lanka public site (`/`) and its admin panel
+The Sri Lanka tours site: the public site (`/`) and its admin panel
 (`/admin`). Vite + React 19 client, plus an Express API in `server/` backed by
 Railway Postgres, with images on Cloudflare R2. Both are served from one
 origin. The move off Supabase is finished (phases 1–7). Setup and commands are
@@ -45,6 +45,7 @@ this file or anywhere else in git.
 | S | Floating buttons hold still while scrolling, moving only for the hero, map, scroll-to-top and footer | done (#55) |
 | G | When to go: best months per destination, a month slider and map on `/when-to-go`, the monsoon explainer (`docs/reviews/when-to-go-sources.md`) | done (#56) |
 | N | Nearby attractions: `attractions` (0023), the Nearby cards, small map markers, search, the wishlist; six new destinations and 30 attractions researched, imported as drafts by `npm run content:import` (`docs/reviews/places-sources.md`) | done (#57) |
+| B | Rebrand (the name, tagline and legal name are in `shared/brand.ts`): one brand source (`shared/brand.ts`, Admin → Settings, 0024), the wordmark and SL favicon, JSON-LD, `/site.webmanifest`, seed text (0025), `npm run brand:audit`, `npm run screenshots -- --brand` | in review |
 
 Update the Status column when a phase lands.
 
@@ -423,16 +424,16 @@ Agreed, not started. Each one gets its own plan first.
 ### Databases and secrets
 
 - **Local runs never use production.** `DATABASE_URL` is the local Postgres
-  (`localhost:5433/teyvat_dev`); tests use `TEST_DATABASE_URL`
-  (`teyvat_test`). The server and `migrate` refuse any other host unless
+  (`localhost:5433`, a `*_dev` database); tests use `TEST_DATABASE_URL`
+  (a `*_test` database). The server and `migrate` refuse any other host unless
   `NODE_ENV=production` (`shared/database-target.ts`).
 - **Production only through `PROD_DATABASE_URL` with `--prod`,** after the host
-  is typed back (`admin:create`, `images:audit`, `images:import`,
+  is typed back (`admin:create`, `images:audit`, `brand:audit`, `images:import`,
   `content:import`, `media:rebase`). Never run anything against production without asking.
 - **Never read, print or copy `.env`'s contents,** and never copy `.env` into a
   worktree.
 - **Never run the Railway CLI.** It is linked at the home directory to a
-  different project (`alluring-warmth`), not Teyvat.
+  different project (`alluring-warmth`), not this one.
 - **`db/migrations/0002_seed.sql` is an upsert.** Never run it by hand against
   production. It overwrites admin edits.
 - **Rotate the Postgres password before go-live.** It is on the launch
@@ -454,8 +455,14 @@ Agreed, not started. Each one gets its own plan first.
 - **AA contrast in both themes. One `h1` per page.**
 - **DM Sans everywhere (self-hosted). Body text at least 16 px on phones. The
   admin's text size options are 100, 110 and 120%.**
-- **The brand is undecided.** The code says "Travel Eye". Don't rename it, and
-  don't add new "Travel Eye" strings.
+- **The brand is in `shared/brand.ts`.** Everything the site says about itself
+  comes from there, with Admin → Settings on top (brand name, short name,
+  tagline, legal name, home headline). Never write the name, tagline or legal
+  name anywhere else: read `BRAND`, `useBrand()` or `loadBrand()`.
+  `brand-strings` fails on any earlier name or the old placeholder in any tracked
+  file outside `docs/`. Contact details come only from Admin → Settings; seeds
+  hold obviously fake ones. Emails take only their sender *name* from the brand:
+  the address stays NOTIFY_EMAIL_FROM's.
 - **`BOOKINGS_ENABLED` stays off in production** until there's a privacy policy
   and real vehicle capacities.
 - **Never log request data.** `errorHandler` logs errors through

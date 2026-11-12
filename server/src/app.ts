@@ -16,6 +16,7 @@ import { API_ROUTES } from '../../shared/api';
 import { sameOrigin } from './auth/middleware';
 import { bookingsEnabled, isProduction, notifyConfig, siteConfig, type SiteConfig } from './env';
 import { createNotifier, OFF, resendSender, type Notifier } from './inquiries/notify';
+import { loadBrand } from './brand';
 import { errorHandler, sendError } from './http';
 import { mediaFromEnv, type MediaConfig } from './media/media';
 import { adminRouter } from './routes/admin';
@@ -69,7 +70,7 @@ export function createApp(options: AppOptions = {}): Express {
   app.locals.notifier =
     options.notifier ??
     (notifyConfig
-      ? createNotifier(resendSender(notifyConfig), { siteUrl: notifyConfig.siteUrl })
+      ? createNotifier(resendSender(notifyConfig), { siteUrl: notifyConfig.siteUrl, brand: () => loadBrand() })
       : OFF);
 
   /**

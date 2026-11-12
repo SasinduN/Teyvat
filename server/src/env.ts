@@ -105,7 +105,7 @@ export const r2Config = readR2Config(process.env);
 
 export interface SiteConfig {
   /**
-   * The public origin (`PUBLIC_SITE_URL`, e.g. `https://traveleye.lk`). Every
+   * The public origin (`PUBLIC_SITE_URL`, e.g. `https://www.example.com`). Every
    * absolute URL the server writes comes from it: canonical links, `og:url`,
    * a relative `og:image`, the sitemap, the enquiry email's link. Null when
    * unset (local runs): the request's own origin is used instead.
@@ -172,9 +172,10 @@ export interface NotifyConfig {
 
 /**
  * Resend's test sender. Until a domain is verified, Resend only delivers mail
- * from it to the address the Resend account was created with.
+ * from it to the address the Resend account was created with. A bare address:
+ * the brand's name goes in front when the email is sent (`emailSender`).
  */
-export const RESEND_TEST_SENDER = 'Travel Eye <onboarding@resend.dev>';
+export const RESEND_TEST_SENDER = 'onboarding@resend.dev';
 
 /**
  * New-enquiry emails are optional, like image uploads. RESEND_API_KEY and

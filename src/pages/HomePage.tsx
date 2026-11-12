@@ -7,7 +7,6 @@ import { StatStrip } from '@/components/StatStrip';
 import { TravelImage } from '@/components/TravelImage';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useDestinations, useHeroSlides, useTours } from '@/hooks/useSiteContent';
-import { HOME_TITLE } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
@@ -67,7 +66,7 @@ function RouteList() {
  * (`LEGACY_HOME_SECTIONS`).
  */
 export function HomePage() {
-  usePageTitle(HOME_TITLE);
+  usePageTitle(null);
   const slides = useHeroSlides();
   const planPhoto = slides[1]?.url ?? slides[0]?.url;
   return (

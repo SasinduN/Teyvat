@@ -18,7 +18,7 @@ import { afterEach, describe, mock, test } from 'node:test';
 import { databaseRefusal, isLocalDatabase, scriptDatabaseUrl } from '../../shared/database-target';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const LOCAL = 'postgresql://postgres:secret@localhost:5433/teyvat_dev';
+const LOCAL = 'postgresql://postgres:secret@localhost:5433/site_dev';
 const REMOTE = 'postgresql://postgres:secret@db.example.invalid:5432/railway?sslmode=require';
 
 /** Runs a TypeScript entry point with `env` on top of this process's, and returns how it ended. */

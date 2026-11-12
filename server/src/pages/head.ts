@@ -1,10 +1,10 @@
 /**
  * A page's `<head>` tags, as Express writes them into `index.html`: the
  * title, description, canonical URL and the Open Graph / Twitter tags that
- * link previews (WhatsApp, Facebook, X) read. Pure functions; `pages.ts`
- * supplies the values.
+ * link previews (WhatsApp, Facebook, X) read, and the brand's JSON-LD. Pure
+ * functions; `pages.ts` supplies the values.
  */
-import { BRAND_NAME } from '../../../shared/brand';
+import type { Brand } from '../../../shared/brand';
 import { escapeHtml } from '../../../shared/html';
 import type { TextSize } from '../../../shared/text-size';
 
@@ -27,6 +27,38 @@ export interface HeadSite {
   origin: string;
   /** `SITE_INDEXABLE`: false puts noindex on every page. */
   indexable: boolean;
+  /** `shared/brand.ts` with the admin's settings on top. */
+  brand: Brand;
+}
+
+/**
+ * JSON for a `<script type="application/ld+json">`: `<`, `>`, `&` and U+2028/9
+ * as `\u` escapes, so no value can close the element. It is data, never run,
+ * so the CSP's `script-src` doesn't apply to it.
+ */
+export function jsonForScript(value: unknown): string {
+  return JSON.stringify(value).replace(
+    /[<>&\u2028\u2029]/g,
+    (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`
+  );
+}
+
+/** The brand as schema.org's TravelAgency: what search engines show for the business. */
+export function brandJsonLd(brand: Brand, origin: string): Record<string, unknown> {
+  const absolute = (path: string | null) => (path ? new URL(path, `${origin}/`).toString() : undefined);
+  const logo = absolute(brand.logo.onLight);
+  const image = absolute(brand.ogImage);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'TravelAgency',
+    name: brand.name,
+    ...(brand.shortName !== brand.name ? { alternateName: brand.shortName } : {}),
+    legalName: brand.legalName,
+    slogan: brand.tagline,
+    url: `${origin}/`,
+    ...(logo ? { logo } : {}),
+    ...(image ? { image } : {})
+  };
 }
 
 /** About what search results and previews show before cutting off. */
@@ -84,17 +116,17 @@ export function renderHead(meta: PageMeta, site: HeadSite): string {
   const e = escapeHtml;
   const description = summarise(meta.description);
   const url = meta.path ? `${site.origin}${meta.path}` : null;
-  const image = shareImage(meta.image, site.origin);
+  const image = shareImage(meta.image ?? site.brand.ogImage, site.origin);
   const alt = meta.imageAlt ?? meta.title;
 
   const property = (name: string, content: string) => `<meta property="${name}" content="${e(content)}">`;
   const named = (name: string, content: string) => `<meta name="${name}" content="${e(content)}">`;
 
-  const tags = [`<title>${e(meta.title)}</title>`, named('description', description)];
+  const tags = [`<title>${e(meta.title)}</title>`, named('description', description), named('application-name', site.brand.name)];
   if (!site.indexable || meta.noindex) tags.push(named('robots', 'noindex'));
   if (url) tags.push(`<link rel="canonical" href="${e(url)}">`);
 
-  tags.push(property('og:type', meta.type), property('og:site_name', BRAND_NAME), property('og:title', meta.title));
+  tags.push(property('og:type', meta.type), property('og:site_name', site.brand.name), property('og:title', meta.title));
   tags.push(property('og:description', description));
   if (url) tags.push(property('og:url', url));
   if (image) {
@@ -108,6 +140,7 @@ export function renderHead(meta: PageMeta, site: HeadSite): string {
   tags.push(named('twitter:card', image ? 'summary_large_image' : 'summary'));
   tags.push(named('twitter:title', meta.title), named('twitter:description', description));
   if (image) tags.push(named('twitter:image', image.url), named('twitter:image:alt', alt));
+  tags.push(`<script type="application/ld+json">${jsonForScript(brandJsonLd(site.brand, site.origin))}</script>`);
 
   return tags.join('\n    ');
 }

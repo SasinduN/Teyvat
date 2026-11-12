@@ -3,7 +3,7 @@ import { FeaturedExperiences } from '@/components/FeaturedExperiences';
 import { ExperiencesSection } from '@/components/ExperiencesSection';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useFeaturedExperiences } from '@/hooks/useSiteContent';
-import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
+import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
@@ -13,7 +13,7 @@ import { Section } from './Section';
  * page it filters the map.
  */
 export function ExperiencesPage() {
-  usePageTitle(PAGE_TITLES.experiences);
+  usePageTitle(PAGE_NAMES.experiences);
   const featured = useFeaturedExperiences();
   return (
     <>

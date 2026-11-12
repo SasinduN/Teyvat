@@ -15,11 +15,14 @@
  */
 import { randomUUID } from 'node:crypto';
 
+import { BRAND, emailSender, type Brand } from '../../../shared/brand';
 import type { NotifyConfig } from '../env';
 
 export interface NotificationEmail {
   subject: string;
   text: string;
+  /** The brand's name, for the From line (`emailSender`). */
+  senderName: string;
 }
 
 export type SendEmail = (email: NotificationEmail) => Promise<void>;
@@ -33,15 +36,16 @@ export const OFF: Notifier = { newInquiry: () => undefined };
 
 export const NOTIFY_WINDOW_MS = 15 * 60 * 1000;
 
-export function composeEmail(count: number, siteUrl: string | null): NotificationEmail {
+export function composeEmail(count: number, siteUrl: string | null, brand: Pick<Brand, 'name'> = BRAND): NotificationEmail {
   const what = count === 1 ? 'a new enquiry' : `${count} new enquiries`;
   const where = siteUrl
     ? `Read ${count === 1 ? 'it' : 'them'} here: ${siteUrl}/admin/inquiries`
     : 'Open the admin panel and go to Enquiries to read it.';
   return {
-    subject: count === 1 ? 'New enquiry on Travel Eye' : `${count} new enquiries on Travel Eye`,
+    subject: count === 1 ? `New enquiry on ${brand.name}` : `${count} new enquiries on ${brand.name}`,
+    senderName: brand.name,
     text:
-      `Travel Eye has ${what}.\n\n${where}\n\n` +
+      `${brand.name} has ${what}.\n\n${where}\n\n` +
       'This email leaves out the enquiry itself on purpose, so no traveller details ' +
       'are copied into email.'
   };
@@ -60,7 +64,7 @@ export const RESEND_EMAILS_ENDPOINT = 'https://api.resend.com/emails';
  * a parameter only so tests can point it at a local stand-in.
  */
 export function resendSender(config: NotifyConfig, endpoint = RESEND_EMAILS_ENDPOINT): SendEmail {
-  return async ({ subject, text }) => {
+  return async ({ subject, text, senderName }) => {
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -69,7 +73,7 @@ export function resendSender(config: NotifyConfig, endpoint = RESEND_EMAILS_ENDP
         // A retry inside Resend's 24 h window can't send the same email twice.
         'Idempotency-Key': randomUUID()
       },
-      body: JSON.stringify({ from: config.from, to: config.to, subject, text }),
+      body: JSON.stringify({ from: emailSender(config.from, { name: senderName }), to: config.to, subject, text }),
       signal: AbortSignal.timeout(10_000)
     });
     if (!res.ok) throw new SendFailed(res.status);
@@ -78,8 +82,14 @@ export function resendSender(config: NotifyConfig, endpoint = RESEND_EMAILS_ENDP
 
 export function createNotifier(
   send: SendEmail,
-  options: { siteUrl: string | null; windowMs?: number }
+  options: {
+    siteUrl: string | null;
+    windowMs?: number;
+    /** The brand at send time (`loadBrand`), so a renamed site's next email says so. */
+    brand?: () => Promise<Brand>;
+  }
 ): Notifier {
+  const brandNow = options.brand ?? (async () => BRAND);
   const windowMs = options.windowMs ?? NOTIFY_WINDOW_MS;
   let lastSentAt = -Infinity;
   let pending = 0;
@@ -92,7 +102,10 @@ export function createNotifier(
     pending = 0;
     lastSentAt = Date.now();
 
-    send(composeEmail(count, options.siteUrl)).catch((error: unknown) => {
+    brandNow()
+      .catch(() => BRAND)
+      .then((brand) => send(composeEmail(count, options.siteUrl, brand)))
+      .catch((error: unknown) => {
       if (error instanceof SendFailed && error.status === 403) {
         console.error(
           '[notify] Resend refused the recipient (403). With the test sender, ' +

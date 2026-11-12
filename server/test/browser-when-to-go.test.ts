@@ -25,6 +25,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { after, before, beforeEach, describe, test } from 'node:test';
 
 import { monthInColombo, MONTH_NAMES } from '../../shared/best-months';
+import { BRAND } from '../../shared/brand';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { findChrome, launchChrome, SAMPLE_WISHLIST, saveTheme, saveWishlist, type Chrome, type Page } from './chrome';
@@ -145,7 +146,7 @@ describe('/when-to-go, in Chrome', { skip, timeout: 8 * 60_000 }, () => {
       assert.deepEqual(await monthShown(page), { name: expected, value: String(monthInColombo()), text: expected, heading: `Best places in ${expected}` });
       assert.equal(await page.evaluate<number>(`document.querySelectorAll('h1').length`), 1);
       assert.equal(await page.evaluate<string>(`document.querySelector('h1').textContent`), 'When to go');
-      assert.equal(await page.evaluate<string>('document.title'), 'When to go | Travel Eye');
+      assert.equal(await page.evaluate<string>('document.title'), `When to go | ${BRAND.name}`);
       assert.equal(await page.evaluate<string>(`document.querySelector('label[for="' + ${SLIDER}.id + '"]').textContent`), 'Month', 'the slider has a label');
     } finally {
       await closePage(page);

@@ -12,7 +12,7 @@ import '../../shared/load-env';
 
 const HOW_TO_FIX =
   '\n\nSet it in .env, for example:\n' +
-  '  TEST_DATABASE_URL=postgresql://postgres:<password>@localhost:<port>/teyvat_test\n' +
+  '  TEST_DATABASE_URL=postgresql://postgres:<password>@localhost:<port>/site_test\n' +
   'with the port your own PostgreSQL listens on, written out.';
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);

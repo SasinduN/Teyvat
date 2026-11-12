@@ -4,22 +4,25 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 import { escapeHtml } from "./shared/html";
-import { HOME_DESCRIPTION, HOME_TITLE } from "./shared/page-meta";
+import { BRAND } from "./shared/brand";
+import { homeDescription, homeTitle } from "./shared/page-meta";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * index.html's default title and description, from shared/page-meta.ts (and
- * so from the brand in shared/brand.ts). Express replaces them per page; these
- * are what the dev server and a page without its own tags show.
+ * index.html's default title and description, from shared/page-meta.ts, and
+ * its favicon, from shared/brand.ts. Express replaces the title and
+ * description per page (with the admin's brand settings); these are what the
+ * dev server and a page without its own tags show.
  */
 const pageMetaDefaults = (): Plugin => ({
   name: "page-meta-defaults",
   transformIndexHtml: (html) =>
     html
-      .replace("%HOME_TITLE%", escapeHtml(HOME_TITLE))
-      .replace("%HOME_DESCRIPTION%", escapeHtml(HOME_DESCRIPTION)),
+      .replace("%HOME_TITLE%", escapeHtml(homeTitle(BRAND)))
+      .replace("%HOME_DESCRIPTION%", escapeHtml(homeDescription(BRAND)))
+      .replace("%BRAND_FAVICON%", escapeHtml(BRAND.favicon)),
 });
 
 // https://vite.dev/config/

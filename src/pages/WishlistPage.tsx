@@ -7,7 +7,7 @@ import { usePageTitle, usePublicSite } from '@/context/PublicSiteContext';
 import { useAttractions, useDestinations, useFeaturedExperiences, useHeroSlides, useTours } from '@/hooks/useSiteContent';
 import { focusPageHeading } from '@/lib/routeFocus';
 import { useWishlist } from '@/lib/wishlist';
-import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
+import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { wishlistMessage, wishlistSubject, type WishlistItem } from '@shared/wishlist';
 
@@ -19,7 +19,7 @@ const PRIVACY = 'Your list stays in this browser. We only see it if you send it 
  * don't appear. Sending the list uses the same enquiry form as everywhere else.
  */
 export function WishlistPage() {
-  usePageTitle(PAGE_TITLES.wishlist);
+  usePageTitle(PAGE_NAMES.wishlist);
   const { available, items, remove, clear } = useWishlist();
   const { openInquiry } = usePublicSite();
   const slides = useHeroSlides();

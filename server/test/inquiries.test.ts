@@ -10,6 +10,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, before, beforeEach, describe, mock, test } from 'node:test';
 
+import { BRAND, emailSender, resolveBrand } from '../../shared/brand';
 import type { InquiryRow } from '../../shared/database.types';
 import { createApp } from '../src/app';
 import { runSweep } from '../src/auth/sweep';
@@ -471,11 +472,11 @@ describe('new-enquiry notifications', () => {
 
       await settle(50);
       assert.equal(sent.length, 1, 'the first is sent at once');
-      assert.equal(sent[0].subject, 'New enquiry on Travel Eye');
+      assert.equal(sent[0].subject, `New enquiry on ${BRAND.name}`);
 
       await settle(400);
       assert.equal(sent.length, 2, 'the rest of the window arrive together');
-      assert.equal(sent[1].subject, '2 new enquiries on Travel Eye');
+      assert.equal(sent[1].subject, `2 new enquiries on ${BRAND.name}`);
       assert.match(sent[1].text, /https:\/\/example\.test\/admin\/inquiries/);
 
       const everything = JSON.stringify(sent);
@@ -513,6 +514,40 @@ describe('new-enquiry notifications', () => {
     }
   });
 
+  test('the brand at send time: a name saved in Admin → Settings is in the next email', async () => {
+    const sent: NotificationEmail[] = [];
+    const notifier = createNotifier(async (e) => void sent.push(e), {
+      siteUrl: null,
+      windowMs: 50,
+      brand: async () => resolveBrand({ brand_name: 'Lagoon & Hills' })
+    });
+    notifier.newInquiry();
+    await settle(30);
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].subject, 'New enquiry on Lagoon & Hills');
+    assert.equal(sent[0].senderName, 'Lagoon & Hills');
+    assert.match(sent[0].text, /^Lagoon & Hills has a new enquiry\./);
+
+    // The settings can't be read: the email still goes, with the default brand.
+    const fallback: NotificationEmail[] = [];
+    createNotifier(async (e) => void fallback.push(e), {
+      siteUrl: null,
+      brand: async () => {
+        throw new Error('database down');
+      }
+    }).newInquiry();
+    await settle(30);
+    assert.equal(fallback[0]?.subject, `New enquiry on ${BRAND.name}`);
+  });
+
+  test("the sender: the brand's name, and NOTIFY_EMAIL_FROM's address untouched", () => {
+    assert.equal(emailSender('onboarding@resend.dev', BRAND), `${BRAND.name} <onboarding@resend.dev>`);
+    assert.equal(emailSender('hello@x.example', { name: 'Lagoon & Hills' }), '"Lagoon & Hills" <hello@x.example>');
+    // A name already in the variable (the earlier brand's) gives way; the address stays.
+    assert.equal(emailSender('Old Name <onboarding@resend.dev>', BRAND), `${BRAND.name} <onboarding@resend.dev>`);
+    assert.equal(emailSender('"Q, Ltd" <a@b.example>  ', { name: 'Say "hi"' }), '"Say \\"hi\\"" <a@b.example>');
+  });
+
   test('without a site URL the email names the page instead of linking', () => {
     const email = composeEmail(1, null);
     assert.match(email.text, /Enquiries/);
@@ -528,7 +563,7 @@ describe('new-enquiry notifications', () => {
       assert.equal(warn.mock.callCount(), 1);
 
       const on = readNotifyConfig({ RESEND_API_KEY: 're_x', NOTIFY_EMAIL_TO: 'owner@example.test', PUBLIC_SITE_URL: 'https://x.example/' });
-      assert.equal(on?.from, 'Travel Eye <onboarding@resend.dev>');
+      assert.equal(on?.from, 'onboarding@resend.dev', 'a bare address: the brand name goes in front at send time');
       assert.equal(on?.siteUrl, 'https://x.example');
     } finally {
       warn.mock.restore();
@@ -552,21 +587,21 @@ describe('new-enquiry notifications', () => {
     const endpoint = `http://127.0.0.1:${(server.address() as AddressInfo).port}/emails`;
     try {
       const send = resendSender(
-        { resendApiKey: 're_test_key', to: 'owner@example.test', from: 'Travel Eye <onboarding@resend.dev>', siteUrl: null },
+        { resendApiKey: 're_test_key', to: 'owner@example.test', from: 'onboarding@resend.dev', siteUrl: null },
         endpoint
       );
-      await send({ subject: 'S', text: 'T' });
+      await send({ subject: 'S', text: 'T', senderName: BRAND.name });
       assert.equal(seen[0].headers.authorization, 'Bearer re_test_key');
       assert.ok(seen[0].headers['idempotency-key']);
       assert.deepEqual(JSON.parse(seen[0].body), {
-        from: 'Travel Eye <onboarding@resend.dev>',
+        from: `${BRAND.name} <onboarding@resend.dev>`,
         to: 'owner@example.test',
         subject: 'S',
         text: 'T'
       });
 
       status = 403;
-      await assert.rejects(send({ subject: 'S', text: 'T' }), (e) => e instanceof SendFailed && e.status === 403);
+      await assert.rejects(send({ subject: 'S', text: 'T', senderName: BRAND.name }), (e) => e instanceof SendFailed && e.status === 403);
     } finally {
       await new Promise((r) => server.close(r));
     }

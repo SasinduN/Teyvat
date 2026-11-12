@@ -14,8 +14,8 @@
  */
 import { Router, type Request, type Response } from 'express';
 
-import { BRAND_NAME, BRAND_TAGLINE } from '../../../shared/brand';
-import { HOME_DESCRIPTION, HOME_TITLE, PAGE_DESCRIPTIONS, PAGE_TITLES, pageTitle } from '../../../shared/page-meta';
+import { BRAND, type Brand } from '../../../shared/brand';
+import { homeDescription, homeTitle, PAGE_DESCRIPTIONS, PAGE_NAMES, pageTitle, type PageName } from '../../../shared/page-meta';
 import { paths } from '../../../shared/site-paths';
 import { SLUG_PATTERN } from '../../../shared/content-schema';
 import { escapeHtml } from '../../../shared/html';
@@ -25,7 +25,8 @@ import { describeForLog } from '../http';
 import { injectHead, injectTextSize, renderHead, type PageMeta } from './head';
 import { fullSrcSet } from '../../../shared/photo-assets';
 import { photoResolver } from '../../../shared/public-photos';
-import { DEFAULT_TEXT_SIZE, isTextSize, type TextSize } from '../../../shared/text-size';
+import { DEFAULT_TEXT_SIZE, type TextSize } from '../../../shared/text-size';
+import { loadPageSettings } from '../brand';
 import { loadPhotoSets } from '../media/photo-sets';
 
 type Resolved = { redirect: string } | { status: 200 | 404; meta: PageMeta; noindexHeader?: boolean };
@@ -70,10 +71,10 @@ async function firstImage(table: 'hero_slides' | 'destinations' | 'featured_expe
   return rows[0] ? photoResolver(await loadPhotoSets(pool)).publicPhoto(table, rows[0].id, rows[0].image) : null;
 }
 
-const notFound = (): Resolved => ({
+const notFoundFor = (brand: Brand): Resolved => ({
   status: 404,
   meta: {
-    title: PAGE_TITLES.notFound,
+    title: pageTitle(PAGE_NAMES.notFound, brand),
     description: PAGE_DESCRIPTIONS.notFound,
     path: null,
     image: null,
@@ -82,34 +83,45 @@ const notFound = (): Resolved => ({
   }
 });
 
-/** The fixed pages: [title, description, share image]. */
-const FIXED_PAGES: Record<string, () => Promise<[string, string, string | null]>> = {
-  [paths.home]: async () => [HOME_TITLE, HOME_DESCRIPTION, await firstImage('hero_slides')],
+/** The fixed pages: [name (null: the home page), description, share image]. */
+const FIXED_PAGES: Record<string, () => Promise<[PageName | null, string | null, string | null]>> = {
+  [paths.home]: async () => [null, null, await firstImage('hero_slides')],
   [paths.destinations]: async () => [
-    PAGE_TITLES.destinations,
+    'destinations',
     PAGE_DESCRIPTIONS.destinations,
     (await firstImage('destinations', 'published and featured')) ?? (await firstImage('destinations'))
   ],
-  [paths.experiences]: async () => [PAGE_TITLES.experiences, PAGE_DESCRIPTIONS.experiences, await firstImage('featured_experiences')],
-  [paths.tours]: async () => [PAGE_TITLES.tours, PAGE_DESCRIPTIONS.tours, await firstImage('tours')],
-  [paths.about]: async () => [PAGE_TITLES.about, PAGE_DESCRIPTIONS.about, await firstImage('hero_slides')],
+  [paths.experiences]: async () => ['experiences', PAGE_DESCRIPTIONS.experiences, await firstImage('featured_experiences')],
+  [paths.tours]: async () => ['tours', PAGE_DESCRIPTIONS.tours, await firstImage('tours')],
+  [paths.about]: async () => ['about', PAGE_DESCRIPTIONS.about, await firstImage('hero_slides')],
   [paths.explore]: async () => [
-    PAGE_TITLES.explore,
+    'explore',
     PAGE_DESCRIPTIONS.explore,
     (await firstImage('destinations', 'published and featured')) ?? (await firstImage('destinations'))
   ],
-  [paths.plan]: async () => [PAGE_TITLES.plan, PAGE_DESCRIPTIONS.plan, await firstImage('hero_slides')],
-  [paths.journal]: async () => [PAGE_TITLES.journal, PAGE_DESCRIPTIONS.journal, await firstImage('articles')],
+  [paths.plan]: async () => ['plan', PAGE_DESCRIPTIONS.plan, await firstImage('hero_slides')],
+  [paths.journal]: async () => ['journal', PAGE_DESCRIPTIONS.journal, await firstImage('articles')],
   [paths.whenToGo]: async () => [
-    PAGE_TITLES.whenToGo,
+    'whenToGo',
     PAGE_DESCRIPTIONS.whenToGo,
     (await firstImage('destinations', 'published and featured')) ?? (await firstImage('destinations'))
   ],
-  [paths.photoCredits]: async () => [PAGE_TITLES.photoCredits, PAGE_DESCRIPTIONS.photoCredits, await firstImage('hero_slides')]
+  [paths.photoCredits]: async () => ['photoCredits', PAGE_DESCRIPTIONS.photoCredits, await firstImage('hero_slides')]
 };
 
 /** What a path is: a page (with its status and tags), or a redirect. */
-export async function resolvePage(path: string, query: URLSearchParams, features = { bookings: false }): Promise<Resolved> {
+export async function resolvePage(
+  path: string,
+  query: URLSearchParams,
+  features = { bookings: false },
+  brand: Brand = BRAND
+): Promise<Resolved> {
+  const notFound = () => notFoundFor(brand);
+  const fixedMeta = (name: PageName): Pick<PageMeta, 'title' | 'description'> => ({
+    title: pageTitle(PAGE_NAMES[name], brand),
+    description: PAGE_DESCRIPTIONS[name as keyof typeof PAGE_DESCRIPTIONS] ?? homeDescription(brand)
+  });
+
   // Old links, already in WhatsApp chats: /?tour=<id> and /?destination=<id>.
   if (path === paths.home) {
     const tour = query.get('tour');
@@ -120,9 +132,10 @@ export async function resolvePage(path: string, query: URLSearchParams, features
 
   const fixed = FIXED_PAGES[path];
   if (fixed) {
-    const [title, description, image] = await fixed();
+    const [name, description, image] = await fixed();
+    const title = name ? pageTitle(PAGE_NAMES[name], brand) : homeTitle(brand);
     // A filtered list (/destinations?category=…) is the same page: the canonical path has no query.
-    return { status: 200, meta: { title, description, path, image, type: 'website' } };
+    return { status: 200, meta: { title, description: description ?? homeDescription(brand), path, image, type: 'website' } };
   }
 
   for (const page of ROW_PAGES) {
@@ -135,7 +148,7 @@ export async function resolvePage(path: string, query: URLSearchParams, features
     return {
       status: 200,
       meta: {
-        title: pageTitle(row.title),
+        title: pageTitle(row.title, brand),
         description: row.description,
         path: page.path(slug),
         image: photoResolver(await loadPhotoSets(pool)).publicPhoto(page.table, slug, row.image),
@@ -151,7 +164,7 @@ export async function resolvePage(path: string, query: URLSearchParams, features
     return {
       status: 200,
       noindexHeader: true,
-      meta: { title: PAGE_TITLES.booking, description: PAGE_DESCRIPTIONS.booking, path: null, image: null, type: 'website', noindex: true }
+      meta: { ...fixedMeta('booking'), path: null, image: null, type: 'website', noindex: true }
     };
   }
 
@@ -160,7 +173,7 @@ export async function resolvePage(path: string, query: URLSearchParams, features
     return {
       status: 200,
       noindexHeader: true,
-      meta: { title: PAGE_TITLES.unsubscribe, description: PAGE_DESCRIPTIONS.unsubscribe, path: null, image: null, type: 'website', noindex: true }
+      meta: { ...fixedMeta('unsubscribe'), path: null, image: null, type: 'website', noindex: true }
     };
   }
 
@@ -169,7 +182,7 @@ export async function resolvePage(path: string, query: URLSearchParams, features
     return {
       status: 200,
       noindexHeader: true,
-      meta: { title: PAGE_TITLES.wishlist, description: PAGE_DESCRIPTIONS.wishlist, path: null, image: null, type: 'website', noindex: true }
+      meta: { ...fixedMeta('wishlist'), path: null, image: null, type: 'website', noindex: true }
     };
   }
 
@@ -177,17 +190,29 @@ export async function resolvePage(path: string, query: URLSearchParams, features
     return {
       status: 200,
       noindexHeader: true,
-      meta: { title: pageTitle('Admin'), description: HOME_DESCRIPTION, path: null, image: null, type: 'website', noindex: true }
+      meta: { ...fixedMeta('admin'), path: null, image: null, type: 'website', noindex: true }
     };
   }
 
   return notFound();
 }
 
-/** The admin's text size (Settings). Read per request, like everything here. */
-async function currentTextSize(): Promise<TextSize> {
-  const { rows } = await pool.query<{ text_size: number }>('select text_size from public.site_settings where id');
-  return isTextSize(rows[0]?.text_size) ? rows[0].text_size : DEFAULT_TEXT_SIZE;
+/**
+ * `/site.webmanifest`: what a phone uses when someone adds the site to their
+ * home screen. A plain website (`display: browser`), no service worker.
+ */
+export function webManifest(brand: Brand): Record<string, unknown> {
+  return {
+    name: brand.name,
+    short_name: brand.shortName,
+    description: brand.tagline,
+    start_url: '/',
+    scope: '/',
+    display: 'browser',
+    theme_color: brand.themeColor,
+    background_color: brand.backgroundColor,
+    icons: [{ src: brand.favicon, sizes: 'any', type: 'image/svg+xml', purpose: 'any' }]
+  };
 }
 
 /** Where absolute URLs point: PUBLIC_SITE_URL, or this request's own origin. */
@@ -250,12 +275,6 @@ async function sitemapXml(origin: string): Promise<string> {
   return ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">', ...urls, '</urlset>', ''].join('\n');
 }
 
-/** A page's name: its title without the " | <brand>" suffix. */
-const pageName = (title: string): string => {
-  const suffix = ` | ${BRAND_NAME}`;
-  return title.endsWith(suffix) ? title.slice(0, -suffix.length) : title;
-};
-
 /**
  * Text from a row, made safe for one Markdown list item: one line, and the
  * characters that would start a link, emphasis, code or HTML escaped. (The
@@ -272,20 +291,14 @@ export function markdownText(value: string): string {
  * Built per request from the rows, so it's never stale; never the admin,
  * the API, drafts, settings or enquiries.
  */
-export async function llmsTxt(origin: string): Promise<string> {
+export async function llmsTxt(origin: string, brand: Brand = BRAND): Promise<string> {
   const item = (name: string, path: string, description: string | null) =>
     `- [${markdownText(name)}](${origin}${path})${description ? `: ${markdownText(description)}` : ''}`;
   const fixed = [
-    item('Home', paths.home, HOME_DESCRIPTION),
-    item(pageName(PAGE_TITLES.explore), paths.explore, PAGE_DESCRIPTIONS.explore),
-    item(pageName(PAGE_TITLES.destinations), paths.destinations, PAGE_DESCRIPTIONS.destinations),
-    item(pageName(PAGE_TITLES.experiences), paths.experiences, PAGE_DESCRIPTIONS.experiences),
-    item(pageName(PAGE_TITLES.tours), paths.tours, PAGE_DESCRIPTIONS.tours),
-    item(pageName(PAGE_TITLES.plan), paths.plan, PAGE_DESCRIPTIONS.plan),
-    item(pageName(PAGE_TITLES.whenToGo), paths.whenToGo, PAGE_DESCRIPTIONS.whenToGo),
-    item(pageName(PAGE_TITLES.journal), paths.journal, PAGE_DESCRIPTIONS.journal),
-    item(pageName(PAGE_TITLES.about), paths.about, PAGE_DESCRIPTIONS.about),
-    item(pageName(PAGE_TITLES.photoCredits), paths.photoCredits, PAGE_DESCRIPTIONS.photoCredits)
+    item('Home', paths.home, homeDescription(brand)),
+    ...(['explore', 'destinations', 'experiences', 'tours', 'plan', 'whenToGo', 'journal', 'about', 'photoCredits'] as const).map(
+      (name) => item(PAGE_NAMES[name], paths[name], PAGE_DESCRIPTIONS[name])
+    )
   ];
   // Table and column names are constants, never from a request.
   const sections = [
@@ -294,7 +307,9 @@ export async function llmsTxt(origin: string): Promise<string> {
     { heading: 'Tours', sql: 'select id, title, short_desc as description from public.tours', path: paths.tour },
     { heading: 'Journal', sql: 'select id, title, snippet as description from public.articles', path: paths.article }
   ] as const;
-  const lines = [`# ${BRAND_NAME}`, '', `> ${BRAND_TAGLINE}. ${HOME_DESCRIPTION}`, '', '## Pages', '', ...fixed];
+  // The tagline ends a sentence: a full stop only if it has none of its own.
+  const tagline = /[.!?]$/.test(brand.tagline) ? brand.tagline : `${brand.tagline}.`;
+  const lines = [`# ${markdownText(brand.name)}`, '', `> ${markdownText(`${tagline} ${homeDescription(brand)}`)}`, '', '## Pages', '', ...fixed];
   for (const section of sections) {
     const { rows } = await pool.query<{ id: string; title: string; description: string | null }>(
       `${section.sql} where published order by sort_order asc, id asc`
@@ -337,7 +352,18 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
       return;
     }
     try {
-      res.set('Cache-Control', 'no-cache').type('text/markdown').send(await llmsTxt(originOf(req, site)));
+      const { brand } = await loadPageSettings();
+      res.set('Cache-Control', 'no-cache').type('text/markdown').send(await llmsTxt(originOf(req, site), brand));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // The web manifest: the brand's names and icon, per request like everything here.
+  router.get('/site.webmanifest', async (_req, res, next) => {
+    try {
+      const { brand } = await loadPageSettings();
+      res.set('Cache-Control', 'no-cache').type('application/manifest+json').send(JSON.stringify(webManifest(brand)));
     } catch (error) {
       next(error);
     }
@@ -360,15 +386,17 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
     const origin = originOf(req, site);
     let resolved: Resolved;
     let textSize: TextSize = DEFAULT_TEXT_SIZE;
+    let brand: Brand = BRAND;
     try {
-      resolved = await resolvePage(path, new URLSearchParams(search), features);
-      if (!('redirect' in resolved)) textSize = await currentTextSize();
+      ({ brand, textSize } = await loadPageSettings());
+      resolved = await resolvePage(path, new URLSearchParams(search), features, brand);
     } catch (error) {
       // The database is down: still send the shell (it shows its own error),
       // with the default head, and a status that says try again.
       console.error(`[pages] couldn't resolve a page: ${describeForLog(error)}`);
       res.status(503).set('Cache-Control', 'no-cache').type('html');
-      res.send(injectHead(template, renderHead({ title: HOME_TITLE, description: HOME_DESCRIPTION, path: null, image: null, type: 'website', noindex: true }, { origin, indexable: false })));
+      const meta: PageMeta = { title: homeTitle(BRAND), description: homeDescription(BRAND), path: null, image: null, type: 'website', noindex: true };
+      res.send(injectHead(template, renderHead(meta, { origin, indexable: false, brand: BRAND })));
       return;
     }
 
@@ -380,7 +408,7 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
     // The hero's first photo otherwise waits for the JS, the content API and the
     // page chunk. The same srcset and sizes as the hero, so it is fetched once:
     // a phone gets the small file here too, not the 1280 px one as well.
-    let head = renderHead(resolved.meta, { origin, indexable: site.indexable });
+    let head = renderHead(resolved.meta, { origin, indexable: site.indexable, brand });
     if (path === paths.home && resolved.status === 200 && resolved.meta.image) {
       const srcSet = fullSrcSet(resolved.meta.image, await loadPhotoSets(pool));
       const responsive = srcSet ? ` imagesrcset="${escapeHtml(srcSet)}" imagesizes="100vw"` : '';

@@ -22,7 +22,8 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { after, before, describe, test } from 'node:test';
 
-import { PAGE_TITLES } from '../../shared/page-meta';
+import { PAGE_NAMES, pageTitle } from '../../shared/page-meta';
+import { BRAND } from '../../shared/brand';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
@@ -124,7 +125,7 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     assert.ok(buttons.includes('Book / Inquire This Tour'), 'the enquiry button as before');
 
     const booking = await openPage(off, '/booking');
-    assert.equal(await booking.evaluate<string>('document.title'), PAGE_TITLES.notFound);
+    assert.equal(await booking.evaluate<string>('document.title'), pageTitle(PAGE_NAMES.notFound, BRAND));
     assert.equal(await booking.evaluate<boolean>(`Boolean(document.querySelector('#my-bookings'))`), false);
   });
 
@@ -145,7 +146,7 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     assert.equal(href, '/booking?tour=island-in-7-days');
 
     const booking = await openPage(on, href);
-    assert.equal(await booking.evaluate<string>('document.title'), PAGE_TITLES.booking);
+    assert.equal(await booking.evaluate<string>('document.title'), pageTitle(PAGE_NAMES.booking, BRAND));
     await waitFor(booking, `document.querySelector('#booking-tour')?.value === 'island-in-7-days'`, 'the tour chosen');
     assert.equal(await booking.evaluate<number>(`document.querySelectorAll('main h1').length`), 1, 'one h1');
   });

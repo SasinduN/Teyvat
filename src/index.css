@@ -287,9 +287,8 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
     --button-secondary-text: var(--brand-primary);
     --button-edge: var(--border-strong);
     --button-hover-edge: var(--text-link);
-    /* The logo's gold and its small "Sri Lanka": darker on the pearl, for AA. */
+    /* The wordmark's small "TOURS": the darker gold on the pearl, for AA. */
     --logo-accent: var(--palette-deep-gold);
-    --logo-tagline: var(--text-secondary);
     background: var(--background);
     color: var(--brand-primary);
   }
@@ -324,7 +323,6 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
     --button-edge: rgb(var(--pearl-channels) / .48);
     --button-hover-edge: rgb(var(--pearl-channels) / .75);
     --logo-accent: var(--accent);
-    --logo-tagline: var(--photo-text-secondary);
     background: transparent;
     border-color: transparent;
     color: var(--on-inverse);
@@ -337,9 +335,7 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   /* Phones: a slightly smaller logo, so theme, plan, search and menu fit beside it. */
   .te-nav .te-logo { flex-shrink: 0; }
   @media (max-width: 639px) {
-    .te-nav .te-logo { gap: .4rem; }
-    .te-nav .te-logo svg { width: 24px; height: 24px; }
-    .te-nav .te-logo > div:last-child > div:first-child { font-size: 1rem; }
+    .te-nav .te-logo-main { font-size: 1rem; }
     .te-nav-phone-actions { gap: .25rem; }
   }
   .te-nav-link {
@@ -424,7 +420,6 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
  * `browser-text-size` measures it.
  */
 @container te-nav (min-width: 62rem) {
-  .te-nav .te-logo { gap: .5rem; }
   .te-nav-links { display: flex; gap: 1.75rem; }
   .te-nav-phone-actions { display: none; }
   .te-nav-actions { margin-inline-start: 0; gap: .25rem; }
@@ -501,9 +496,8 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
    the compact spacing overrides the markup's utility gap. */
 @media (max-width: 375px) {
   .te-nav .te-container { width: 100%; padding-inline: .5rem; }
-  .te-nav .te-logo { gap: .25rem; }
-  .te-nav .te-logo svg { width: 20px; height: 20px; }
-  .te-nav .te-logo > div:last-child > div:first-child { font-size: var(--text-xs); }
+  .te-nav .te-logo-main { font-size: var(--text-xs); letter-spacing: .02em; }
+  .te-nav .te-logo-sub { margin-top: .2rem; letter-spacing: .3em; }
   .te-nav-phone-actions { gap: .125rem; }
 }
 /*
@@ -514,9 +508,8 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 @media (max-width: 639px) { .te-nav-phone-actions:has(.te-wish-icon--phone) { gap: .125rem; } }
 @media (max-width: 430px) {
   .te-nav:has(.te-wish-icon--phone) .te-container { width: 100%; padding-inline: .5rem; }
-  .te-nav:has(.te-wish-icon--phone) .te-logo { gap: .25rem; }
-  .te-nav:has(.te-wish-icon--phone) .te-logo svg { width: 20px; height: 20px; }
-  .te-nav:has(.te-wish-icon--phone) .te-logo > div:last-child > div:first-child { font-size: var(--text-xs); }
+  .te-nav:has(.te-wish-icon--phone) .te-logo-main { font-size: var(--text-xs); letter-spacing: .02em; }
+  .te-nav:has(.te-wish-icon--phone) .te-logo-sub { margin-top: .2rem; letter-spacing: .3em; }
 }
 @container te-nav (max-width: 21.4rem) { .te-wish-icon--phone { display: none; } }
 /* The narrowest phones at 120%: four won't fit either. The phone menu has Plan Your Journey. */
@@ -838,3 +831,30 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/*
+ * The wordmark (Logo.tsx): "SERENDIB LUXE" large, "TOURS" small underneath, set
+ * wide so the two lines start and end together. The small line never goes under
+ * the 13 px label floor (text-xs), and takes --logo-accent: a gold picked per
+ * background (the header's rules above; the footer's --accent on its deep green).
+ */
+.te-logo-main { letter-spacing: .06em; }
+.te-logo-sub {
+  margin-top: .3rem;
+  font-size: var(--text-xs);
+  letter-spacing: .42em;
+  color: var(--logo-accent, var(--accent));
+}
+
+/*
+ * The logo as files (shared/brand.ts, BRAND_ASSETS.logo): the one drawn for a light
+ * background, or for a dark one (the footer, the dark theme, the header over the home
+ * photo). Unused while the brand has no files: the text wordmark shows instead.
+ */
+.te-logo-file { display: block; height: 2.25rem; width: auto; }
+.te-logo[data-size="sm"] .te-logo-file { height: 1.75rem; }
+.te-logo[data-size="lg"] .te-logo-file { height: 3rem; }
+.te-logo-file--on-dark { display: none; }
+:is(.te-logo[data-variant="light"], :root[data-theme="dark"] .te-logo, .te-nav[data-home="true"][data-scrolled="false"] .te-logo) .te-logo-file--on-light { display: none; }
+:is(.te-logo[data-variant="light"], :root[data-theme="dark"] .te-logo, .te-nav[data-home="true"][data-scrolled="false"] .te-logo) .te-logo-file--on-dark { display: block; }
+@media (max-width: 639px) { .te-nav .te-logo-file { height: 1.75rem; } }

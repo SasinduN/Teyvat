@@ -75,7 +75,7 @@ export async function launchChrome(executable: string): Promise<Chrome> {
 class ChromeStartupError extends Error {}
 
 async function launchOnce(executable: string): Promise<Chrome> {
-  const profile = mkdtempSync(join(tmpdir(), 'teyvat-chrome-'));
+  const profile = mkdtempSync(join(tmpdir(), 'site-chrome-'));
   const child: ChildProcess = spawn(
     executable,
     [

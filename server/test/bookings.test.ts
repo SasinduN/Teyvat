@@ -12,6 +12,7 @@ import { after, before, beforeEach, describe, mock, test } from 'node:test';
 
 import { blankLocation, type BookingInput, type BookingRecord } from '../../shared/booking';
 import { createApp } from '../src/app';
+import { BRAND } from '../../shared/brand';
 import { dispatchBookingNotifications } from '../src/bookings/notifications';
 import { pool } from '../src/db';
 import { BOOKING_COOKIE } from '../src/routes/bookings';
@@ -390,12 +391,14 @@ describe('bookings switched on', () => {
     const b: BookingRecord = await (await submit()).json();
     const eventId = randomUUID();
     await pool.query('insert into public.booking_notifications (id, booking_id, event) values ($1, $2, $3)', [eventId, b.id, '1:pending']);
-    const config = { resendApiKey: 'test-only-key', to: 'staff@example.test', from: 'Travel Eye <test@example.test>', siteUrl: null };
+    const config = { resendApiKey: 'test-only-key', to: 'staff@example.test', from: 'test@example.test', siteUrl: null };
     let calls = 0;
     await dispatchBookingNotifications(config, async (_url, init) => {
       calls++;
       const body = JSON.parse(String(init?.body));
       assert.ok(!body.text.includes(b.details.pickup.label));
+      assert.equal(body.subject, `${BRAND.name} booking pending`, 'the brand from shared/brand.ts');
+      assert.equal(body.from, `${BRAND.name} <test@example.test>`, "the brand's name before the address");
       assert.equal((init?.headers as Record<string, string>)['Idempotency-Key'], eventId);
       return new Response('', { status: 503 });
     });
@@ -404,6 +407,21 @@ describe('bookings switched on', () => {
     await pool.query('update public.booking_notifications set next_attempt_at = now() where id = $1', [eventId]);
     await dispatchBookingNotifications(config, async () => new Response('{}', { status: 200 }));
     assert.equal((await pool.query('select status from public.booking_notifications where id = $1', [eventId])).rows[0].status, 'sent');
+
+    // A name saved in Admin → Settings: the next email's subject and sender name; the address stays.
+    await pool.query("update public.site_settings set brand_name = 'Lagoon & Hills Journeys' where id");
+    try {
+      await pool.query('insert into public.booking_notifications (id, booking_id, event) values ($1, $2, $3)', [randomUUID(), b.id, '2:confirmed']);
+      const sent: { subject: string; from: string }[] = [];
+      await dispatchBookingNotifications({ ...config, from: 'Old Name <test@example.test>' }, async (_url, init) => {
+        sent.push(JSON.parse(String(init?.body)));
+        return new Response('{}', { status: 200 });
+      });
+      assert.equal(sent[0]?.subject, 'Lagoon & Hills Journeys booking confirmed');
+      assert.equal(sent[0]?.from, '"Lagoon & Hills Journeys" <test@example.test>');
+    } finally {
+      await pool.query('update public.site_settings set brand_name = null where id');
+    }
   });
 
   test('nothing about a request reaches the logs, even when it fails', async () => {
