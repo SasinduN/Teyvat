@@ -242,7 +242,7 @@ export interface HeroSlideRow extends Timestamps, Orderable {
 
 /**
  * Allowed `pillars.icon` values: the column's CHECK constraint. Same list as
- * `PillarIcon` in `src/types` and the icon map in `WhyTravelEye`. A runtime
+ * `PillarIcon` in `src/types` and the icon map in `WhyUs`. A runtime
  * array, not just a type, so the admin can offer it as a dropdown and the API
  * can validate against it.
  */
@@ -300,6 +300,13 @@ export interface SiteSettingsRow extends Timestamps {
   stats: SiteStat[];
   /** /when-to-go's explainer: paragraphs separated by a blank line (0022). NULL hides it. */
   when_to_go_explainer: string | null;
+  /** The brand's text (0024). NULL: the default in `shared/brand.ts`. */
+  brand_name: string | null;
+  brand_short_name: string | null;
+  brand_tagline: string | null;
+  brand_legal_name: string | null;
+  /** The home page's h1 (0024). NULL: the brand's tagline. */
+  hero_headline: string | null;
 }
 
 export interface InquiryRow extends Timestamps {

@@ -7,7 +7,8 @@
  * The email holds the reference and the status only: no pickup, stops or
  * coordinates. Nothing about the request reaches the logs.
  */
-import { BRAND_NAME } from '../../../shared/brand';
+import { emailSender } from '../../../shared/brand';
+import { loadBrand } from '../brand';
 import { pool } from '../db';
 import { notifyConfig, type NotifyConfig } from '../env';
 import { RESEND_EMAILS_ENDPOINT } from '../inquiries/notify';
@@ -26,6 +27,7 @@ export async function dispatchBookingNotifications(
     return;
   }
   try {
+    const brand = await loadBrand(client);
     await client.query('begin');
     const { rows } = await client.query<{ id: string; event: string; reference: string; email: string }>(
       `select n.id, n.event, b.reference, b.details->>'contactEmail' as email
@@ -42,9 +44,9 @@ export async function dispatchBookingNotifications(
           method: 'POST',
           headers: { Authorization: `Bearer ${config.resendApiKey}`, 'Content-Type': 'application/json', 'Idempotency-Key': n.id },
           body: JSON.stringify({
-            from: config.from,
+            from: emailSender(config.from, brand),
             to: [...new Set([n.email, config.to].filter(Boolean))],
-            subject: `${BRAND_NAME} booking ${status}`,
+            subject: `${brand.name} booking ${status}`,
             text:
               `Booking reference: ${n.reference}\nStatus: ${status}\n` +
               'A pending request is not a confirmed reservation. Open the booking page in the browser you used to send the request to see its current status.'

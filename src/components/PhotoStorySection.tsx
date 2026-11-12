@@ -2,12 +2,13 @@ import { TravelImage } from '@/components/TravelImage';
 import { useModalFocus } from '@/hooks/useModalFocus';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { usePhotoStories } from '@/hooks/useSiteContent';
+import { useBrand, usePhotoStories } from '@/hooks/useSiteContent';
 import { PhotoStory } from '../types';
 import { Camera, MapPin, X, Maximize2 } from 'lucide-react';
 
 export const PhotoStorySection: React.FC = () => {
   const PHOTO_STORIES = usePhotoStories();
+  const brand = useBrand();
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoStory | null>(null);
   // Keyboard focus stays in the dialog, Escape closes it, and focus returns to the photo.
   const dialogRef = useModalFocus(Boolean(selectedPhoto), () => setSelectedPhoto(null));
@@ -126,7 +127,7 @@ export const PhotoStorySection: React.FC = () => {
                 </div>
 
                 <div className="pt-4 border-t border-white/10 text-xs text-white/50">
-                  Captured for Travel Eye Journal © 2026
+                  From the {brand.name} Journal
                 </div>
               </div>
             </motion.div>

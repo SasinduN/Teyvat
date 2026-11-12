@@ -80,7 +80,7 @@ describe('login', () => {
     assert.equal(res.headers.get('cache-control'), 'no-store');
     assert.deepEqual(await res.json(), { user: { id, email: EMAIL, fullName: 'Test Admin' } });
 
-    const cookie = res.headers.getSetCookie().find((c) => c.startsWith('__Host-teyvat_session='));
+    const cookie = res.headers.getSetCookie().find((c) => c.startsWith('__Host-session='));
     assert.ok(cookie);
     for (const attribute of ['HttpOnly', 'Secure', 'SameSite=Strict', 'Path=/', 'Max-Age=604800']) {
       assert.ok(cookie.includes(attribute), `cookie is missing ${attribute}: ${cookie}`);

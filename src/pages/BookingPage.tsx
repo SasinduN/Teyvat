@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BOOKING_API, checkCapacity, sriLankaToday, type BookingCatalog } from '@shared/booking';
 import { initialRide, rideSchema, type RideInput } from '@shared/ride';
-import { PAGE_TITLES } from '@shared/page-meta';
+import { PAGE_NAMES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useFeatures, useSiteSettings } from '@/hooks/useSiteContent';
@@ -29,7 +29,7 @@ export function BookingPage() {
 }
 
 function RideBookingForm() {
-  usePageTitle(PAGE_TITLES.booking);
+  usePageTitle(PAGE_NAMES.booking);
   const [params] = useSearchParams();
   const [catalog, setCatalog] = useState<BookingCatalog | null>(null);
   const { whatsappNumber } = useSiteSettings();

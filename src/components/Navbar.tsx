@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Search, Menu, X, Compass, ArrowRight, Heart } from 'lucide-react';
 import { useModalFocus } from '@/hooks/useModalFocus';
-import { useFeatures } from '@/hooks/useSiteContent';
+import { useBrand, useFeatures } from '@/hooks/useSiteContent';
+import { copyrightLine } from '@shared/brand';
 import { activeNavigationTarget } from '@/lib/activeNavigation';
 import { isNavGroup, navItems, navSections, paths } from '@shared/site-paths';
 import { Logo } from './Logo';
@@ -32,6 +33,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
   const menuRef = useModalFocus(mobileMenuOpen, () => setMobileMenuOpen(false));
   const activeTarget = activeNavigationTarget(location.pathname, location.hash);
   const features = useFeatures();
+  const brand = useBrand();
   const wishlist = useWishlist();
   const phoneActionsRef = useRef<HTMLDivElement>(null);
 
@@ -214,8 +216,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
           </nav>
 
           <div className="pt-8 border-t border-[var(--border)] text-center text-xs text-[var(--text-secondary)] space-y-1">
-            <p className="font-heading text-sm text-[var(--accent-text)]">“See Sri Lanka Through a Different Eye.”</p>
-            <p>© 2026 Travel Eye Sri Lanka</p>
+            <p className="font-heading text-sm text-[var(--accent-text)]">{brand.tagline}</p>
+            <p>{copyrightLine(brand, new Date().getFullYear())}</p>
           </div>
         </div>
       )}

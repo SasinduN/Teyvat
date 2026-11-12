@@ -31,7 +31,7 @@ async function main(): Promise<void> {
   const client = new Client({
     connectionString: target.connectionString,
     ssl: target.ssl,
-    application_name: 'teyvat-images-audit',
+    application_name: 'site-images-audit',
     options: '-c default_transaction_read_only=on'
   });
   await client.connect();

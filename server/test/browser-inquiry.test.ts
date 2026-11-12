@@ -216,7 +216,7 @@ describe('InquiryModal with the honeypot, in Chrome', { skip }, () => {
       const now = await screenshot(chrome, currentScript, css, subject);
 
       const keep = () => {
-        const dir = mkdtempSync(join(tmpdir(), 'teyvat-modal-'));
+        const dir = mkdtempSync(join(tmpdir(), 'site-modal-'));
         for (const [name, shot] of Object.entries({ before, control, now })) {
           writeFileSync(join(dir, `${name}.png`), Buffer.from(shot.png, 'base64'));
         }

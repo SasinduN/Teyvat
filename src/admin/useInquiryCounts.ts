@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { countInquiries } from '@/lib/api/inquiries';
 import { queryKeys } from '@/lib/queryClient';
+import { documentBrand } from '@/lib/brand';
 
 /**
  * How many enquiries wait in the inbox, for the sidebar badge, the tab title
@@ -19,12 +20,12 @@ export function useInquiryCounts() {
   });
 }
 
-/** "(2) Enquiries · Travel Eye Admin" while anything is new; the page's own title otherwise. */
+/** "(2) Enquiries · <brand> Admin" while anything is new; the page's own title otherwise. */
 export function useUnreadTitle(unread: number): void {
   useEffect(() => {
     const previous = document.title;
     if (unread > 0) {
-      document.title = `(${unread}) Enquiries · Travel Eye Admin`;
+      document.title = `(${unread}) Enquiries · ${documentBrand().name} Admin`;
     }
     return () => {
       document.title = previous;

@@ -20,7 +20,8 @@ import { Client } from 'pg';
 import { DESTINATIONS } from '../../scripts/fixtures/destinations';
 import type { SiteContentPayload } from '../../shared/api';
 import { explainerParagraphs, monthInColombo, normalizeMonths, suitability, suitabilityPhrase } from '../../shared/best-months';
-import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '../../shared/page-meta';
+import { PAGE_DESCRIPTIONS, PAGE_NAMES, pageTitle } from '../../shared/page-meta';
+import { BRAND } from '../../shared/brand';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import {
@@ -286,11 +287,11 @@ describe('the page on the server', { skip: built ? false : 'no build; run `npm r
     assert.equal(res.status, 200);
     const html = await res.text();
     const escaped = (text: string) => text.replace(/'/g, '&#39;');
-    assert.ok(html.includes(`<title>${escaped(PAGE_TITLES.whenToGo)}</title>`));
-    assert.equal(PAGE_TITLES.whenToGo, 'When to go | Travel Eye');
+    assert.ok(html.includes(`<title>${escaped(pageTitle(PAGE_NAMES.whenToGo, BRAND))}</title>`));
+    assert.equal(pageTitle(PAGE_NAMES.whenToGo, BRAND), `When to go | ${BRAND.name}`);
     assert.ok(html.includes(`<meta name="description" content="${escaped(PAGE_DESCRIPTIONS.whenToGo)}">`));
     assert.ok(html.includes(`<link rel="canonical" href="${SITE}/when-to-go">`));
-    assert.ok(html.includes(`<meta property="og:title" content="${escaped(PAGE_TITLES.whenToGo)}">`));
+    assert.ok(html.includes(`<meta property="og:title" content="${escaped(pageTitle(PAGE_NAMES.whenToGo, BRAND))}">`));
     assert.ok(html.includes(`<meta property="og:url" content="${SITE}/when-to-go">`));
     assert.match(html, /<meta property="og:image" content="https:\/\//);
     assert.match(html, /<meta name="twitter:title" content="When to go/);

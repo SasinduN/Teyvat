@@ -40,7 +40,7 @@ export const WIKIMEDIA_UPLOADS = 'https://upload.wikimedia.org/';
  * Wikimedia's policy asks automated clients to identify themselves with a
  * way to reach whoever runs them: the repository, here.
  */
-export const IMPORT_USER_AGENT = 'Teyvat-image-import/1.0 (+https://github.com/SasinduN/Teyvat; one-off copy of credited photos)';
+export const IMPORT_USER_AGENT = 'site-image-import/1.0 (+https://github.com/SasinduN; one-off copy of credited photos)';
 
 export interface ImportOptions {
   /** Stand-ins for tests. */

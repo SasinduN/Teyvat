@@ -1,35 +1,40 @@
 /**
- * Page titles, shared by the client (`document.title` on navigation) and,
- * from phase 8b, by Express (the `<title>` and share tags it sends), so the
- * two can never disagree.
+ * Page titles, shared by the client (`document.title` on navigation) and by
+ * Express (the `<title>` and share tags it sends), so the two can never
+ * disagree. The brand comes in as an argument: the admin can change its name
+ * (`resolveBrand`, `shared/brand.ts`), so no title is a constant.
  */
-import { BRAND_NAME, BRAND_TAGLINE } from './brand';
+import type { BrandText } from './brand';
 
-/** The home page's title: the one `index.html` has always had. */
-export const HOME_TITLE = `${BRAND_NAME} | ${BRAND_TAGLINE}`;
+/** The home page's title: "<brand> | <tagline>". */
+export const homeTitle = (brand: Pick<BrandText, 'name' | 'tagline'>): string => `${brand.name} | ${brand.tagline}`;
 
-/** The home page's description: the one `index.html` has always had. */
-export const HOME_DESCRIPTION = `Tea country, ancient cities, wildlife and surf in Sri Lanka, with routes planned by ${BRAND_NAME}.`;
+/** The home page's description. */
+export const homeDescription = (brand: Pick<BrandText, 'name'>): string =>
+  `Tea country, ancient cities, wildlife and surf in Sri Lanka, with routes planned by ${brand.name}.`;
 
-/** Any other page: "Ella | Travel Eye". */
-export const pageTitle = (name: string): string => `${name} | ${BRAND_NAME}`;
+/** Any other page: "Ella | <brand>". */
+export const pageTitle = (name: string, brand: Pick<BrandText, 'name'>): string => `${name} | ${brand.name}`;
 
-/** The fixed titles of the pages that aren't a content row. */
-export const PAGE_TITLES = {
-  destinations: pageTitle('Destinations'),
-  experiences: pageTitle('Experiences'),
-  tours: pageTitle('Tours'),
-  about: pageTitle('About Us'),
-  explore: pageTitle('Explore Sri Lanka'),
-  plan: pageTitle('Plan Your Trip'),
-  journal: pageTitle('Journal'),
-  whenToGo: pageTitle('When to go'),
-  photoCredits: pageTitle('Photo Credits'),
-  unsubscribe: pageTitle('Unsubscribe'),
-  wishlist: pageTitle('Your wishlist'),
-  booking: pageTitle('Book Your Ride'),
-  notFound: pageTitle('Page not found')
+/** The names of the pages that aren't a content row: their titles before " | <brand>". */
+export const PAGE_NAMES = {
+  destinations: 'Destinations',
+  experiences: 'Experiences',
+  tours: 'Tours',
+  about: 'About Us',
+  explore: 'Explore Sri Lanka',
+  plan: 'Plan Your Trip',
+  journal: 'Journal',
+  whenToGo: 'When to go',
+  photoCredits: 'Photo Credits',
+  unsubscribe: 'Unsubscribe',
+  wishlist: 'Your wishlist',
+  booking: 'Book Your Ride',
+  notFound: 'Page not found',
+  admin: 'Admin'
 } as const;
+
+export type PageName = keyof typeof PAGE_NAMES;
 
 /**
  * The fixed pages' descriptions: their headers' subtitles, and (phase 8b)

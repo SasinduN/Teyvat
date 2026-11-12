@@ -260,7 +260,7 @@ describe(`the home page's changed sections look as they did at their baseline co
         const now = await screenshot(chrome, currentScript, css, payload, section, width);
 
         const keep = () => {
-          const dir = mkdtempSync(join(tmpdir(), `teyvat-home-${section.name}-${width}-`));
+          const dir = mkdtempSync(join(tmpdir(), `site-home-${section.name}-${width}-`));
           for (const [name, shot] of Object.entries({ before, control, now })) {
             writeFileSync(join(dir, `${name}.png`), Buffer.from(shot.png, 'base64'));
           }

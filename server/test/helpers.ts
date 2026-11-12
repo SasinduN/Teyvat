@@ -155,13 +155,15 @@ export async function resetContent(options: { whatsappNumber?: string | null } =
   }
   await pool.query(
     `update public.site_settings
-        set postal_address = 'Level 12, Galle Face Terrace, Colombo 03, Sri Lanka',
-            phone = '+94 11 234 5678',
-            contact_email = 'hello@traveleye.lk',
+        set postal_address = 'Placeholder address: set it in Admin → Settings',
+            phone = '+94 00 000 0000',
+            contact_email = 'hello@serendibluxetours.com',
             instagram_url = null, facebook_url = null, tiktok_url = null, youtube_url = null,
             privacy_url = null, terms_url = null, sustainability_url = null,
             whatsapp_number = $1,
-            text_size = 100
+            text_size = 100,
+            brand_name = null, brand_short_name = null, brand_tagline = null, brand_legal_name = null,
+            hero_headline = null
       where id`,
     [options.whatsappNumber === undefined ? DEV_WHATSAPP_NUMBER : options.whatsappNumber]
   );

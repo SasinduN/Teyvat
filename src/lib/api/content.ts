@@ -5,6 +5,7 @@
  * `server/src/routes/content.ts`). This side only maps rows to the shapes the
  * approved components expect.
  */
+import { documentBrand } from '@/lib/brand';
 import { API_ROUTES, type SiteContentPayload, type SiteFeatures } from '@shared/api';
 import { registerPhotoSets } from '@shared/photo-assets';
 import {
@@ -83,7 +84,9 @@ export const EMPTY_CONTENT: SiteContent = {
     termsUrl: '',
     sustainabilityUrl: '',
     // No whatsappNumber: the button stays hidden until content has loaded.
-    stats: []
+    stats: [],
+    // The splash's logo: the name the server put in the page, before content arrives.
+    brand: documentBrand()
   },
   imageCredits: [],
   features: { bookings: false }

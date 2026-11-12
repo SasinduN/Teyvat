@@ -6,7 +6,6 @@ import { RouteMap } from '@/components/RouteMap';
 import { SaveButton } from '@/components/SaveButton';
 import { usePageSubject, usePageTitle } from '@/context/PublicSiteContext';
 import { useFeatures, useTours } from '@/hooks/useSiteContent';
-import { pageTitle } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import type { TourPackage } from '@/types';
 import { NotFoundPage } from './NotFoundPage';
@@ -21,7 +20,7 @@ export function TourPage() {
 }
 
 function TourView({ t }: { t: TourPackage }) {
-  usePageTitle(pageTitle(t.title));
+  usePageTitle(t.title);
   usePageSubject({ inquiry: t.title, whatsapp: { kind: 'tour', id: t.id, title: t.title } });
   const tours = useTours();
   const { bookings } = useFeatures();

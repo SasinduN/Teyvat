@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useLocation, useNavigationType } from 'react-router-dom';
 
 /** Positions by history entry, kept for the tab's life (and across a reload). */
-const STORAGE_KEY = 'teyvat-scroll-positions';
+const STORAGE_KEY = 'site:scroll-positions';
 
 /**
  * Navigation state for a change of the page's own query (a filter, clearing

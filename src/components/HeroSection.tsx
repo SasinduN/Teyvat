@@ -2,12 +2,16 @@ import { TravelImage } from '@/components/TravelImage';
 import React, { useState, useEffect, useRef } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { Pause, Play, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useHeroSlides } from '@/hooks/useSiteContent';
+import { useBrand, useHeroSlides, useSiteSettings } from '@/hooks/useSiteContent';
+import { heroHeadlineParts } from '@shared/brand';
 import { SiteLink } from './SiteLink';
 import { paths } from '@shared/site-paths';
 
 export const HeroSection: React.FC = () => {
   const HERO_IMAGES = useHeroSlides();
+  const brand = useBrand();
+  // Admin → Settings → Home page headline, or the tagline.
+  const headline = heroHeadlineParts(useSiteSettings().heroHeadline ?? brand.tagline);
   const slideSources = HERO_IMAGES.map(slide => slide.url).join('\n');
   const [currentBg, setCurrentBg] = useState(0);
   const [seenSlides, setSeenSlides] = useState(() => new Set([0]));
@@ -105,9 +109,9 @@ export const HeroSection: React.FC = () => {
           <h1
             className="te-hero-title font-heading text-4xl font-bold tracking-tight text-white leading-[1.1] mb-6 drop-shadow-md"
           >
-            See Sri Lanka Through a <br className="hidden sm:inline" />
+            {headline.lead && <>{headline.lead} <br className="hidden sm:inline" /></>}
             <span className="te-hero-emphasis font-heading">
-              Different Eye.
+              {headline.emphasis}
             </span>
           </h1>
 

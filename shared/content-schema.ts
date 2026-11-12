@@ -14,6 +14,7 @@ import { z } from './zod';
 
 import { normalizeMonths } from './best-months';
 import { isTextSize, TEXT_SIZES } from './text-size';
+import { BRAND_MAX_LENGTH, BRAND_TEXT_DEFAULTS } from './brand';
 
 import {
   PILLAR_ICON_NAMES,
@@ -271,6 +272,26 @@ export const FIELDS_BY_TABLE: Record<ContentTableName, Field[]> = {
   ]
 };
 
+/**
+ * The brand's text (0024): each box empty means the default in `shared/brand.ts`,
+ * which the help names. Page titles, share tags, emails and the logo follow.
+ */
+const BRAND_FIELDS: Field[] = (
+  [
+    ['brand_name', 'Brand name', 'name', 'Page titles, the logo, share previews and emails.'],
+    ['brand_short_name', 'Short name', 'shortName', 'The logo’s large line (the rest of the name goes small underneath), and a phone’s home screen.'],
+    ['brand_tagline', 'Tagline', 'tagline', 'The home page’s title and headline (unless one is set below), the footer and the phone menu.'],
+    ['brand_legal_name', 'Legal name', 'legalName', 'The registered company name, in the copyright line.']
+  ] as const
+).map(([name, label, key, use]): Field => ({
+  name,
+  label,
+  type: 'text',
+  maxLength: BRAND_MAX_LENGTH[name],
+  span: key === 'tagline' || key === 'legalName' ? 2 : 1,
+  help: `${use} Empty: “${BRAND_TEXT_DEFAULTS[key]}”.`
+}));
+
 /** The single `site_settings` row, as the settings page edits it. */
 export const SITE_SETTINGS_FIELDS: Field[] = [
   { name: 'postal_address', label: 'Postal address', type: 'text', required: true, span: 2 },
@@ -311,6 +332,15 @@ export const SITE_SETTINGS_FIELDS: Field[] = [
     rows: 12,
     span: 2,
     help: 'Shown under the map on the When to go page. Leave a blank line between paragraphs. Leave it empty to hide it.'
+  },
+  ...BRAND_FIELDS,
+  {
+    name: 'hero_headline',
+    label: 'Home page headline',
+    type: 'text',
+    maxLength: 120,
+    span: 2,
+    help: `The large line over the home page's photos. Text after the first comma is set in the accent style. Empty: the tagline.`
   }
 ];
 

@@ -3,7 +3,7 @@ import { PageHero } from '@/components/PageHero';
 import { ToursSection } from '@/components/ToursSection';
 import { usePageTitle, usePublicSite } from '@/context/PublicSiteContext';
 import { useTours } from '@/hooks/useSiteContent';
-import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
+import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
@@ -12,7 +12,7 @@ import { Section } from './Section';
  * goes to the home page's map with that tour's route showing.
  */
 export function ToursPage() {
-  usePageTitle(PAGE_TITLES.tours);
+  usePageTitle(PAGE_NAMES.tours);
   const tours = useTours();
   const { openInquiry } = usePublicSite();
   const navigate = useNavigate();

@@ -1,5 +1,5 @@
 -- =============================================================================
--- Teyvat / Travel Eye Sri Lanka — initial schema
+-- initial schema
 -- =============================================================================
 -- Self-managed Postgres (Railway). Applied by the repo's own runner:
 --
@@ -253,7 +253,7 @@ comment on column public.hero_slides.image is
   'Named `image` for consistency with every other content table; the component prop is `url`.';
 
 -- 3.9 Pillars -------------------------------------------------------------------
--- The "Why Travel Eye" value propositions.
+-- The "Why us" value propositions (the About page).
 --
 -- `icon` stores a Lucide icon NAME, not a component — a database cannot hold a
 -- React component. The rendering component maps the name back to an icon. The
@@ -470,9 +470,9 @@ insert into public.site_settings (
   sustainability_url
 ) values (
   true,
-  'Level 12, Galle Face Terrace, Colombo 03, Sri Lanka',  -- Footer.tsx:81
-  '+94 11 234 5678',                                      -- Footer.tsx:85
-  'hello@traveleye.lk',                                   -- Footer.tsx:89-90
+  'Placeholder address: set it in Admin → Settings',     -- Footer.tsx:81; obviously fake on purpose
+  '+94 00 000 0000',                                      -- Footer.tsx:85; obviously fake on purpose
+  'hello@serendibluxetours.com',                          -- Footer.tsx:89-90
   '#instagram',                                           -- Footer.tsx:39
   '#facebook',                                            -- Footer.tsx:42
   '#tiktok',                                              -- Footer.tsx:45

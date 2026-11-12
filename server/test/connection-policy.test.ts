@@ -13,7 +13,7 @@ const remote = (mode: string) => `postgresql://u:p@example.proxy.rlwy.net:12345/
 
 test('no sslmode, or disable: no TLS', () => {
   assert.equal(connectionTargetFor('postgresql://u:p@postgres.railway.internal:5432/railway').ssl, false);
-  assert.equal(connectionTargetFor('postgresql://localhost:5433/teyvat_test?sslmode=disable').ssl, false);
+  assert.equal(connectionTargetFor('postgresql://localhost:5433/site_test?sslmode=disable').ssl, false);
 });
 
 test('allow, prefer and require encrypt without verifying, for any host', () => {
@@ -49,5 +49,5 @@ test('an unknown sslmode throws instead of silently meaning no TLS', () => {
 test('isRailwayInternal recognises only the private-network host', () => {
   assert.equal(isRailwayInternal('postgresql://u:p@postgres.railway.internal:5432/railway'), true);
   assert.equal(isRailwayInternal(remote('require')), false);
-  assert.equal(isRailwayInternal('postgresql://localhost:5433/teyvat_test'), false);
+  assert.equal(isRailwayInternal('postgresql://localhost:5433/site_test'), false);
 });

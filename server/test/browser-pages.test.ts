@@ -29,6 +29,8 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { after, before, beforeEach, describe, test } from 'node:test';
 
 import { NAV_LINKS } from '../../shared/site-paths';
+import { BRAND } from '../../shared/brand';
+import { homeTitle } from '../../shared/page-meta';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
@@ -146,7 +148,7 @@ describe('pages and links, in Chrome', { skip, timeout: 4 * 60_000 }, () => {
     );
     assert.equal(await page.evaluate<string>(`document.querySelector('header .te-home-link').getAttribute('href')`), '/');
     // Its name is the logo's text plus "homepage" (the visible label leads the accessible name).
-    assert.match(await page.evaluate<string>(`document.querySelector('header .te-home-link').textContent`), /TRAVEL.*EYE.*SRI LANKA.*homepage/s);
+    assert.match(await page.evaluate<string>(`document.querySelector('header .te-home-link').textContent`), new RegExp(`^${BRAND.name} homepage$`));
 
     page = await openPage('/destinations', { mobile: true });
     await page.evaluate(`document.querySelector('[aria-label="Open menu"]').click(), true`);
@@ -253,18 +255,18 @@ describe('pages and links, in Chrome', { skip, timeout: 4 * 60_000 }, () => {
 
   test('focus moves to the new page’s <h1>, and the title follows', async () => {
     const page = await openPage('/');
-    assert.equal(await page.evaluate<string>('document.title'), 'Travel Eye | See Sri Lanka Through a Different Eye');
+    assert.equal(await page.evaluate<string>('document.title'), homeTitle(BRAND));
 
     await clickLink(page, 'header nav', 'Destinations');
     await at(page, '/destinations');
     await waitFor(page, `document.activeElement?.tagName === 'H1'`, 'focus on the h1', 2_000);
     assert.equal(await page.evaluate<string>('document.activeElement.textContent.trim()'), 'Destinations');
-    assert.equal(await page.evaluate<string>('document.title'), 'Destinations | Travel Eye');
+    assert.equal(await page.evaluate<string>('document.title'), `Destinations | ${BRAND.name}`);
 
     await page.evaluate(`document.querySelector('main a[href="/destinations/ella"]').click(), true`);
     await at(page, '/destinations/ella');
     await waitFor(page, `document.activeElement?.textContent.trim() === 'Ella'`, "focus on Ella's h1", 2_000);
-    assert.equal(await page.evaluate<string>('document.title'), 'Ella | Travel Eye');
+    assert.equal(await page.evaluate<string>('document.title'), `Ella | ${BRAND.name}`);
     assert.equal(
       await page.evaluate<string>(`getComputedStyle(document.activeElement).outlineStyle`),
       'none',
@@ -276,7 +278,7 @@ describe('pages and links, in Chrome', { skip, timeout: 4 * 60_000 }, () => {
     for (const path of ['/no-such-page', '/destinations/nowhere', '/tours/nothing', '/experiences/none', '/journal/missing']) {
       const page = await openPage(path);
       await waitFor(page, `document.querySelector('[data-not-found]')`, `the 404 page for ${path}`);
-      assert.equal(await page.evaluate<string>('document.title'), 'Page not found | Travel Eye', path);
+      assert.equal(await page.evaluate<string>('document.title'), `Page not found | ${BRAND.name}`, path);
     }
 
     // Unpublished is the same as missing.

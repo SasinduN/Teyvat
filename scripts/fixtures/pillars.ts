@@ -3,7 +3,7 @@ import { Pillar } from '../../src/types';
 /**
  * Seed source of truth for `public.pillars`.
  *
- * Copied verbatim from the `pillars` literal that `WhyTravelEye` held before
+ * Copied verbatim from the `pillars` literal that `WhyUs` held before
  * phase 2b, except that the lucide component reference (`Users`) becomes its
  * name (`'Users'`) — a database cannot store a React component. The component
  * now reads these rows from `/api/content` and resolves the name back through

@@ -5,7 +5,7 @@ import { useDestinations, usePillars } from '@/hooks/useSiteContent';
  * How we plan: the pillars as a numbered list, beside a photo. `pillars.icon` stays in
  * the database and the admin; the public site no longer shows it.
  */
-export function WhyTravelEye() {
+export function WhyUs() {
   const pillars = usePillars();
   const destinations = useDestinations();
   const photo = destinations.find((destination) => destination.id === 'sigiriya')?.image ?? destinations[0]?.image;

@@ -1,7 +1,8 @@
-# Teyvat — Travel Eye Sri Lanka
+# Sri Lanka tours site
 
 An inbound-tourism site for travellers visiting Sri Lanka, and the admin panel
-that runs it.
+that runs it. The brand isn't chosen yet: its name, logo and the rest live in
+`shared/brand.ts`, and the name can be changed in Admin → Settings.
 
 - **Public site** (`/`): the approved marketing design, rendered from the
   database.
@@ -48,12 +49,12 @@ Zod · Express 5 · PostgreSQL · Cloudflare R2 · Resend.
 ### 2. Clone and install
 
 ```bash
-git clone https://github.com/SasinduN/Teyvat.git
-cd Teyvat
+git clone <this repository's URL> site
+cd site
 npm ci
 ```
 
-> For a clean local setup, make sure the checked-out repo sits at the project root itself. If the folder contains a nested `Teyvat-main` directory, move the files up one level before running the app or database scripts.
+> For a clean local setup, make sure the checked-out repo sits at the project root itself. If the folder contains a nested `*-main` directory (from a ZIP download), move the files up one level before running the app or database scripts.
 
 ### 3. Environment
 
@@ -66,8 +67,8 @@ optional, and the site runs without them.
 
 | Variable | Locally |
 | --- | --- |
-| `DATABASE_URL` | your **local** development database: `postgresql://postgres:<pw>@localhost:5433/teyvat_dev` |
-| `TEST_DATABASE_URL` | your local **test** database: `postgresql://postgres:<pw>@localhost:5433/teyvat_test` |
+| `DATABASE_URL` | your **local** development database: `postgresql://postgres:<pw>@localhost:5433/site_dev` |
+| `TEST_DATABASE_URL` | your local **test** database: `postgresql://postgres:<pw>@localhost:5433/site_test` |
 | `PROD_DATABASE_URL` | optional, only for the scripts that reach production with `--prod` (below) |
 | `VITE_CARTO_KEY` | optional: CARTO's tile key. Without it the map uses attributed OpenStreetMap tiles in both themes |
 
@@ -97,15 +98,15 @@ default 5432.
 2. Create the two databases:
 
    ```bash
-   createdb -h localhost -p 5433 -U postgres teyvat_dev
-   createdb -h localhost -p 5433 -U postgres teyvat_test
+   createdb -h localhost -p 5433 -U postgres site_dev
+   createdb -h localhost -p 5433 -U postgres site_test
    ```
 
 3. In `.env`:
 
    ```
-   DATABASE_URL=postgresql://postgres:<password>@localhost:5433/teyvat_dev
-   TEST_DATABASE_URL=postgresql://postgres:<password>@localhost:5433/teyvat_test
+   DATABASE_URL=postgresql://postgres:<password>@localhost:5433/site_dev
+   TEST_DATABASE_URL=postgresql://postgres:<password>@localhost:5433/site_test
    ```
 
 4. Apply the migrations, which include the seed content:
@@ -177,6 +178,7 @@ npm run build && npm start     # everything on http://localhost:8081
 | `npm run seed:dev` | Local database only: the fake WhatsApp number, if none is saved |
 | `npm run admin:create` | Create an admin, or `--reset-password` for an existing one (`--prod`) |
 | `npm run images:audit` | Read-only: stored image URLs the CSP would block (`--prod`) |
+| `npm run brand:audit` | Read-only: table, id and column of rows that still name an earlier brand or the placeholder, never the text (`--prod`) |
 | `npm run media:rebase` | Move stored image URLs to a new R2 base (`--from`, `--to`, `--dry-run`, `--prod`) |
 | `npm run images:import` | Copy the Wikimedia photos the content uses into R2 and repoint rows and credits (`--dry-run`, `--prod`) |
 | `npm run content:import` | Researched destinations and attractions (`scripts/content/places.json`) into the database as drafts, photos to R2 with credits; never overwrites an admin's edit (`--dry-run`, `--prod`, `--skip-photos`) |
@@ -377,7 +379,7 @@ rate limits keep IP addresses for 24 hours. Status emails go through Resend.
 - **Every user is an admin.** There's no sign-up page; accounts come from
   `npm run admin:create`.
 - **Passwords:** argon2id.
-- **Sessions:** the cookie is `__Host-teyvat_session` (`HttpOnly`, `Secure`,
+- **Sessions:** the cookie is `__Host-session` (`HttpOnly`, `Secure`,
   `SameSite=Strict`) and carries a random token; the database stores only its
   SHA-256. A session lasts 7 days from sign-in. There's sign-out and
   sign-out-everywhere.
@@ -472,7 +474,7 @@ point-in-time recovery).
   no `sslmode`: its traffic never leaves Railway's private network. It logs a
   warning at start-up if given anything else.
 - The scripts that reach production from a laptop with `--prod`
-  (`admin:create`, `images:audit`, `images:import`, `content:import`, `media:rebase`) read
+  (`admin:create`, `images:audit`, `brand:audit`, `images:import`, `content:import`, `media:rebase`) read
   `PROD_DATABASE_URL`: the Postgres service's `DATABASE_PUBLIC_URL` with
   `?sslmode=require`. That is encrypted but not authenticated, because
   Railway's proxy certificate is self-signed.

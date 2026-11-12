@@ -1,5 +1,5 @@
 -- =============================================================================
--- Teyvat / Travel Eye Sri Lanka — sign-in throttling
+-- sign-in throttling
 -- =============================================================================
 -- One row per POST /api/auth/login that got as far as checking a password.
 -- The API counts recent failures here before it verifies anything, so the

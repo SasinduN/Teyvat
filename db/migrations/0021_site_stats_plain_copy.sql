@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------------------------
--- Teyvat — the stats strip, and plainer seed copy (design/less-generic)
+-- the stats strip, and plainer seed copy (design/less-generic)
 --
 -- site_settings.stats: up to four numbers on the home and About pages
 -- (shared/site-stats.ts). Seeded only with what has a source; the sources are in

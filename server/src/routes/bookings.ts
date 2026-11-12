@@ -49,7 +49,7 @@ import { pool } from '../db';
 import { notifyConfig } from '../env';
 import { ApiError, asyncRoute, clientIp, sendError } from '../http';
 
-export const BOOKING_COOKIE = '__Host-teyvat_booking';
+export const BOOKING_COOKIE = '__Host-booking';
 const GUEST_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 
