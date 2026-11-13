@@ -19,6 +19,7 @@
     "admin:create": "tsx scripts/create-admin.ts",
     "images:audit": "tsx scripts/images-audit.ts",
     "brand:audit": "tsx scripts/brand-audit.ts",
+    "db:backup": "tsx scripts/db-backup.ts",
     "images:import": "tsx scripts/images-import.ts",
     "content:import": "tsx scripts/content-import.ts",
     "media:rebase": "tsx scripts/media-rebase.ts",
