@@ -1,5 +1,5 @@
 -- =============================================================================
--- site_settings links: NULL or https://
+-- Teyvat / Travel Eye Sri Lanka — site_settings links: NULL or https://
 -- =============================================================================
 -- Phase 4 makes the seven footer links editable in the admin panel, and they
 -- render straight into `href`. The rule for each is now:

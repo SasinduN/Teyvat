@@ -1,5 +1,5 @@
 -- =============================================================================
--- image_credits
+-- Teyvat / Travel Eye Sri Lanka — image_credits
 -- =============================================================================
 -- Who took a photo, and the licence it is shared under, keyed by the image URL
 -- the content tables store. Keyed by URL, not by row, because one photo is

@@ -1,5 +1,5 @@
 -- =============================================================================
--- tour route stops, and airport travel time
+-- Teyvat / Travel Eye Sri Lanka — tour route stops, and airport travel time
 -- =============================================================================
 -- A tour's route was a list of place names (`tours.route`). The map can only
 -- draw a route whose stops have coordinates, so each stop becomes a row of

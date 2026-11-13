@@ -1,5 +1,5 @@
 -- =============================================================================
--- the media library
+-- Teyvat / Travel Eye Sri Lanka — the media library
 -- =============================================================================
 -- One row per image uploaded to the R2 bucket through POST /api/admin/media.
 --

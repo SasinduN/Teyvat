@@ -256,6 +256,32 @@ describe('the brand from the database', () => {
     assert.equal(rows[0].contact_email, 'owner@example.test', 'an admin’s address stays');
   });
 
+  test('0001 then 0025 and 0026: a fresh database gets the placeholders; an edited address and phone stay', async () => {
+    const read = (name: string) => readFileSync(join(REPO_ROOT, 'db/migrations', name), 'utf8');
+    // 0001's own seed values, read from the frozen file, not copied here.
+    const seed = /insert into public\.site_settings[\s\S]*?values \(\s*true,\s*'([^']*)',[^\n]*\n\s*'([^']*)',[^\n]*\n\s*'([^']*)'/.exec(read('0001_init.sql'));
+    assert.ok(seed, "0001's site_settings insert");
+    const [, address, phone, email] = seed;
+    await pool.query('update public.site_settings set postal_address = $1, phone = $2, contact_email = $3 where id', [address, phone, email]);
+    for (const name of ['0025_rebrand_seed_text.sql', '0026_seed_contact_placeholders.sql', '0026_seed_contact_placeholders.sql']) {
+      await pool.query(read(name));
+    }
+    let { rows } = await pool.query<{ postal_address: string; phone: string; contact_email: string }>(
+      'select postal_address, phone, contact_email from public.site_settings where id'
+    );
+    assert.deepEqual(rows[0], {
+      postal_address: 'Placeholder address: set it in Admin → Settings',
+      phone: '+94 00 000 0000',
+      contact_email: 'hello@serendibluxetours.com'
+    });
+
+    await pool.query("update public.site_settings set postal_address = '12 Real Road, Galle', phone = '+94 91 555 0100' where id");
+    await pool.query(read('0026_seed_contact_placeholders.sql'));
+    ({ rows } = await pool.query('select postal_address, phone, contact_email from public.site_settings where id'));
+    assert.equal(rows[0].postal_address, '12 Real Road, Galle', 'an admin’s address stays');
+    assert.equal(rows[0].phone, '+94 91 555 0100', 'and their phone');
+  });
+
   test('brand:audit: table, id and column of every match, never the value; people’s data unread', async () => {
     assert.deepEqual(await findOldBrand(pool), [], 'the seed and the tests’ content are clean');
 
