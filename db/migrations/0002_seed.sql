@@ -1,5 +1,5 @@
 -- =============================================================================
--- content seed
+-- Teyvat / Travel Eye Sri Lanka — content seed
 -- =============================================================================
 -- GENERATED FILE — do not edit by hand.
 -- Regenerate with:  npm run seed:generate

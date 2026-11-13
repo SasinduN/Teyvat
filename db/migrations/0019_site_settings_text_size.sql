@@ -1,5 +1,5 @@
 -- =============================================================================
--- site_settings.text_size
+-- Teyvat / Travel Eye Sri Lanka — site_settings.text_size
 -- =============================================================================
 -- The site-wide text size, a percent of the visitor's browser default. Express
 -- writes it on <html> in every page it sends, and the stylesheet makes it the

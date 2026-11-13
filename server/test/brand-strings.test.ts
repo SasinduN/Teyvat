@@ -5,8 +5,12 @@
  * 1. No earlier name, and not the placeholder used before the name was chosen,
  *    anywhere: every file git tracks (or would track), except
  *    `docs/`, which holds the project's history (plans, reviews, changelogs) and
- *    is never shown to visitors. Zero allowed: code, tests, seeds, migrations,
- *    the README and CLAUDE.md included. Identifiers count too (a component named
+ *    is never shown to visitors, and the applied migrations: those are frozen
+ *    (`migrations-frozen.test.ts`), so the earlier name stays in them, in
+ *    comments and in SQL that production already ran. A migration that isn't
+ *    frozen yet is read without its `--` comments, and its SQL must not name
+ *    an earlier brand. Zero allowed: code, tests, seeds, the README and
+ *    CLAUDE.md included. Identifiers count too (a component named
  *    after the old brand, a cookie or a database named after the project).
  * 2. The current name, tagline and legal name are written only in
  *    `shared/brand.ts`: everything else reads them from there.
@@ -21,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
 import { BRAND, BRAND_TEXT_DEFAULTS } from '../../shared/brand';
+import { APPLIED_MIGRATIONS, migrationHash } from './applied-migrations';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BRAND_SOURCE = 'shared/brand.ts';
@@ -54,13 +59,22 @@ function textOf(file: string): string | null {
   return buffer.includes(0) ? null : buffer.toString('utf8');
 }
 
+const MIGRATIONS = 'db/migrations/';
+
+/** An applied migration, unchanged: frozen, never edited, so never scanned. */
+function isFrozenMigration(file: string, text: string): boolean {
+  return file.startsWith(MIGRATIONS) && APPLIED_MIGRATIONS[file.slice(MIGRATIONS.length)] === migrationHash(text);
+}
+
 function linesMatching(files: string[], patterns: readonly RegExp[]): string[] {
   const found: string[] = [];
   for (const file of files) {
     const text = textOf(file);
-    if (text === null) continue;
-    text.split('\n').forEach((line, i) => {
-      if (patterns.some((p) => p.test(line))) found.push(`${file}:${i + 1}: ${line.trim().slice(0, 160)}`);
+    if (text === null || isFrozenMigration(file, text)) continue;
+    text.split('\n').forEach((raw, i) => {
+      // In a migration, its SQL counts and its comments don't: they never reach a visitor.
+      const line = file.startsWith(MIGRATIONS) ? raw.replace(/--.*$/, '') : raw;
+      if (patterns.some((p) => p.test(line))) found.push(`${file}:${i + 1}: ${raw.trim().slice(0, 160)}`);
     });
   }
   return found;

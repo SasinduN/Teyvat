@@ -1,5 +1,5 @@
 -- =============================================================================
--- the Wikimedia fallback
+-- Teyvat / Travel Eye Sri Lanka — the Wikimedia fallback
 -- =============================================================================
 -- From this release the CSP no longer allows upload.wikimedia.org: the photos
 -- migration 0010 hotlinked from there were copied into R2 by

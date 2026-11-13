@@ -436,6 +436,16 @@ Agreed, not started. Each one gets its own plan first.
   different project (`alluring-warmth`), not this one.
 - **`db/migrations/0002_seed.sql` is an upsert.** Never run it by hand against
   production. It overwrites admin edits.
+- **Never edit a migration that has been applied; write a new one.** Not even a
+  comment. `migrate` records only file names in `schema_migrations`, so an edit
+  never reaches production and fresh databases quietly differ from it. A change
+  to data goes in a new migration that touches a row only while it still holds
+  the exact old value (0021, 0025, 0026), so admin edits stay.
+  `migrations-frozen` fails if a listed file changes, and every migration's hash
+  goes in `server/test/applied-migrations.ts` in the PR that adds it. That
+  includes 0002: `npm run seed:generate` would rewrite it, so a fixture change
+  needs a new migration too. `brand-strings` skips the frozen files: the earlier
+  name stays in them.
 - **Rotate the Postgres password before go-live.** It is on the launch
   checklist (`docs/LAUNCH-CHECKLIST.md`, item 2), with everything else before launch;
   the steps are `docs/runbooks/rotate-postgres-password.md`.

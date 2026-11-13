@@ -1,5 +1,5 @@
 -- =============================================================================
--- booking requests
+-- Teyvat / Travel Eye Sri Lanka — booking requests
 -- =============================================================================
 -- The friend import's bookings (docs/reviews/friend-import.md; his
 -- 0011_bookings.sql, renumbered: 0011 is image_credits here). Requests,

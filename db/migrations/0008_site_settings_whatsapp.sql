@@ -1,5 +1,5 @@
 -- =============================================================================
--- site_settings.whatsapp_number
+-- Teyvat / Travel Eye Sri Lanka — site_settings.whatsapp_number
 -- =============================================================================
 -- The number behind the public site's WhatsApp chat button, which opens
 -- https://wa.me/<number>. International format, digits only, no "+":

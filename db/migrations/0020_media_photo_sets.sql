@@ -1,5 +1,5 @@
 -- =============================================================================
--- photo sets in the media library
+-- Teyvat / Travel Eye Sri Lanka — photo sets in the media library
 -- =============================================================================
 -- One photograph at several widths, for `srcset`. `npm run images:migrate-assets`
 -- moves the photos in public/assets/ into R2 and fills these in: `photo_key` is
