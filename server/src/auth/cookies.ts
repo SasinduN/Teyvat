@@ -8,7 +8,7 @@
  */
 import type { Request, Response } from 'express';
 
-export const SESSION_COOKIE = '__Host-teyvat_session';
+export const SESSION_COOKIE = '__Host-session';
 
 /** Seven days, fixed from sign-in. Activity does not extend it. */
 export const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;

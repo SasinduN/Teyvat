@@ -7,7 +7,7 @@ import { useHeroSlides } from '@/hooks/useSiteContent';
 import { postJson } from '@/lib/api/http';
 import { describeError } from '@/lib/errors';
 import { API_ROUTES } from '@shared/api';
-import { PAGE_TITLES } from '@shared/page-meta';
+import { PAGE_NAMES } from '@shared/page-meta';
 import { paths, UNSUBSCRIBE_TOKEN_PATTERN } from '@shared/site-paths';
 
 /**
@@ -17,7 +17,7 @@ import { paths, UNSUBSCRIBE_TOKEN_PATTERN } from '@shared/site-paths';
  * from the site, and `noindex` (server/src/pages/pages.ts).
  */
 export function UnsubscribePage() {
-  usePageTitle(PAGE_TITLES.unsubscribe);
+  usePageTitle(PAGE_NAMES.unsubscribe);
   const slides = useHeroSlides();
   const [params] = useSearchParams();
   const token = params.get('token')?.trim() ?? '';

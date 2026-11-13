@@ -3,13 +3,13 @@ import { JournalSection } from '@/components/JournalSection';
 import { PhotoStorySection } from '@/components/PhotoStorySection';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useArticles } from '@/hooks/useSiteContent';
-import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
+import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
 /** `/journal`: every published article, then the photo stories. */
 export function JournalPage() {
-  usePageTitle(PAGE_TITLES.journal);
+  usePageTitle(PAGE_NAMES.journal);
   const articles = useArticles();
 
   return (

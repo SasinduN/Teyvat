@@ -38,7 +38,7 @@ async function main(): Promise<void> {
   const client = new Client({
     connectionString: target.connectionString,
     ssl: target.ssl,
-    application_name: 'teyvat-rebase'
+    application_name: 'site-rebase'
   });
   await client.connect();
 

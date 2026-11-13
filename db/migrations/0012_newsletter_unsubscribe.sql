@@ -1,5 +1,5 @@
 -- =============================================================================
--- Teyvat / Travel Eye Sri Lanka — newsletter unsubscribe tokens and consent
+-- newsletter unsubscribe tokens and consent
 -- =============================================================================
 -- Every subscriber gets an unguessable token (a random UUID). The link
 -- /unsubscribe?token=<token> (`newsletterUnsubscribeUrl` in

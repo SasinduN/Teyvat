@@ -6,7 +6,6 @@ import { PlanCard } from '@/components/PlanCard';
 import { SaveButton } from '@/components/SaveButton';
 import { usePageSubject, usePageTitle } from '@/context/PublicSiteContext';
 import { useDestinations, useFeaturedExperiences } from '@/hooks/useSiteContent';
-import { pageTitle } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import type { Destination, ExperienceItem } from '@/types';
 import { NotFoundPage } from './NotFoundPage';
@@ -33,7 +32,7 @@ function whereItHappens(e: ExperienceItem, destinations: Destination[]): Destina
 }
 
 function ExperienceView({ e }: { e: ExperienceItem }) {
-  usePageTitle(pageTitle(e.title));
+  usePageTitle(e.title);
   usePageSubject({
     // The subject the home page's experience cards have always used.
     inquiry: `Experience: ${e.title} (${e.location})`,

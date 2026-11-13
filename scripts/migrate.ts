@@ -47,11 +47,11 @@ const DRY_RUN = process.argv.includes('--dry-run');
  * is required: the migration files commit mid-run, and a transaction-scoped
  * lock would be released by the first `commit;`.
  *
- * The value is arbitrary — it only has to be identical in every replica.
- * 0x746579766174 is "teyvat" in ASCII, which makes it self-documenting if it
- * ever shows up in `pg_locks`.
+ * The value is arbitrary — it only has to be identical in every replica, and
+ * it must never change (a replica on the old value wouldn't wait for one on
+ * the new). Six ASCII letters, the project's working name, as a number.
  */
-const LOCK_ID = '127979178320244'; // 0x746579766174
+const LOCK_ID = '127979178320244';
 
 /** `0001_init.sql` — four digits, snake_case, nothing else. */
 const FILENAME_PATTERN = /^\d{4}_[a-z0-9_]+\.sql$/;
@@ -64,7 +64,7 @@ function requireDatabaseUrl(): string {
         '  Railway:  it is injected automatically once the Postgres service is\n' +
         '            attached — use the internal `*.railway.internal` URL.\n' +
         '  Local:    the local database, in .env in the project root:\n' +
-        '              DATABASE_URL=postgresql://postgres:<password>@localhost:5433/teyvat_dev\n' +
+        '              DATABASE_URL=postgresql://postgres:<password>@localhost:5433/site_dev\n' +
         '            (README, "Local database").'
     );
     process.exit(1);
@@ -122,7 +122,7 @@ async function main(): Promise<void> {
   const client = new Client({
     connectionString: target.connectionString,
     ssl: target.ssl,
-    application_name: 'teyvat-migrate'
+    application_name: 'site-migrate'
   });
 
   await client.connect();

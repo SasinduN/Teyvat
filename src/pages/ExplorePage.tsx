@@ -11,7 +11,7 @@ import { useDestinations, useTours } from '@/hooks/useSiteContent';
 import { goToSection } from '@/lib/routeFocus';
 import type { CategoryType } from '@/types';
 import { KEEP_SCROLL } from '@/lib/ScrollRestorer';
-import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
+import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
@@ -30,7 +30,7 @@ import { Section } from './Section';
  * still loads only as it nears the screen.
  */
 export function ExplorePage() {
-  usePageTitle(PAGE_TITLES.explore);
+  usePageTitle(PAGE_NAMES.explore);
   const destinations = useDestinations();
   const tours = useTours();
   const { openInquiry } = usePublicSite();

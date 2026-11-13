@@ -1,5 +1,5 @@
 -- =============================================================================
--- Teyvat / Travel Eye Sri Lanka — enquiries on the API
+-- enquiries on the API
 -- =============================================================================
 -- Phase 6 moves the enquiry form and inbox onto our own API.
 --

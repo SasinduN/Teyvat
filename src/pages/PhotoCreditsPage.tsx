@@ -3,7 +3,7 @@ import { ExternalLink } from 'lucide-react';
 import { PageHero } from '@/components/PageHero';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useHeroSlides, useImageCredits } from '@/hooks/useSiteContent';
-import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
+import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 
 /**
@@ -13,7 +13,7 @@ import { paths } from '@shared/site-paths';
  * Edited under Admin → Photo credits.
  */
 export function PhotoCreditsPage() {
-  usePageTitle(PAGE_TITLES.photoCredits);
+  usePageTitle(PAGE_NAMES.photoCredits);
   const credits = useImageCredits();
   const slides = useHeroSlides();
 

@@ -7,6 +7,7 @@
  * `null`) for the optional fields, since components test them with plain
  * truthiness and optional chaining.
  */
+import { resolveBrand } from '@shared/brand';
 import type {
   Article,
   Attraction,
@@ -213,7 +214,9 @@ export const toSiteSettings = (r: PublicSiteSettings): SiteSettings => ({
   sustainabilityUrl: r.sustainability_url ?? undefined,
   whatsappNumber: r.whatsapp_number ?? undefined,
   stats: r.stats ?? [],
-  whenToGoExplainer: r.when_to_go_explainer ?? undefined
+  whenToGoExplainer: r.when_to_go_explainer ?? undefined,
+  brand: resolveBrand(r),
+  heroHeadline: r.hero_headline ?? undefined
 });
 
 export const toImageCredit = (r: PublicImageCredit): ImageCredit => ({

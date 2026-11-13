@@ -3,7 +3,6 @@ import { HeroChip, PageHero } from '@/components/PageHero';
 import { ArticleCard, SectionHead } from '@/components/PageCards';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useArticles } from '@/hooks/useSiteContent';
-import { pageTitle } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import type { Article } from '@/types';
 import { NotFoundPage } from './NotFoundPage';
@@ -22,7 +21,7 @@ export function ArticlePage() {
 }
 
 function ArticleView({ a }: { a: Article }) {
-  usePageTitle(pageTitle(a.title));
+  usePageTitle(a.title);
   const all = useArticles();
 
   return (

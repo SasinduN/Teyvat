@@ -44,7 +44,7 @@ jobs:
         image: public.ecr.aws/docker/library/postgres:18
         env:
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: teyvat_test
+          POSTGRES_DB: site_test
         ports:
           - 5432:5432
         options: >-
@@ -55,8 +55,8 @@ jobs:
 
     env:
       # Satisfies the test guard: localhost, an explicit port, a *_test database.
-      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/teyvat_test
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/teyvat_test
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/site_test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/site_test
       # No R2 or Resend here: the tests clear those variables and use fakes.
 
     steps:

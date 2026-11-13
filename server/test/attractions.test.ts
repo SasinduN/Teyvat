@@ -432,7 +432,7 @@ describe('npm run content:import', () => {
       [resolve(REPO_ROOT, 'node_modules/tsx/dist/cli.mjs'), resolve(REPO_ROOT, 'scripts/content-import.ts'), '--dry-run'],
       { cwd: REPO_ROOT, env: { ...process.env, DATABASE_URL: TEST_DATABASE_URL }, encoding: 'utf8' }
     );
-    assert.match(output, /database: teyvat_test on localhost/);
+    assert.ok(output.includes(`database: ${new URL(TEST_DATABASE_URL).pathname.slice(1)} on localhost`), output);
     assert.match(output, /dry run: nothing is written/);
     assert.match(output, /destinations\/hiriketiya: create \(photo: none\)/);
     assert.match(output, /attractions\/jungle-beach: skip, already exists/);

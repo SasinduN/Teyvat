@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------------------------
--- Teyvat — "When to go": each destination's best months, and the monsoon explainer
+-- "When to go": each destination's best months, and the monsoon explainer
 --
 -- destinations.best_months: months 1 to 12, empty meaning "not set". Filled here from
 -- best_time only where the text is clear; anything else stays empty for an admin to set.

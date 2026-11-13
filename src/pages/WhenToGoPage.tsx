@@ -18,7 +18,7 @@ import {
   SUITABILITY_MEANINGS,
   type Suitability
 } from '@shared/best-months';
-import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
+import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import type { Destination } from '@/types';
 import { Section } from './Section';
@@ -82,7 +82,7 @@ function PlaceGrid({ places }: { places: Destination[] }) {
  * is. Places with no best months say "not set" on the map and stay out of the lists.
  */
 export function WhenToGoPage() {
-  usePageTitle(PAGE_TITLES.whenToGo);
+  usePageTitle(PAGE_NAMES.whenToGo);
   const destinations = useDestinations();
   const attractions = useAttractions();
   const { whenToGoExplainer } = useSiteSettings();

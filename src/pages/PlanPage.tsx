@@ -6,7 +6,7 @@ import { TravelPlanner } from '@/components/TravelPlanner';
 import { WishlistTextLink } from '@/components/WishlistLink';
 import { usePageTitle, usePublicSite } from '@/context/PublicSiteContext';
 import { useHeroSlides } from '@/hooks/useSiteContent';
-import { PAGE_DESCRIPTIONS, PAGE_TITLES } from '@shared/page-meta';
+import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
@@ -16,7 +16,7 @@ import { Section } from './Section';
  * the choices as its subject.
  */
 export function PlanPage() {
-  usePageTitle(PAGE_TITLES.plan);
+  usePageTitle(PAGE_NAMES.plan);
   const slides = useHeroSlides();
   const { openInquiry } = usePublicSite();
 

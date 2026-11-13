@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------------------------
--- Teyvat — nearby attractions, and a record of what `npm run content:import` wrote
+-- nearby attractions, and a record of what `npm run content:import` wrote
 --
 -- public.attractions: places worth seeing near a destination, each belonging to one
 -- (deleting the destination deletes them). The public site shows an attraction only

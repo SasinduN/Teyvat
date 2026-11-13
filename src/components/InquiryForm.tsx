@@ -2,6 +2,7 @@ import React, { useState, useId, useEffect, useRef } from 'react';
 import { CheckCircle2, Send, Compass, User, Mail, Phone, Loader2, AlertCircle } from 'lucide-react';
 import { submitInquiry } from '@/lib/api/inquiries';
 import { describeError } from '@/lib/errors';
+import { documentBrand } from '@/lib/brand';
 
 interface InquiryFormProps {
   /** What the enquiry is about; saved as its subject and quoted in the message. */
@@ -32,8 +33,10 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
   prefilledSubject,
   prefilledMessage,
   onDone,
-  doneLabel = 'Back to Travel Eye'
+  doneLabel
 }) => {
+  // From the page's own tag (the admin's name), not the content: the form renders on its own too.
+  const brand = documentBrand();
   const id = useId();
   const successRef = useRef<HTMLDivElement>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -76,7 +79,7 @@ export const InquiryForm: React.FC<InquiryFormProps> = ({
             onClick={onDone}
             className="te-button te-button--secondary mt-4 px-8 py-3 font-bold"
           >
-            {doneLabel}
+            {doneLabel ?? `Back to ${brand.name}`}
           </button>
         </div>
       ) : (

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BRAND_NAME } from '@shared/brand';
+import { copyrightLine } from '@shared/brand';
 import { Logo } from './Logo';
-import { useFeatures, useSiteSettings } from '@/hooks/useSiteContent';
+import { useBrand, useFeatures, useSiteSettings } from '@/hooks/useSiteContent';
 import { useWishlist } from '@/lib/wishlist';
 import { MapPin, Phone, Mail, CheckCircle2, ArrowRight } from 'lucide-react';
 import { API_ROUTES } from '@shared/api';
@@ -27,6 +27,7 @@ const Social: React.FC<{ href: string | null | undefined; label: string; classNa
 
 export const Footer: React.FC = () => {
   const settings = useSiteSettings();
+  const brand = useBrand();
   const links = navLinks(useFeatures());
   const { available: wishlistAvailable } = useWishlist();
   const [email, setEmail] = useState('');
@@ -63,7 +64,7 @@ export const Footer: React.FC = () => {
           <div className="md:col-span-6 xl:col-span-4 space-y-5">
             <Logo variant="light" size="lg" />
             <p className="font-heading text-lg text-[var(--accent)]">
-              “See Sri Lanka Through a Different Eye.”
+              {brand.tagline}
             </p>
             <p className="text-sm text-white/70 leading-relaxed">
               Trips around Sri Lanka, planned by people who live here.
@@ -189,7 +190,7 @@ export const Footer: React.FC = () => {
 
         {/* Bottom Bar */}
         <div data-footer-last-row className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-white/80 space-y-2 sm:space-y-0">
-          <p>© 2026 {BRAND_NAME} Sri Lanka. All rights reserved.</p>
+          <p>{copyrightLine(brand, new Date().getFullYear())}. All rights reserved.</p>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
             {wishlistAvailable && <Link to={paths.wishlist} className="hover:text-white transition-colors">Wishlist</Link>}
             <Link to={paths.photoCredits} className="hover:text-white transition-colors">Photo Credits</Link>

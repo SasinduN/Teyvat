@@ -1,73 +1,113 @@
 /**
- * The brand isn't decided (CLAUDE.md), so no new "Travel Eye" may appear in
- * the site's code: titles, headings, labels, storage keys and ids take it
- * from `shared/brand.ts` (`BRAND_NAME`), or say something brand-neutral.
+ * The brand lives in one place, `shared/brand.ts` (and the admin's settings on
+ * top), so a rebrand is one change.
  *
- * The strings that were already there (the approved demo's copy, the admin's
- * name, the notification email) are allowed, file by file, up to how many
- * each file had when this test was written. Removing one is fine (lower the
- * number here when you do); adding one fails, with the file and line.
+ * 1. No earlier name, and not the placeholder used before the name was chosen,
+ *    anywhere: every file git tracks (or would track), except
+ *    `docs/`, which holds the project's history (plans, reviews, changelogs) and
+ *    is never shown to visitors. Zero allowed: code, tests, seeds, migrations,
+ *    the README and CLAUDE.md included. Identifiers count too (a component named
+ *    after the old brand, a cookie or a database named after the project).
+ * 2. The current name, tagline and legal name are written only in
+ *    `shared/brand.ts`: everything else reads them from there.
  *
- * "Travel Eye" and "travel-eye", in any case; not identifiers such as
- * `WhyTravelEye`, which the rename changes along with everything else.
+ * The patterns below are written so they don't match themselves.
  */
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const BRAND = /travel[ -]eye/i;
-const ROOTS = ['src', 'shared', 'server/src', 'public', 'index.html'];
-const SOURCE = /\.(ts|tsx|js|mjs|css|html|txt|json|svg)$/;
+import { BRAND, BRAND_TEXT_DEFAULTS } from '../../shared/brand';
 
-/** Where the brand is defined: the one place it belongs. */
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BRAND_SOURCE = 'shared/brand.ts';
 
-/** File → how many lines naming the brand it may have (9 October 2026). */
-const ALLOWED: Record<string, number> = {
-  'server/src/env.ts': 1,
-  'server/src/inquiries/notify.ts': 2,
-  'shared/page-meta.ts': 1,
-  'src/admin/collections.ts': 3,
-  'src/admin/components/AdminLayout.tsx': 2,
-  'src/admin/pages/LoginPage.tsx': 2,
-  'src/admin/useInquiryCounts.ts': 2,
-  'src/components/InquiryForm.tsx': 1,
-  'src/components/Navbar.tsx': 1,
-  'src/components/PhotoStorySection.tsx': 1,
-  'src/types/index.ts': 1
-};
+/**
+ * The earlier brand (with and without spaces, dashes or underscores, so its
+ * domain and identifiers too), the project's working name, the placeholder and
+ * its domain, and a name already used by another Sri Lankan tour company, so
+ * it never creeps in.
+ */
+// The separators include `.` and `*`, so a regular expression that spells a name out with `.*` between its words counts too.
+const OLD_NAMES: readonly RegExp[] = [/travel[\s_.*-]*eye/i, /te[y]vat/i, /your[\s_.*-]*brand/i, /ceylon[\s_.*-]*eminence/i];
 
-function files(path: string): string[] {
-  const full = join(REPO_ROOT, path);
-  if (!existsSync(full)) return [];
-  if (statSync(full).isFile()) return [path];
-  return readdirSync(full).flatMap((name) => files(join(path, name)));
+/** Every text file git tracks, plus new ones it would track, outside `docs/`. */
+function repoFiles(): string[] {
+  const out = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024
+  });
+  return [...new Set(out.split('\0').filter(Boolean))].filter((file) => !file.startsWith('docs/'));
 }
 
-test('no new "Travel Eye" outside shared/brand.ts', () => {
-  const found = new Map<string, string[]>();
-  for (const file of ROOTS.flatMap(files).map((f) => relative(REPO_ROOT, join(REPO_ROOT, f)).replace(/\\/g, '/'))) {
-    if (file === BRAND_SOURCE || !SOURCE.test(file)) continue;
-    readFileSync(join(REPO_ROOT, file), 'utf8')
-      .split('\n')
-      .forEach((line, i) => {
-        if (BRAND.test(line)) found.set(file, [...(found.get(file) ?? []), `${file}:${i + 1}: ${line.trim()}`]);
-      });
+function textOf(file: string): string | null {
+  let buffer: Buffer;
+  try {
+    buffer = readFileSync(join(REPO_ROOT, file));
+  } catch {
+    return null; // Deleted in the working tree, not yet staged.
   }
+  return buffer.includes(0) ? null : buffer.toString('utf8');
+}
 
-  const problems: string[] = [];
-  for (const [file, lines] of found) {
-    const allowed = ALLOWED[file] ?? 0;
-    if (lines.length > allowed) {
-      problems.push(`${file}: ${lines.length} line(s) name the brand, ${allowed} allowed. Use BRAND_NAME from ${BRAND_SOURCE}:\n  ${lines.join('\n  ')}`);
-    }
+function linesMatching(files: string[], patterns: readonly RegExp[]): string[] {
+  const found: string[] = [];
+  for (const file of files) {
+    const text = textOf(file);
+    if (text === null) continue;
+    text.split('\n').forEach((line, i) => {
+      if (patterns.some((p) => p.test(line))) found.push(`${file}:${i + 1}: ${line.trim().slice(0, 160)}`);
+    });
   }
-  assert.deepEqual(problems, [], problems.join('\n\n'));
+  return found;
+}
+
+test('no earlier brand name in any file outside docs/', () => {
+  const files = repoFiles();
+  assert.ok(files.length > 100, `expected the whole repo, got ${files.length} files`);
+  const found = linesMatching(files, OLD_NAMES);
+  assert.deepEqual(found, [], `Use shared/brand.ts (BRAND, useBrand(), loadBrand()) instead:\n  ${found.join('\n  ')}`);
 });
 
-test('the brand itself is defined in shared/brand.ts', () => {
-  assert.match(readFileSync(join(REPO_ROOT, BRAND_SOURCE), 'utf8'), /export const BRAND_NAME = '[^']+';/);
+test('the name, tagline and legal name are written only in shared/brand.ts', () => {
+  const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const values = [BRAND_TEXT_DEFAULTS.name, BRAND_TEXT_DEFAULTS.tagline, BRAND_TEXT_DEFAULTS.legalName];
+  const patterns = values.map((value) => new RegExp(escape(value), 'i'));
+  const files = repoFiles().filter((file) => file !== BRAND_SOURCE && !file.startsWith('server/test/'));
+  const found = linesMatching(files, patterns);
+  assert.deepEqual(found, [], `Read the brand from ${BRAND_SOURCE} instead:\n  ${found.join('\n  ')}`);
+});
+
+test('the patterns catch the earlier names in every spelling, and spare the brand', () => {
+  // Built from pieces, so this file doesn't name them either.
+  const travel = ['Travel', 'Eye'];
+  const placeholder = ['Your', 'Brand'];
+  const samples = [
+    travel.join(' '),
+    travel.join('').toUpperCase(),
+    `${travel.join('-').toLowerCase()}.lk`,
+    `Why${travel.join('')}`,
+    'te' + 'yvat_test',
+    `${placeholder.join(' ')} Tours`,
+    `hello@${placeholder.join('').toLowerCase()}tours.example`,
+    'Ceylon' + ' Eminence',
+    `/${travel.join('.*').toUpperCase()}/`
+  ];
+  for (const sample of samples) assert.ok(OLD_NAMES.some((p) => p.test(sample)), sample);
+  for (const fine of [BRAND.name, BRAND.shortName, BRAND.legalName, BRAND.tagline, BRAND.emailDomain, 'travelling with sharp eyes', 'your own brand-new itinerary']) {
+    assert.ok(!OLD_NAMES.some((p) => p.test(fine)), fine);
+  }
+});
+
+test('shared/brand.ts defines every part of the brand', () => {
+  for (const [key, value] of Object.entries(BRAND_TEXT_DEFAULTS)) assert.ok(value.trim().length > 0, key);
+  assert.ok(BRAND.favicon.startsWith('/'), 'the favicon is a site path');
+  assert.match(BRAND.emailDomain, /^[a-z0-9.-]+\.[a-z]+$/);
+  assert.match(BRAND.themeColor, /^#[0-9A-F]{6}$/i);
+  assert.match(BRAND.backgroundColor, /^#[0-9A-F]{6}$/i);
+  assert.equal(BRAND.logo.onLight === null, BRAND.logo.onDark === null, 'both logo files, or neither (the text wordmark)');
 });

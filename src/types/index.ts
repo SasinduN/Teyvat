@@ -1,3 +1,4 @@
+import type { Brand } from '@shared/brand';
 import type { SiteStat } from '@shared/site-stats';
 
 import type { PillarIconName } from '@shared/database.types';
@@ -142,11 +143,11 @@ export interface HeroSlide {
 /**
  * Allowed `Pillar.icon` values: the CHECK constraint on `public.pillars.icon`,
  * declared once in `shared/database.types.ts`. Adding an icon means changing
- * that constraint, that type, and the icon map in `WhyTravelEye` together.
+ * that constraint, that type, and the icon map in `WhyUs` together.
  */
 export type PillarIcon = PillarIconName;
 
-/** A "Why Travel Eye" value proposition. */
+/** A "Why us" value proposition (the About page's pillars). */
 export interface Pillar {
   id: string;
   /** Lucide icon name, resolved to a component by the rendering component. */
@@ -188,4 +189,8 @@ export interface SiteSettings {
   whatsappNumber?: string;
   /** /when-to-go's explainer. Unset: it is hidden. */
   whenToGoExplainer?: string;
+  /** `shared/brand.ts` with the admin's brand settings on top. */
+  brand: Brand;
+  /** The home page's h1. Unset: the brand's tagline. */
+  heroHeadline?: string;
 }

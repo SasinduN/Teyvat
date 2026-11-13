@@ -10,7 +10,6 @@ import { WishlistTextLink } from '@/components/WishlistLink';
 import { usePageSubject, usePageTitle } from '@/context/PublicSiteContext';
 import { useAttractions, useDestinations, useTours } from '@/hooks/useSiteContent';
 import { airportTravelTime, googleMapsUrl } from '@/lib/googleMaps';
-import { pageTitle } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import type { Destination } from '@/types';
 import { NotFoundPage } from './NotFoundPage';
@@ -26,7 +25,7 @@ export function DestinationPage() {
 }
 
 function DestinationView({ d }: { d: Destination }) {
-  usePageTitle(pageTitle(d.name));
+  usePageTitle(d.name);
   usePageSubject({ inquiry: d.name, whatsapp: { kind: 'destination', id: d.id, name: d.name } });
   const all = useDestinations();
   const tours = useTours();

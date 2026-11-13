@@ -34,7 +34,7 @@ const git = (repo: string, ...args: string[]) => execFileSync('git', args, { cwd
 const trackedScreenshots = (repo: string) => git(repo, 'ls-files', '--', 'docs/screenshots').split('\n').filter(Boolean);
 
 function withTemporaryDirectory(run: (directory: string) => void): void {
-  const directory = mkdtempSync(join(tmpdir(), 'teyvat-images-'));
+  const directory = mkdtempSync(join(tmpdir(), 'site-images-'));
   try {
     run(directory);
   } finally {

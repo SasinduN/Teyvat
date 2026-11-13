@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { after, before, describe, test } from 'node:test';
+import { BRAND } from '../../shared/brand';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
@@ -51,7 +52,7 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     const page = await open();
     assert.equal(await page.evaluate<boolean>(`/The Premium Sri Lanka Experience|Currently featured:/.test(document.querySelector('#hero').textContent)`), false);
     assert.equal(await page.evaluate<number>(`document.querySelectorAll('.te-hero-badge,.te-hero-caption').length`), 0);
-    assert.match(await page.evaluate<string>(`document.querySelector('#hero h1').textContent`), /See Sri Lanka Through a/);
+    assert.equal((await page.evaluate<string>(`document.querySelector('#hero h1').textContent`)).replace(/\s+/g, ' ').trim(), BRAND.tagline, 'the headline is the tagline');
     assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('.te-hero-actions a')].map(a=>a.getAttribute('href'))`), ['/explore','/plan']);
     await wait(page, `document.querySelector('.te-hero-slide[data-active=true] img')?.naturalWidth > 0`, 'initial photograph');
     const first = await page.evaluate<string>(`document.querySelector('.te-hero-slide[data-active=true] img').getAttribute('src')`);

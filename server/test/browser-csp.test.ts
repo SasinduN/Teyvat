@@ -6,7 +6,7 @@ import './test-db';
  * The Content-Security-Policy against the real site: the built client served
  * by the real app, in headless Chrome, with every `securitypolicyviolation`
  * recorded while it walks the public page and the admin. Nothing may be
- * blocked. A control (an image from a host that isn't allowed) proves the
+ * blocked, the brand's inline JSON-LD included. A control (an image from a host that isn't allowed) proves the
  * recorder works, so "no violations" means something.
  *
  * Unsplash isn't needed: its requests are answered here. Chrome applies the CSP
@@ -233,6 +233,9 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     ];
     for (const [path, ready] of pages) {
       await visit(path, ready);
+      // The brand's JSON-LD is in every page: inline, but data, never run, so the CSP lets it be.
+      const ld = await page.evaluate<string[]>(`[...document.querySelectorAll('script[type="application/ld+json"]')].map((s) => JSON.parse(s.textContent)['@type'])`);
+      assert.deepEqual(ld, ['TravelAgency'], `${path}: one JSON-LD block`);
       const height = await page.evaluate<number>('document.body.scrollHeight');
       for (let y = 0; y <= height; y += 900) {
         await page.evaluate(`window.scrollTo(0, ${y})`);
