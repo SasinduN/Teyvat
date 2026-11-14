@@ -76,6 +76,13 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 .site h1, .site h2 { text-wrap: balance; }
 .site p { text-wrap: pretty; }
 .site main section h2 { font-size: var(--heading-section); line-height: 1.2; }
+/*
+ * Its own formatting context, so a page header's top margin stays inside main. Without
+ * it the margin collapsed through main, .site and #root into <body>, which then moved
+ * 80 px down as each page's code arrived (the placeholder before it has no margin): a
+ * layout shift of 0.1 on phones. The page looks the same either way once loaded.
+ */
+.site main { display: flow-root; }
 .site main > section:not(.te-hero):not(.te-page-hero), .site main > article { padding-block: var(--section-space); }
 
 /*

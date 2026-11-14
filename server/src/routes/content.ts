@@ -28,6 +28,7 @@ import type {
 import { pool } from '../db';
 import { publicImageCredits } from '../media/credits';
 import { asyncRoute } from '../http';
+import { sendText } from '../compress';
 import { publicStopsByTour } from '../tour-stops';
 import { photoResolver } from '../../../shared/public-photos';
 import { loadPhotoSets } from '../media/photo-sets';
@@ -205,6 +206,6 @@ contentRouter.get(
     // TanStack Query holds it in memory for five minutes, which a reload
     // resets, and an admin save in the same tab invalidates it.
     res.set('Cache-Control', 'no-cache');
-    res.json(payload);
+    await sendText(req, res, JSON.stringify(payload), 'json');
   })
 );

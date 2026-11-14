@@ -65,7 +65,7 @@ export const PhotoStorySection: React.FC = () => {
                 <span className="text-xs uppercase font-bold text-[var(--accent-text)] flex items-center gap-1">
                   <MapPin className="w-3 h-3" /> {photo.location}
                 </span>
-                <h4 className="font-heading font-bold text-sm leading-tight mt-0.5">{photo.title}</h4>
+                <h3 className="font-heading font-bold text-sm leading-tight mt-0.5">{photo.title}</h3>
               </div>
             </motion.div>
           ))}
