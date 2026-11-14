@@ -47,6 +47,7 @@ this file or anywhere else in git.
 | G | When to go: best months per destination, a month slider and map on `/when-to-go`, the monsoon explainer (`docs/reviews/when-to-go-sources.md`) | done (#56) |
 | N | Nearby attractions: `attractions` (0023), the Nearby cards, small map markers, search, the wishlist; six new destinations and 30 attractions researched, imported as drafts by `npm run content:import` (`docs/reviews/places-sources.md`) | done (#57) |
 | B | Rebrand (the name, tagline and legal name are in `shared/brand.ts`): one brand source (`shared/brand.ts`, Admin → Settings, 0024), the wordmark and SL favicon, JSON-LD, `/site.webmanifest`, seed text (0025), `npm run brand:audit`, `npm run screenshots -- --brand` | in review |
+| Q | Bug and performance audit (`docs/reviews/audit-2026-11.md`): the `<body>` shift, compression, `/api/content` and header photos preloaded, `browser-hero-contrast`'s hang | done (#62) |
 | R2 | Move R2 to the client's Cloudflare account: `images.serendibluxetours.com` always allowed, `R2_PREVIOUS_PUBLIC_BASE_URL`, `media:rebase` covers the credits, `docs/runbooks/move-r2-to-client.md` | in review |
 
 Update the Status column when a phase lands.
@@ -322,6 +323,12 @@ Update the Status column when a phase lands.
     (title, description, canonical, Open Graph, Twitter), between the
     `<!--page-meta-->` markers. A new page type needs its path added there.
   - Every injected value goes through `escapeHtml` (`shared/html.ts`).
+  - Every public page preloads `/api/content`, and those in `HERO_IS_SHARE_IMAGE`
+    (`pages.ts`) their header photo, with the header's own `srcset` and `sizes`. A page
+    whose header stops showing its share image comes out of that set (`browser-preload`).
+    The shell and `/api/content` go out compressed (`server/src/compress.ts`).
+  - `.site main` is `display: flow-root`: without it a page header's top margin
+    collapsed into `<body>`, which jumped 80 px as each page arrived (CLS 0.1).
   - Titles come from `shared/page-meta.ts`, and the brand from
     `shared/brand.ts`, for the client too.
   - `GET /llms.txt` (llmstxt.org) is Markdown built per request from the
@@ -350,13 +357,12 @@ Agreed, not started. Each one gets its own plan first.
 - **Remove `'unsafe-inline'` from `style-src`:** it is there only for the `<style>` the
   admin's toasts (Sonner) inject.
 - **Booking flow fixes:** Sasindu will list them.
-- **Bug and performance audit.** It includes the layout shift on `<body>`:
-  about 80 px as each page's code loads, before any photo.
+- **Mobile performance to 90** (`docs/reviews/audit-2026-11.md`, "Left"): measure
+  production first; then server-rendered page headers or a smaller entry, each its own plan.
+- **`/booking?tour=…` layout shift** while its catalog loads (the same audit).
 - **Move R2 to the client's account and `images.serendibluxetours.com`:** Sasindu
   runs `docs/runbooks/move-r2-to-client.md` (launch checklist item 9). A week after,
   with no errors: unset `R2_PREVIOUS_PUBLIC_BASE_URL`, then a PR removes its support.
-- **Watch `browser-hero-contrast` for flakiness:** one 60 s timeout in a full
-  run (#49), then 10/10 twice alone; the cause wasn't found.
 - **The enquiry form moves 1 px after it opens:** the panel sits at a fractional
   position, and Chrome repaints some rows 1 px apart after the entrance (`browser-inquiry`'s
   `screenshot()`). Tiny; whole-pixel centring would end it.

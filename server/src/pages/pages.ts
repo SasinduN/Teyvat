@@ -28,6 +28,7 @@ import { photoResolver } from '../../../shared/public-photos';
 import { DEFAULT_TEXT_SIZE, type TextSize } from '../../../shared/text-size';
 import { loadPageSettings } from '../brand';
 import { loadPhotoSets } from '../media/photo-sets';
+import { sendText } from '../compress';
 
 type Resolved = { redirect: string } | { status: 200 | 404; meta: PageMeta; noindexHeader?: boolean };
 
@@ -109,6 +110,23 @@ const FIXED_PAGES: Record<string, () => Promise<[PageName | null, string | null,
   [paths.photoCredits]: async () => ['photoCredits', PAGE_DESCRIPTIONS.photoCredits, await firstImage('hero_slides')]
 };
 
+const isAdminPath = (path: string): boolean => path === '/admin' || path.startsWith('/admin/');
+
+/**
+ * Pages whose header (PageHero, or the home page's first slide) shows their share
+ * image: the same first row, in the same order, that the page picks from
+ * /api/content, so the photo can be preloaded with the HTML. About (the second
+ * slide) is not one. `browser-preload` checks each against the photo on screen.
+ */
+const HERO_IS_SHARE_IMAGE: ReadonlySet<string> = new Set([
+  paths.home, paths.destinations, paths.explore, paths.whenToGo, paths.tours, paths.journal,
+  paths.experiences, paths.plan, paths.photoCredits, paths.wishlist
+]);
+
+export function heroIsShareImage(path: string): boolean {
+  return HERO_IS_SHARE_IMAGE.has(path) || ROW_PAGES.some((page) => path.startsWith(page.prefix));
+}
+
 /** What a path is: a page (with its status and tags), or a redirect. */
 export async function resolvePage(
   path: string,
@@ -182,11 +200,12 @@ export async function resolvePage(
     return {
       status: 200,
       noindexHeader: true,
-      meta: { ...fixedMeta('wishlist'), path: null, image: null, type: 'website', noindex: true }
+      // Its header is the first slide; noindex, so only the preload uses this.
+      meta: { ...fixedMeta('wishlist'), path: null, image: await firstImage('hero_slides'), type: 'website', noindex: true }
     };
   }
 
-  if (path === '/admin' || path.startsWith('/admin/')) {
+  if (isAdminPath(path)) {
     return {
       status: 200,
       noindexHeader: true,
@@ -405,20 +424,22 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
       return;
     }
     if (resolved.noindexHeader) res.set('X-Robots-Tag', 'noindex');
-    // The hero's first photo otherwise waits for the JS, the content API and the
-    // page chunk. The same srcset and sizes as the hero, so it is fetched once:
-    // a phone gets the small file here too, not the 1280 px one as well.
     let head = renderHead(resolved.meta, { origin, indexable: site.indexable, brand });
-    if (path === paths.home && resolved.status === 200 && resolved.meta.image) {
+    // Every public page renders from /api/content, which otherwise starts only once
+    // the JS has loaded and run. Same URL, mode and credentials as the app's fetch,
+    // so the browser hands that fetch this response. The admin doesn't read it.
+    if (!isAdminPath(path)) head += '\n<link rel="preload" href="/api/content" as="fetch" crossorigin>';
+    // The header's photo otherwise waits for the JS, the content API and the
+    // page chunk. The same srcset and sizes as the header (fullWidth, 100vw), so
+    // it is fetched once: a phone gets the small file here too, not the 1280 px
+    // one as well. Only where the header shows the share image (heroIsShareImage).
+    if (heroIsShareImage(path) && resolved.status === 200 && resolved.meta.image) {
       const srcSet = fullSrcSet(resolved.meta.image, await loadPhotoSets(pool));
       const responsive = srcSet ? ` imagesrcset="${escapeHtml(srcSet)}" imagesizes="100vw"` : '';
       head += `\n<link rel="preload" as="image" href="${escapeHtml(resolved.meta.image)}"${responsive} fetchpriority="high">`;
     }
-    res
-      .status(resolved.status)
-      .set('Cache-Control', 'no-cache')
-      .type('html')
-      .send(injectTextSize(injectHead(template, head), textSize));
+    res.status(resolved.status).set('Cache-Control', 'no-cache');
+    await sendText(req, res, injectTextSize(injectHead(template, head), textSize), 'html');
   });
 
   return router;

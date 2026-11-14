@@ -50,6 +50,8 @@ export function DestinationsPage() {
       <Section name="DestinationsList">
         <section className="py-16 sm:py-20">
           <div className="te-container">
+            {/* For the outline only: the cards' names are h3s, and they need an h2 between them and the h1. */}
+            <h2 className="sr-only">All destinations</h2>
             <div className="mb-8 flex flex-wrap items-center gap-2" role="group" aria-label="Filter by category">
               {(['All', ...CATEGORIES] as CategoryType[]).map((c) => {
                 const selected = c === category;
