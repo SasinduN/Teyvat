@@ -146,12 +146,13 @@ describe('text on photos: contrast over any photo, in Chrome', { skip }, () => {
     await sleep(300);
     const { data } = (await page.send('Page.captureScreenshot', { format: 'png' })) as { data: string };
 
+    // createImageBitmap, not an <img>'s decode(): the decoder is a background tab, and
+    // there headless Chrome could leave decode() pending until the test's 60 s ran out
+    // (the backlog's "browser-hero-contrast flakiness"; every run on one laptop, 11/2026).
     return decoder.evaluate<string[]>(`(async () => {
-      const img = new Image();
-      img.src = 'data:image/png;base64,${data}';
-      await img.decode();
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width; canvas.height = img.height;
+      const bytes = Uint8Array.from(atob('${data}'), (c) => c.charCodeAt(0));
+      const img = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+      const canvas = new OffscreenCanvas(img.width, img.height);
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0);
       const pixels = ctx.getImageData(0, 0, img.width, img.height).data;
