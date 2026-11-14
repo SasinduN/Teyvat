@@ -53,6 +53,8 @@ const BUTTON = '[data-whatsapp-button]';
 
 describe('the WhatsApp button, in Chrome', { skip }, () => {
   let app: RunningApp;
+  /** Bookings on: the Book a ride button stacks above this one, so the stack is two rows tall. */
+  let withBookings: RunningApp;
   let chrome: Chrome;
 
   /** The link the button should carry for `context` on this server. */
@@ -67,7 +69,7 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     throw new Error(`timed out waiting for ${what}`);
   }
 
-  async function openPage(options: { mobile?: boolean; path?: string } = {}): Promise<Page> {
+  async function openPage(options: { mobile?: boolean; path?: string; base?: string } = {}): Promise<Page> {
     const page = await chrome.newPage();
     await page.send('Page.enable');
     await page.send('Emulation.setDeviceMetricsOverride', {
@@ -76,7 +78,7 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
       deviceScaleFactor: 1,
       mobile: Boolean(options.mobile)
     });
-    await page.send('Page.navigate', { url: `${app.baseUrl}${options.path ?? '/'}` });
+    await page.send('Page.navigate', { url: `${options.base ?? app.baseUrl}${options.path ?? '/'}` });
     await waitFor(page, `document.querySelector('main h1')`, 'the page');
     // Jumps, not smooth scrolls, so a scroll has landed when it returns.
     await page.evaluate(`document.documentElement.style.scrollBehavior = 'auto', true`);
@@ -244,6 +246,7 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     await resetAuthTables();
     await createUser();
     app = await listen(createApp({ media: null }));
+    withBookings = await listen(createApp({ media: null, bookings: true }));
     chrome = await launchChrome(executable!);
   }, HOOK_TIMEOUT);
 
@@ -254,6 +257,7 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
   after(async () => {
     await chrome?.close();
     await app?.close();
+    await withBookings?.close();
     await pool.end();
   }, HOOK_TIMEOUT);
 
@@ -371,8 +375,8 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     assert.equal(await coveredBy(page, '#explore-map .leaflet-control-zoom-in'), null, 'zoom in takes the tap');
     assert.equal(await coveredBy(page, '#explore-map .leaflet-control-zoom-out'), null, 'zoom out takes the tap');
 
-    // Return to a clear area. The QuickSearch submit button is now protected
-    // too, so top=0 alone is not necessarily clear on a short phone viewport.
+    // Return to a clear area. The QuickSearch submit button is protected too
+    // ([data-float-avoid]): at top=0 on a phone it rises above it.
     let restored = false;
     for (const top of [0, 120, 240, 360, 480, 600, 720]) {
       await page.evaluate(`window.scrollTo(0, ${top}), true`);
@@ -382,7 +386,46 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
       if ((await page.evaluate<number>(LIFT)) === 0) { restored = true; break; }
     }
     assert.ok(restored, 'back down once clear of all protected controls');
+
+    // At the very top, once settled (not mid-slide), nothing of the search button is under it.
+    // It used to rest over the button's right end, and this test passed only by sampling mid-slide.
+    await page.evaluate(`window.scrollTo(0, 0), true`);
+    await sleep(150 + 280 + 300);
+    await frames(page);
+    assert.ok(await shown(page), 'still shown at the top');
+    assert.equal(await coversElement(page, 'form button[type="submit"]'), false, 'clear of the search button at the top, settled');
   });
+
+  for (const bookings of [false, true]) for (const [width, height] of [[320, 568], [375, 667], [390, 844]] as const) {
+    const stack = bookings ? 'both buttons (bookings on)' : 'the button';
+    test(`phone ${width}x${height}, ${stack}: at the top of /explore, settled, they cover nothing of the search form or the h1`, async () => {
+      const page = await openPage({ mobile: true, path: '/explore', base: bookings ? withBookings.baseUrl : app.baseUrl });
+      await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: true });
+      await page.evaluate(`window.scrollTo(0, 0), true`);
+      await waitFor(page, `document.querySelector('form[data-float-avoid] button[type="submit"]')`, 'the search form');
+      // Settled: the check 150 ms after the last change, then the 280 ms move, with room to spare.
+      await sleep(150 + 280 + 400);
+      await frames(page);
+      const seen = await page.evaluate<{ shown: boolean; boxes: number; covering: string[] }>(`(() => {
+        const visible = (el) => { const s = getComputedStyle(el); return s.visibility !== 'hidden' && s.display !== 'none' && Number(s.opacity) > 0; };
+        // The buttons and, while they show, their labels.
+        const mine = [...document.querySelectorAll('.te-floating-actions a, .te-floating-actions .te-floating-label')].filter(visible);
+        // Every field, its label, and the Explore button, then the headline.
+        const theirs = [...document.querySelectorAll('form[data-float-avoid], form[data-float-avoid] *, main h1')].filter(visible);
+        const hit = (a, b) => a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom;
+        const covering = [];
+        for (const m of mine) for (const t of theirs) {
+          const a = m.getBoundingClientRect(), b = t.getBoundingClientRect();
+          if (b.width > 0 && b.height > 0 && hit(a, b)) covering.push((m.className || m.tagName) + ' over ' + t.tagName + (t.textContent.trim() ? ' "' + t.textContent.trim().slice(0, 30) + '"' : ''));
+        }
+        return { shown: document.querySelector('${BUTTON}').dataset.state === 'shown', boxes: mine.length, covering: [...new Set(covering)] };
+      })()`);
+      assert.ok(seen.shown, 'shown');
+      // Each button with its label: two boxes a button.
+      assert.equal(seen.boxes, bookings ? 4 : 2, 'every button and label is measured');
+      assert.deepEqual(seen.covering, [], `${width}x${height}: covering`);
+    });
+  }
 
   test("phone: the home page's slide controls each take the tap", async () => {
     // Problem 4 of docs/plans/redesign-redo.md: #12's WhatsApp button covered "Next".

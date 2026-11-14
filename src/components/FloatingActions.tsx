@@ -8,8 +8,13 @@ import '../styles/floating-booking.css';
 /**
  * The only things the stack moves for: they stay put on screen, or nearly, so a visitor can
  * need them where the buttons are. Everything else scrolls away, and passes underneath.
+ * `[data-float-avoid]` is /explore's search form, every field and its button: like the hero's
+ * controls, it's on a phone's first screen, right where the buttons rest, so they rise above it
+ * there. While it's on the page the page's h1 is in the way too (`HEADLINE`), so rising never
+ * puts them on the headline: where they don't fit between the two, they go above the h1.
  */
-const AVOID = '.te-hero-controls, .leaflet-control, #explore-map [data-keep-clear], [data-scroll-top], [data-footer-last-row]';
+const AVOID = '.te-hero-controls, .leaflet-control, #explore-map [data-keep-clear], [data-float-avoid], [data-scroll-top], [data-footer-last-row]';
+const HEADLINE = 'main h1';
 const MODAL = '[role="dialog"][aria-modal="true"]';
 
 /** Clearance when rising to a spot, and what it takes to come back down. The gap is the hysteresis. */
@@ -109,7 +114,9 @@ export function FloatingActions({ whatsappHref, bookingAllowed = true, hidden = 
           return { left: r.left, right: r.right, top: r.top - moved, bottom: r.bottom - moved };
         });
       if (boxes.length === 0) return;
-      const obstacles = [...document.querySelectorAll(AVOID)]
+      const avoid = [...document.querySelectorAll(AVOID)];
+      if (avoid.some((element) => element.matches('[data-float-avoid]'))) avoid.push(...document.querySelectorAll(HEADLINE));
+      const obstacles = avoid
         .filter(usable)
         .map((element) => element.getBoundingClientRect())
         .filter((r) => r.width > 0 && r.height > 0);

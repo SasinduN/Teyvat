@@ -37,7 +37,7 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
   return (
     <div className="te-container te-search">
       <div className="bg-[var(--inverse-surface)] text-white p-4 sm:p-6 md:p-8 rounded-lg">
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[1.2fr_1.2fr_1fr_auto] gap-4 items-center">
+        <form onSubmit={handleSubmit} data-float-avoid className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[1.2fr_1.2fr_1fr_auto] gap-4 items-center">
           
           {/* Where field */}
           <div className="bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
