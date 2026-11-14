@@ -12,13 +12,16 @@ import type { MediaUsage } from '../../../shared/api';
 import { FIELDS_BY_TABLE } from '../../../shared/content-schema';
 import { CONTENT_TABLE_NAMES, type ContentTableName } from '../../../shared/database.types';
 import { EXTENSION_BY_TYPE, type StoredImageType } from '../../../shared/image-sniff';
-import { r2Config } from '../env';
+import { previousR2Base, r2Config } from '../env';
+import { allowedImageOrigins } from '../../../shared/image-hosts';
 import { r2Endpoint, r2Store, type ObjectStore } from './store';
 
 export interface MediaConfig {
   store: ObjectStore;
   /** Normalised: `https://…`, no trailing slash. */
   publicBaseUrl: string;
+  /** R2_PREVIOUS_PUBLIC_BASE_URL during a move: its images are still allowed. Not ours for uploads or deletes. */
+  previousBaseUrl?: string | null;
 }
 
 /** Built from the environment; `null` when R2 isn't configured. */
@@ -26,8 +29,14 @@ export function mediaFromEnv(): MediaConfig | null {
   if (!r2Config) return null;
   return {
     store: r2Store({ ...r2Config, endpoint: r2Endpoint(r2Config.accountId) }),
-    publicBaseUrl: r2Config.publicBaseUrl
+    publicBaseUrl: r2Config.publicBaseUrl,
+    previousBaseUrl: previousR2Base
   };
+}
+
+/** The image allow-list for an app with this media configuration: the CSP and every image field. */
+export function imageOriginsFor(media: MediaConfig | null): string[] {
+  return allowedImageOrigins(media?.publicBaseUrl ?? null, media?.previousBaseUrl ?? null);
 }
 
 /** The app's media configuration, set on `app.locals` by `createApp`. */

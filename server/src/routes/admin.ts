@@ -29,8 +29,7 @@ import { CONTENT_TABLE_NAMES, type ContentTableName } from '../../../shared/data
 import { requireAdmin } from '../auth/middleware';
 import { pool } from '../db';
 import { ApiError, asyncRoute, sendError } from '../http';
-import { allowedImageOrigins } from '../../../shared/image-hosts';
-import { fieldPathsFor, imageUrlsIn, isUnderBase, mediaOf } from '../media/media';
+import { fieldPathsFor, imageOriginsFor, imageUrlsIn, isUnderBase, mediaOf } from '../media/media';
 import type { TourStopInput } from '../../../shared/tour-stops';
 import { adminStops, refuseIfOnARoute, replaceStops } from '../tour-stops';
 
@@ -164,9 +163,9 @@ async function refuseMissingDestination(
   if (!rowCount) throw new ApiError('bad_request', NO_SUCH_DESTINATION, { destination_id: NO_SUCH_DESTINATION });
 }
 
-/** The image allow-list for this app: Unsplash, plus R2 when uploads are set up. */
-function imageOriginsFor(req: Request): string[] {
-  return allowedImageOrigins(mediaOf(req)?.publicBaseUrl ?? null);
+/** The image allow-list for this app (`imageOriginsFor`, shared with the CSP). */
+function imageOriginsOf(req: Request): string[] {
+  return imageOriginsFor(mediaOf(req));
 }
 
 const CHANGED_SINCE =
@@ -270,7 +269,7 @@ adminRouter.post(
   asyncRoute(async (req, res) => {
     const table = tableOf(req);
     const values = parseOrThrow(
-      schemaForTable(table, 'create', { imageOrigins: imageOriginsFor(req) }),
+      schemaForTable(table, 'create', { imageOrigins: imageOriginsOf(req) }),
       req.body
     ) as Record<string, unknown>;
     const columns = writableColumns(table, 'create');
@@ -313,7 +312,7 @@ adminRouter.put(
     }
 
     const values = parseOrThrow(
-      schemaForTable(table, 'update', { imageOrigins: imageOriginsFor(req) }),
+      schemaForTable(table, 'update', { imageOrigins: imageOriginsOf(req) }),
       body.values
     ) as Record<string, unknown>;
     const columns = writableColumns(table, 'update');

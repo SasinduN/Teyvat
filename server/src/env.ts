@@ -101,6 +101,24 @@ export function readR2Config(source: NodeJS.ProcessEnv): R2Config | null {
 
 export const r2Config = readR2Config(process.env);
 
+/**
+ * R2_PREVIOUS_PUBLIC_BASE_URL: the base R2 had before a move (an `r2.dev` address),
+ * still allowed for images while it's set (docs/runbooks/move-r2-to-client.md).
+ * Optional; not one of the five. Anything but an https:// URL is ignored, with a warning.
+ */
+export function readPreviousR2Base(source: NodeJS.ProcessEnv): string | null {
+  const raw = source.R2_PREVIOUS_PUBLIC_BASE_URL?.trim();
+  if (!raw) return null;
+  const base = normaliseBaseUrl(raw);
+  if (!/^https:\/\/[^\s/]+/.test(base)) {
+    console.warn('[media] R2_PREVIOUS_PUBLIC_BASE_URL is ignored: it must start with https://.');
+    return null;
+  }
+  return base;
+}
+
+export const previousR2Base = readPreviousR2Base(process.env);
+
 /* --------------------------------------------------------------- the site */
 
 export interface SiteConfig {

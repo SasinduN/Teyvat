@@ -179,9 +179,9 @@ npm run build && npm start     # everything on http://localhost:8081
 | `npm run seed:generate` | Regenerate `0002_seed.sql` from `scripts/fixtures/*.ts` |
 | `npm run seed:dev` | Local database only: the fake WhatsApp number, if none is saved |
 | `npm run admin:create` | Create an admin, or `--reset-password` for an existing one (`--prod`) |
-| `npm run images:audit` | Read-only: stored image URLs the CSP would block (`--prod`) |
+| `npm run images:audit` | Read-only: stored image URLs the CSP would block (`--prod`; during an R2 move `--r2-base`, `--previous-base`) |
 | `npm run brand:audit` | Read-only: table, id and column of rows that still name an earlier brand or the placeholder, never the text (`--prod`) |
-| `npm run media:rebase` | Move stored image URLs to a new R2 base (`--from`, `--to`, `--dry-run`, `--prod`) |
+| `npm run media:rebase` | Move stored image URLs, the media library and the photo credits to a new R2 base (`--from`, `--to`, `--dry-run`, `--verify-files`, `--prod`). Safe to run twice. [`docs/runbooks/move-r2-to-client.md`](docs/runbooks/move-r2-to-client.md) |
 | `npm run images:import` | Copy the Wikimedia photos the content uses into R2 and repoint rows and credits (`--dry-run`, `--prod`) |
 | `npm run content:import` | Researched destinations and attractions (`scripts/content/places.json`) into the database as drafts, photos to R2 with credits; never overwrites an admin's edit (`--dry-run`, `--prod`, `--skip-photos`) |
 
@@ -428,7 +428,9 @@ sends. They don't apply under `npm run dev`, where Vite serves the page.
 | `style-src` | `'self' 'unsafe-inline'` | our CSS, and the `<style>` the admin's toasts inject |
 | `font-src` | `'self'` | our DM Sans files (`src/styles/fonts.css`) |
 | `img-src` | `'self' https://images.unsplash.com` | the seeded photos |
-| | the `R2_PUBLIC_BASE_URL` origin | uploads; read at boot, so a new domain needs no code change |
+| | `https://images.serendibluxetours.com` | R2's custom domain on the client's account (`docs/runbooks/move-r2-to-client.md`) |
+| | the `R2_PUBLIC_BASE_URL` origin | uploads; read at boot |
+| | the `R2_PREVIOUS_PUBLIC_BASE_URL` origin | only while it's set, during a move of R2 |
 | | `https://basemaps.cartocdn.com` | the map tiles (exactly that host; a `*.` wildcard wouldn't match it) |
 | `connect-src` | `'self'` | the browser only calls our own `/api` |
 | `frame-ancestors` | `'none'` | nobody may frame the site |
@@ -512,6 +514,7 @@ point-in-time recovery).
 | `NODE_ENV` | `production` |
 | `NPM_CONFIG_PRODUCTION` | `false` (otherwise `npm ci` skips the build tools) |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL` | image uploads: all five or none |
+| `R2_PREVIOUS_PUBLIC_BASE_URL` | only during a move of R2: the old base, still allowed for images (`docs/runbooks/move-r2-to-client.md`) |
 | `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` (+ optional `NOTIFY_EMAIL_FROM`) | new-enquiry emails |
 | `PUBLIC_SITE_URL` | the public `https://` origin, for canonical links, share previews, the sitemap, `llms.txt` and the email's link (unset: each request's host) |
 | `SITE_INDEXABLE` | `true` opens the site to search engines (and serves `/sitemap.xml` and `/llms.txt`); anything else keeps them out (launch checklist item 21) |

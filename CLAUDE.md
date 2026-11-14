@@ -47,6 +47,7 @@ this file or anywhere else in git.
 | G | When to go: best months per destination, a month slider and map on `/when-to-go`, the monsoon explainer (`docs/reviews/when-to-go-sources.md`) | done (#56) |
 | N | Nearby attractions: `attractions` (0023), the Nearby cards, small map markers, search, the wishlist; six new destinations and 30 attractions researched, imported as drafts by `npm run content:import` (`docs/reviews/places-sources.md`) | done (#57) |
 | B | Rebrand (the name, tagline and legal name are in `shared/brand.ts`): one brand source (`shared/brand.ts`, Admin → Settings, 0024), the wordmark and SL favicon, JSON-LD, `/site.webmanifest`, seed text (0025), `npm run brand:audit`, `npm run screenshots -- --brand` | in review |
+| R2 | Move R2 to the client's Cloudflare account: `images.serendibluxetours.com` always allowed, `R2_PREVIOUS_PUBLIC_BASE_URL`, `media:rebase` covers the credits, `docs/runbooks/move-r2-to-client.md` | in review |
 
 Update the Status column when a phase lands.
 
@@ -57,9 +58,14 @@ Update the Status column when a phase lands.
     (`src/admin/components/ImagePicker.tsx`): upload, library or URL.
   - Nothing is deleted from R2 automatically; only a library delete removes
     an object.
-  - Image URLs must be on the allow-list in `shared/image-hosts.ts` (Unsplash
-    + the R2 origin). The same list builds the CSP's `img-src`. The
-    Wikimedia photos from 0010 were copied into R2 (`npm run
+  - Image URLs must be on the allow-list in `shared/image-hosts.ts` (Unsplash,
+    R2's custom domain `images.` on the brand's domain, the R2 origin, and
+    `R2_PREVIOUS_PUBLIC_BASE_URL`'s during a move). The same list builds the CSP's
+    `img-src`; every caller goes through `imageOriginsFor` (`media.ts`).
+  - `media:rebase` moves every URL that starts with the old base: `media` (photo
+    sets too), every image column and `image_credits`, then reports any column in
+    any table still mentioning it. Idempotent; `--dry-run`, `--verify-files`.
+  - The Wikimedia photos from 0010 were copied into R2 (`npm run
     images:import`); 0013 puts any leftover back on its seed photo.
   - The owner-authorized exact-location rule (2026-10-14) pins the 20 known
     destination covers through `shared/public-photos.ts` for both public
@@ -346,10 +352,9 @@ Agreed, not started. Each one gets its own plan first.
 - **Booking flow fixes:** Sasindu will list them.
 - **Bug and performance audit.** It includes the layout shift on `<body>`:
   about 80 px as each page's code loads, before any photo.
-- **`media:rebase` and photo credits:** make it update `image_credits.url`.
-  Do this before any custom-domain move, or credits on other uploads stop showing.
-- **R2 custom domain before launch:** `r2.dev` is rate-limited (launch checklist
-  item 9).
+- **Move R2 to the client's account and `images.serendibluxetours.com`:** Sasindu
+  runs `docs/runbooks/move-r2-to-client.md` (launch checklist item 9). A week after,
+  with no errors: unset `R2_PREVIOUS_PUBLIC_BASE_URL`, then a PR removes its support.
 - **Watch `browser-hero-contrast` for flakiness:** one 60 s timeout in a full
   run (#49), then 10/10 twice alone; the cause wasn't found.
 - **The enquiry form moves 1 px after it opens:** the panel sits at a fractional
@@ -496,6 +501,8 @@ Agreed, not started. Each one gets its own plan first.
   - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`,
     `R2_PUBLIC_BASE_URL`: image uploads. All five or none; missing ones turn
     uploads off without stopping the site.
+  - `R2_PREVIOUS_PUBLIC_BASE_URL`: only while R2 moves
+    (`docs/runbooks/move-r2-to-client.md`): the old base, still allowed for images.
   - `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` (and optionally `NOTIFY_EMAIL_FROM`):
     new-enquiry emails. Off without the first two.
   - `PUBLIC_SITE_URL`: the public `https://` origin. Every absolute URL the
