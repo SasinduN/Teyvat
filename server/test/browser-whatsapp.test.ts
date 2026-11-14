@@ -371,8 +371,8 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     assert.equal(await coveredBy(page, '#explore-map .leaflet-control-zoom-in'), null, 'zoom in takes the tap');
     assert.equal(await coveredBy(page, '#explore-map .leaflet-control-zoom-out'), null, 'zoom out takes the tap');
 
-    // Return to a clear area. The QuickSearch submit button is now protected
-    // too, so top=0 alone is not necessarily clear on a short phone viewport.
+    // Return to a clear area. The QuickSearch submit button is protected too
+    // ([data-float-avoid]): at top=0 on a phone it rises above it.
     let restored = false;
     for (const top of [0, 120, 240, 360, 480, 600, 720]) {
       await page.evaluate(`window.scrollTo(0, ${top}), true`);
@@ -382,6 +382,14 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
       if ((await page.evaluate<number>(LIFT)) === 0) { restored = true; break; }
     }
     assert.ok(restored, 'back down once clear of all protected controls');
+
+    // At the very top, once settled (not mid-slide), nothing of the search button is under it.
+    // It used to rest over the button's right end, and this test passed only by sampling mid-slide.
+    await page.evaluate(`window.scrollTo(0, 0), true`);
+    await sleep(150 + 280 + 300);
+    await frames(page);
+    assert.ok(await shown(page), 'still shown at the top');
+    assert.equal(await coversElement(page, 'form button[type="submit"]'), false, 'clear of the search button at the top, settled');
   });
 
   test("phone: the home page's slide controls each take the tap", async () => {

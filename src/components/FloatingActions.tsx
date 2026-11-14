@@ -8,8 +8,10 @@ import '../styles/floating-booking.css';
 /**
  * The only things the stack moves for: they stay put on screen, or nearly, so a visitor can
  * need them where the buttons are. Everything else scrolls away, and passes underneath.
+ * `[data-float-avoid]` is /explore's search button: like the hero's controls, it's on a
+ * phone's first screen, right where the buttons rest, so they rise above it there.
  */
-const AVOID = '.te-hero-controls, .leaflet-control, #explore-map [data-keep-clear], [data-scroll-top], [data-footer-last-row]';
+const AVOID = '.te-hero-controls, .leaflet-control, #explore-map [data-keep-clear], [data-float-avoid], [data-scroll-top], [data-footer-last-row]';
 const MODAL = '[role="dialog"][aria-modal="true"]';
 
 /** Clearance when rising to a spot, and what it takes to come back down. The gap is the hysteresis. */

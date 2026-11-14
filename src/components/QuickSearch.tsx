@@ -102,6 +102,7 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
               type="submit"
               className="te-button te-button--primary w-full h-full min-h-[52px] font-bold flex items-center justify-center space-x-2"
               aria-label="Explore destinations" title="Explore destinations"
+              data-float-avoid
             >
               <Search className="w-5 h-5 hidden xl:block" />
               <span className="xl:hidden flex items-center space-x-2">

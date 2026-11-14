@@ -269,7 +269,8 @@ Update the Status column when a phase lands.
   - **They hold still while the page scrolls.** Cards, links and buttons pass underneath
     (dodging every row looked broken, #54). 150 ms after the scroll stops they look once, and
     move in one 280 ms ease-out (`--te-float-lift`, no animation with reduced motion), only for
-    `AVOID`: the hero's slide controls, the map's controls and Quick Jump, scroll-to-top, the
+    `AVOID`: the hero's slide controls, the map's controls and Quick Jump, `/explore`'s search
+    button (`data-float-avoid`: under them at the top on phones), scroll-to-top, the
     footer's last row. Rising takes 16 px extra and coming down needs that room, so a boundary
     can't flip them. Don't add anything that scrolls away to `AVOID`. The footer's padding
     keeps the end of each page clear. `browser-floating-visible` counts the moves.
