@@ -37,7 +37,7 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
   return (
     <div className="te-container te-search">
       <div className="bg-[var(--inverse-surface)] text-white p-4 sm:p-6 md:p-8 rounded-lg">
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[1.2fr_1.2fr_1fr_auto] gap-4 items-center">
+        <form onSubmit={handleSubmit} data-float-avoid className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[1.2fr_1.2fr_1fr_auto] gap-4 items-center">
           
           {/* Where field */}
           <div className="bg-[var(--inverse-surface)]/80 p-3.5 rounded-2xl border border-white/10 hover:border-[var(--accent)]/50 transition-colors">
@@ -102,7 +102,6 @@ export const QuickSearch: React.FC<QuickSearchProps> = ({ onSearchSubmit }) => {
               type="submit"
               className="te-button te-button--primary w-full h-full min-h-[52px] font-bold flex items-center justify-center space-x-2"
               aria-label="Explore destinations" title="Explore destinations"
-              data-float-avoid
             >
               <Search className="w-5 h-5 hidden xl:block" />
               <span className="xl:hidden flex items-center space-x-2">
