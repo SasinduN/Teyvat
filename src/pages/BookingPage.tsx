@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BOOKING_API, checkCapacity, maxPassengers, offeredVehicle, passengerRange, smallestFit, sriLankaToday, type BookingCatalog } from '@shared/booking';
+import { BOOKING_API, bagsLabel, checkCapacity, groupBags, maxPassengers, offeredVehicle, passengerRange, smallestFit, sriLankaToday, type BookingCatalog, type BookingVehicle } from '@shared/booking';
 import { initialRide, rideSchema, withTripType, type RideInput } from '@shared/ride';
 import { PAGE_NAMES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
@@ -13,9 +13,17 @@ import { currentPickup, pickupWarning } from '@/lib/booking-geolocation';
 import { LocationField } from '@/components/booking/LocationField';
 import { rangeLabel, VehicleImage, VehiclePicker } from '@/components/booking/VehiclePicker';
 import { PassengerStepper } from '@/components/booking/PassengerStepper';
+import { VehicleSketchFilter } from '@/components/booking/VehicleIcon';
 import { NotFoundPage } from './NotFoundPage';
 import '@/styles/booking.css';
 import '@/styles/ride-booking.css';
+
+/** The summary's bags: the vehicle's number, or per passenger worked out for the group ("up to 24 bags"). */
+function summaryBags(v: BookingVehicle, passengers: number): string {
+  const total = groupBags(v, passengers);
+  if (v.luggagePerPassenger !== null) return total !== null && checkCapacity(v, passengers) === null ? ` · up to ${total} bags` : ` · ${bagsLabel(v)}`;
+  return total !== null ? ` · ${bagsLabel(v)}` : '';
+}
 
 const TourBookingPage = lazy(() => import('./TourBookingPage').then(m => ({ default: m.TourBookingPage })));
 const message = (error: unknown) => error instanceof Error ? error.message : 'Your request could not be sent. Please try again.';
@@ -110,7 +118,7 @@ function RideBookingForm() {
     : suggestion ? suggestion.id !== vehicle?.id && <button type="button" className="te-button te-button--secondary ride-switch" onClick={() => update('vehicleId', suggestion.id)}>Switch to {suggestion.name}</button>
     : <p className="ride-switch-none">None of our vehicles takes {form.passengers} passengers. Please <Link to={paths.contact}>contact our team</Link>.</p>;
 
-  return <div className="booking-page ride-page"><div className="te-container ride-container">
+  return <div className="booking-page ride-page"><VehicleSketchFilter /><div className="te-container ride-container">
     <header className="booking-intro"><p className="te-eyebrow">CITY · HOTEL · AIRPORT</p><h1 className="font-heading">Book Your Ride</h1>
       <p>Choose your pickup, destination, and travel details for a comfortable journey across Sri Lanka.</p></header>
     {error && <div className="booking-error" ref={errorBox} role="alert" tabIndex={-1}><strong>{error}</strong>
@@ -152,7 +160,7 @@ function RideBookingForm() {
                   <VehicleImage vehicle={vehicle} width={300} height={160} className="ride-showcase__image" eager />
                   <figcaption><strong>{vehicle.name}</strong>
                     {vehicle.exampleModels.length > 0 && <span>{vehicle.exampleModels.join(', ')}</span>}
-                    <span>{rangeLabel(vehicle)}{vehicle.luggageCapacity !== null ? ` · ${vehicle.luggageCapacity} bags` : ''}</span></figcaption>
+                    <span>{rangeLabel(vehicle)}{summaryBags(vehicle, form.passengers)}</span></figcaption>
                 </figure>
               : <div className="ride-showcase__empty"><p>Choose a vehicle</p></div>}
           </div>

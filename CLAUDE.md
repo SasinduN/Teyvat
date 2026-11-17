@@ -48,7 +48,8 @@ this file or anywhere else in git.
 | N | Nearby attractions: `attractions` (0023), the Nearby cards, small map markers, search, the wishlist; six new destinations and 30 attractions researched, imported as drafts by `npm run content:import` (`docs/reviews/places-sources.md`) | done (#57) |
 | B | Rebrand (the name, tagline and legal name are in `shared/brand.ts`): one brand source (`shared/brand.ts`, Admin → Settings, 0024), the wordmark and SL favicon, JSON-LD, `/site.webmanifest`, seed text (0025), `npm run brand:audit`, `npm run screenshots -- --brand` | in review |
 | Q | Bug and performance audit (`docs/reviews/audit-2026-11.md`): the `<body>` shift, compression, `/api/content` and header photos preloaded, `browser-hero-contrast`'s hang | in review |
-| V | Ride page redesign (`docs/plans/ride-vehicle-picker.md`): vehicle categories (0027), the card picker, the passenger stepper, the phone bar, and the hero's "Book a ride" slide and button | in review |
+| V | Ride page redesign (`docs/plans/ride-vehicle-picker.md`): vehicle categories (0027), the card picker, the passenger stepper, the phone bar, and the hero's "Book a ride" slide and button | done (#65) |
+| V+ | The buses (0028: AC Bus 1–20, Bus 1–52, bags per passenger) and the sketch-style icon set (plan, part 11) | in review |
 
 Update the Status column when a phase lands.
 
@@ -265,11 +266,15 @@ Update the Status column when a phase lands.
   - `min_passengers` to `passenger_capacity` is the range; `checkCapacity`, the cards, the summary
     and the WhatsApp line all read it (`passengerRange`, `smallestFit`, `maxPassengers`). No seat
     numbers in components.
-  - The ride page offers only categories taking requests, in `sort_order`. Mini, Car and SUV are on;
-    Mini Van, Van and Bus are seeded off until the owner confirms them.
-  - Each category shows its icon (`VehicleIcon`, seven inline SVGs, colours from the `--vehicle-*`
-    tokens, so a selected card recolours them), unless Admin → Bookings sets an image from the media
-    library, which replaces it. Never a committed image.
+  - The ride page offers only categories taking requests, in `sort_order`. Mini, Car, SUV, AC Bus and
+    Bus are on (0028); Mini Van and Van are seeded off until the owner confirms them.
+  - Luggage is one number for the vehicle (`luggage_capacity`) or per passenger
+    (`luggage_per_passenger`, the buses' 2), never both: `bagsLabel`, `groupBags`. `air_conditioned`
+    puts an AC badge on the card.
+  - Each category shows its icon (`VehicleIcon`: eight inline sketch-style SVGs, outlines in the
+    `--vehicle-ink` filled with the card's own colour, `--vehicle-paper`, so a selected card recolours
+    them), unless Admin → Bookings sets an image from the media library, which replaces it. Never a
+    committed image. The wobble is one SVG filter per page (`VehicleSketchFilter`), from 640 px up.
   - The floating Book a ride steps out while the hero's own Book a ride is on screen
     (`FloatingActions`); `browser-floating-visible` expects it.
   - The hero's "Book a ride" slide (second) and button exist only with bookings on

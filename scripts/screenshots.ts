@@ -788,6 +788,9 @@ const RIDE_STATES: { name: string; steps: (before: boolean) => string[] }[] = [
       ? [...ROUTE, CHOOSE('car'), FILL('Number of passengers', '6'), `(document.querySelector('.ride-form').requestSubmit(), true)`]
       : [...ROUTE, CHOOSE('mini'), FILL('Number of passengers', '4')]
   },
+  // The buses (0028): each chosen for a group it takes. Before 0028 neither is offered.
+  { name: 'ride-ac-bus-chosen', steps: () => [...ROUTE, FILL('Number of passengers', '12'), CHOOSE('ac-bus')] },
+  { name: 'ride-bus-chosen', steps: () => [...ROUTE, FILL('Number of passengers', '40'), CHOOSE('bus')] },
   {
     name: 'ride-round-trip',
     steps: () => [...ROUTE, ROUND_TRIP, FILL('Return date', '2099-12-27'), FILL('Return time', '17:30'), FILL('Number of passengers', '2'), CHOOSE('car')]
@@ -810,6 +813,13 @@ async function shootRide(chrome: Chrome, site: Site, out: string): Promise<void>
           await sleep(120);
         }
         await page.evaluate('(document.activeElement?.blur(), true)');
+        // The chosen card in view along its row (five cards overflow it), without moving the page.
+        await page.evaluate(`(() => {
+          const card = document.querySelector('.ride-vehicle.is-selected');
+          const track = card?.closest('.ride-vehicles__track');
+          if (card && track) track.scrollLeft = card.offsetLeft - track.offsetLeft - 8;
+          return true;
+        })()`);
         await page.evaluate(LOADED);
         await page.evaluate(QUIET);
         if (viewport.mobile) {

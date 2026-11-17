@@ -340,3 +340,28 @@ Source: the "Ride vehicle icon set" design canvas (seven icons on a 120 × 64 gr
 3. Goods one way only, or round trips too?
 4. Can anyone ride along with the goods? If so, how many in the cab?
 5. Anything they won't carry (to say on the form)?
+
+## 11. The buses and the sketch-style icons (2026-11-17, `feat/bus-categories`)
+
+From the owner, in place of the one placeholder bus:
+
+| Category | Passengers | Bags | AC | Sort |
+|---|---|---|---|---|
+| AC Bus (`ac-bus`, new) | 1–20 | 2 each | yes | 55 |
+| Bus (`bus`, the 0027 row, same id) | 1–52 (the fleet's 30–52 seat buses; any group up to 52) | 2 each | no | 60 |
+
+- **0028:** `luggage_per_passenger` and `air_conditioned`, the icon list gains `ac-bus`, the bus
+  changes only while it holds 0027's placeholder, and the AC Bus is added. Both are switched on.
+- **Bags per passenger:** the card says "2 bags each"; the summary works out the group's total
+  ("up to 24 bags" for 12 passengers). The other categories keep one number.
+- **The picker:** the stepper's limit becomes 52. "Switch to" suggests the AC Bus for 6 to 20, then
+  the Bus for 21 to 52. Mini Van and Van stay off.
+- **AC badge:** the AC Bus card's first badge, "AC" with a small snowflake (the canvas's own mark,
+  in the badge's colour).
+- **Icons:** the "Ride vehicles, sketch style" design canvas, eight icons drawn as our own inline
+  SVGs on a 240 × 128 grid: outlines (body 2.4, glass 1.6, seams 1.4, reflections 1.2 at 45%, a
+  second body stroke at 1 px, 35%, offset 0.8 / 0.6), filled with the card's colour; wheels with
+  tyre, tread, rim, five spokes and a gold hub. The ink is charcoal in the light theme and #ECEAE4
+  in the dark theme and on the hero's dark slide. A selected card's ink, glass and hubs are #161616
+  on the gold. The wobble (feTurbulence and feDisplacementMap) is one filter per page, applied from
+  640 px up; phones keep the double stroke. Checked in Chrome only; Safari is untested here.

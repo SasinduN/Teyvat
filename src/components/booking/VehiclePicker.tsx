@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { checkCapacity, passengerRange, type BookingVehicle } from '@shared/booking';
-import { VehicleIcon } from './VehicleIcon';
+import { bagsLabel, checkCapacity, passengerRange, type BookingVehicle } from '@shared/booking';
+import { SnowflakeMark, VehicleIcon } from './VehicleIcon';
 
 /**
  * A category's picture at a fixed size, so nothing shifts: its image when the admin chose one,
@@ -14,8 +14,6 @@ export function VehicleImage({ vehicle, width, height, className, eager = false 
   return <VehicleIcon name={vehicle.icon} width={width} height={height} className={className} />;
 }
 
-/** "4 bags", or "1 bag". */
-const bagsLabel = (bags: number) => `${bags} ${bags === 1 ? 'bag' : 'bags'}`;
 
 /** "Up to 4 passengers", capitalised for a badge. */
 export const rangeLabel = (v: BookingVehicle) => passengerRange(v).replace(/^u/, 'U');
@@ -90,8 +88,9 @@ export function VehiclePicker({ vehicles, value, passengers, onChange, error }: 
                 onChange={() => onChange(v.id)} />
               <span className="ride-vehicle__name">{v.name}</span>
               <span className="ride-vehicle__badges">
+                {v.airConditioned && <span className="ride-vehicle__badge ride-vehicle__badge--ac"><SnowflakeMark /><abbr title="Air-conditioned">AC</abbr></span>}
                 <span className="ride-vehicle__badge">{rangeLabel(v)}</span>
-                {v.luggageCapacity !== null && <span className="ride-vehicle__badge">{bagsLabel(v.luggageCapacity)}</span>}
+                {bagsLabel(v) && <span className="ride-vehicle__badge">{bagsLabel(v)}</span>}
               </span>
               <span className="ride-vehicle__details" id={describedBy}>
                 {v.description && <span className="ride-vehicle__description">{v.description}</span>}

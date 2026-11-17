@@ -53,10 +53,16 @@ test('the whole round-trip message, word for word', () => {
     'Please confirm the fare and availability.'
   ].join('\n'));
 });
-test('a category with a minimum names its range', () => {
-  const text = new URL(rideWhatsAppUrl('94771236478', { ...ride(), passengers: 12, vehicleId: 'bus' }, switchedOn('bus'))).searchParams.get('text')!;
-  assert.ok(text.includes('Vehicle: Bus (10–30 passengers)'));
-  assert.throws(() => rideWhatsAppUrl('94771236478', { ...ride(), passengers: 2, vehicleId: 'bus' }, switchedOn('bus')), /at least 10/);
+test('the buses: the vehicle line names each one and its range', () => {
+  const line = (id: string, passengers: number) =>
+    new URL(rideWhatsAppUrl('94771236478', { ...ride(), passengers, vehicleId: id }, seeded(id))).searchParams.get('text')!.split('\n').find((l) => l.startsWith('Vehicle:'));
+  assert.equal(line('ac-bus', 12), 'Vehicle: AC Bus (up to 20 passengers)');
+  assert.equal(line('bus', 40), 'Vehicle: Bus (up to 52 passengers)');
+  assert.throws(() => rideWhatsAppUrl('94771236478', { ...ride(), passengers: 21, vehicleId: 'ac-bus' }, seeded('ac-bus')), /capacity/);
+  // A category with a minimum still names its range.
+  const coach = { ...switchedOn('bus'), minPassengers: 30 };
+  assert.ok(new URL(rideWhatsAppUrl('94771236478', { ...ride(), passengers: 40, vehicleId: 'bus' }, coach)).searchParams.get('text')!.includes('Vehicle: Bus (30–52 passengers)'));
+  assert.throws(() => rideWhatsAppUrl('94771236478', { ...ride(), passengers: 2, vehicleId: 'bus' }, coach), /at least 30/);
 });
 test('missing or invalid WhatsApp configuration never produces a chat link', () => {
   for (const number of [undefined, '', '0771234567', 'https://example.com', '940771234567']) assert.throws(() => rideWhatsAppUrl(number, ride(), vehicle), /unavailable/);

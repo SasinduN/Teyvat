@@ -38,7 +38,9 @@ export interface BookingVehicleRow {
   min_passengers: number;
   passenger_capacity: number | null;
   luggage_capacity: number | null;
-  icon: 'mini' | 'car' | 'suv' | 'mini-van' | 'van' | 'bus' | 'mini-lorry';
+  luggage_per_passenger: number | null;
+  air_conditioned: boolean;
+  icon: 'mini' | 'car' | 'suv' | 'mini-van' | 'van' | 'ac-bus' | 'bus' | 'mini-lorry';
   image_url: string | null;
   sort_order: number;
   accepting_requests: boolean;
