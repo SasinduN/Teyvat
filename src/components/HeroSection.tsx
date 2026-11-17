@@ -4,7 +4,7 @@ import { useReducedMotion } from 'framer-motion';
 import { Pause, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useBrand, useFeatures, useHeroSlides, useSiteSettings } from '@/hooks/useSiteContent';
 import { RIDE_SLIDE_COPY, RIDE_SLIDE_IMAGE_SIZE, withRideSlide } from '@shared/ride-slide';
-import { VehicleIcon } from './booking/VehicleIcon';
+import { VehicleIcon, VehicleSketchFilter } from './booking/VehicleIcon';
 import { heroHeadlineParts } from '@shared/brand';
 import { SiteLink } from './SiteLink';
 import { paths } from '@shared/site-paths';
@@ -114,6 +114,8 @@ export const HeroSection: React.FC = () => {
           />}
         </div>
       ))}
+
+      {bookings && <VehicleSketchFilter />}
 
       {/* Photo-preserving contrast overlay */}
       <div className="te-hero-overlay absolute inset-0" />

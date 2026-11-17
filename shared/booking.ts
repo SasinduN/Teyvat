@@ -117,10 +117,10 @@ export type BookingDetails = BookingInput & {
  * The vehicle icon set (src/components/booking/VehicleIcon.tsx). A category shows its icon unless
  * it has an image. `mini-lorry` is drawn for the goods categories still to come.
  */
-export const VEHICLE_ICONS = ['mini', 'car', 'suv', 'mini-van', 'van', 'bus', 'mini-lorry'] as const;
+export const VEHICLE_ICONS = ['mini', 'car', 'suv', 'mini-van', 'van', 'ac-bus', 'bus', 'mini-lorry'] as const;
 export type VehicleIconName = (typeof VEHICLE_ICONS)[number];
 export const VEHICLE_ICON_LABELS: Record<VehicleIconName, string> = {
-  mini: 'Mini', car: 'Car', suv: 'SUV', 'mini-van': 'Mini Van', van: 'Van', bus: 'Bus', 'mini-lorry': 'Mini Lorry'
+  mini: 'Mini', car: 'Car', suv: 'SUV', 'mini-van': 'Mini Van', van: 'Van', 'ac-bus': 'AC Bus', bus: 'Bus', 'mini-lorry': 'Mini Lorry'
 };
 
 /** A vehicle image, which replaces the icon: an https URL from the media library (the server checks the host). */
@@ -145,6 +145,9 @@ export const vehicleSchema = z
     minPassengers: z.number().int().min(1).max(100).default(1),
     passengerCapacity: z.number().int().min(1).max(100).nullable(),
     luggageCapacity: z.number().int().min(0).max(100).nullable(),
+    /** Bags for each passenger (the buses: 2), instead of one number for the vehicle. */
+    luggagePerPassenger: z.number().int().min(1).max(10).nullable().default(null),
+    airConditioned: z.boolean().default(false),
     icon: z.enum(VEHICLE_ICONS).default('car'),
     imageUrl: z.preprocess((v) => (v === '' || v === undefined ? null : v), vehicleImage.nullable()),
     sortOrder: z.number().int().min(0).max(10000).default(0),
@@ -152,6 +155,10 @@ export const vehicleSchema = z
   })
   .strict()
   .refine((v) => !v.acceptingRequests || v.passengerCapacity !== null, 'Enter actual passenger capacity before enabling requests.')
+  .refine((v) => v.luggageCapacity === null || v.luggagePerPassenger === null, {
+    message: 'Give bags for the vehicle or bags per passenger, not both.',
+    path: ['luggagePerPassenger']
+  })
   .refine((v) => v.passengerCapacity === null || v.minPassengers <= v.passengerCapacity, {
     message: 'The minimum passengers can’t be more than the capacity.',
     path: ['minPassengers']
@@ -230,6 +237,19 @@ export function smallestFit(vehicles: readonly BookingVehicle[], passengers: num
 }
 
 /** The most passengers any offered category takes (the stepper's limit), or 1 with none. */
+/** The bags badge: "4 bags" for the vehicle, "2 bags each" per passenger, or null when unknown. */
+export function bagsLabel(v: Pick<BookingVehicle, 'luggageCapacity' | 'luggagePerPassenger'>): string | null {
+  if (v.luggagePerPassenger !== null) return `${v.luggagePerPassenger} ${v.luggagePerPassenger === 1 ? 'bag' : 'bags'} each`;
+  if (v.luggageCapacity !== null) return `${v.luggageCapacity} ${v.luggageCapacity === 1 ? 'bag' : 'bags'}`;
+  return null;
+}
+
+/** The bags this group may bring: per passenger, worked out for `passengers`; else the vehicle's number. */
+export function groupBags(v: Pick<BookingVehicle, 'luggageCapacity' | 'luggagePerPassenger'>, passengers: number): number | null {
+  if (v.luggagePerPassenger !== null) return Number.isFinite(passengers) && passengers > 0 ? v.luggagePerPassenger * passengers : null;
+  return v.luggageCapacity;
+}
+
 export function maxPassengers(vehicles: readonly BookingVehicle[]): number {
   return Math.max(1, ...vehicles.filter(offeredVehicle).map((v) => v.passengerCapacity!));
 }

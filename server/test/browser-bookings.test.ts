@@ -160,7 +160,7 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     await waitFor(page, `document.querySelector('.ride-form')`, 'ride form');
     assert.equal(await page.evaluate<string>(`document.querySelector('main h1').textContent`), 'Book Your Ride');
     assert.equal(await page.evaluate<number>(`document.querySelectorAll('.ride-form input:not([type=radio]), .ride-form select').length`), 5, 'pickup, drop-off, date, time, passengers');
-    assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('.ride-vehicle__input')].map((r) => r.value)`), ['mini', 'car', 'suv'], 'the categories taking requests, in order');
+    assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('.ride-vehicle__input')].map((r) => r.value)`), ['mini', 'car', 'suv', 'ac-bus', 'bus'], 'the categories taking requests, in order');
     assert.ok(await page.evaluate<boolean>(`document.querySelector('.ride-summary').textContent.includes('Choose a vehicle')`), 'the placeholder before a choice');
     assert.equal(await page.evaluate<boolean>(`/Contact details|Customer name|Travel notes|Tours \(optional\)/.test(document.querySelector('.ride-form').textContent)`), false);
     await fill(page, 'Pickup location', 'Matara'); await fill(page, 'Drop-off location', 'Galle');
@@ -253,7 +253,11 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     assert.equal(await page.evaluate<string>(`document.querySelector('.ride-vehicles legend').textContent`), 'Vehicle');
     assert.equal(await page.evaluate<number>(`(document.querySelector('main').innerText.match(/Driver included/g) ?? []).length`), 1, 'said once');
     assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('.ride-vehicle__input')].map((r) => r.getAttribute('aria-label'))`),
-      ['Mini, up to 3 passengers', 'Car, up to 4 passengers', 'SUV, up to 5 passengers']);
+      ['Mini, up to 3 passengers', 'Car, up to 4 passengers', 'SUV, up to 5 passengers', 'AC Bus, up to 20 passengers', 'Bus, up to 52 passengers']);
+    // The AC Bus wears an AC badge (with its snowflake), and the buses count bags per passenger.
+    assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('.ride-vehicle__input[value=ac-bus] ~ .ride-vehicle__badges .ride-vehicle__badge')].map((b) => b.textContent)`), ['AC', 'Up to 20 passengers', '2 bags each']);
+    assert.equal(await page.evaluate<number>(`document.querySelectorAll('.ride-vehicle__badge--ac').length`), 1, 'only the AC Bus');
+    assert.equal(await page.evaluate<string>(`document.querySelector('.ride-vehicle__input[value=ac-bus]').closest('.ride-vehicle').querySelector('svg[data-vehicle-icon]').dataset.vehicleIcon`), 'ac-bus');
     await page.send('Page.bringToFront');
     await page.evaluate(`document.querySelector('.ride-vehicle__input[value=car]').focus(), true`);
     await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', text: ' ', windowsVirtualKeyCode: 32 });
@@ -267,13 +271,22 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     await waitFor(page, `document.querySelector('.ride-showcase figcaption')?.textContent.includes('SUV')`, 'the summary shows the choice');
     // No image chosen: the category's own icon, inline, in the summary and on the card.
     assert.equal(await page.evaluate<string>(`document.querySelector('.ride-showcase svg[data-vehicle-icon]').dataset.vehicleIcon`), 'suv');
-    // The selected card recolours its icon (dark body, pale glass on the gold); the others keep the theme's.
-    const fills = await page.evaluate<{ selected: string; other: string }>(`(() => {
-      const body = (id) => getComputedStyle(document.querySelector('.ride-vehicle__input[value=' + id + ']').closest('.ride-vehicle').querySelector('.vi-body')).fill;
-      return { selected: body('suv'), other: body('car') };
+    // The sketch icons are outlines on the card's own colour. The selected card's ink is #161616 on
+    // the gold, the hubs too; the others keep the theme's ink (charcoal here) and the gold hubs.
+    const ink = await page.evaluate<{ selected: { stroke: string; fill: string; hub: string }; other: { stroke: string; fill: string; hub: string } }>(`(() => {
+      const card = (id) => document.querySelector('.ride-vehicle__input[value=' + id + ']').closest('.ride-vehicle');
+      const look = (id) => { const body = getComputedStyle(card(id).querySelector('.vi-body')); return { stroke: body.stroke, fill: body.fill, hub: getComputedStyle(card(id).querySelector('.vi-gold')).fill }; };
+      return { selected: look('suv'), other: look('car') };
     })()`);
-    assert.equal(fills.selected, 'rgb(22, 22, 22)', 'selected: #161616');
-    assert.notEqual(fills.other, fills.selected);
+    assert.equal(ink.selected.stroke, 'rgb(22, 22, 22)', 'selected ink: #161616');
+    // (Not the card's computed background: that is still mid-transition here.)
+    assert.equal(ink.selected.fill, 'rgb(213, 182, 123)', 'the outline is filled with the card itself (the gold, --accent)');
+    assert.equal(ink.selected.hub, 'rgb(22, 22, 22)', 'dark hubs on the gold');
+    assert.notEqual(ink.other.stroke, ink.selected.stroke);
+    assert.equal(ink.other.hub, 'rgb(245, 197, 24)', 'gold hubs elsewhere');
+    // The wobble: one filter on the page, used by the icons on a laptop.
+    assert.equal(await page.evaluate<number>(`document.querySelectorAll('filter#vehicle-sketch').length`), 1);
+    assert.match(await page.evaluate<string>(`getComputedStyle(document.querySelector('.ride-vehicle .vi-sketch')).filter`), /vehicle-sketch/);
     // Two badges from the catalog: passengers and bags.
     assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('.ride-vehicle__input[value=car] ~ .ride-vehicle__badges .ride-vehicle__badge')].map((b) => b.textContent)`), ['Up to 4 passengers', '4 bags']);
     // Every vehicle image has its size before it loads.
@@ -300,8 +313,17 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     // The limit is the largest category's: the SUV's 5.
     await page.evaluate(`${plus}.click(), true`);
     await waitFor(page, `document.querySelector('#ride-passengers').value === '5'`, 'five');
-    assert.equal(await page.evaluate<boolean>(`${plus}.disabled`), true, 'not above the largest category');
     await waitFor(page, `[...document.querySelectorAll('button')].some((b) => b.textContent === 'Switch to SUV')`, 'the SUV offered for 5');
+    // Past the SUV: the AC Bus is the smallest that fits, up to 20; then the Bus.
+    await fill(page, 'Number of passengers', '12');
+    await waitFor(page, `[...document.querySelectorAll('button')].some((b) => b.textContent === 'Switch to AC Bus')`, 'the AC Bus offered for 12');
+    await page.evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Switch to AC Bus').click(), true`);
+    await waitFor(page, `document.querySelector('.ride-showcase figcaption')?.textContent.includes('up to 24 bags')`, 'the bags for the group: 12 × 2');
+    await fill(page, 'Number of passengers', '30');
+    await waitFor(page, `[...document.querySelectorAll('button')].some((b) => b.textContent === 'Switch to Bus')`, 'the Bus offered for 30');
+    // The limit is the largest category's: the Bus's 52.
+    await fill(page, 'Number of passengers', '52');
+    await waitFor(page, `document.querySelector('#ride-passengers').value === '52' && ${plus}.disabled`, 'not above the largest category (52)');
   });
 
   test('ride: with reduced motion the return fields and the chosen vehicle appear without moving', async () => {

@@ -36,6 +36,10 @@ import {
 import { HOOK_TIMEOUT } from './timeouts';
 import { SEEDED_VEHICLES, seeded } from './vehicle-categories';
 
+const MIGRATION_0028 = readFileSync(
+  resolve(dirname(fileURLToPath(import.meta.url)), '../../db/migrations/0028_bus_categories.sql'),
+  'utf8'
+);
 const MIGRATION_0027 = readFileSync(
   resolve(dirname(fileURLToPath(import.meta.url)), '../../db/migrations/0027_vehicle_categories.sql'),
   'utf8'
@@ -377,18 +381,37 @@ describe('bookings switched on', () => {
     assert.deepEqual(vehicles, SEEDED_VEHICLES, 'the migration and server/test/vehicle-categories.ts agree');
   });
 
-  test('vehicle categories: the server refuses a bus for 2 (its minimum is 10) and takes 12', async () => {
-    await pool.query("update public.booking_vehicles set accepting_requests = true where id = 'bus'");
+  // Five requests: the rate limit is 5 per IP in 15 minutes, refused ones included.
+  test('vehicle categories: the server takes the AC Bus up to 20 and the Bus up to 52, and no more', async () => {
+    const ride = (vehicleId: string, passengers: number) =>
+      submitRide({ details: { ...rideDetails(), vehicleId, passengers }, callbackPhone: '+94 771234567' });
+    assert.equal((await ride('ac-bus', 20)).status, 201);
+    const over = await ride('ac-bus', 21);
+    assert.equal(over.status, 400);
+    assert.match((await over.json()).error.message, /exceeds vehicle capacity/);
+    assert.equal((await ride('bus', 52)).status, 201);
+    assert.equal((await ride('bus', 53)).status, 400);
+    assert.equal((await ride('van', 2)).status, 400, 'a category switched off takes nobody');
+  });
+
+  test("vehicle categories: 0028 replaces only 0027's placeholder bus, and keeps an admin's edit", async () => {
+    const bus = () => pool.query(`select min_passengers, passenger_capacity, luggage_per_passenger, accepting_requests, description
+      from public.booking_vehicles where id = 'bus'`).then((r) => r.rows[0]);
+    const placeholder = `update public.booking_vehicles set min_passengers = 10, passenger_capacity = 30, luggage_per_passenger = null,
+      accepting_requests = false, description = 'A coach for larger groups and tours.' where id = 'bus'`;
     try {
-      const two = await submitRide({ details: { ...rideDetails(), vehicleId: 'bus', passengers: 2 }, callbackPhone: '+94 771234567' });
-      assert.equal(two.status, 400);
-      assert.match((await two.json()).error.message, /at least 10 passengers/);
-      const twelve = await submitRide({ details: { ...rideDetails(), vehicleId: 'bus', passengers: 12 }, callbackPhone: '+94 771234567' });
-      assert.equal(twelve.status, 201);
-      const off = await submitRide({ details: { ...rideDetails(), vehicleId: 'van', passengers: 2 }, callbackPhone: '+94 771234567' });
-      assert.equal(off.status, 400, 'a category switched off takes nobody');
+      await pool.query(placeholder);
+      await pool.query(MIGRATION_0028);
+      assert.deepEqual(await bus(), { min_passengers: 1, passenger_capacity: 52, luggage_per_passenger: 2, accepting_requests: true, description: seeded('bus').description });
+
+      await pool.query(placeholder);
+      await pool.query("update public.booking_vehicles set passenger_capacity = 40, description = 'Staff wording' where id = 'bus'");
+      await pool.query(MIGRATION_0028);
+      assert.deepEqual(await bus(), { min_passengers: 10, passenger_capacity: 40, luggage_per_passenger: null, accepting_requests: false, description: 'Staff wording' }, "an admin's edit stays");
+      assert.equal(Number((await pool.query("select count(*) from public.booking_vehicles where id = 'ac-bus'")).rows[0].count), 1, 'the AC Bus once');
     } finally {
-      await pool.query("update public.booking_vehicles set accepting_requests = false where id = 'bus'");
+      await pool.query(`update public.booking_vehicles set min_passengers = 1, passenger_capacity = 52, luggage_per_passenger = 2,
+        accepting_requests = true, description = $1 where id = 'bus'`, [seeded('bus').description]);
     }
   });
 

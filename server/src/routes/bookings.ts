@@ -102,7 +102,8 @@ async function limit(req: Request, action: LimitedAction): Promise<void> {
 const uuid = z.string().uuid();
 const VEHICLE_SQL = `select id, name, type, description, example_models as "exampleModels",
   min_passengers as "minPassengers", passenger_capacity as "passengerCapacity",
-  luggage_capacity as "luggageCapacity", icon, image_url as "imageUrl", sort_order as "sortOrder",
+  luggage_capacity as "luggageCapacity", luggage_per_passenger as "luggagePerPassenger",
+  air_conditioned as "airConditioned", icon, image_url as "imageUrl", sort_order as "sortOrder",
   accepting_requests as "acceptingRequests"
   from public.booking_vehicles`;
 /** The picker's order: the admin's sort order, then the name. */
@@ -526,12 +527,13 @@ bookingsRouter.put(
     }
     await pool.query(
       `insert into public.booking_vehicles (id, name, type, description, example_models, min_passengers,
-         passenger_capacity, luggage_capacity, icon, image_url, sort_order, accepting_requests)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         passenger_capacity, luggage_capacity, luggage_per_passenger, air_conditioned, icon, image_url, sort_order, accepting_requests)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        on conflict (id) do update set name = $2, type = $3, description = $4, example_models = $5, min_passengers = $6,
-         passenger_capacity = $7, luggage_capacity = $8, icon = $9, image_url = $10, sort_order = $11, accepting_requests = $12`,
+         passenger_capacity = $7, luggage_capacity = $8, luggage_per_passenger = $9, air_conditioned = $10, icon = $11,
+         image_url = $12, sort_order = $13, accepting_requests = $14`,
       [v.id, v.name, v.type, v.description, v.exampleModels, v.minPassengers, v.passengerCapacity, v.luggageCapacity,
-        v.icon, v.imageUrl, v.sortOrder, v.acceptingRequests]
+        v.luggagePerPassenger, v.airConditioned, v.icon, v.imageUrl, v.sortOrder, v.acceptingRequests]
     );
     res.json(v);
   })

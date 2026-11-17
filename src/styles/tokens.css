@@ -84,22 +84,14 @@
   --on-inverse: var(--palette-ivory-text);
   --on-accent: var(--palette-charcoal-ink);
   /*
-   * The vehicle icons (VehicleIcon, vehicle-icon.css). Light: a charcoal body with pale glass, as
-   * the canvas's light body would vanish on white cards. On dark ground (the dark theme, the hero's
-   * ride slide) they are the design canvas's own. A selected card (the gold) has its own pair.
+   * The vehicle icons (VehicleIcon, vehicle-icon.css), sketch style: outlines in the ink, charcoal
+   * in the light theme and the design canvas's #ECEAE4 on dark ground (the dark theme, the hero's
+   * ride slide); gold for hubs, lights, cargo and the bus stripe; a selected (gold) card's ink is dark.
    */
-  --vehicle-body-on-dark: #ECEAE4;
-  --vehicle-glass-on-dark: #2C2C2C;
-  --vehicle-body: var(--palette-charcoal-ink);
-  --vehicle-glass: #ECEAE4;
-  --vehicle-tyre: #0E0E0E;
-  --vehicle-accent: #F5C518;
-  --vehicle-shadow: #000;
-  --vehicle-shadow-opacity: .4;
-  --vehicle-selected-body: #161616;
-  --vehicle-selected-glass: #FFE27A;
-  --vehicle-selected-tyre: #161616;
-  --vehicle-selected-accent: #FFF6CC;
+  --vehicle-ink-on-dark: #ECEAE4;
+  --vehicle-ink: var(--palette-charcoal-ink);
+  --vehicle-gold: #F5C518;
+  --vehicle-selected-ink: #161616;
   --on-secondary: var(--white);
   --border: var(--palette-border);
   --border-strong: var(--palette-border-strong);
@@ -240,8 +232,7 @@
   --button-secondary-bg: var(--palette-night-sky);
   --button-secondary-hover: var(--palette-night-sky-raised);
   --button-secondary-text: var(--palette-ivory-text);
-  --vehicle-body: var(--vehicle-body-on-dark);
-  --vehicle-glass: var(--vehicle-glass-on-dark);
+  --vehicle-ink: var(--vehicle-ink-on-dark);
   --glass-saturation: 112%;
   --glass-noise-opacity: 0;
 }

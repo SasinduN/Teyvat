@@ -14,7 +14,7 @@ import {
 import { useFeatures, useSiteContent } from '@/hooks/useSiteContent';
 import { bookingRequest } from '@/lib/booking-client';
 import { ImagePicker } from '@/admin/components/ImagePicker';
-import { VehicleIcon } from '@/components/booking/VehicleIcon';
+import { VehicleIcon, VehicleSketchFilter } from '@/components/booking/VehicleIcon';
 import {
   Badge,
   Button,
@@ -46,6 +46,8 @@ const EMPTY_VEHICLE: BookingVehicle = {
   minPassengers: 1,
   passengerCapacity: null,
   luggageCapacity: null,
+  luggagePerPassenger: null,
+  airConditioned: false,
   icon: 'car',
   imageUrl: null,
   sortOrder: 0,
@@ -249,6 +251,7 @@ const Bookings: React.FC = () => {
       </Card>
 
       <Card className="p-5">
+        <VehicleSketchFilter />
         <h2 className="font-heading text-lg font-bold text-[var(--brand-primary)]">Vehicle categories</h2>
         <FieldHelp>
           Enter real passenger and luggage capacities, not counting the driver: every ride comes with one. Taking requests for a category doesn't mean a vehicle is free: you still confirm each one. The ride page shows categories taking requests, in sort order.
@@ -341,7 +344,7 @@ const Bookings: React.FC = () => {
             />
           </div>
           <div className="space-y-1.5">
-            <FieldLabel htmlFor="vehicle-luggage">Bags (optional)</FieldLabel>
+            <FieldLabel htmlFor="vehicle-luggage">Bags for the vehicle (optional)</FieldLabel>
             <Input
               id="vehicle-luggage"
               type="number"
@@ -350,6 +353,18 @@ const Bookings: React.FC = () => {
               value={vehicle.luggageCapacity ?? ''}
               onChange={(e) => setVehicle((v) => ({ ...v, luggageCapacity: e.target.value === '' ? null : Number(e.target.value) }))}
             />
+          </div>
+          <div className="space-y-1.5">
+            <FieldLabel htmlFor="vehicle-luggage-each">Bags per passenger (optional)</FieldLabel>
+            <Input
+              id="vehicle-luggage-each"
+              type="number"
+              min={1}
+              max={10}
+              value={vehicle.luggagePerPassenger ?? ''}
+              onChange={(e) => setVehicle((v) => ({ ...v, luggagePerPassenger: e.target.value === '' ? null : Number(e.target.value) }))}
+            />
+            <FieldHelp>Use one of the two. Per passenger, the ride page works out the group's total.</FieldHelp>
           </div>
           <div className="space-y-1.5">
             <FieldLabel htmlFor="vehicle-sort">Sort order</FieldLabel>
@@ -382,6 +397,10 @@ const Bookings: React.FC = () => {
             <ImagePicker id="vehicle-image" folder="library" value={vehicle.imageUrl ?? ''} onChange={(url) => setVehicle((v) => ({ ...v, imageUrl: url || null }))} />
             <FieldHelp>If set, it replaces the icon: the vehicle on a transparent background, facing right.</FieldHelp>
           </div>
+          <label className="flex items-center gap-2 self-end text-sm text-[var(--text-primary)]">
+            <input type="checkbox" checked={vehicle.airConditioned} onChange={(e) => setVehicle((v) => ({ ...v, airConditioned: e.target.checked }))} />
+            Air-conditioned (an AC badge on its card)
+          </label>
           <label className="flex items-center gap-2 self-end text-sm text-[var(--text-primary)]">
             <input type="checkbox" checked={vehicle.acceptingRequests} onChange={(e) => setVehicle((v) => ({ ...v, acceptingRequests: e.target.checked }))} />
             Take booking requests for this category

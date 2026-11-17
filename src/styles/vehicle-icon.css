@@ -1,26 +1,39 @@
 /*
- * The vehicle icons' fills (src/components/booking/VehicleIcon.tsx). Solid shapes, no outlines;
- * the colours are tokens (tokens.css: --vehicle-*), so a selected card or the hero's dark slide
- * restyles them by setting the variables on an ancestor.
+ * The sketch-style vehicle icons (src/components/booking/VehicleIcon.tsx): outlines in the ink,
+ * filled with the paper behind them, gold for hubs, lights, cargo and the bus stripe. Colours are
+ * tokens (tokens.css: --vehicle-*); a card sets its own paper, and a selected card or the hero's
+ * dark slide restyles the rest by setting the variables on an ancestor.
  */
 .vehicle-icon { display: block; overflow: visible; }
-.vehicle-icon .vi-body { fill: var(--vehicle-body); }
-.vehicle-icon .vi-glass { fill: var(--vehicle-glass); }
-.vehicle-icon .vi-tyre { fill: var(--vehicle-tyre); }
-.vehicle-icon .vi-accent { fill: var(--vehicle-accent); }
-.vehicle-icon .vi-seam { stroke: var(--vehicle-glass); stroke-width: 1.5; }
-.vehicle-icon .vi-shadow { fill: var(--vehicle-shadow); opacity: var(--vehicle-shadow-opacity); }
+.vehicle-icon :is(path, circle) { stroke-linecap: round; stroke-linejoin: round; }
+.vehicle-icon .vi-body { fill: var(--vehicle-paper, var(--surface)); stroke: var(--vehicle-ink); stroke-width: 2.4; }
+.vehicle-icon .vi-ghost { fill: none; stroke: var(--vehicle-ink); stroke-width: 1; opacity: .35; }
+.vehicle-icon .vi-ink { fill: none; stroke: var(--vehicle-ink); stroke-width: 2.4; }
+.vehicle-icon .vi-fine { fill: none; stroke: var(--vehicle-ink); stroke-width: 1.4; }
+.vehicle-icon .vi-glass { fill: var(--vehicle-glass, var(--vehicle-ink)); fill-opacity: .06; stroke: var(--vehicle-ink); stroke-width: 1.6; }
+.vehicle-icon .vi-reflect { fill: none; stroke: var(--vehicle-ink); stroke-width: 1.2; opacity: .45; }
+.vehicle-icon .vi-tyre { fill: var(--vehicle-paper, var(--surface)); stroke: var(--vehicle-ink); stroke-width: 2.4; }
+.vehicle-icon .vi-tread { fill: none; stroke: var(--vehicle-ink); stroke-width: 1; stroke-dasharray: 2 3; opacity: .5; }
+.vehicle-icon .vi-gold { fill: var(--vehicle-gold); stroke: var(--vehicle-gold); stroke-width: 1; }
+.vehicle-icon .vi-gold-line { fill: none; stroke: var(--vehicle-gold); stroke-width: 2; }
+.vehicle-icon .vi-cargo { fill: var(--vehicle-gold); fill-opacity: .18; stroke: var(--vehicle-gold); stroke-width: 1.6; }
+.vehicle-icon .vi-ground { fill: none; stroke: var(--vehicle-ink); stroke-width: 1.2; opacity: .35; }
 
-/* On a dark ground in either theme (the hero's ride slide). */
-.vehicle-icons--on-dark {
-  --vehicle-body: var(--vehicle-body-on-dark);
-  --vehicle-glass: var(--vehicle-glass-on-dark);
+/* The hand-drawn wobble: one filter per page (VehicleSketchFilter). Phones keep the double stroke only. */
+.vehicle-sketch-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+@media (min-width: 640px) {
+  .vehicle-icon .vi-sketch { filter: url(#vehicle-sketch); }
 }
-/* A selected card: the dark body and pale glass on the gold. */
+
+/* On the dark page colour in either theme (the hero's ride slide). */
+.vehicle-icons--on-dark { --vehicle-ink: var(--vehicle-ink-on-dark); --vehicle-paper: var(--inverse-surface); }
+/* A selected card: dark ink on the gold; the hubs and lights go dark too, or they'd vanish. */
 .vehicle-icons--selected {
-  --vehicle-body: var(--vehicle-selected-body);
-  --vehicle-glass: var(--vehicle-selected-glass);
-  --vehicle-tyre: var(--vehicle-selected-tyre);
-  --vehicle-accent: var(--vehicle-selected-accent);
-  --vehicle-shadow-opacity: .18;
+  --vehicle-ink: var(--vehicle-selected-ink);
+  --vehicle-paper: var(--accent);
+  --vehicle-glass: var(--vehicle-selected-ink);
+  --vehicle-gold: var(--vehicle-selected-ink);
 }
+
+/* The AC badge's snowflake: the badge's own colour and size. */
+.vehicle-snowflake { width: 1em; height: 1em; flex: none; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
