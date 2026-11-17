@@ -1,4 +1,4 @@
-import { checkCapacity, type BookingLocation, type BookingVehicle } from './booking';
+import { checkCapacity, passengerRange, type BookingLocation, type BookingVehicle } from './booking';
 import { rideSchema, type RideInput } from './ride';
 import { normalizeWhatsAppNumber, whatsappNumberProblem, whatsappUrl } from './whatsapp';
 
@@ -28,7 +28,7 @@ export function rideWhatsAppUrl(number: string | undefined, input: RideInput, ve
       `Return route: ${ride.dropoff.label} → ${ride.pickup.label}`
     ] : []),
     `Passengers: ${ride.passengers}`,
-    `Vehicle: ${vehicle.name}`,
+    `Vehicle: ${vehicle.name} (${passengerRange(vehicle)})`,
     'Please confirm the fare and availability.'
   ];
   return whatsappUrl(digits, lines.join('\n'));

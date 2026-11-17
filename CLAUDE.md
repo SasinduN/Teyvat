@@ -48,6 +48,7 @@ this file or anywhere else in git.
 | N | Nearby attractions: `attractions` (0023), the Nearby cards, small map markers, search, the wishlist; six new destinations and 30 attractions researched, imported as drafts by `npm run content:import` (`docs/reviews/places-sources.md`) | done (#57) |
 | B | Rebrand (the name, tagline and legal name are in `shared/brand.ts`): one brand source (`shared/brand.ts`, Admin → Settings, 0024), the wordmark and SL favicon, JSON-LD, `/site.webmanifest`, seed text (0025), `npm run brand:audit`, `npm run screenshots -- --brand` | in review |
 | Q | Bug and performance audit (`docs/reviews/audit-2026-11.md`): the `<body>` shift, compression, `/api/content` and header photos preloaded, `browser-hero-contrast`'s hang | in review |
+| V | Ride page redesign (`docs/plans/ride-vehicle-picker.md`): vehicle categories (0027), the card picker, the passenger stepper, the phone bar, and the hero's "Book a ride" slide and button | in review |
 
 Update the Status column when a phase lands.
 
@@ -257,6 +258,22 @@ Update the Status column when a phase lands.
   sends nothing to the server (#45, `docs/RIDE_WHATSAPP.md`): submitting opens
   a WhatsApp draft to `site_settings.whatsapp_number`, for the visitor to
   review and send. `/booking?tour=…`, the API and the admin's records stay.
+
+- **Vehicle categories** (0027, `shared/booking.ts`, `docs/plans/ride-vehicle-picker.md`):
+  - Passenger counts never include the driver: every ride comes with one. The page says "Driver
+    included" once and words capacity as passengers, never seats.
+  - `min_passengers` to `passenger_capacity` is the range; `checkCapacity`, the cards, the summary
+    and the WhatsApp line all read it (`passengerRange`, `smallestFit`, `maxPassengers`). No seat
+    numbers in components.
+  - The ride page offers only categories taking requests, in `sort_order`. Mini, Car and SUV are on;
+    Mini Van, Van and Bus are seeded off until the owner confirms them.
+  - Each category shows its icon (`VehicleIcon`, seven inline SVGs, colours from the `--vehicle-*`
+    tokens, so a selected card recolours them), unless Admin → Bookings sets an image from the media
+    library, which replaces it. Never a committed image.
+  - The floating Book a ride steps out while the hero's own Book a ride is on screen
+    (`FloatingActions`); `browser-floating-visible` expects it.
+  - The hero's "Book a ride" slide (second) and button exist only with bookings on
+    (`shared/ride-slide.ts`, which also holds the slide's image); `browser-hero-booking`.
 
 - **WhatsApp button** (`src/components/WhatsAppButton.tsx`,
   `shared/whatsapp.ts`):

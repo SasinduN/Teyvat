@@ -6,7 +6,7 @@ The owner requested ride enquiries through WhatsApp instead of the admin panel. 
 
 The ordinary `/booking` ride form keeps pickup/drop-off, manual/GPS selection, dates/times, return fields, passengers, vehicle-capacity checks and live summary. Submit validates those values and opens WhatsApp in a new tab with a draft addressed to `site_settings.whatsapp_number`. The visitor must review it and tap Send. A prepared-draft link allows reopening if the browser blocks the popup; editing any ride field clears that stale draft. There is no sent/delivery/confirmed claim.
 
-The draft includes pickup/drop-off labels, addresses when present, map links for available coordinates, trip type, departure and return details in Sri Lanka time, reversed return route, passenger count, vehicle name and a request to confirm fare/availability.
+The draft includes pickup/drop-off labels, addresses when present, map links for available coordinates, trip type, departure and return details in Sri Lanka time, reversed return route, passenger count, the vehicle category with its passenger range (`Vehicle: Car (up to 4 passengers)`; since 0027, `docs/plans/ride-vehicle-picker.md`) and a request to confirm fare/availability.
 
 Only the catalogue is fetched by the ride form. No account/guest-session/history calls, ride POST, callback dialog, admin receipt or request-history UI. Missing or invalid configured number disables the handoff and explains unavailability. No hardcoded business number and no admin fallback. The production settings row is used after deployment; local absence does not require an API key or any overwrite of production settings.
 

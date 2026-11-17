@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { blankLocation } from '../../shared/booking';
-import { rideSchema, rideDataSchema, rideRequestDataSchema, callbackPhoneSchema, sameRideLocation, type RideInput } from '../../shared/ride';
+import { rideSchema, rideDataSchema, rideRequestDataSchema, callbackPhoneSchema, sameRideLocation, withTripType, type RideInput } from '../../shared/ride';
 
 const valid = (): RideInput => ({ pickup: blankLocation('Matara'), dropoff: blankLocation('Galle'), tripType: 'one_way', departureDate: '2099-10-20', departureTime: '09:00', returnDate: null, returnTime: null, passengers: 2, vehicleId: 'test-car' });
 test('manual city, hotel and airport rides need no tour or contact fields', () => {
@@ -29,4 +29,19 @@ test('guest follow-up phone is validated separately and cannot supply account id
   assert.ok(rideRequestDataSchema.safeParse({ details: valid(), callbackPhone: '+94 771234567' }).success);
   assert.ok(!callbackPhoneSchema.safeParse('.......').success);
   assert.ok(!rideRequestDataSchema.safeParse({ details: valid(), contactEmail: 'someone@example.test' }).success);
+});
+
+test('switching back to one way clears the return, so the one-way rule still passes', () => {
+  const round = { ...withTripType(valid(), 'round_trip'), returnDate: '2099-10-21', returnTime: '09:00' };
+  assert.ok(rideSchema.safeParse(round).success);
+  const oneWay = withTripType(round, 'one_way');
+  assert.equal(oneWay.tripType, 'one_way');
+  assert.equal(oneWay.returnDate, null);
+  assert.equal(oneWay.returnTime, null);
+  assert.ok(rideSchema.safeParse(oneWay).success, 'no return details left behind');
+  // Without the clearing, the same ride is refused.
+  assert.ok(!rideSchema.safeParse({ ...round, tripType: 'one_way' }).success);
+  // Round trip keeps what was there, and the rest of the ride is untouched.
+  assert.deepEqual(withTripType(round, 'round_trip'), round);
+  assert.deepEqual({ ...oneWay, tripType: 'round_trip', returnDate: '2099-10-21', returnTime: '09:00' }, round);
 });

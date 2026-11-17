@@ -1,0 +1,26 @@
+/*
+ * The vehicle icons' fills (src/components/booking/VehicleIcon.tsx). Solid shapes, no outlines;
+ * the colours are tokens (tokens.css: --vehicle-*), so a selected card or the hero's dark slide
+ * restyles them by setting the variables on an ancestor.
+ */
+.vehicle-icon { display: block; overflow: visible; }
+.vehicle-icon .vi-body { fill: var(--vehicle-body); }
+.vehicle-icon .vi-glass { fill: var(--vehicle-glass); }
+.vehicle-icon .vi-tyre { fill: var(--vehicle-tyre); }
+.vehicle-icon .vi-accent { fill: var(--vehicle-accent); }
+.vehicle-icon .vi-seam { stroke: var(--vehicle-glass); stroke-width: 1.5; }
+.vehicle-icon .vi-shadow { fill: var(--vehicle-shadow); opacity: var(--vehicle-shadow-opacity); }
+
+/* On a dark ground in either theme (the hero's ride slide). */
+.vehicle-icons--on-dark {
+  --vehicle-body: var(--vehicle-body-on-dark);
+  --vehicle-glass: var(--vehicle-glass-on-dark);
+}
+/* A selected card: the dark body and pale glass on the gold. */
+.vehicle-icons--selected {
+  --vehicle-body: var(--vehicle-selected-body);
+  --vehicle-glass: var(--vehicle-selected-glass);
+  --vehicle-tyre: var(--vehicle-selected-tyre);
+  --vehicle-accent: var(--vehicle-selected-accent);
+  --vehicle-shadow-opacity: .18;
+}

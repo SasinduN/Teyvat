@@ -41,3 +41,8 @@ export const callbackPhoneSchema = z.string().trim().max(40).regex(/^\+?[\d\s().
 export const rideRequestDataSchema = z.object({ details: rideDataSchema, callbackPhone: callbackPhoneSchema.optional() }).strict();
 export type RideSubmission = z.infer<typeof rideRequestDataSchema>;
 export const initialRide = (): RideInput => ({ pickup: blankLocation(), dropoff: blankLocation(), tripType: 'one_way', departureDate: '', departureTime: '', returnDate: null, returnTime: null, passengers: 1, vehicleId: '' });
+
+/** The ride with a new trip type. One way clears the return, so "one-way rides cannot include return details" holds. */
+export function withTripType(ride: RideInput, tripType: RideInput['tripType']): RideInput {
+  return tripType === 'one_way' ? { ...ride, tripType, returnDate: null, returnTime: null } : { ...ride, tripType };
+}

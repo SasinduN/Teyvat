@@ -1,14 +1,19 @@
 import { TravelImage } from '@/components/TravelImage';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { Pause, Play, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useBrand, useHeroSlides, useSiteSettings } from '@/hooks/useSiteContent';
+import { useBrand, useFeatures, useHeroSlides, useSiteSettings } from '@/hooks/useSiteContent';
+import { RIDE_SLIDE_COPY, RIDE_SLIDE_IMAGE_SIZE, withRideSlide } from '@shared/ride-slide';
+import { VehicleIcon } from './booking/VehicleIcon';
 import { heroHeadlineParts } from '@shared/brand';
 import { SiteLink } from './SiteLink';
 import { paths } from '@shared/site-paths';
 
 export const HeroSection: React.FC = () => {
-  const HERO_IMAGES = useHeroSlides();
+  const photos = useHeroSlides();
+  // Bookings on: the "Book a ride" slide second, and its button among the fixed ones (shared/ride-slide.ts).
+  const { bookings } = useFeatures();
+  const HERO_IMAGES = useMemo(() => withRideSlide(photos, bookings), [photos, bookings]);
   const brand = useBrand();
   // Admin → Settings → Home page headline, or the tagline.
   const headline = heroHeadlineParts(useSiteSettings().heroHeadline ?? brand.tagline);
@@ -56,6 +61,8 @@ export const HeroSection: React.FC = () => {
       const image = slide.querySelector('img');
       if (image?.complete && image.naturalWidth > 0 && image.getAttribute('src') === sources[index]) ready.add(index);
     });
+    // The ride slide drawn with icons has nothing to load: it's ready at once.
+    sources.forEach((source, index) => { if (source === '') ready.add(index); });
     setReadySlides(ready);
   }, [slideSources]);
   useEffect(() => { setSeenSlides(previous => new Set([...previous, currentBg])); }, [currentBg]);
@@ -69,6 +76,8 @@ export const HeroSection: React.FC = () => {
     }, 4500);
     return () => window.clearTimeout(timer);
   }, [HERO_IMAGES.length, currentBg, readySlides, visible, documentVisible, reducedMotion, paused]);
+
+  const rideActive = 'ride' in (HERO_IMAGES[currentBg] ?? {});
 
   const showSlide = (index: number) => {
     setSeenSlides(previous => new Set([...previous, index]));
@@ -87,10 +96,17 @@ export const HeroSection: React.FC = () => {
       {/* Background Image Carousel with Smooth Crossfade */}
       {HERO_IMAGES.map((bg, idx) => (
         <div
-          key={bg.url} aria-hidden={idx !== currentBg} data-active={idx === currentBg}
-          className="te-hero-slide"
+          key={bg.url || bg.id} aria-hidden={idx !== currentBg} data-active={idx === currentBg}
+          className={'ride' in bg ? 'te-hero-slide te-hero-slide--ride' : 'te-hero-slide'}
         >
-          {seenSlides.has(idx) && <TravelImage fullWidth loading="eager" fetchPriority={idx === currentBg ? 'high' : 'low'} sizes="100vw"
+          {seenSlides.has(idx) && 'ride' in bg && (bg.url
+            ? <img className="te-hero-ride-art" src={bg.url} alt="" {...RIDE_SLIDE_IMAGE_SIZE}
+                onLoad={() => setReadySlides(previous => previous.has(idx) ? previous : new Set([...previous, idx]))} />
+            : <div className="te-hero-ride-art te-hero-ride-icons vehicle-icons--on-dark" data-ride-art>
+                <VehicleIcon name="van" width={360} height={192} className="te-hero-ride-van" />
+                <VehicleIcon name="car" width={330} height={176} className="te-hero-ride-car" />
+              </div>)}
+          {seenSlides.has(idx) && !('ride' in bg) && <TravelImage fullWidth loading="eager" fetchPriority={idx === currentBg ? 'high' : 'low'} sizes="100vw"
             onLoad={() => setReadySlides(previous => previous.has(idx) ? previous : new Set([...previous, idx]))}
             src={bg.url}
             alt={bg.title}
@@ -116,27 +132,43 @@ export const HeroSection: React.FC = () => {
           </h1>
 
           {/* Supporting Subtitle */}
+          {bookings ? (
+            // Both lines in one cell, so the copy keeps its height as the slides change.
+            <p className="te-hero-subtitle te-hero-subtitle--stack text-lg text-white/90 leading-relaxed mb-10 text-shadow">
+              <span data-active={!rideActive}>Tea country, ancient cities, leopards and surf, all on one island.</span>
+              <span data-active={rideActive} data-hero-ride-line><strong>{RIDE_SLIDE_COPY.headline}</strong> {RIDE_SLIDE_COPY.line}</span>
+            </p>
+          ) : (
           <p
             className="te-hero-subtitle text-lg text-white/90 leading-relaxed mb-10 text-shadow"
           >
             Tea country, ancient cities, leopards and surf, all on one island.
           </p>
+          )}
 
           {/* Action Buttons */}
           <div
             className="te-hero-actions te-cta-group flex flex-col sm:flex-row items-center gap-4"
           >
+            {/* Bookings on: on phones (stacked buttons) "Book a ride" takes Explore's place; the
+                header's Discover → Explore map still goes there (docs/plans/ride-vehicle-picker.md, part 9). */}
             <SiteLink to={paths.explore}
-              className="te-button te-button--secondary te-button--lg w-full sm:w-auto group"
+              className={`te-button te-button--secondary te-button--lg w-full sm:w-auto group${bookings ? ' te-hero-action--wide-only' : ''}`}
             >
               <span>Explore Sri Lanka</span>
             </SiteLink>
 
             <SiteLink to={paths.plan}
-              className="te-button te-button--primary te-button--lg w-full sm:w-auto"
+              className={`te-button ${rideActive ? 'te-button--secondary' : 'te-button--primary'} te-button--lg w-full sm:w-auto`}
             >
               <span>Plan Your Journey</span>
             </SiteLink>
+
+            {bookings && <SiteLink to={paths.booking} data-hero-booking
+              className={`te-button ${rideActive ? 'te-button--primary' : 'te-button--secondary'} te-button--lg w-full sm:w-auto`}
+            >
+              <span>{RIDE_SLIDE_COPY.button}</span>
+            </SiteLink>}
           </div>
 
         </div>

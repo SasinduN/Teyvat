@@ -93,11 +93,33 @@ describe('the floating buttons stay', { skip, timeout: 8 * 60_000 }, () => {
     await Promise.all(open.splice(0).map((page) => page.send('Page.close').catch(() => undefined)));
   };
 
-  /** Both buttons seen and taking a tap, right now: true at every step, moving or not. */
+  /** Whether the home hero's own Book a ride button is on screen (bookings on, the home page). */
+  const HERO_BOOKING_ON_SCREEN = `(() => {
+    const r = document.querySelector('[data-hero-booking]')?.getBoundingClientRect();
+    return Boolean(r && r.height > 0 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth);
+  })()`;
+
+  /**
+   * Both buttons seen and taking a tap, right now: true at every step, moving or not. The one
+   * exception (docs/plans/ride-vehicle-picker.md, part 10): while the hero's own Book a ride is
+   * on screen the floating one steps out, and then the hero's must be there instead. Its
+   * IntersectionObserver reports a frame late, so the state gets half a second to agree.
+   */
   async function assertVisible(page: Page, where: string): Promise<void> {
-    const states = await page.evaluate<ButtonState[]>(BUTTON_STATES);
+    let states = await page.evaluate<ButtonState[]>(BUTTON_STATES);
+    let heroBooking = await page.evaluate<boolean>(HERO_BOOKING_ON_SCREEN);
+    const agrees = () => states.every((s) => s.name !== 'Book a ride' || s.shown !== heroBooking);
+    for (let i = 0; i < 10 && !agrees(); i += 1) {
+      await sleep(50);
+      states = await page.evaluate<ButtonState[]>(BUTTON_STATES);
+      heroBooking = await page.evaluate<boolean>(HERO_BOOKING_ON_SCREEN);
+    }
     assert.equal(states.length, 2, `${where}: both buttons on the page`);
     for (const state of states) {
+      if (state.name === 'Book a ride' && heroBooking) {
+        assert.equal(state.shown, false, `${where}: the floating Book a ride steps out while the hero's is on screen`);
+        continue;
+      }
       assert.ok(state.shown, `${where}: ${state.name} hidden`);
       assert.ok(state.onScreen, `${where}: ${state.name} off screen`);
       assert.ok(state.clickable, `${where}: ${state.name} under ${state.on}`);
