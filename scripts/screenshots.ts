@@ -39,6 +39,10 @@
  * new-enquiry email each version would send (subject, sender name, text), from its own
  * `composeEmail`, drawn as a plain message card.
  *
+ * `--ride` takes only the ride page's pairs (docs/plans/ride-vehicle-picker.md): its four states, light
+ * and dark, phone and laptop, the home hero's two slides and Admin → Bookings, with bookings on in both
+ * scratch databases.
+ *
  * `--admin` adds the admin: the login page (empty, a password typed and
  * shown, after two wrong tries, locked), then (signed in as a throwaway
  * admin created in each scratch database) the dashboard, a collection, two
@@ -107,6 +111,8 @@ const { values } = parseArgs({
     attractions: { type: 'boolean', default: false },
     /** Only the ten pairs for the rebrand: header, footer, hero, phone menu, admin sign-in, an email. */
     brand: { type: 'boolean', default: false },
+    /** Only the ride page's states, the home hero and Admin → Bookings, bookings on. */
+    ride: { type: 'boolean', default: false },
     out: { type: 'string' }
   },
   strict: true
@@ -234,7 +240,7 @@ async function prepare(site: Site): Promise<void> {
       await client.end();
     }
   }
-  if (values.admin || values['when-to-go'] || values.attractions) {
+  if (values.admin || values['when-to-go'] || values.attractions || values.ride) {
     const client = new Client({ connectionString: db });
     await client.connect();
     try {
@@ -254,7 +260,7 @@ async function prepare(site: Site): Promise<void> {
   // any variable that isn't set, so a deleted R2 key came back and only the base ran without R2.
   for (const key of ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET', 'R2_PUBLIC_BASE_URL', 'RESEND_API_KEY', 'NOTIFY_EMAIL_TO', 'NOTIFY_EMAIL_FROM']) env[key] = '';
   // The same for the switches: as the base would have them.
-  env.BOOKINGS_ENABLED = values['header-floating'] ? 'true' : '';
+  env.BOOKINGS_ENABLED = values['header-floating'] || values.ride ? 'true' : '';
   // The bucket's public origin, so the CSP lets the photos in. The rest only has to be set: nothing is uploaded.
   if (livePhotos) {
     Object.assign(env, { R2_ACCOUNT_ID: 'screenshots', R2_ACCESS_KEY_ID: 'screenshots', R2_SECRET_ACCESS_KEY: 'screenshots', R2_BUCKET: 'screenshots', R2_PUBLIC_BASE_URL: livePhotos.origin });
@@ -746,6 +752,112 @@ async function shootBrand(chrome: Chrome, site: Site, out: string): Promise<void
   }
 }
 
+/** Sets a labelled field the way typing does, so React sees it (the ride form's fields, either version). */
+const FILL = (label: string, value: string) => `(() => {
+  const label = [...document.querySelectorAll('label')].find((l) => l.textContent.trim() === ${JSON.stringify(label)});
+  const input = label && document.getElementById(label.htmlFor);
+  if (!input) return false;
+  const proto = input.tagName === 'SELECT' ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
+  Object.getOwnPropertyDescriptor(proto, 'value').set.call(input, ${JSON.stringify(value)});
+  input.dispatchEvent(new Event(input.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true }));
+  return true;
+})()`;
+/** Chooses a vehicle: a card's radio after, the dropdown before. */
+const CHOOSE = (id: string) => `(() => {
+  const radio = document.querySelector('.ride-vehicle__input[value="${id}"]');
+  if (radio) { radio.click(); return true; }
+  return ${FILL('Vehicle category', id)};
+})()`;
+const ROUTE = [FILL('Pickup location', 'Colombo airport'), FILL('Drop-off location', 'Galle'), FILL('Pickup date', '2099-12-20'), FILL('Pickup time', '09:00')];
+const ROUND_TRIP = `(document.querySelector('input[value=round_trip]')?.click(), true)`;
+
+/**
+ * `--ride`: the ride page's four states (nothing chosen, a vehicle chosen, a capacity error, a round
+ * trip) at 1280 and 375 px, light and dark; the Admin → Bookings vehicle form; and the home hero with
+ * bookings on: its first slide and the "Book a ride" slide. With `--text-size 120`, the "after" site at
+ * 120%. Bookings are on in both scratch databases, and nowhere else.
+ * Before 0027 there is no Mini, so "before" shows the capacity error with the Car and 6 passengers.
+ */
+const RIDE_STATES: { name: string; steps: (before: boolean) => string[] }[] = [
+  { name: 'ride-nothing-chosen', steps: () => [] },
+  { name: 'ride-vehicle-chosen', steps: () => [...ROUTE, FILL('Number of passengers', '2'), CHOOSE('car')] },
+  {
+    name: 'ride-capacity-error',
+    // Before, the error showed only on submitting; after, it shows as the count changes.
+    steps: (before) => before
+      ? [...ROUTE, CHOOSE('car'), FILL('Number of passengers', '6'), `(document.querySelector('.ride-form').requestSubmit(), true)`]
+      : [...ROUTE, CHOOSE('mini'), FILL('Number of passengers', '4')]
+  },
+  {
+    name: 'ride-round-trip',
+    steps: () => [...ROUTE, ROUND_TRIP, FILL('Return date', '2099-12-27'), FILL('Return time', '17:30'), FILL('Number of passengers', '2'), CHOOSE('car')]
+  }
+];
+
+
+async function shootRide(chrome: Chrome, site: Site, out: string): Promise<void> {
+  const before = site.label === 'before';
+  for (const dark of [false, true]) {
+    for (const [name, viewport] of Object.entries(VIEWPORTS)) {
+      const suffix = `${name}${dark ? '-dark' : ''}-${site.label}.jpg`;
+      for (const state of RIDE_STATES) {
+        const page = await open(chrome, `${site.url}/booking`, viewport, dark);
+        await waitFor(page, `document.querySelector('.ride-form')`);
+        // A draft would open WhatsApp: never, here.
+        await page.evaluate(`(window.open = () => null, true)`);
+        for (const step of state.steps(before)) {
+          await page.evaluate(step);
+          await sleep(120);
+        }
+        await page.evaluate('(document.activeElement?.blur(), true)');
+        await page.evaluate(LOADED);
+        await page.evaluate(QUIET);
+        if (viewport.mobile) {
+          // The phone's bar sticks to the screen's bottom: a screenful, with the vehicles in it.
+          await page.evaluate(`(() => { const el = document.querySelector('.ride-vehicles, .ride-form select'); el?.scrollIntoView({ block: 'center' }); return true; })()`);
+          await page.evaluate(QUIET);
+          await shoot(page, join(out, `${state.name}-${suffix}`), false);
+        } else {
+          await shoot(page, join(out, `${state.name}-${suffix}`), true);
+        }
+        await closePage(page);
+        console.log(`  ${state.name}-${suffix}`);
+      }
+      // The home hero: the first slide, then the "Book a ride" slide (the second).
+      const home = await open(chrome, `${site.url}/`, viewport, dark);
+      await home.evaluate(LOADED);
+      await home.evaluate(QUIET);
+      await shoot(home, join(out, `hero-first-slide-${suffix}`), false);
+      await home.evaluate(`(document.querySelector('[aria-label="Next featured destination"]')?.click(), true)`);
+      await sleep(1200);
+      await home.evaluate(LOADED);
+      await home.evaluate(QUIET);
+      await shoot(home, join(out, `hero-second-slide-${suffix}`), false);
+      await closePage(home);
+      console.log(`  hero-*-${suffix}`);
+      // Admin → Bookings, its vehicle form open on the Car.
+      const blank = await chrome.newPage();
+      await blank.send('Network.clearBrowserCookies');
+      await closePage(blank);
+      const signIn = await openAdmin(chrome, `${site.url}/admin/login`, viewport, dark);
+      const status = await signIn.evaluate<number>(`fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(${JSON.stringify(SHOTS_ADMIN)})
+      }).then((r) => r.status)`);
+      if (status !== 200) throw new Error(`[${site.label}] admin sign-in failed (${status})`);
+      await closePage(signIn);
+      const admin = await openAdmin(chrome, `${site.url}/admin/bookings`, viewport, dark);
+      await waitFor(admin, `[...document.querySelectorAll('button')].some((b) => b.textContent.startsWith('Edit Car'))`);
+      await admin.evaluate(`([...document.querySelectorAll('button')].find((b) => b.textContent.startsWith('Edit Car'))?.click(), true)`);
+      await admin.evaluate(LOADED);
+      await admin.evaluate(QUIET);
+      await shoot(admin, join(out, `admin-bookings-${suffix}`), true);
+      await closePage(admin);
+      console.log(`  admin-bookings-${suffix}`);
+    }
+  }
+}
+
 async function main(): Promise<void> {
   const executable = findChrome();
   if (!executable) throw new Error('No Chrome found; set CHROME_PATH.');
@@ -793,6 +905,10 @@ async function main(): Promise<void> {
       }
       if (values.brand) {
         await shootBrand(chrome, site, out);
+        continue;
+      }
+      if (values.ride) {
+        await shootRide(chrome, site, out);
         continue;
       }
       for (const dark of themes) {

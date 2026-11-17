@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 128" width="240" height="128">
+  <!-- Placeholder artwork (bus); replace through Admin → Media. docs/plans/ride-vehicle-picker.md -->
+  <g transform="translate(0 0) scale(1)">
+  <ellipse cx="120" cy="112" rx="113" ry="7" fill="#0F1F1A" fill-opacity=".18"/>
+  <ellipse cx="44" cy="99" rx="9.3" ry="15" fill="#232D29"/>
+  <ellipse cx="178" cy="99" rx="9.3" ry="15" fill="#232D29"/>
+  <polygon points="12,99 12,23 22,13 204,13 210,21 210,99" fill="#B9C7C2" stroke="#2E433B" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="30,108 30,32 12,23 12,99" fill="#CBD6D2" stroke="#2E433B" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="30,32 40,22 22,13 12,23" fill="#F5F8F7" stroke="#2E433B" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="40,22 222,22 204,13 22,13" fill="#F5F8F7" stroke="#2E433B" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="222,22 228,30 210,21 204,13" fill="#CBD6D2" stroke="#2E433B" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="228,30 228,108 210,99 210,21" fill="#CBD6D2" stroke="#2E433B" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="30,35 30,41 19.2,35.6 19.2,29.6" fill="#F2D27E" stroke="#2E433B" stroke-width="1"/>
+  <polygon points="30,108 30,32 40,22 222,22 228,30 228,108" fill="#E4EBE8" stroke="#2E433B" stroke-width="1.75" stroke-linejoin="round"/>
+  <polygon points="36,30 58,30 58,72 34,72" fill="#6A8C9B" stroke="#2E433B" stroke-width="1.25" stroke-linejoin="round"/>
+  <polygon points="64,30 90,30 90,62 64,62" fill="#6A8C9B" stroke="#2E433B" stroke-width="1.25" stroke-linejoin="round"/>
+  <polygon points="96,30 122,30 122,62 96,62" fill="#6A8C9B" stroke="#2E433B" stroke-width="1.25" stroke-linejoin="round"/>
+  <polygon points="128,30 154,30 154,62 128,62" fill="#6A8C9B" stroke="#2E433B" stroke-width="1.25" stroke-linejoin="round"/>
+  <polygon points="160,30 186,30 186,62 160,62" fill="#6A8C9B" stroke="#2E433B" stroke-width="1.25" stroke-linejoin="round"/>
+  <polygon points="192,30 218,30 218,62 192,62" fill="#6A8C9B" stroke="#2E433B" stroke-width="1.25" stroke-linejoin="round"/>
+  <line x1="34" y1="92" x2="224" y2="92" stroke="#2E433B" stroke-opacity=".35" stroke-width="1.25"/>
+  <circle cx="62" cy="108" r="15" fill="#232D29"/>
+  <circle cx="62" cy="108" r="6.75" fill="#A9B4B0"/>
+  <circle cx="196" cy="108" r="15" fill="#232D29"/>
+  <circle cx="196" cy="108" r="6.75" fill="#A9B4B0"/>
+  </g>
+</svg>

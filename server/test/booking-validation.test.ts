@@ -11,12 +11,17 @@ import {
   bookingSchema,
   canTransition,
   checkCapacity,
+  maxPassengers,
+  offeredVehicle,
+  passengerRange,
+  smallestFit,
   sriLankaToday,
   tripInstant,
   vehicleSchema,
   type BookingInput
 } from '../../shared/booking';
 import { currentPickup, pickupWarning } from '../../src/lib/booking-geolocation';
+import { SEEDED_VEHICLES, seeded, switchedOn } from './vehicle-categories';
 
 const valid = (): BookingInput => ({
   tourId: null,
@@ -86,11 +91,61 @@ test('Sri Lanka time: midnight and the conversion are the same in any browser ti
 });
 
 test('capacity: a real one is required, and a full vehicle is refused', () => {
-  const v = { id: 'test-car', name: 'Test car', type: 'Car' as const, passengerCapacity: 3, luggageCapacity: null, acceptingRequests: true };
+  const v = { ...seeded('mini'), id: 'test-car', name: 'Test car' };
   assert.equal(checkCapacity(v, 3), null);
   assert.ok(checkCapacity(v, 4));
   assert.ok(!vehicleSchema.safeParse({ ...v, passengerCapacity: null }).success);
   assert.ok(checkCapacity({ ...v, acceptingRequests: false }, 1));
+});
+
+test("capacity: every category's own minimum and maximum, from its data", () => {
+  for (const id of SEEDED_VEHICLES.map((v) => v.id)) {
+    const v = switchedOn(id);
+    const max = v.passengerCapacity!;
+    assert.equal(checkCapacity(v, v.minPassengers), null, `${id}: its minimum fits`);
+    assert.equal(checkCapacity(v, max), null, `${id}: its maximum fits`);
+    assert.equal(checkCapacity(v, max + 1), 'Passenger count exceeds vehicle capacity.', `${id}: one over`);
+    if (v.minPassengers > 1) assert.match(checkCapacity(v, v.minPassengers - 1)!, /at least/, `${id}: one under`);
+  }
+  // The seeded numbers themselves (passengers, never counting the driver).
+  assert.deepEqual(SEEDED_VEHICLES.map((v) => [v.id, v.minPassengers, v.passengerCapacity]), [
+    ['mini', 1, 3], ['car', 1, 4], ['suv', 1, 5], ['mini-van', 1, 6], ['van', 1, 9], ['bus', 10, 30]
+  ]);
+});
+
+test('capacity: the bus takes 10 to 30, and fewer is refused with its minimum named', () => {
+  const bus = switchedOn('bus');
+  assert.equal(checkCapacity(bus, 9), 'This category takes at least 10 passengers.');
+  assert.equal(checkCapacity(bus, 1), 'This category takes at least 10 passengers.');
+  assert.equal(checkCapacity(bus, 10), null);
+  assert.equal(checkCapacity(bus, 30), null);
+  assert.equal(checkCapacity(bus, 31), 'Passenger count exceeds vehicle capacity.');
+  // Switched off (as seeded), it refuses everyone.
+  assert.match(checkCapacity(seeded('bus'), 12)!, /not accepting/);
+});
+
+test('capacity: a minimum above the maximum is refused, and the words never count the driver', () => {
+  assert.ok(!vehicleSchema.safeParse({ ...seeded('car'), minPassengers: 5 }).success);
+  assert.ok(vehicleSchema.safeParse({ ...seeded('car'), imageUrl: '' }).success, 'an empty image is none');
+  assert.ok(!vehicleSchema.safeParse({ ...seeded('car'), imageUrl: 'javascript:alert(1)' }).success);
+  assert.ok(!vehicleSchema.safeParse({ ...seeded('car'), imageUrl: '/images/../secret.svg' }).success);
+  assert.equal(passengerRange(seeded('car')), 'up to 4 passengers');
+  assert.equal(passengerRange(seeded('bus')), '10–30 passengers');
+  assert.equal(passengerRange({ minPassengers: 1, passengerCapacity: 1 }), 'up to 1 passenger');
+});
+
+test("the picker: only categories taking requests, the smallest that fits, and the stepper's limit", () => {
+  assert.deepEqual(SEEDED_VEHICLES.filter(offeredVehicle).map((v) => v.id), ['mini', 'car', 'suv']);
+  assert.equal(smallestFit(SEEDED_VEHICLES, 2)?.id, 'mini');
+  assert.equal(smallestFit(SEEDED_VEHICLES, 4)?.id, 'car');
+  assert.equal(smallestFit(SEEDED_VEHICLES, 5)?.id, 'suv');
+  assert.equal(smallestFit(SEEDED_VEHICLES, 6), null, 'the vans are off');
+  assert.equal(maxPassengers(SEEDED_VEHICLES), 5);
+  const allOn = SEEDED_VEHICLES.map((v) => switchedOn(v.id));
+  assert.equal(smallestFit(allOn, 7)?.id, 'van');
+  assert.equal(smallestFit(allOn, 12)?.id, 'bus');
+  assert.equal(maxPassengers(allOn), 30);
+  assert.equal(maxPassengers([]), 1);
 });
 
 test('the lifecycle: never confirmed by itself, never reopened', () => {

@@ -5,7 +5,6 @@
 .ride-page h1 { margin-bottom: .65rem; }
 .ride-page .booking-intro p { margin: .4rem 0; }
 .ride-grid { grid-template-columns: minmax(0, 1.65fr) minmax(260px, 1fr); gap: 1.25rem; margin: 1rem 0; }
-.ride-grid--empty { grid-template-columns: minmax(0, 720px); }
 .ride-page .booking-card { margin-bottom: 0; padding: 1.25rem; }
 .ride-page label { margin-top: .9rem; margin-bottom: .35rem; }
 .ride-page :is(input:not([type="radio"]), select) { min-height: 48px; background: var(--surface); }
@@ -14,29 +13,124 @@
 .ride-page [aria-invalid="true"] { border-color: var(--danger); }
 .ride-page .ride-field-error { color: var(--danger); }
 .ride-location-button { display: inline-flex; align-items: center; min-height: 44px; color: var(--text-link); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
-.ride-page .ride-trip { margin-top: 1rem; }
-.ride-page .ride-trip legend { font-size: 1rem; font-weight: 500; margin: 0 0 .4rem; color: var(--text-primary); }
-.ride-trip-options { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
-.ride-page .ride-trip-option { display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-strong); border-radius: var(--radius-md); min-height: 48px; margin: 0; padding: .4rem; cursor: pointer; }
-.ride-trip-option.is-selected { color: var(--palette-white); background: var(--palette-tropical-teal); border-color: var(--palette-tropical-teal); }
-.ride-page .ride-trip-option input { accent-color: var(--palette-white); }
 .ride-page .ride-submit { width: 100%; min-height: 48px; margin: 1.2rem 0 .25rem; }
 .ride-page .ride-consent { font-size: var(--text-sm); line-height: 1.5; margin: .5rem 0 0; }
+.ride-sr-only, .ride-page .ride-segment input, .ride-page .ride-vehicle__input {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* Trip type: two segments, the chosen one filled. */
+.ride-page .ride-trip { margin: 0 0 .25rem; }
+.ride-segmented { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; padding: .25rem; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--background); }
+.ride-page .ride-segment { position: relative; display: flex; align-items: center; justify-content: center; min-height: 2.75rem; margin: 0; padding: .4rem; border-radius: calc(var(--radius-md) - .25rem); color: var(--text-primary); font-weight: 600; cursor: pointer; transition: background-color 180ms ease, color 180ms ease; }
+.ride-page .ride-segment.is-selected { background: var(--brand-secondary); color: var(--on-secondary); }
+.ride-segment:has(input:focus-visible) { outline: 3px solid var(--brand-secondary); outline-offset: 3px; }
+
+/* The return date and time open downwards. The padding keeps their focus rings inside the clip. */
+.ride-return { display: grid; grid-template-rows: 1fr; animation: ride-reveal 240ms var(--ease-premium) both; }
+.ride-return__inner { min-height: 0; overflow: hidden; padding: 0 .5rem .5rem; margin: 0 -.5rem -.5rem; }
+@keyframes ride-reveal { from { grid-template-rows: 0fr; opacity: 0; } to { grid-template-rows: 1fr; opacity: 1; } }
+
+/* Passengers: minus, the number, plus. */
+.ride-stepper { margin-top: .25rem; }
+.ride-stepper__row { display: grid; grid-template-columns: 3rem minmax(0, 7rem) 3rem; gap: .5rem; align-items: center; }
+.ride-page .ride-stepper input { text-align: center; font-weight: 600; -moz-appearance: textfield; appearance: textfield; }
+.ride-page .ride-stepper input::-webkit-inner-spin-button, .ride-page .ride-stepper input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.ride-stepper__button { display: inline-flex; align-items: center; justify-content: center; width: 3rem; min-height: 3rem; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--text-primary); cursor: pointer; }
+.ride-stepper__button:disabled { opacity: .45; cursor: not-allowed; }
+.ride-page .ride-switch { margin: .35rem 0 0; }
+.ride-page .ride-switch-none { margin: .35rem 0 0; font-size: var(--text-sm); }
+
+/* Vehicle categories: a row of cards, swiped on phones, with arrow buttons on wider screens while it overflows. */
+.ride-vehicles { margin-top: 1.75rem; }
+.ride-page .ride-vehicles__legend { margin: 0; font-size: 1rem; font-weight: 500; color: var(--text-primary); }
+.ride-vehicles__head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-height: 2.75rem; margin-bottom: .5rem; }
+.ride-page .ride-vehicles__driver { margin: 0; font-size: var(--text-sm); }
+.ride-vehicles__arrows { display: flex; gap: .5rem; }
+.ride-page .ride-vehicles__arrows .te-button { margin: 0; }
+.ride-vehicles__track {
+  display: flex; gap: .75rem; overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory; scroll-padding-inline: .5rem; scrollbar-width: thin;
+  padding: .5rem; margin: -.5rem;
+}
+.ride-page .ride-vehicle {
+  position: relative; flex: 0 0 min(15.5rem, 82%); scroll-snap-align: start;
+  display: flex; flex-direction: column; align-items: flex-start; gap: .35rem;
+  min-height: 13.5rem; margin: 0; padding: .9rem .9rem 5.75rem;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-card);
+  background: var(--surface); color: var(--text-primary); font-weight: 400; cursor: pointer;
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+.ride-vehicle__name { font-size: var(--text-base); font-weight: 700; line-height: 1.25; }
+.ride-vehicle__badge { padding: .15rem .55rem; border-radius: 999px; background: var(--background-secondary); color: var(--text-on-tint); font-size: var(--text-xs); font-weight: 600; line-height: 1.5; }
+.ride-vehicle__details { display: flex; flex-direction: column; gap: .2rem; }
+.ride-vehicle__description, .ride-vehicle__models, .ride-vehicle__bags { color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.4; }
+.ride-vehicle__models { font-weight: 500; }
+.ride-vehicle__fit { margin-top: .2rem; color: var(--text-primary); font-size: var(--text-xs); font-weight: 700; }
+.ride-vehicle__image { position: absolute; right: .5rem; bottom: .5rem; width: 9.375rem; height: auto; pointer-events: none; }
+.ride-vehicle:has(.ride-vehicle__input:focus-visible) { outline: 3px solid var(--brand-secondary); outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) {
+  .ride-page .ride-vehicle:not(.is-selected):hover { border-color: var(--brand-secondary); }
+}
+/* Too small (or too few passengers): still choosable, quieter. Text keeps its full colour for AA. */
+.ride-page .ride-vehicle.is-dimmed { background: var(--background); border-style: dashed; }
+.ride-vehicle.is-dimmed .ride-vehicle__image { opacity: .4; }
+/* Chosen: the accent fill, with the text that holds AA on it. */
+.ride-page .ride-vehicle.is-selected { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.ride-vehicle.is-selected :is(.ride-vehicle__description, .ride-vehicle__models, .ride-vehicle__bags, .ride-vehicle__fit) { color: var(--on-accent); }
+.ride-vehicle.is-selected .ride-vehicle__badge { background: var(--surface); color: var(--text-primary); }
+.ride-vehicle.is-selected .ride-vehicle__image { opacity: 1; }
+
+/* The summary: the chosen vehicle, large, then the ride. */
 .ride-page .ride-summary { background: var(--palette-sky-mist); }
 :root[data-theme="dark"] .ride-page .ride-summary { background: var(--palette-night-sky); }
 .ride-page .ride-summary h2 { font-size: var(--heading-card); margin-bottom: .8rem; }
+.ride-showcase { display: grid; place-items: center; min-height: 14rem; margin-bottom: 1rem; padding: 1rem; border-radius: var(--radius-md); background: var(--surface); overflow: hidden; }
+.ride-showcase__vehicle { display: grid; justify-items: center; gap: .75rem; width: 100%; margin: 0; text-align: center; animation: ride-showcase-in 320ms var(--ease-premium) both; }
+.ride-showcase__image { width: 100%; max-width: 18.75rem; height: auto; }
+.ride-showcase__vehicle figcaption { display: grid; gap: .15rem; }
+.ride-showcase__vehicle strong { font-size: var(--heading-card); color: var(--text-primary); }
+.ride-showcase__vehicle span { color: var(--text-secondary); font-size: var(--text-sm); }
+.ride-showcase__empty { display: grid; place-items: center; width: 100%; min-height: 12rem; border: 1px dashed var(--border-strong); border-radius: var(--radius-md); }
+.ride-page .ride-showcase__empty p { margin: 0; color: var(--text-secondary); font-weight: 600; }
+@keyframes ride-showcase-in { from { opacity: 0; transform: translateX(1.5rem); } to { opacity: 1; transform: none; } }
 .ride-summary .booking-summary { grid-template-columns: 6rem minmax(0, 1fr); gap: .6rem; font-size: var(--text-sm); }
 .ride-summary dd { margin: 0; }
 .ride-page .booking-price { border-top: 1px solid var(--border); padding-top: .8rem; font-size: var(--text-xs); margin-bottom: 0; }
+
+/* Phones only: the bar that stands in for the summary. */
+.ride-bar { display: none; }
+
 .ride-page .ride-success, .ride-page .ride-requests { margin: 1rem 0; }
 .ride-success h2 { font-size: var(--heading-card); }
 .ride-callback { width: min(440px, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto; background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 1.5rem; margin: auto; }
 .ride-callback::backdrop { background: rgb(16 31 27 / .55); }
 .ride-callback h2 { font-size: var(--heading-sub); margin-bottom: .65rem; }
-.ride-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+@media (min-width: 768px) {
+  .ride-vehicles__track { scrollbar-width: none; }
+  .ride-vehicles__track::-webkit-scrollbar { display: none; }
+}
 @media (max-width: 767px) {
-  .ride-grid, .ride-grid--empty { grid-template-columns: minmax(0, 1fr); }
+  .ride-grid { grid-template-columns: minmax(0, 1fr); }
   .ride-page .booking-card { padding: 1rem; }
   .ride-page .booking-aside { position: static; }
-  .ride-summary .booking-summary { grid-template-columns: 6rem minmax(0, 1fr); }
+  .ride-vehicles__arrows { display: none; }
+  /* The summary collapses into the bar, which carries Continue. */
+  .ride-page .ride-summary, .ride-page .ride-submit { display: none; }
+  .ride-bar {
+    position: sticky; bottom: 0; z-index: 20; display: flex; align-items: center; gap: .75rem;
+    margin: 0 calc(-1 * var(--page-gutter)); padding: .75rem var(--page-gutter) calc(.75rem + env(safe-area-inset-bottom));
+    background: var(--surface); border-top: 1px solid var(--border); box-shadow: 0 -8px 24px rgb(var(--inverse-channels) / .12);
+  }
+  .ride-bar__image { width: 3.75rem; height: auto; flex: none; }
+  .ride-page .ride-bar__name { flex: 1; min-width: 0; margin: 0; color: var(--text-primary); line-height: 1.3; }
+  .ride-bar__name span { display: block; color: var(--text-secondary); font-size: var(--text-sm); }
+  .ride-page .ride-bar .te-button { flex: none; margin: 0; }
+  /* Scroll to top rises above the bar (and fades if they still meet, at the page's end: data-keep-clear). */
+  :root:has(.ride-bar) .te-scroll-top { bottom: calc(5.75rem + env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ride-return, .ride-showcase__vehicle { animation: none; }
+  .ride-page .ride-segment, .ride-page .ride-vehicle { transition: none; }
 }

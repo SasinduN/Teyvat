@@ -8,9 +8,12 @@ import './test-db';
  */
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { after, before, beforeEach, describe, mock, test } from 'node:test';
 
-import { blankLocation, type BookingInput, type BookingRecord } from '../../shared/booking';
+import { blankLocation, type BookingInput, type BookingRecord, type BookingVehicle } from '../../shared/booking';
 import { createApp } from '../src/app';
 import { BRAND } from '../../shared/brand';
 import { dispatchBookingNotifications } from '../src/bookings/notifications';
@@ -31,6 +34,12 @@ import {
   type RunningApp
 } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
+import { SEEDED_VEHICLES, seeded } from './vehicle-categories';
+
+const MIGRATION_0027 = readFileSync(
+  resolve(dirname(fileURLToPath(import.meta.url)), '../../db/migrations/0027_vehicle_categories.sql'),
+  'utf8'
+);
 
 const valid = (): BookingInput => ({
   tourId: null,
@@ -360,6 +369,60 @@ describe('bookings switched on', () => {
       body: JSON.stringify({ id: 'car', name: 'Car', type: 'Car', passengerCapacity: null, luggageCapacity: null, acceptingRequests: true })
     });
     assert.equal(bad.status, 400);
+  });
+
+  test('vehicle categories (0027): the catalogue has every card field, in the admin\'s order', async () => {
+    const c = await (await fetch(`${app.baseUrl}/api/bookings/catalog`)).json();
+    const vehicles: BookingVehicle[] = c.vehicles.filter((v: BookingVehicle) => v.id !== 'test-car');
+    assert.deepEqual(vehicles, SEEDED_VEHICLES, 'the migration and server/test/vehicle-categories.ts agree');
+  });
+
+  test('vehicle categories: the server refuses a bus for 2 (its minimum is 10) and takes 12', async () => {
+    await pool.query("update public.booking_vehicles set accepting_requests = true where id = 'bus'");
+    try {
+      const two = await submitRide({ details: { ...rideDetails(), vehicleId: 'bus', passengers: 2 }, callbackPhone: '+94 771234567' });
+      assert.equal(two.status, 400);
+      assert.match((await two.json()).error.message, /at least 10 passengers/);
+      const twelve = await submitRide({ details: { ...rideDetails(), vehicleId: 'bus', passengers: 12 }, callbackPhone: '+94 771234567' });
+      assert.equal(twelve.status, 201);
+      const off = await submitRide({ details: { ...rideDetails(), vehicleId: 'van', passengers: 2 }, callbackPhone: '+94 771234567' });
+      assert.equal(off.status, 400, 'a category switched off takes nobody');
+    } finally {
+      await pool.query("update public.booking_vehicles set accepting_requests = false where id = 'bus'");
+    }
+  });
+
+  test("vehicle categories: the admin's save keeps every new field, and refuses an image from elsewhere", async () => {
+    const put = (body: unknown) => fetch(`${app.baseUrl}/api/admin/booking-vehicles/van`, {
+      method: 'PUT',
+      headers: { ...browserHeaders(app), ...withSession(adminToken) },
+      body: JSON.stringify(body)
+    });
+    const edited = { ...seeded('van'), description: 'Edited by staff.', exampleModels: ['Toyota HiAce'], minPassengers: 2, sortOrder: 5, imageUrl: '/images/vehicles/bus.svg' };
+    try {
+      assert.equal((await put(edited)).status, 200);
+      const list = await (await fetch(`${app.baseUrl}/api/admin/booking-vehicles`, { headers: withSession(adminToken) })).json();
+      assert.deepEqual(list.vehicles.find((v: BookingVehicle) => v.id === 'van'), edited);
+      assert.equal((await put({ ...edited, imageUrl: 'https://example.com/van.png' })).status, 400, 'not on the image allow-list');
+      assert.equal((await put({ ...edited, minPassengers: 10 })).status, 400, 'a minimum above the capacity');
+    } finally {
+      assert.equal((await put(seeded('van'))).status, 200);
+    }
+  });
+
+  test("vehicle categories: 0027 moves Car from 5 to 4 only while it holds 0018's numbers, and keeps admin text", async () => {
+    const car = () => pool.query("select passenger_capacity, luggage_capacity, description from public.booking_vehicles where id = 'car'").then((r) => r.rows[0]);
+    try {
+      await pool.query("update public.booking_vehicles set passenger_capacity = 5, luggage_capacity = 3 where id = 'car'");
+      await pool.query(MIGRATION_0027);
+      assert.deepEqual(await car(), { passenger_capacity: 4, luggage_capacity: 4, description: seeded('car').description });
+
+      await pool.query("update public.booking_vehicles set passenger_capacity = 6, luggage_capacity = 2, description = 'Staff wording' where id = 'car'");
+      await pool.query(MIGRATION_0027);
+      assert.deepEqual(await car(), { passenger_capacity: 6, luggage_capacity: 2, description: 'Staff wording' }, "an admin's edit stays");
+    } finally {
+      await pool.query("update public.booking_vehicles set passenger_capacity = 4, luggage_capacity = 4, description = $1 where id = 'car'", [seeded('car').description]);
+    }
   });
 
   test('a database failure is a generic 500, never a success', async () => {

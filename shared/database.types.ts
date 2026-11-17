@@ -28,13 +28,18 @@ export type StoredCategory =
 
 export type PhotoAspect = 'square' | 'portrait' | 'landscape';
 
-/** Since 0014_bookings; the request's own shape is `BookingInput` (shared/booking.ts). */
+/** Since 0014_bookings, with 0027's card fields; the request's own shape is `BookingInput` (shared/booking.ts). */
 export interface BookingVehicleRow {
   id: string;
   name: string;
-  type: 'Car' | 'SUV' | 'Van' | 'Minibus';
+  type: 'Car' | 'SUV' | 'Van' | 'Minibus' | 'Bus';
+  description: string | null;
+  example_models: string[];
+  min_passengers: number;
   passenger_capacity: number | null;
   luggage_capacity: number | null;
+  image_url: string | null;
+  sort_order: number;
   accepting_requests: boolean;
 }
 export interface BookingRow {

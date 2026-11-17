@@ -159,8 +159,9 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     const page = await openPage(on, '/booking');
     await waitFor(page, `document.querySelector('.ride-form')`, 'ride form');
     assert.equal(await page.evaluate<string>(`document.querySelector('main h1').textContent`), 'Book Your Ride');
-    assert.equal(await page.evaluate<number>(`document.querySelectorAll('.ride-form input:not([type=radio]), .ride-form select').length`), 6);
-    assert.equal(await page.evaluate<boolean>(`Boolean(document.querySelector('.ride-summary'))`), false, 'no empty summary');
+    assert.equal(await page.evaluate<number>(`document.querySelectorAll('.ride-form input:not([type=radio]), .ride-form select').length`), 5, 'pickup, drop-off, date, time, passengers');
+    assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('.ride-vehicle__input')].map((r) => r.value)`), ['mini', 'car', 'suv'], 'the categories taking requests, in order');
+    assert.ok(await page.evaluate<boolean>(`document.querySelector('.ride-summary').textContent.includes('Choose a vehicle')`), 'the placeholder before a choice');
     assert.equal(await page.evaluate<boolean>(`/Contact details|Customer name|Travel notes|Tours \(optional\)/.test(document.querySelector('.ride-form').textContent)`), false);
     await fill(page, 'Pickup location', 'Matara'); await fill(page, 'Drop-off location', 'Galle');
     await waitFor(page, `document.querySelector('.ride-summary')?.textContent.includes('Matara') && document.querySelector('.ride-summary')?.textContent.includes('Galle')`, 'live route');
@@ -175,10 +176,17 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     for (const width of [320, 375, 768, 1024, 1440]) {
       await page.send('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile: width < 768 });
       await sleep(150);
-      const layout = await page.evaluate<{ overflow: boolean; form: { x: number; bottom: number }; summary: { x: number; y: number } }>(`(() => { const f = document.querySelector('.ride-form').getBoundingClientRect(); const s = document.querySelector('.ride-summary').getBoundingClientRect(); return { overflow: document.documentElement.scrollWidth > innerWidth, form: {x:f.x,bottom:f.bottom}, summary:{x:s.x,y:s.y} }; })()`);
+      await page.evaluate('window.scrollTo(0, 0), true');
+      await sleep(100);
+      const layout = await page.evaluate<{ overflow: boolean; form: { x: number }; summary: { x: number; shown: boolean }; bar: { shown: boolean; bottom: number }; screen: number }>(`(() => { const f = document.querySelector('.ride-form').getBoundingClientRect(); const s = document.querySelector('.ride-summary'); const b = document.querySelector('.ride-bar'); return { overflow: document.documentElement.scrollWidth > innerWidth, form: {x:f.x}, summary:{x:s.getBoundingClientRect().x, shown: getComputedStyle(s).display !== 'none'}, bar: { shown: getComputedStyle(b).display !== 'none', bottom: b.getBoundingClientRect().bottom }, screen: innerHeight }; })()`);
       assert.equal(layout.overflow, false, `no overflow at ${width}`);
-      if (width < 768) assert.ok(layout.summary.y >= layout.form.bottom, `summary below at ${width}`);
-      else assert.ok(layout.summary.x > layout.form.x, `summary beside at ${width}`);
+      if (width < 768) {
+        assert.equal(layout.summary.shown, false, `the summary becomes the bar at ${width}`);
+        assert.ok(layout.bar.shown && Math.abs(layout.bar.bottom - layout.screen) <= 1, `the bar holds the screen's bottom at ${width}`);
+      } else {
+        assert.ok(layout.summary.shown && layout.summary.x > layout.form.x, `summary beside at ${width}`);
+        assert.equal(layout.bar.shown, false, `no bar at ${width}`);
+      }
       const shot = await page.send('Page.captureScreenshot', { captureBeyondViewport: true });
       const directory = join(REPO_ROOT, 'docs/qa-results/rides'); mkdirSync(directory, { recursive: true });
       writeFileSync(join(directory, `ride-${width}.png`), Buffer.from(shot.data as string, 'base64'));
@@ -209,7 +217,7 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     await waitFor(page, `document.body.textContent.includes('must be different')`, 'invalid identical route');
     assert.equal(await page.evaluate<number>('window.__rideOpened.length'), 0);
     await fill(page, 'Drop-off location', 'Galle'); await fill(page, 'Pickup date', '2099-12-20');
-    await fill(page, 'Pickup time', '09:00'); await fill(page, 'Number of passengers', '5'); await fill(page, 'Vehicle category', 'car');
+    await fill(page, 'Pickup time', '09:00'); await fill(page, 'Number of passengers', '5'); await page.evaluate(`document.querySelector('.ride-vehicle__input[value=car]').click(), true`);
     await page.evaluate(`document.querySelector('.ride-form').requestSubmit(), true`);
     await waitFor(page, `document.querySelector('#ride-passengers').getAttribute('aria-invalid') === 'true'`, 'capacity validation');
     assert.equal(await page.evaluate<number>('window.__rideOpened.length'), 0);
@@ -228,7 +236,7 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     const url = new URL(opened[0].url); assert.equal(url.origin, 'https://wa.me'); assert.equal(url.pathname, '/94771236478');
     assert.equal(opened[0].target, '_blank'); assert.equal(opened[0].features, 'noopener,noreferrer');
     const message = url.searchParams.get('text')!;
-    for (const part of ['Pickup: Matara', 'Drop-off: Galle', '2099-12-20 09:00', '2099-12-21 17:30', 'Return route: Galle → Matara', 'Passengers: 2', 'Vehicle: Car', 'UTC+05:30']) assert.ok(message.includes(part), part);
+    for (const part of ['Pickup: Matara', 'Drop-off: Galle', '2099-12-20 09:00', '2099-12-21 17:30', 'Return route: Galle → Matara', 'Passengers: 2', 'Vehicle: Car (up to 4 passengers)', 'UTC+05:30']) assert.ok(message.includes(part), part);
     assert.equal(await page.evaluate<string>(`document.querySelector('.ride-form a[href^="https://wa.me/"]').href`), url.href, 'popup fallback has the same draft after URL normalization');
     assert.equal(await page.evaluate<boolean>(`Boolean(document.querySelector('dialog, .ride-success, .ride-requests'))`), false, 'no admin callback, receipt or request history');
     const requests = await page.evaluate<{path:string;method:string}[]>('window.__bookingRequests');
@@ -237,6 +245,64 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     await fill(page, 'Drop-off location', 'Colombo');
     await waitFor(page, `!document.querySelector('.ride-form a[href^="https://wa.me/"]')`, 'old draft cleared after edits');
     await pool.query('update public.site_settings set whatsapp_number = null where id');
+  });
+
+  test('ride: the vehicle cards are a radio group: arrow keys, a visible focus ring, names with capacity', async () => {
+    const page = await openPage(on, '/booking');
+    await waitFor(page, `document.querySelector('.ride-vehicle__input')`, 'the cards');
+    assert.equal(await page.evaluate<string>(`document.querySelector('.ride-vehicles legend').textContent`), 'Vehicle');
+    assert.equal(await page.evaluate<number>(`(document.querySelector('main').innerText.match(/Driver included/g) ?? []).length`), 1, 'said once');
+    assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('.ride-vehicle__input')].map((r) => r.getAttribute('aria-label'))`),
+      ['Mini, up to 3 passengers', 'Car, up to 4 passengers', 'SUV, up to 5 passengers']);
+    await page.send('Page.bringToFront');
+    await page.evaluate(`document.querySelector('.ride-vehicle__input[value=car]').focus(), true`);
+    await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', text: ' ', windowsVirtualKeyCode: 32 });
+    await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+    await waitFor(page, `document.querySelector('.ride-vehicle__input[value=car]').checked`, 'Space chooses');
+    await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'ArrowRight', code: 'ArrowRight', windowsVirtualKeyCode: 39 });
+    await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'ArrowRight', code: 'ArrowRight', windowsVirtualKeyCode: 39 });
+    await waitFor(page, `document.querySelector('.ride-vehicle__input[value=suv]').checked && document.querySelector('.ride-vehicle.is-selected .ride-vehicle__name').textContent === 'SUV'`, 'the arrow key moves the choice');
+    const ring = await page.evaluate<{ style: string; width: string }>(`(() => { const s = getComputedStyle(document.activeElement.closest('.ride-vehicle')); return { style: s.outlineStyle, width: s.outlineWidth }; })()`);
+    assert.deepEqual(ring, { style: 'solid', width: '3px' }, 'the focused card shows its ring');
+    await waitFor(page, `document.querySelector('.ride-showcase figcaption')?.textContent.includes('SUV')`, 'the summary shows the choice');
+    assert.ok(await page.evaluate<boolean>(`document.querySelector('.ride-showcase__image').getAttribute('src') === '/images/vehicles/suv.svg'`));
+    // Every vehicle image has its size before it loads.
+    assert.ok(await page.evaluate<boolean>(`[...document.querySelectorAll('.ride-vehicle__image, .ride-showcase__image')].every((i) => i.getAttribute('width') && i.getAttribute('height'))`));
+  });
+
+  test('ride: a card that is too small is dimmed but choosable, and offers the smallest that fits', async () => {
+    const page = await openPage(on, '/booking');
+    await waitFor(page, `document.querySelector('.ride-vehicle__input')`, 'the cards');
+    const plus = `[...document.querySelectorAll('.ride-stepper__button')].find((b) => b.getAttribute('aria-label') === 'One passenger more')`;
+    const minus = `[...document.querySelectorAll('.ride-stepper__button')].find((b) => b.getAttribute('aria-label') === 'One passenger fewer')`;
+    assert.equal(await page.evaluate<boolean>(`${minus}.disabled`), true, 'not below 1');
+    for (let i = 0; i < 3; i += 1) await page.evaluate(`${plus}.click(), true`);
+    await waitFor(page, `document.querySelector('#ride-passengers').value === '4'`, 'the stepper counts');
+    const mini = `document.querySelector('.ride-vehicle__input[value=mini]').closest('.ride-vehicle')`;
+    await waitFor(page, `${mini}.classList.contains('is-dimmed') && ${mini}.textContent.includes('Too small for 4')`, 'Mini dimmed');
+    await page.evaluate(`document.querySelector('.ride-vehicle__input[value=mini]').click(), true`);
+    await waitFor(page, `document.querySelector('#ride-passengers-error')?.textContent === 'Passenger count exceeds vehicle capacity.'`, 'the capacity error by the passengers');
+    assert.equal(await page.evaluate<string>(`document.querySelector('#ride-passengers').getAttribute('aria-invalid')`), 'true');
+    assert.ok(await page.evaluate<boolean>(`document.querySelector('.ride-vehicle__input[value=mini]').checked`), 'the choice stays');
+    await page.evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Switch to Car').click(), true`);
+    await waitFor(page, `document.querySelector('.ride-vehicle__input[value=car]').checked && !document.querySelector('#ride-passengers-error')`, 'one tap to the Car');
+    assert.equal(await page.evaluate<string>(`document.querySelector('#ride-passengers-note').textContent`), '4 of 4 passengers');
+    // The limit is the largest category's: the SUV's 5.
+    await page.evaluate(`${plus}.click(), true`);
+    await waitFor(page, `document.querySelector('#ride-passengers').value === '5'`, 'five');
+    assert.equal(await page.evaluate<boolean>(`${plus}.disabled`), true, 'not above the largest category');
+    await waitFor(page, `[...document.querySelectorAll('button')].some((b) => b.textContent === 'Switch to SUV')`, 'the SUV offered for 5');
+  });
+
+  test('ride: with reduced motion the return fields and the chosen vehicle appear without moving', async () => {
+    const page = await openPage(on, '/booking');
+    await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+    await waitFor(page, `document.querySelector('.ride-vehicle__input')`, 'the cards');
+    await page.evaluate(`document.querySelector('input[value=round_trip]').click(), document.querySelector('.ride-vehicle__input[value=car]').click(), true`);
+    await waitFor(page, `document.querySelector('.ride-return') && document.querySelector('.ride-showcase__vehicle')`, 'both shown');
+    assert.deepEqual(await page.evaluate<string[]>(`['.ride-return', '.ride-showcase__vehicle'].map((s) => getComputedStyle(document.querySelector(s)).animationName)`), ['none', 'none']);
+    await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
+    assert.deepEqual(await page.evaluate<string[]>(`['.ride-return', '.ride-showcase__vehicle'].map((s) => getComputedStyle(document.querySelector(s)).animationName)`), ['ride-reveal', 'ride-showcase-in']);
   });
 
   test('on: GPS only when asked, with the explanation beside the button', async () => {

@@ -1,7 +1,7 @@
 import { useId } from 'react';
-import type { BookingVehicle } from '@shared/booking';
+import { checkCapacity, type BookingVehicle } from '@shared/booking';
 
-/** The vehicle categories staff have set up; one that can't take the party is disabled. */
+/** The tour request's vehicle categories; one that can't take the party (too many, or below its minimum) is disabled. */
 export function VehicleSelector({
   vehicles,
   value,
@@ -24,7 +24,7 @@ export function VehicleSelector({
       <select id={id} required value={value} aria-invalid={Boolean(error)} aria-describedby={`${id}-help`} onChange={(e) => onChange(e.target.value)}>
         <option value="">Select a vehicle</option>
         {vehicles.map((v) => (
-          <option key={v.id} value={v.id} disabled={!v.acceptingRequests || v.passengerCapacity === null || passengers > v.passengerCapacity}>
+          <option key={v.id} value={v.id} disabled={checkCapacity(v, passengers) !== null}>
             {v.name}
             {v.passengerCapacity !== null ? ` · up to ${v.passengerCapacity} passengers` : ''}
             {!v.acceptingRequests ? ' · requests unavailable' : ''}

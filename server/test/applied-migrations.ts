@@ -42,6 +42,7 @@ export const APPLIED_MIGRATIONS: Readonly<Record<string, string>> = {
   '0024_site_settings_brand.sql': '41fce8b396c878a4a292115c3991e5c47017c4da6247d59e36188bab49826a12',
   '0025_rebrand_seed_text.sql': '0af53134def62b8bbeb0d449d2c0aa5d1bc284567eb9d23576bdc6b050980693',
   '0026_seed_contact_placeholders.sql': '0e1db0b6659c07f48dee5e9d8486481f4899224312162b68f97b92a4bf20cff7',
+  '0027_vehicle_categories.sql': '6a4ae219ca9d786486435d5add5747dcd3c7f13098a8135b1b1fff993d087f17',
 };
 
 /** A migration's hash, as listed above: SHA-256 of its text with \r\n as \n. */

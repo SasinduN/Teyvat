@@ -53,7 +53,7 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     assert.equal(await page.evaluate<boolean>(`/The Premium Sri Lanka Experience|Currently featured:/.test(document.querySelector('#hero').textContent)`), false);
     assert.equal(await page.evaluate<number>(`document.querySelectorAll('.te-hero-badge,.te-hero-caption').length`), 0);
     assert.equal((await page.evaluate<string>(`document.querySelector('#hero h1').textContent`)).replace(/\s+/g, ' ').trim(), BRAND.tagline, 'the headline is the tagline');
-    assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('.te-hero-actions a')].map(a=>a.getAttribute('href'))`), ['/explore','/plan']);
+    assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('.te-hero-actions a')].map(a=>a.getAttribute('href'))`), ['/explore','/plan','/booking'], 'bookings on: the hero\'s own "Book a ride" too (docs/plans/ride-vehicle-picker.md, part 9)');
     await wait(page, `document.querySelector('.te-hero-slide[data-active=true] img')?.naturalWidth > 0`, 'initial photograph');
     const first = await page.evaluate<string>(`document.querySelector('.te-hero-slide[data-active=true] img').getAttribute('src')`);
     // Reading/focus within the hero deliberately suspends automatic playback.
@@ -157,7 +157,8 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     await wait(page,`location.pathname==='/booking' && document.querySelector('main h1')?.textContent==='Book Your Ride'`,'ride navigation');
     assert.equal(await page.evaluate<number>(`document.querySelectorAll('${CTA}').length`),0,'no redundant CTA on booking');
     await wait(page,`document.querySelector('.ride-form')`,'ride catalog loaded');
-    assert.equal(await page.evaluate<number>(`document.querySelectorAll('.ride-form input:not([type=radio]),.ride-form select').length`),6,'ride form unchanged');
+    assert.equal(await page.evaluate<number>(`document.querySelectorAll('.ride-form input:not([type=radio]),.ride-form select').length`),5,'ride form: pickup, drop-off, date, time, passengers');
+    assert.ok(await page.evaluate<number>(`document.querySelectorAll('.ride-form .ride-vehicle__input').length`)>0,'and the vehicle cards');
     await page.send('Page.navigate',{url:on.baseUrl+'/booking/?tour=island-in-7-days'});
     await wait(page,`document.querySelector('main h1')`,'booking URL variant');
     assert.equal(await page.evaluate<number>(`document.querySelectorAll('${CTA}').length`),0,'booking trailing slash/query hidden');
