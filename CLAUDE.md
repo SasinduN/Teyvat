@@ -267,8 +267,11 @@ Update the Status column when a phase lands.
     numbers in components.
   - The ride page offers only categories taking requests, in `sort_order`. Mini, Car and SUV are on;
     Mini Van, Van and Bus are seeded off until the owner confirms them.
-  - The images are placeholder SVGs in `public/images/vehicles/`, replaced through Admin → Media and
-    the category's image field (Admin → Bookings), never by committing a WebP.
+  - Each category shows its icon (`VehicleIcon`, seven inline SVGs, colours from the `--vehicle-*`
+    tokens, so a selected card recolours them), unless Admin → Bookings sets an image from the media
+    library, which replaces it. Never a committed image.
+  - The floating Book a ride steps out while the hero's own Book a ride is on screen
+    (`FloatingActions`); `browser-floating-visible` expects it.
   - The hero's "Book a ride" slide (second) and button exist only with bookings on
     (`shared/ride-slide.ts`, which also holds the slide's image); `browser-hero-booking`.
 

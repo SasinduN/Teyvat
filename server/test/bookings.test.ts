@@ -398,13 +398,15 @@ describe('bookings switched on', () => {
       headers: { ...browserHeaders(app), ...withSession(adminToken) },
       body: JSON.stringify(body)
     });
-    const edited = { ...seeded('van'), description: 'Edited by staff.', exampleModels: ['Toyota HiAce'], minPassengers: 2, sortOrder: 5, imageUrl: '/images/vehicles/bus.svg' };
+    const edited = { ...seeded('van'), description: 'Edited by staff.', exampleModels: ['Toyota HiAce'], minPassengers: 2, sortOrder: 5, icon: 'bus', imageUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957' };
     try {
       assert.equal((await put(edited)).status, 200);
       const list = await (await fetch(`${app.baseUrl}/api/admin/booking-vehicles`, { headers: withSession(adminToken) })).json();
       assert.deepEqual(list.vehicles.find((v: BookingVehicle) => v.id === 'van'), edited);
       assert.equal((await put({ ...edited, imageUrl: 'https://example.com/van.png' })).status, 400, 'not on the image allow-list');
       assert.equal((await put({ ...edited, minPassengers: 10 })).status, 400, 'a minimum above the capacity');
+      assert.equal((await put({ ...edited, icon: 'rocket' })).status, 400, 'only the seven icons');
+      assert.equal((await put({ ...edited, imageUrl: '/images/vehicles/van.svg' })).status, 400, 'images come from the media library');
     } finally {
       assert.equal((await put(seeded('van'))).status, 200);
     }

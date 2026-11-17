@@ -265,7 +265,17 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     const ring = await page.evaluate<{ style: string; width: string }>(`(() => { const s = getComputedStyle(document.activeElement.closest('.ride-vehicle')); return { style: s.outlineStyle, width: s.outlineWidth }; })()`);
     assert.deepEqual(ring, { style: 'solid', width: '3px' }, 'the focused card shows its ring');
     await waitFor(page, `document.querySelector('.ride-showcase figcaption')?.textContent.includes('SUV')`, 'the summary shows the choice');
-    assert.ok(await page.evaluate<boolean>(`document.querySelector('.ride-showcase__image').getAttribute('src') === '/images/vehicles/suv.svg'`));
+    // No image chosen: the category's own icon, inline, in the summary and on the card.
+    assert.equal(await page.evaluate<string>(`document.querySelector('.ride-showcase svg[data-vehicle-icon]').dataset.vehicleIcon`), 'suv');
+    // The selected card recolours its icon (dark body, pale glass on the gold); the others keep the theme's.
+    const fills = await page.evaluate<{ selected: string; other: string }>(`(() => {
+      const body = (id) => getComputedStyle(document.querySelector('.ride-vehicle__input[value=' + id + ']').closest('.ride-vehicle').querySelector('.vi-body')).fill;
+      return { selected: body('suv'), other: body('car') };
+    })()`);
+    assert.equal(fills.selected, 'rgb(22, 22, 22)', 'selected: #161616');
+    assert.notEqual(fills.other, fills.selected);
+    // Two badges from the catalog: passengers and bags.
+    assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('.ride-vehicle__input[value=car] ~ .ride-vehicle__badges .ride-vehicle__badge')].map((b) => b.textContent)`), ['Up to 4 passengers', '4 bags']);
     // Every vehicle image has its size before it loads.
     assert.ok(await page.evaluate<boolean>(`[...document.querySelectorAll('.ride-vehicle__image, .ride-showcase__image')].every((i) => i.getAttribute('width') && i.getAttribute('height'))`));
   });

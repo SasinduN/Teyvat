@@ -118,6 +118,32 @@ describe('the hero\'s "Book a ride", off and on, in Chrome', { skip, timeout: 3 
     await onPhone.send('Page.close');
   });
 
+  test("the floating Book a ride steps out while the hero's is on screen, and comes back once it scrolls away", async () => {
+    const floating = `document.querySelector('[data-floating-booking]')?.dataset.state`;
+    for (const width of [375, 1280]) {
+      const page = await home(on, width);
+      await waitFor(page, `document.querySelector('[data-hero-booking]') && ${floating} === 'hidden'`, `hidden beside the hero's at ${width}`);
+      assert.equal(await page.evaluate<boolean>(`document.querySelector('[data-floating-booking]').hasAttribute('inert')`), true, 'and out of the tab order');
+      assert.equal(await page.evaluate<string>(`document.querySelector('[data-whatsapp-button]')?.dataset.state ?? 'none'`) !== 'hidden', true, 'WhatsApp stays');
+      await page.evaluate(`window.scrollTo(0, document.querySelector('#hero').offsetHeight + 400), true`);
+      await waitFor(page, `${floating} === 'shown'`, `back once the hero has gone at ${width}`);
+      await page.evaluate('window.scrollTo(0, 0), true');
+      await waitFor(page, `${floating} === 'hidden'`, `hidden again at the top at ${width}`);
+      await page.send('Page.close');
+    }
+    // Elsewhere, with no hero button, it shows as before.
+    const about = await chrome.newPage();
+    await about.send('Page.navigate', { url: `${on.baseUrl}/about` });
+    await waitFor(about, `document.body.dataset.route && ${floating} === 'shown'`, 'shown on /about');
+    await about.send('Page.close');
+    // Bookings off: no hero button and no floating Book a ride, as today; WhatsApp unchanged.
+    const page = await home(off, 375);
+    await waitFor(page, `document.querySelector('[data-whatsapp-button]')`, 'the WhatsApp button');
+    assert.equal(await page.evaluate<boolean>(`Boolean(document.querySelector('[data-hero-booking], [data-floating-booking]'))`), false);
+    assert.notEqual(await page.evaluate<string>(`document.querySelector('[data-whatsapp-button]').dataset.state`), 'hidden');
+    await page.send('Page.close');
+  });
+
   test('on: the ride slide is second, and the first photo stays first', async () => {
     const page = await home(on);
     const shown = await slides(page);
@@ -143,7 +169,9 @@ describe('the hero\'s "Book a ride", off and on, in Chrome', { skip, timeout: 3 
 
       await page.evaluate(`document.querySelector('[aria-label="Next featured destination"]').click(), true`);
       await waitFor(page, `document.querySelectorAll('#hero .te-hero-slide')[1].dataset.active === 'true'`, `the ride slide at ${width}`);
-      assert.equal(await page.evaluate<string>(`document.querySelectorAll('#hero .te-hero-slide')[1].querySelector('img').getAttribute('src')`), RIDE_SLIDE_IMAGE);
+      // RIDE_SLIDE_IMAGE unset: the slide draws the van and car icons, inline.
+      assert.equal(RIDE_SLIDE_IMAGE, null);
+      assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('#hero .te-hero-slide')[1].querySelectorAll('[data-ride-art] svg[data-vehicle-icon]')].map((s) => s.dataset.vehicleIcon)`), ['van', 'car']);
       await waitFor(page, `${rideLine} === 'visible'`, 'the ride line');
       assert.equal(
         await page.evaluate<string>(`document.querySelector('[data-hero-ride-line]').textContent`),

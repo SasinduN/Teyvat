@@ -4,6 +4,7 @@ import { useReducedMotion } from 'framer-motion';
 import { Pause, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useBrand, useFeatures, useHeroSlides, useSiteSettings } from '@/hooks/useSiteContent';
 import { RIDE_SLIDE_COPY, RIDE_SLIDE_IMAGE_SIZE, withRideSlide } from '@shared/ride-slide';
+import { VehicleIcon } from './booking/VehicleIcon';
 import { heroHeadlineParts } from '@shared/brand';
 import { SiteLink } from './SiteLink';
 import { paths } from '@shared/site-paths';
@@ -60,6 +61,8 @@ export const HeroSection: React.FC = () => {
       const image = slide.querySelector('img');
       if (image?.complete && image.naturalWidth > 0 && image.getAttribute('src') === sources[index]) ready.add(index);
     });
+    // The ride slide drawn with icons has nothing to load: it's ready at once.
+    sources.forEach((source, index) => { if (source === '') ready.add(index); });
     setReadySlides(ready);
   }, [slideSources]);
   useEffect(() => { setSeenSlides(previous => new Set([...previous, currentBg])); }, [currentBg]);
@@ -93,11 +96,16 @@ export const HeroSection: React.FC = () => {
       {/* Background Image Carousel with Smooth Crossfade */}
       {HERO_IMAGES.map((bg, idx) => (
         <div
-          key={bg.url} aria-hidden={idx !== currentBg} data-active={idx === currentBg}
+          key={bg.url || bg.id} aria-hidden={idx !== currentBg} data-active={idx === currentBg}
           className={'ride' in bg ? 'te-hero-slide te-hero-slide--ride' : 'te-hero-slide'}
         >
-          {seenSlides.has(idx) && 'ride' in bg && <img className="te-hero-ride-art" src={bg.url} alt="" {...RIDE_SLIDE_IMAGE_SIZE}
-            onLoad={() => setReadySlides(previous => previous.has(idx) ? previous : new Set([...previous, idx]))} />}
+          {seenSlides.has(idx) && 'ride' in bg && (bg.url
+            ? <img className="te-hero-ride-art" src={bg.url} alt="" {...RIDE_SLIDE_IMAGE_SIZE}
+                onLoad={() => setReadySlides(previous => previous.has(idx) ? previous : new Set([...previous, idx]))} />
+            : <div className="te-hero-ride-art te-hero-ride-icons vehicle-icons--on-dark" data-ride-art>
+                <VehicleIcon name="van" width={360} height={192} className="te-hero-ride-van" />
+                <VehicleIcon name="car" width={330} height={176} className="te-hero-ride-car" />
+              </div>)}
           {seenSlides.has(idx) && !('ride' in bg) && <TravelImage fullWidth loading="eager" fetchPriority={idx === currentBg ? 'high' : 'low'} sizes="100vw"
             onLoad={() => setReadySlides(previous => previous.has(idx) ? previous : new Set([...previous, idx]))}
             src={bg.url}

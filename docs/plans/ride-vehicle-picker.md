@@ -1,7 +1,13 @@
 # Plan: the ride page's vehicle picker, vehicle categories and a "Book a ride" hero slide
 
-Status: APPROVED (2026-11-17), all parts. Building on `feat/ride-vehicle-picker`.
-One choice is still open: the layout of the hero's fixed "Book a ride" button (part 9).
+Status: APPROVED (2026-11-17). Parts 1 to 10 are in PR #65; the Mini Lorry (part 10) is its own PR
+next, waiting for the owner's answers.
+
+- **Hero button layout (part 9):** "replace". Below 640 px, with bookings on, the hero shows Plan
+  Your Journey and Book a ride; wider screens keep Explore Sri Lanka too.
+- **Floating Book a ride:** it hides while the hero's own Book a ride is on screen (an
+  IntersectionObserver in `FloatingActions`) and comes back once the hero scrolls away. At 120% on
+  phones the two had met.
 
 Branch: `feat/ride-vehicle-picker`, from `origin/main` (`5ae0c8a`). This is a public
 design change: before/after screenshots at 1280 and 375 px in both themes, and
@@ -269,7 +275,11 @@ The contents stay the same. Only the vehicle line changes:
 - **Screenshots:** the home hero with the flag on, at 1280 and 375 px, both
   themes, before and after, plus the two button layouts at 375 px.
 
-## 10. The icon set and the Mini Lorry (proposed 2026-11-17, waiting for answers)
+## 10. The icon set (approved and built 2026-11-17) and the Mini Lorry (next PR)
+
+Approved with the four differences below. One change to the fourth: the image field stays.
+If an image is set it replaces the icon; if not, the chosen icon shows. Each seeded category
+defaults to its matching icon (0027, which was still unapplied in production, so it was edited).
 
 Source: the "Ride vehicle icon set" design canvas (seven icons on a 120 × 64 grid).
 

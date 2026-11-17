@@ -113,12 +113,22 @@ export type BookingDetails = BookingInput & {
   customerUserId?: string;
 };
 
-/** A vehicle image: placeholder artwork shipped with the site, or an https URL (the media library). */
+/**
+ * The vehicle icon set (src/components/booking/VehicleIcon.tsx). A category shows its icon unless
+ * it has an image. `mini-lorry` is drawn for the goods categories still to come.
+ */
+export const VEHICLE_ICONS = ['mini', 'car', 'suv', 'mini-van', 'van', 'bus', 'mini-lorry'] as const;
+export type VehicleIconName = (typeof VEHICLE_ICONS)[number];
+export const VEHICLE_ICON_LABELS: Record<VehicleIconName, string> = {
+  mini: 'Mini', car: 'Car', suv: 'SUV', 'mini-van': 'Mini Van', van: 'Van', bus: 'Bus', 'mini-lorry': 'Mini Lorry'
+};
+
+/** A vehicle image, which replaces the icon: an https URL from the media library (the server checks the host). */
 const vehicleImage = z
   .string()
   .trim()
   .max(500)
-  .refine((v) => /^\/images\/vehicles\/[a-z0-9-]+\.svg$/.test(v) || /^https:\/\/[^\s]+$/.test(v), 'Choose an image from the media library.');
+  .refine((v) => /^https:\/\/[^\s]+$/.test(v), 'Choose an image from the media library.');
 
 /**
  * A vehicle category. Passenger counts never include the driver: every ride
@@ -135,6 +145,7 @@ export const vehicleSchema = z
     minPassengers: z.number().int().min(1).max(100).default(1),
     passengerCapacity: z.number().int().min(1).max(100).nullable(),
     luggageCapacity: z.number().int().min(0).max(100).nullable(),
+    icon: z.enum(VEHICLE_ICONS).default('car'),
     imageUrl: z.preprocess((v) => (v === '' || v === undefined ? null : v), vehicleImage.nullable()),
     sortOrder: z.number().int().min(0).max(10000).default(0),
     acceptingRequests: z.boolean()

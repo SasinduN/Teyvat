@@ -874,6 +874,11 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 .te-hero-slide--ride { background: var(--inverse-surface); }
 /* Clear of the floating buttons (lower right) and the slide controls. */
 .te-hero-ride-art { position: absolute; right: calc(max(1rem, (100vw - var(--container-max)) / 2) + 4rem); top: 50%; width: min(40vw, 38rem); height: auto; transform: translateY(-42%); }
+/* The icons: the van behind, the car in front and lower, on the same ground. */
+.te-hero-ride-icons { aspect-ratio: 2 / 1; }
+.te-hero-ride-icons .vehicle-icon { position: absolute; height: auto; }
+.te-hero-ride-van { left: 0; top: 0; width: 58%; }
+.te-hero-ride-car { right: 0; bottom: 0; width: 54%; }
 /* No photo under this slide's copy, so no photo overlay: the dark page colour holds the contrast. */
 .te-hero-overlay { transition: opacity 700ms ease; }
 .te-hero:has(.te-hero-slide--ride[data-active="true"]) .te-hero-overlay { opacity: 0; }
@@ -886,7 +891,8 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   .te-hero-actions .te-hero-action--wide-only { display: none; }
 }
 @media (max-width: 767px) {
-  .te-hero-ride-art { top: auto; right: auto; left: 1rem; bottom: 4.5rem; width: min(68vw, 20rem); transform: none; }
+  /* Only the height left under the copy (about 42.5rem, in rem so it grows with the text size): smaller, or none, rather than under the buttons. */
+  .te-hero-ride-art { top: auto; right: auto; left: 1rem; bottom: 4.5rem; width: clamp(0px, (100svh - 42.5rem) * 2, min(60vw, 18rem)); transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .te-hero-subtitle--stack > span, .te-hero-overlay { transition: none; }

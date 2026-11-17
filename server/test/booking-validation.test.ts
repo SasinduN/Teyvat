@@ -129,6 +129,8 @@ test('capacity: a minimum above the maximum is refused, and the words never coun
   assert.ok(vehicleSchema.safeParse({ ...seeded('car'), imageUrl: '' }).success, 'an empty image is none');
   assert.ok(!vehicleSchema.safeParse({ ...seeded('car'), imageUrl: 'javascript:alert(1)' }).success);
   assert.ok(!vehicleSchema.safeParse({ ...seeded('car'), imageUrl: '/images/../secret.svg' }).success);
+  assert.ok(!vehicleSchema.safeParse({ ...seeded('car'), icon: 'rocket' }).success, 'one of the seven icons');
+  assert.equal(vehicleSchema.parse({ ...seeded('car'), icon: undefined }).icon, 'car', 'the car by default');
   assert.equal(passengerRange(seeded('car')), 'up to 4 passengers');
   assert.equal(passengerRange(seeded('bus')), '10–30 passengers');
   assert.equal(passengerRange({ minPassengers: 1, passengerCapacity: 1 }), 'up to 1 passenger');

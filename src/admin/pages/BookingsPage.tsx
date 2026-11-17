@@ -5,6 +5,8 @@ import {
   BOOKING_API,
   BOOKING_STATUSES,
   canTransition,
+  VEHICLE_ICON_LABELS,
+  VEHICLE_ICONS,
   type BookingRecord,
   type BookingStatus,
   type BookingVehicle
@@ -12,6 +14,7 @@ import {
 import { useFeatures, useSiteContent } from '@/hooks/useSiteContent';
 import { bookingRequest } from '@/lib/booking-client';
 import { ImagePicker } from '@/admin/components/ImagePicker';
+import { VehicleIcon } from '@/components/booking/VehicleIcon';
 import {
   Badge,
   Button,
@@ -43,6 +46,7 @@ const EMPTY_VEHICLE: BookingVehicle = {
   minPassengers: 1,
   passengerCapacity: null,
   luggageCapacity: null,
+  icon: 'car',
   imageUrl: null,
   sortOrder: 0,
   acceptingRequests: false
@@ -359,10 +363,24 @@ const Bookings: React.FC = () => {
             />
             <FieldHelp>Smaller numbers come first.</FieldHelp>
           </div>
+          <div className="space-y-1.5">
+            <FieldLabel htmlFor="vehicle-icon">Icon</FieldLabel>
+            <div className="flex items-center gap-3">
+              <Select id="vehicle-icon" value={vehicle.icon} onChange={(e) => setVehicle((v) => ({ ...v, icon: e.target.value as BookingVehicle['icon'] }))}>
+                {VEHICLE_ICONS.map((icon) => (
+                  <option key={icon} value={icon}>
+                    {VEHICLE_ICON_LABELS[icon]}
+                  </option>
+                ))}
+              </Select>
+              <VehicleIcon name={vehicle.icon} width={75} height={40} />
+            </div>
+            <FieldHelp>Shown on the ride page unless an image is chosen below.</FieldHelp>
+          </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <FieldLabel htmlFor="vehicle-image">Image</FieldLabel>
+            <FieldLabel htmlFor="vehicle-image">Image (optional)</FieldLabel>
             <ImagePicker id="vehicle-image" folder="library" value={vehicle.imageUrl ?? ''} onChange={(url) => setVehicle((v) => ({ ...v, imageUrl: url || null }))} />
-            <FieldHelp>The vehicle on a transparent background, seen from the front three-quarters.</FieldHelp>
+            <FieldHelp>If set, it replaces the icon: the vehicle on a transparent background, facing right.</FieldHelp>
           </div>
           <label className="flex items-center gap-2 self-end text-sm text-[var(--text-primary)]">
             <input type="checkbox" checked={vehicle.acceptingRequests} onChange={(e) => setVehicle((v) => ({ ...v, acceptingRequests: e.target.checked }))} />

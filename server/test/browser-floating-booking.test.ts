@@ -61,7 +61,9 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     await page.evaluate(`document.querySelector('[aria-label="Pause slideshow"]').click(); true`);
     assert.equal(await page.evaluate<string>(`document.querySelector('[aria-label="Resume slideshow"]').getAttribute('aria-pressed')`), 'true');
     await page.evaluate(`document.querySelector('[aria-label="Next featured destination"]').click(); true`);
-    await wait(page, `document.querySelector('.te-hero-slide[data-active=true] img')?.naturalWidth > 0 && document.querySelector('.te-hero-slide[data-active=true] img')?.getAttribute('src') !== ${JSON.stringify(first)} && document.querySelector('#hero').getAttribute('aria-busy') === 'false'`, 'next loaded photograph');
+    // Bookings on, the next slide is the "Book a ride" slide (drawn inline, no photo to load), else the next photograph.
+    const moved = `(() => { const slide = document.querySelector('.te-hero-slide[data-active=true]'); if (slide?.querySelector('[data-ride-art]')) return true; const img = slide?.querySelector('img'); return img?.naturalWidth > 0 && img.getAttribute('src') !== ${JSON.stringify(first)}; })()`;
+    await wait(page, `${moved} && document.querySelector('#hero').getAttribute('aria-busy') === 'false'`, 'next loaded slide');
     await page.evaluate(`document.querySelector('[aria-label="Previous featured destination"]').click(); true`);
     await wait(page, `document.querySelector('.te-hero-slide[data-active=true] img')?.getAttribute('src') === ${JSON.stringify(first)}`, 'previous photograph');
     await sleep(7300);
@@ -69,7 +71,7 @@ describe('clean hero and floating ride CTA in Chrome', { skip, timeout: 240_000 
     await page.evaluate(`document.querySelector('[aria-label="Resume slideshow"]').click(); true`);
     await page.evaluate(`document.querySelector('header a').focus(); true`);
     assert.equal(await page.evaluate<string>(`document.querySelector('[aria-label="Pause slideshow"]').getAttribute('aria-pressed')`), 'false');
-    await wait(page, `document.querySelector('.te-hero-slide[data-active=true] img')?.naturalWidth > 0 && document.querySelector('.te-hero-slide[data-active=true] img')?.getAttribute('src') !== ${JSON.stringify(first)}`, 'automatic resumed slide');
+    await wait(page, moved, 'automatic resumed slide');
     const directory=join(root,'docs/qa-results/content-cleanup');
     mkdirSync(directory,{recursive:true});
     const shot=await page.send('Page.captureScreenshot',{format:'png'});writeFileSync(join(directory,'home-clean.png'),Buffer.from(shot.data as string,'base64'));

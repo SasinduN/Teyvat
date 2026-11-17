@@ -1,14 +1,21 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { checkCapacity, passengerRange, type BookingVehicle } from '@shared/booking';
+import { VehicleIcon } from './VehicleIcon';
 
-/** A category's image at a fixed size, so nothing shifts while it loads; nothing when it has none. */
+/**
+ * A category's picture at a fixed size, so nothing shifts: its image when the admin chose one,
+ * else its icon (inline, so a selected card can recolour it).
+ */
 export function VehicleImage({ vehicle, width, height, className, eager = false }: {
   vehicle: BookingVehicle; width: number; height: number; className?: string; eager?: boolean;
 }) {
-  if (!vehicle.imageUrl) return null;
-  return <img className={className} src={vehicle.imageUrl} alt="" width={width} height={height} decoding="async" loading={eager ? 'eager' : 'lazy'} />;
+  if (vehicle.imageUrl) return <img className={className} src={vehicle.imageUrl} alt="" width={width} height={height} decoding="async" loading={eager ? 'eager' : 'lazy'} />;
+  return <VehicleIcon name={vehicle.icon} width={width} height={height} className={className} />;
 }
+
+/** "4 bags", or "1 bag". */
+const bagsLabel = (bags: number) => `${bags} ${bags === 1 ? 'bag' : 'bags'}`;
 
 /** "Up to 4 passengers", capitalised for a badge. */
 export const rangeLabel = (v: BookingVehicle) => passengerRange(v).replace(/^u/, 'U');
@@ -77,16 +84,18 @@ export function VehiclePicker({ vehicles, value, passengers, onChange, error }: 
           const selected = v.id === value;
           const describedBy = `${id}-${v.id}-details`;
           return (
-            <label key={v.id} className={`ride-vehicle${selected ? ' is-selected' : ''}${note ? ' is-dimmed' : ''}`}>
+            <label key={v.id} className={`ride-vehicle${selected ? ' is-selected vehicle-icons--selected' : ''}${note ? ' is-dimmed' : ''}`}>
               <input type="radio" name={`${id}-vehicle`} value={v.id} checked={selected} className="ride-vehicle__input"
                 aria-label={`${v.name}, ${passengerRange(v)}`} aria-describedby={describedBy}
                 onChange={() => onChange(v.id)} />
               <span className="ride-vehicle__name">{v.name}</span>
-              <span className="ride-vehicle__badge">{rangeLabel(v)}</span>
+              <span className="ride-vehicle__badges">
+                <span className="ride-vehicle__badge">{rangeLabel(v)}</span>
+                {v.luggageCapacity !== null && <span className="ride-vehicle__badge">{bagsLabel(v.luggageCapacity)}</span>}
+              </span>
               <span className="ride-vehicle__details" id={describedBy}>
                 {v.description && <span className="ride-vehicle__description">{v.description}</span>}
                 {v.exampleModels.length > 0 && <span className="ride-vehicle__models">{v.exampleModels.join(', ')}</span>}
-                {v.luggageCapacity !== null && <span className="ride-vehicle__bags">{v.luggageCapacity} {v.luggageCapacity === 1 ? 'bag' : 'bags'}</span>}
                 {note && <span className="ride-vehicle__fit">{note}</span>}
               </span>
               <VehicleImage vehicle={v} width={150} height={80} className="ride-vehicle__image" />

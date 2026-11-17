@@ -102,7 +102,7 @@ async function limit(req: Request, action: LimitedAction): Promise<void> {
 const uuid = z.string().uuid();
 const VEHICLE_SQL = `select id, name, type, description, example_models as "exampleModels",
   min_passengers as "minPassengers", passenger_capacity as "passengerCapacity",
-  luggage_capacity as "luggageCapacity", image_url as "imageUrl", sort_order as "sortOrder",
+  luggage_capacity as "luggageCapacity", icon, image_url as "imageUrl", sort_order as "sortOrder",
   accepting_requests as "acceptingRequests"
   from public.booking_vehicles`;
 /** The picker's order: the admin's sort order, then the name. */
@@ -521,17 +521,17 @@ bookingsRouter.put(
   asyncRoute(async (req, res) => {
     const v = parse(vehicleSchema, req.body);
     if (v.id !== req.params.id) throw new ApiError('bad_request', 'Vehicle ID mismatch.');
-    if (v.imageUrl?.startsWith('https:') && !isAllowedImageUrl(v.imageUrl, allowedImageOrigins(mediaOf(req)?.publicBaseUrl ?? null))) {
+    if (v.imageUrl && !isAllowedImageUrl(v.imageUrl, allowedImageOrigins(mediaOf(req)?.publicBaseUrl ?? null))) {
       throw new ApiError('bad_request', IMAGE_HOST_REFUSED);
     }
     await pool.query(
       `insert into public.booking_vehicles (id, name, type, description, example_models, min_passengers,
-         passenger_capacity, luggage_capacity, image_url, sort_order, accepting_requests)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         passenger_capacity, luggage_capacity, icon, image_url, sort_order, accepting_requests)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        on conflict (id) do update set name = $2, type = $3, description = $4, example_models = $5, min_passengers = $6,
-         passenger_capacity = $7, luggage_capacity = $8, image_url = $9, sort_order = $10, accepting_requests = $11`,
+         passenger_capacity = $7, luggage_capacity = $8, icon = $9, image_url = $10, sort_order = $11, accepting_requests = $12`,
       [v.id, v.name, v.type, v.description, v.exampleModels, v.minPassengers, v.passengerCapacity, v.luggageCapacity,
-        v.imageUrl, v.sortOrder, v.acceptingRequests]
+        v.icon, v.imageUrl, v.sortOrder, v.acceptingRequests]
     );
     res.json(v);
   })
