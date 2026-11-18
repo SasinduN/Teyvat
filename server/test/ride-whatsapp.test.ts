@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { blankLocation, type BookingVehicle } from '../../shared/booking';
-import { initialRide, withTripType, type RideInput } from '../../shared/ride';
+import { initialRide, withTripType, type GoodsInput, type RideInput } from '../../shared/ride';
 import { seeded, switchedOn } from './vehicle-categories';
-import { rideWhatsAppUrl } from '../../shared/ride-whatsapp';
+import { goodsWhatsAppUrl, rideWhatsAppUrl } from '../../shared/ride-whatsapp';
 
 const vehicle: BookingVehicle = seeded('car');
 const ride = (): RideInput => ({ ...initialRide(), pickup: blankLocation('Matara'), dropoff: blankLocation('Galle'), departureDate: '2099-12-20', departureTime: '09:15', passengers: 2, vehicleId: 'car' });
@@ -74,4 +74,53 @@ test('capacity, category availability and selected vehicle must be valid', () =>
   assert.throws(() => draft({ ...ride(), passengers: 5 }), /capacity/);
   assert.throws(() => rideWhatsAppUrl('94771236478', ride(), { ...vehicle, acceptingRequests: false }), /not accepting/);
   assert.throws(() => rideWhatsAppUrl('94771236478', ride(), { ...vehicle, id: 'suv' }), /supported vehicle/);
+});
+
+const lorry = seeded('mini-lorry');
+const goods = (): GoodsInput => ({ pickup: blankLocation('Matara'), dropoff: blankLocation('Galle'), tripType: 'one_way', departureDate: '2099-12-20', departureTime: '09:15', returnDate: null, returnTime: null, vehicleId: 'mini-lorry', goods: 'Two suitcases and a bicycle', weightKg: 60, riders: 0, returnLoad: null });
+const goodsText = (value: GoodsInput) => new URL(goodsWhatsAppUrl('+94 77 123 6478', value, lorry)).searchParams.get('text');
+test('goods: the whole one-way message, word for word', () => {
+  assert.equal(goodsText(goods()), [
+    "Hi! I'd like to enquire about moving goods in Sri Lanka.",
+    'Pickup: Matara',
+    'Drop-off: Galle',
+    'Trip type: One way',
+    'Pickup date/time: 2099-12-20 09:15 (Sri Lanka time, UTC+05:30)',
+    'Goods: Two suitcases and a bicycle',
+    'Weight: about 60 kg',
+    'Riding along: nobody',
+    'Vehicle: Mini Lorry (up to 100 kg)',
+    'Please confirm the fare and availability.'
+  ].join('\n'));
+});
+test('goods: the whole round-trip message, with a rider and no weight', () => {
+  const value: GoodsInput = { ...goods(), tripType: 'round_trip', returnDate: '2099-12-21', returnTime: '17:30', weightKg: null, riders: 1, returnLoad: 'rider' };
+  assert.equal(goodsText(value), [
+    "Hi! I'd like to enquire about moving goods in Sri Lanka.",
+    'Pickup: Matara',
+    'Drop-off: Galle',
+    'Trip type: Round trip',
+    'Pickup date/time: 2099-12-20 09:15 (Sri Lanka time, UTC+05:30)',
+    'Return date/time: 2099-12-21 17:30 (Sri Lanka time, UTC+05:30)',
+    'Return route: Galle → Matara',
+    'On the way back: rider only',
+    'Goods: Two suitcases and a bicycle',
+    'Weight: not sure',
+    'Riding along: 1 person (next to the driver)',
+    'Vehicle: Mini Lorry (up to 100 kg)',
+    'Please confirm the fare and availability.'
+  ].join('\n'));
+  const back = (returnLoad: 'goods' | 'empty') => goodsText({ ...value, returnLoad })!.split('\n').find((l) => l.startsWith('On the way back:'));
+  assert.equal(back('goods'), 'On the way back: carrying goods');
+  assert.equal(back('empty'), 'On the way back: empty');
+});
+test('goods: over the load, a second rider or a passenger category never makes a link', () => {
+  assert.equal(goodsText({ ...goods(), weightKg: 100 })!.includes('Weight: about 100 kg'), true, '100 kg is fine');
+  assert.throws(() => goodsText({ ...goods(), weightKg: 101 }), /carries up to 100 kg/);
+  assert.throws(() => goodsText({ ...goods(), riders: 2 }), /one seat next to the driver/);
+  assert.throws(() => goodsWhatsAppUrl('94771236478', { ...goods(), vehicleId: 'car' }, seeded('car')), /not accepting goods/);
+  assert.throws(() => goodsWhatsAppUrl('94771236478', goods(), { ...lorry, acceptingRequests: false }), /not accepting/);
+  assert.throws(() => goodsWhatsAppUrl(undefined, goods(), lorry), /unavailable/);
+  // And the lorry never makes a passenger link.
+  assert.throws(() => rideWhatsAppUrl('94771236478', { ...ride(), vehicleId: 'mini-lorry', passengers: 1 }, lorry), /goods, not passengers/);
 });

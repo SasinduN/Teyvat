@@ -310,7 +310,7 @@ Source: the "Ride vehicle icon set" design canvas (seven icons on a 120 × 64 gr
 - **Badges:** "Up to N passengers" and "N bags", both from the catalog. A category with no bag
   count shows one badge.
 
-### Mini Lorry: goods, not passengers
+### Mini Lorry: goods, not passengers (first draft; part 12 replaces it)
 
 - **The category:** a new `kind` column, `passenger` or `goods`, plus `max_load_kg`. A goods
   category has no passenger range. It can take requests only once `max_load_kg` is set. Seeded
@@ -365,3 +365,148 @@ From the owner, in place of the one placeholder bus:
   in the dark theme and on the hero's dark slide. A selected card's ink, glass and hubs are #161616
   on the gold. The wobble (feTurbulence and feDisplacementMap) is one filter per page, applied from
   640 px up; phones keep the double stroke. Checked in Chrome only; Safari is untested here.
+
+## 12. The Mini Lorry: goods mode (2026-11-18, `feat/mini-lorry`)
+
+The owner's answers to part 10's questions. This replaces part 10's Mini Lorry draft. Approved
+2026-11-18 with all three choices (switched on, a rider checkbox, no example models) and two
+additions: the weight is optional, and a goods round trip asks what comes back.
+
+| Question | Answer |
+|---|---|
+| Maximum load | 100 kg: the low end of the owner's 100–120, as a hard limit. The card says "Up to 100 kg" |
+| Helpers | None, driver only. No helpers question on the form |
+| Trip type | One way and round trip |
+| People | One rider next to the driver, nobody in the back. No cargo-bed seats. If more people are travelling, the form suggests booking a car or van as well |
+| Refused goods | "We don't carry anything illegal, or dangerous goods such as gas cylinders, fuel, fireworks, explosives, or corrosive or toxic chemicals." |
+
+The SUV gets nothing from this PR. Sasindu sets its 5 passengers and 6 bags in Admin → Bookings.
+0029 doesn't touch the SUV row, and a test checks that an admin's SUV values survive it. Mini Van
+and Van stay switched off, waiting on the owner.
+
+### Data (migration 0029)
+
+- **New columns** on `booking_vehicles`:
+  - `kind`: `passenger` (the default; every existing row) or `goods`.
+  - `max_load_kg`: 1 to 10000, or empty.
+- **Rules:**
+  - A goods category has no luggage: `luggage_capacity` and `luggage_per_passenger` are both empty.
+  - A goods category can take requests only once `max_load_kg` is set.
+  - A passenger category never has a load.
+  - The vehicle type list adds `Lorry`.
+- **Riders:** a goods category's `passenger_capacity` is its rider seats next to the driver (the lorry's 1).
+  `min_passengers` stays 1 and is not used for goods: riding along is optional.
+- **The row:**
+  - `mini-lorry`, "Mini Lorry", type Lorry, kind goods, 100 kg, 1 rider seat.
+  - Icon `mini-lorry`, sort 70, after the Bus.
+  - **Switched on**, now that the load is known.
+  - Description: "An open-bed lorry for small loads. Driver only, no loading help."
+  - No example models: the owner hasn't named any, and the admin can add them.
+  - An existing row with this id is left alone.
+
+### Shared rules
+
+- `vehicleSchema` gains `kind` and `maxLoadKg`, with the rules above. `offeredVehicle`,
+  `smallestFit` and `maxPassengers` look only at passenger categories, so the stepper's limit stays
+  the Bus's 52 and "Switch to" never offers the lorry.
+- `checkCapacity` refuses a goods category: "This category carries goods, not passengers." So a
+  ride or tour request naming the lorry is refused, and the server needs no new code for it.
+- New: `checkLoad(vehicle, kg)` ("The Mini Lorry carries up to 100 kg.") and
+  `checkRiders(vehicle, riders)`, plus `loadLabel` ("Up to 100 kg").
+- `goodsSchema` in `shared/ride.ts`:
+  - the ride's places, trip type and dates;
+  - `goods`: what they're moving, required, up to 300 characters;
+  - `weightKg`: a whole number from 1, or empty ("not sure");
+  - `riders`: 0 or more, checked against the category;
+  - `returnLoad`, for a round trip only: `goods`, `empty` or `rider` (only with a rider).
+- **Goods requests go through WhatsApp only, like rides.** The API takes no goods requests.
+
+### The form (`/booking`)
+
+- **"What are you booking?"**, Passengers / Goods, a segmented control like the trip type's, above
+  it. It's shown only while a goods category is taking requests; with the lorry off the page is
+  exactly as now.
+- **Switching** keeps pickup, drop-off, trip type and dates, and clears the vehicle choice.
+- **Goods mode:**
+  - **The picker** shows goods categories only. With one, the lorry is chosen for them, as a single
+    card. Its badges are "Goods" and "Up to 100 kg".
+  - **In place of the passenger stepper:**
+    - *What are you moving?* (text area, required). Under it, the refused-goods note, always shown
+      and tied to the field (`aria-describedby`).
+    - *Approximate weight in kg (optional)* (number). Its hint: "Not sure? Leave it blank and list
+      the items; we'll confirm on WhatsApp." Over 100: "The Mini Lorry carries up to 100 kg."
+    - *Someone will ride along: one seat, next to the driver* (checkbox). Under it: "Nobody rides in
+      the back. If more people are travelling, book a car or van as well."
+  - **Trip type:** both, with the same return fields. A round trip adds *On the way back*:
+    Carrying goods / Empty / Rider only, three segments; "Rider only" is there only while the
+    rider box is ticked (unticking it clears that choice). Required for a round trip.
+  - **The summary** shows the lorry ("Up to 100 kg"), then the goods, the weight ("About 60 kg"
+    or "Not sure"), "1 person, next to the driver" or "Goods only", and on a round trip what
+    comes back. The phone bar is unchanged and shows the lorry.
+- **Passengers mode** is unchanged and never shows the lorry.
+- **The hero and the floating Book a ride** are unchanged.
+
+### WhatsApp message (goods)
+
+```
+Hi! I'd like to enquire about moving goods in Sri Lanka.
+Pickup: …              (address and map lines as now)
+Drop-off: …
+Trip type: One way
+Pickup date/time: 2026-12-01 09:00 (Sri Lanka time, UTC+05:30)
+(Return date/time and route, for a round trip, then:)
+On the way back: carrying goods                    or: empty, or: rider only
+Goods: Two suitcases and a bicycle
+Weight: about 60 kg                                or: Weight: not sure
+Riding along: 1 person (next to the driver)        or: Riding along: nobody
+Vehicle: Mini Lorry (up to 100 kg)
+Please confirm the fare and availability.
+```
+
+### Elsewhere
+
+- **Tour booking:** `VehicleSelector` leaves out goods categories, so the lorry isn't a disabled
+  option there. This is a component change only; `TourBookingPage` is unchanged.
+- **Admin → Bookings:**
+  - A "Carries" choice, Passengers or Goods.
+  - For goods, "Maximum load (kg)" replaces the passenger range and bags. "Most passengers"
+    becomes "Seats next to the driver".
+  - The admin's list shows "Up to 100 kg" for goods.
+- **Docs:** CLAUDE.md marks V+ done (#66) and adds this PR's row in review, with the goods notes
+  under Vehicle categories. `docs/RIDE_WHATSAPP.md` gets the goods message.
+
+### Tests
+
+- **Shared:**
+  - `checkLoad` passes at 100 and refuses 101;
+  - riders 0 and 1 pass, 2 is refused;
+  - `goodsSchema` requires what's moving, takes a blank weight, and needs the way back only on a
+    round trip ("rider only" only with a rider);
+  - the passenger helpers never return the lorry.
+- **WhatsApp:** the exact goods messages, one way and round trip, with and without a rider and a
+  weight.
+- **Server:**
+  - 0029 adds the lorry and re-runs cleanly;
+  - it leaves an existing `mini-lorry` row alone;
+  - an admin's SUV values (5 passengers, 6 bags) survive it;
+  - the catalog lists the lorry with its load;
+  - a ride or tour request naming the lorry is refused;
+  - the admin saves a goods category, and refuses one that takes requests without a load.
+- **Chrome:**
+  - no switch while the lorry is off;
+  - with it on, Goods shows only the lorry with its badges;
+  - 101 kg shows the error, and a blank weight is fine;
+  - "On the way back" only on a round trip, "Rider only" only with the rider ticked;
+  - the refused-goods note is tied to the field;
+  - the rider checkbox and its note;
+  - the WhatsApp link's text;
+  - Passengers mode never shows the lorry;
+  - the stepper's limit is still 52;
+  - switching back keeps the places and dates.
+
+### Screenshots
+
+The ride states as before (nothing chosen, now with the Passengers / Goods switch) plus four goods
+states: Goods mode empty, filled in, over the weight limit (101 kg), and a round trip with a rider. Also Admin →
+Bookings with the lorry open. All at 1280 and 375 px, light and dark, at 100% and 120%, in one
+local HTML page as before. The hero is unchanged, and the identical pairs say so.

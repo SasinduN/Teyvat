@@ -115,7 +115,7 @@ export type BookingDetails = BookingInput & {
 
 /**
  * The vehicle icon set (src/components/booking/VehicleIcon.tsx). A category shows its icon unless
- * it has an image. `mini-lorry` is drawn for the goods categories still to come.
+ * it has an image. `mini-lorry` is the goods category's.
  */
 export const VEHICLE_ICONS = ['mini', 'car', 'suv', 'mini-van', 'van', 'ac-bus', 'bus', 'mini-lorry'] as const;
 export type VehicleIconName = (typeof VEHICLE_ICONS)[number];
@@ -130,16 +130,23 @@ const vehicleImage = z
   .max(500)
   .refine((v) => /^https:\/\/[^\s]+$/.test(v), 'Choose an image from the media library.');
 
+/** What a category carries. A goods category (the Mini Lorry) has a load in kg and no luggage. */
+export const VEHICLE_KINDS = ['passenger', 'goods'] as const;
+export type VehicleKind = (typeof VEHICLE_KINDS)[number];
+
 /**
  * A vehicle category. Passenger counts never include the driver: every ride
  * comes with one. `minPassengers` to `passengerCapacity` is the range the
  * picker, the summary, the WhatsApp message and `checkCapacity` all read.
+ * For goods, `maxLoadKg` is the load, `passengerCapacity` the seats next to
+ * the driver, and `minPassengers` isn't used: riding along is optional.
  */
 export const vehicleSchema = z
   .object({
     id,
     name: text(80),
-    type: z.enum(['Car', 'SUV', 'Van', 'Minibus', 'Bus']),
+    type: z.enum(['Car', 'SUV', 'Van', 'Minibus', 'Bus', 'Lorry']),
+    kind: z.enum(VEHICLE_KINDS).default('passenger'),
     description: z.string().trim().max(200).nullable().default(null).transform((v) => v || null),
     exampleModels: z.array(text(60)).max(6).default([]),
     minPassengers: z.number().int().min(1).max(100).default(1),
@@ -148,6 +155,8 @@ export const vehicleSchema = z
     /** Bags for each passenger (the buses: 2), instead of one number for the vehicle. */
     luggagePerPassenger: z.number().int().min(1).max(10).nullable().default(null),
     airConditioned: z.boolean().default(false),
+    /** Goods only: the most it carries, in kg. */
+    maxLoadKg: z.number().int().min(1).max(10000).nullable().default(null),
     icon: z.enum(VEHICLE_ICONS).default('car'),
     imageUrl: z.preprocess((v) => (v === '' || v === undefined ? null : v), vehicleImage.nullable()),
     sortOrder: z.number().int().min(0).max(10000).default(0),
@@ -162,6 +171,15 @@ export const vehicleSchema = z
   .refine((v) => v.passengerCapacity === null || v.minPassengers <= v.passengerCapacity, {
     message: 'The minimum passengers can’t be more than the capacity.',
     path: ['minPassengers']
+  })
+  .refine((v) => v.kind === 'goods' || v.maxLoadKg === null, { message: 'Only a goods category has a load.', path: ['maxLoadKg'] })
+  .refine((v) => v.kind === 'passenger' || (v.luggageCapacity === null && v.luggagePerPassenger === null), {
+    message: 'A goods category has a load, not bags.',
+    path: ['luggageCapacity']
+  })
+  .refine((v) => v.kind === 'passenger' || !v.acceptingRequests || v.maxLoadKg !== null, {
+    message: 'Enter the maximum load before enabling requests.',
+    path: ['maxLoadKg']
   });
 export type BookingVehicle = z.output<typeof vehicleSchema>;
 
@@ -211,16 +229,40 @@ export function canTransition(from: BookingStatus, to: BookingStatus): boolean {
   return TRANSITIONS[from].includes(to);
 }
 
-/** Why `vehicle` can't carry `passengers`, or null. */
+/** Why `vehicle` can't carry `passengers`, or null. A goods category never takes a passenger request. */
 export function checkCapacity(vehicle: BookingVehicle, passengers: number): string | null {
+  if (vehicle.kind === 'goods') return 'This category carries goods, not passengers.';
   if (!vehicle.acceptingRequests || vehicle.passengerCapacity === null) return 'This vehicle category is not accepting requests.';
   if (passengers > vehicle.passengerCapacity) return 'Passenger count exceeds vehicle capacity.';
   if (passengers < vehicle.minPassengers) return `This category takes at least ${vehicle.minPassengers} passengers.`;
   return null;
 }
 
-/** Whether a category is offered on the ride page: taking requests, with a capacity. */
-export const offeredVehicle = (v: BookingVehicle): boolean => v.acceptingRequests && v.passengerCapacity !== null;
+/** Whether a passenger category is offered on the ride page: taking requests, with a capacity. */
+export const offeredVehicle = (v: BookingVehicle): boolean => v.kind === 'passenger' && v.acceptingRequests && v.passengerCapacity !== null;
+
+/** Whether a goods category is offered (the form's Goods mode): taking requests, with a load. */
+export const offeredGoodsVehicle = (v: BookingVehicle): boolean => v.kind === 'goods' && v.acceptingRequests && v.maxLoadKg !== null;
+
+/** Why `vehicle` can't take a load of `kg`, or null. No weight (`null`, "not sure") is fine. */
+export function checkLoad(vehicle: BookingVehicle, kg: number | null): string | null {
+  if (!offeredGoodsVehicle(vehicle)) return 'This vehicle category is not accepting goods requests.';
+  if (kg !== null && kg > vehicle.maxLoadKg!) return `The ${vehicle.name} carries up to ${vehicle.maxLoadKg} kg.`;
+  return null;
+}
+
+/** Why `riders` can't ride along in a goods category (its seats next to the driver), or null. */
+export function checkRiders(vehicle: BookingVehicle, riders: number): string | null {
+  const seats = vehicle.passengerCapacity ?? 0;
+  if (riders > seats) return seats === 0 ? `Nobody can ride in the ${vehicle.name}.` : `The ${vehicle.name} has ${seats === 1 ? 'one seat' : `${seats} seats`} next to the driver.`;
+  return null;
+}
+
+/** "up to 100 kg" for goods, else the passenger range. */
+export function vehicleRange(v: Pick<BookingVehicle, 'kind' | 'maxLoadKg' | 'minPassengers' | 'passengerCapacity'>): string {
+  if (v.kind === 'goods') return v.maxLoadKg === null ? 'load not set' : `up to ${v.maxLoadKg} kg`;
+  return passengerRange(v);
+}
 
 /** "up to 4 passengers", or "10–30 passengers" when there is a minimum. Never counts the driver. */
 export function passengerRange(v: Pick<BookingVehicle, 'minPassengers' | 'passengerCapacity'>): string {
@@ -236,7 +278,6 @@ export function smallestFit(vehicles: readonly BookingVehicle[], passengers: num
     .sort((a, b) => a.passengerCapacity! - b.passengerCapacity! || a.sortOrder - b.sortOrder)[0] ?? null;
 }
 
-/** The most passengers any offered category takes (the stepper's limit), or 1 with none. */
 /** The bags badge: "4 bags" for the vehicle, "2 bags each" per passenger, or null when unknown. */
 export function bagsLabel(v: Pick<BookingVehicle, 'luggageCapacity' | 'luggagePerPassenger'>): string | null {
   if (v.luggagePerPassenger !== null) return `${v.luggagePerPassenger} ${v.luggagePerPassenger === 1 ? 'bag' : 'bags'} each`;
@@ -250,6 +291,7 @@ export function groupBags(v: Pick<BookingVehicle, 'luggageCapacity' | 'luggagePe
   return v.luggageCapacity;
 }
 
+/** The most passengers any offered category takes (the stepper's limit), or 1 with none. */
 export function maxPassengers(vehicles: readonly BookingVehicle[]): number {
   return Math.max(1, ...vehicles.filter(offeredVehicle).map((v) => v.passengerCapacity!));
 }

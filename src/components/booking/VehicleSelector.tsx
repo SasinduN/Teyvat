@@ -1,7 +1,10 @@
 import { useId } from 'react';
 import { checkCapacity, type BookingVehicle } from '@shared/booking';
 
-/** The tour request's vehicle categories; one that can't take the party (too many, or below its minimum) is disabled. */
+/**
+ * The tour request's vehicle categories; one that can't take the party (too many, or below its minimum) is disabled.
+ * Goods categories (the Mini Lorry) aren't for tours and aren't listed.
+ */
 export function VehicleSelector({
   vehicles,
   value,
@@ -23,7 +26,7 @@ export function VehicleSelector({
       <label htmlFor={id}>Vehicle category</label>
       <select id={id} required value={value} aria-invalid={Boolean(error)} aria-describedby={`${id}-help`} onChange={(e) => onChange(e.target.value)}>
         <option value="">Select a vehicle</option>
-        {vehicles.map((v) => (
+        {vehicles.filter((v) => v.kind === 'passenger').map((v) => (
           <option key={v.id} value={v.id} disabled={checkCapacity(v, passengers) !== null}>
             {v.name}
             {v.passengerCapacity !== null ? ` · up to ${v.passengerCapacity} passengers` : ''}

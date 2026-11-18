@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { bagsLabel, checkCapacity, passengerRange, type BookingVehicle } from '@shared/booking';
+import { bagsLabel, checkCapacity, checkLoad, vehicleRange, type BookingVehicle } from '@shared/booking';
 import { SnowflakeMark, VehicleIcon } from './VehicleIcon';
 
 /**
@@ -15,11 +15,12 @@ export function VehicleImage({ vehicle, width, height, className, eager = false 
 }
 
 
-/** "Up to 4 passengers", capitalised for a badge. */
-export const rangeLabel = (v: BookingVehicle) => passengerRange(v).replace(/^u/, 'U');
+/** "Up to 4 passengers" (or "Up to 100 kg" for goods), capitalised for a badge. */
+export const rangeLabel = (v: BookingVehicle) => vehicleRange(v).replace(/^u/, 'U');
 
-/** Why a card is dimmed for this many passengers, or null when it fits. */
-function fitNote(v: BookingVehicle, passengers: number): string | null {
+/** Why a card is dimmed for this many passengers (or, for goods, this weight), or null when it fits. */
+function fitNote(v: BookingVehicle, passengers: number, weightKg: number | null): string | null {
+  if (v.kind === 'goods') return weightKg !== null && checkLoad(v, weightKg) !== null ? `Too heavy for ${weightKg} kg` : null;
   if (!Number.isFinite(passengers) || checkCapacity(v, passengers) === null) return null;
   return passengers < v.minPassengers ? `From ${v.minPassengers} passengers` : `Too small for ${passengers}`;
 }
@@ -31,10 +32,12 @@ function fitNote(v: BookingVehicle, passengers: number): string | null {
  * capacity error then shows by the passenger field. Phones swipe (scroll
  * snap); wider screens get arrow buttons while the row overflows.
  */
-export function VehiclePicker({ vehicles, value, passengers, onChange, error }: {
+export function VehiclePicker({ vehicles, value, passengers, weightKg = null, onChange, error }: {
   vehicles: BookingVehicle[];
   value: string;
   passengers: number;
+  /** Goods mode: the load entered, if any. */
+  weightKg?: number | null;
   onChange: (id: string) => void;
   error?: string;
 }) {
@@ -78,16 +81,17 @@ export function VehiclePicker({ vehicles, value, passengers, onChange, error }: 
       </div>
       <div className="ride-vehicles__track" ref={track}>
         {vehicles.map((v) => {
-          const note = fitNote(v, passengers);
+          const note = fitNote(v, passengers, weightKg);
           const selected = v.id === value;
           const describedBy = `${id}-${v.id}-details`;
           return (
             <label key={v.id} className={`ride-vehicle${selected ? ' is-selected vehicle-icons--selected' : ''}${note ? ' is-dimmed' : ''}`}>
               <input type="radio" name={`${id}-vehicle`} value={v.id} checked={selected} className="ride-vehicle__input"
-                aria-label={`${v.name}, ${passengerRange(v)}`} aria-describedby={describedBy}
+                aria-label={`${v.name}, ${vehicleRange(v)}`} aria-describedby={describedBy}
                 onChange={() => onChange(v.id)} />
               <span className="ride-vehicle__name">{v.name}</span>
               <span className="ride-vehicle__badges">
+                {v.kind === 'goods' && <span className="ride-vehicle__badge">Goods</span>}
                 {v.airConditioned && <span className="ride-vehicle__badge ride-vehicle__badge--ac"><SnowflakeMark /><abbr title="Air-conditioned">AC</abbr></span>}
                 <span className="ride-vehicle__badge">{rangeLabel(v)}</span>
                 {bagsLabel(v) && <span className="ride-vehicle__badge">{bagsLabel(v)}</span>}

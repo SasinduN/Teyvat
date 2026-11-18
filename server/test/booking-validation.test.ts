@@ -12,13 +12,17 @@ import {
   canTransition,
   bagsLabel,
   checkCapacity,
+  checkLoad,
+  checkRiders,
   groupBags,
   maxPassengers,
+  offeredGoodsVehicle,
   offeredVehicle,
   passengerRange,
   smallestFit,
   sriLankaToday,
   tripInstant,
+  vehicleRange,
   vehicleSchema,
   type BookingInput
 } from '../../shared/booking';
@@ -101,7 +105,7 @@ test('capacity: a real one is required, and a full vehicle is refused', () => {
 });
 
 test("capacity: every category's own minimum and maximum, from its data", () => {
-  for (const id of SEEDED_VEHICLES.map((v) => v.id)) {
+  for (const id of SEEDED_VEHICLES.filter((v) => v.kind === 'passenger').map((v) => v.id)) {
     const v = switchedOn(id);
     const max = v.passengerCapacity!;
     assert.equal(checkCapacity(v, v.minPassengers), null, `${id}: its minimum fits`);
@@ -110,7 +114,7 @@ test("capacity: every category's own minimum and maximum, from its data", () => 
     if (v.minPassengers > 1) assert.match(checkCapacity(v, v.minPassengers - 1)!, /at least/, `${id}: one under`);
   }
   // The seeded numbers themselves (passengers, never counting the driver).
-  assert.deepEqual(SEEDED_VEHICLES.map((v) => [v.id, v.minPassengers, v.passengerCapacity]), [
+  assert.deepEqual(SEEDED_VEHICLES.filter((v) => v.kind === 'passenger').map((v) => [v.id, v.minPassengers, v.passengerCapacity]), [
     ['mini', 1, 3], ['car', 1, 4], ['suv', 1, 5], ['mini-van', 1, 6], ['van', 1, 9], ['ac-bus', 1, 20], ['bus', 1, 52]
   ]);
 });
@@ -178,6 +182,39 @@ test("the picker: only categories taking requests, the smallest that fits, and t
   assert.equal(smallestFit(allOn, 12)?.id, 'ac-bus');
   assert.equal(maxPassengers(allOn), 52);
   assert.equal(maxPassengers([]), 1);
+  // The lorry carries goods: never offered, suggested or counted for passengers.
+  assert.ok(!allOn.filter(offeredVehicle).some((v) => v.id === 'mini-lorry'));
+  assert.notEqual(smallestFit(allOn, 1)?.id, 'mini-lorry');
+});
+
+test('goods: the Mini Lorry carries up to 100 kg, with one seat next to the driver (0029)', () => {
+  const lorry = seeded('mini-lorry');
+  assert.equal(lorry.kind, 'goods');
+  assert.equal(lorry.acceptingRequests, true, 'switched on');
+  assert.deepEqual(SEEDED_VEHICLES.filter(offeredGoodsVehicle).map((v) => v.id), ['mini-lorry']);
+  assert.equal(checkLoad(lorry, 100), null, '100 kg');
+  assert.equal(checkLoad(lorry, 101), 'The Mini Lorry carries up to 100 kg.');
+  assert.equal(checkLoad(lorry, null), null, 'no weight: not sure');
+  assert.match(checkLoad({ ...lorry, acceptingRequests: false }, 10)!, /not accepting/);
+  assert.match(checkLoad(seeded('car'), 10)!, /not accepting goods/, 'a passenger category takes no goods');
+  assert.equal(checkRiders(lorry, 0), null);
+  assert.equal(checkRiders(lorry, 1), null);
+  assert.equal(checkRiders(lorry, 2), 'The Mini Lorry has one seat next to the driver.');
+  assert.equal(checkCapacity(lorry, 1), 'This category carries goods, not passengers.', 'a ride or tour request is refused');
+  assert.equal(vehicleRange(lorry), 'up to 100 kg');
+  assert.equal(vehicleRange(seeded('car')), 'up to 4 passengers');
+  assert.equal(bagsLabel(lorry), null, 'no bags');
+});
+
+test('goods: a load only for goods, no bags for goods, and a load before taking requests', () => {
+  const lorry = seeded('mini-lorry');
+  assert.ok(vehicleSchema.safeParse(lorry).success);
+  assert.ok(!vehicleSchema.safeParse({ ...seeded('car'), maxLoadKg: 100 }).success, 'a passenger category has no load');
+  assert.ok(!vehicleSchema.safeParse({ ...lorry, luggageCapacity: 2 }).success, 'goods have no bags');
+  assert.ok(!vehicleSchema.safeParse({ ...lorry, luggagePerPassenger: 1 }).success);
+  assert.ok(!vehicleSchema.safeParse({ ...lorry, maxLoadKg: null }).success, 'taking requests needs a load');
+  assert.ok(vehicleSchema.safeParse({ ...lorry, maxLoadKg: null, acceptingRequests: false }).success, 'switched off, it can wait');
+  assert.equal(vehicleSchema.parse({ ...seeded('car'), kind: undefined, maxLoadKg: undefined }).kind, 'passenger', 'passengers by default');
 });
 
 test('the lifecycle: never confirmed by itself, never reopened', () => {

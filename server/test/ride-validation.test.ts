@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { blankLocation } from '../../shared/booking';
-import { rideSchema, rideDataSchema, rideRequestDataSchema, callbackPhoneSchema, sameRideLocation, withTripType, type RideInput } from '../../shared/ride';
+import { goodsSchema, rideSchema, rideDataSchema, rideRequestDataSchema, callbackPhoneSchema, sameRideLocation, withTripType, type GoodsInput, type RideInput } from '../../shared/ride';
 
 const valid = (): RideInput => ({ pickup: blankLocation('Matara'), dropoff: blankLocation('Galle'), tripType: 'one_way', departureDate: '2099-10-20', departureTime: '09:00', returnDate: null, returnTime: null, passengers: 2, vehicleId: 'test-car' });
 test('manual city, hotel and airport rides need no tour or contact fields', () => {
@@ -44,4 +44,30 @@ test('switching back to one way clears the return, so the one-way rule still pas
   // Round trip keeps what was there, and the rest of the ride is untouched.
   assert.deepEqual(withTripType(round, 'round_trip'), round);
   assert.deepEqual({ ...oneWay, tripType: 'round_trip', returnDate: '2099-10-21', returnTime: '09:00' }, round);
+});
+
+const goods = (): GoodsInput => ({ pickup: blankLocation('Matara'), dropoff: blankLocation('Galle'), tripType: 'one_way', departureDate: '2099-10-20', departureTime: '09:00', returnDate: null, returnTime: null, vehicleId: 'mini-lorry', goods: 'Two suitcases and a bicycle', weightKg: 60, riders: 0, returnLoad: null });
+const goodsIssues = (value: object) => {
+  const result = goodsSchema.safeParse(value);
+  return result.success ? [] : result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
+};
+test('goods: what is moving is required; the weight may be left blank ("not sure")', () => {
+  assert.deepEqual(goodsIssues(goods()), []);
+  assert.deepEqual(goodsIssues({ ...goods(), weightKg: null }), [], 'blank weight');
+  assert.deepEqual(goodsIssues({ ...goods(), goods: '   ' }), ['goods: Tell us what you’re moving.']);
+  assert.ok(goodsIssues({ ...goods(), goods: 'x'.repeat(301) }).length, 'at most 300 characters');
+  assert.deepEqual(goodsIssues({ ...goods(), weightKg: 12.5 }), ['weightKg: Enter the weight in whole kg.']);
+  assert.ok(goodsIssues({ ...goods(), weightKg: 0 }).length);
+  assert.ok(goodsIssues({ ...goods(), passengers: 2 }).length, 'no passenger count');
+  assert.ok(goodsIssues({ ...goods(), dropoff: blankLocation('Matara') }).length, 'the same place rules as a ride');
+  assert.ok(goodsIssues({ ...goods(), departureDate: '2020-01-01' }).length, 'in the future');
+});
+test('goods: a round trip says what comes back, and "rider only" needs a rider', () => {
+  const round = { ...goods(), tripType: 'round_trip', returnDate: '2099-10-21', returnTime: '09:00' } as const;
+  assert.deepEqual(goodsIssues(round), ['returnLoad: Choose what the lorry carries on the way back.']);
+  for (const returnLoad of ['goods', 'empty'] as const) assert.deepEqual(goodsIssues({ ...round, returnLoad }), [], returnLoad);
+  assert.deepEqual(goodsIssues({ ...round, returnLoad: 'rider' }), ['returnLoad: Rider only needs someone riding along.']);
+  assert.deepEqual(goodsIssues({ ...round, returnLoad: 'rider', riders: 1 }), []);
+  assert.deepEqual(goodsIssues({ ...goods(), returnLoad: 'empty' }), ['returnLoad: One-way trips cannot include the way back.']);
+  assert.ok(goodsIssues({ ...round, returnLoad: 'boxes' }).length, 'one of the three');
 });
