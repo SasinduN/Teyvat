@@ -39,9 +39,10 @@
  * new-enquiry email each version would send (subject, sender name, text), from its own
  * `composeEmail`, drawn as a plain message card.
  *
- * `--ride` takes only the ride page's pairs (docs/plans/ride-vehicle-picker.md): its four states, light
+ * `--ride` takes only the ride page's pairs (docs/plans/ride-vehicle-picker.md): its states, light
  * and dark, phone and laptop, the home hero's two slides and Admin → Bookings, with bookings on in both
- * scratch databases.
+ * scratch databases. For a short retake: `--ride-states goods-empty,goods-filled` takes only those
+ * states (no hero, no admin), and `--phone-only` only the 375 px width.
  *
  * `--admin` adds the admin: the login page (empty, a password typed and
  * shown, after two wrong tries, locked), then (signed in as a throwaway
@@ -113,6 +114,10 @@ const { values } = parseArgs({
     brand: { type: 'boolean', default: false },
     /** Only the ride page's states, the home hero and Admin → Bookings, bookings on. */
     ride: { type: 'boolean', default: false },
+    /** With --ride: only these states (comma-separated names), and no hero or admin. */
+    'ride-states': { type: 'string' },
+    /** With --ride: only the 375 px width. */
+    'phone-only': { type: 'boolean', default: false },
     out: { type: 'string' }
   },
   strict: true
@@ -816,10 +821,15 @@ const RIDE_STATES: { name: string; steps: (before: boolean) => string[]; view?: 
 
 async function shootRide(chrome: Chrome, site: Site, out: string): Promise<void> {
   const before = site.label === 'before';
+  const only = values['ride-states']?.split(',').map((n) => n.trim()).filter(Boolean);
+  const unknown = only?.filter((n) => !RIDE_STATES.some((s) => s.name === n)) ?? [];
+  if (unknown.length) throw new Error(`--ride-states: no state named ${unknown.join(', ')}`);
+  const states = only ? RIDE_STATES.filter((s) => only.includes(s.name)) : RIDE_STATES;
+  const viewports = Object.entries(VIEWPORTS).filter(([, v]) => !values['phone-only'] || v.mobile);
   for (const dark of [false, true]) {
-    for (const [name, viewport] of Object.entries(VIEWPORTS)) {
+    for (const [name, viewport] of viewports) {
       const suffix = `${name}${dark ? '-dark' : ''}-${site.label}.jpg`;
-      for (const state of RIDE_STATES) {
+      for (const state of states) {
         const page = await open(chrome, `${site.url}/booking`, viewport, dark);
         await waitFor(page, `document.querySelector('.ride-form')`);
         // A draft would open WhatsApp: never, here.
@@ -849,6 +859,7 @@ async function shootRide(chrome: Chrome, site: Site, out: string): Promise<void>
         await closePage(page);
         console.log(`  ${state.name}-${suffix}`);
       }
+      if (only) continue;
       // The home hero: the first slide, then the "Book a ride" slide (the second).
       const home = await open(chrome, `${site.url}/`, viewport, dark);
       await home.evaluate(LOADED);
