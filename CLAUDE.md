@@ -49,7 +49,8 @@ this file or anywhere else in git.
 | B | Rebrand (the name, tagline and legal name are in `shared/brand.ts`): one brand source (`shared/brand.ts`, Admin → Settings, 0024), the wordmark and SL favicon, JSON-LD, `/site.webmanifest`, seed text (0025), `npm run brand:audit`, `npm run screenshots -- --brand` | in review |
 | Q | Bug and performance audit (`docs/reviews/audit-2026-11.md`): the `<body>` shift, compression, `/api/content` and header photos preloaded, `browser-hero-contrast`'s hang | in review |
 | V | Ride page redesign (`docs/plans/ride-vehicle-picker.md`): vehicle categories (0027), the card picker, the passenger stepper, the phone bar, and the hero's "Book a ride" slide and button | done (#65) |
-| V+ | The buses (0028: AC Bus 1–20, Bus 1–52, bags per passenger) and the sketch-style icon set (plan, part 11) | in review |
+| V+ | The buses (0028: AC Bus 1–20, Bus 1–52, bags per passenger) and the sketch-style icon set (plan, part 11) | done (#66) |
+| V++ | The Mini Lorry: goods mode on `/booking` (0029, plan part 12) | in review |
 
 Update the Status column when a phase lands.
 
@@ -275,6 +276,12 @@ Update the Status column when a phase lands.
     `--vehicle-ink` filled with the card's own colour, `--vehicle-paper`, so a selected card recolours
     them), unless Admin → Bookings sets an image from the media library, which replaces it. Never a
     committed image. The wobble is one SVG filter per page (`VehicleSketchFilter`), from 640 px up.
+  - **Goods** (0029, plan part 12): `kind` is `passenger` or `goods`. A goods category (the Mini
+    Lorry, 100 kg) has `max_load_kg` and no luggage, and its `passenger_capacity` is its seats next
+    to the driver; nobody rides in the back. It appears only on the ride page's Goods tab (shown
+    while one takes requests), never in the passenger picker or the tour selector, and
+    `checkCapacity` refuses it for a passenger request. Goods go through WhatsApp only
+    (`goodsSchema`, `checkLoad`, `checkRiders`, `goodsWhatsAppUrl`). The weight is optional.
   - The floating Book a ride steps out while the hero's own Book a ride is on screen
     (`FloatingActions`); `browser-floating-visible` expects it.
   - The hero's "Book a ride" slide (second) and button exist only with bookings on

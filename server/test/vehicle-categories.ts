@@ -1,11 +1,11 @@
 /**
- * The vehicle categories as migrations 0014, 0017, 0018, 0027 and 0028 leave them, in the
+ * The vehicle categories as migrations 0014, 0017, 0018, 0027, 0028 and 0029 leave them, in the
  * catalogue's order (sort order). `bookings.test` checks this list against the migrated
  * database, so the unit tests that use it test the real numbers.
  */
 import type { BookingVehicle } from '../../shared/booking';
 
-const base = { luggageCapacity: null, luggagePerPassenger: null, airConditioned: false, imageUrl: null, exampleModels: [] as string[], minPassengers: 1 };
+const base = { kind: 'passenger' as const, maxLoadKg: null, luggageCapacity: null, luggagePerPassenger: null, airConditioned: false, imageUrl: null, exampleModels: [] as string[], minPassengers: 1 };
 
 export const SEEDED_VEHICLES: readonly BookingVehicle[] = [
   {
@@ -38,6 +38,11 @@ export const SEEDED_VEHICLES: readonly BookingVehicle[] = [
   {
     ...base, id: 'bus', name: 'Bus', type: 'Bus', description: 'Non-AC 30–52 seat buses for big groups and tours.',
     passengerCapacity: 52, luggagePerPassenger: 2, icon: 'bus', sortOrder: 60, acceptingRequests: true
+  },
+  {
+    ...base, id: 'mini-lorry', name: 'Mini Lorry', type: 'Lorry', kind: 'goods', maxLoadKg: 100,
+    description: 'An open-bed lorry for small loads. Driver only, no loading help.',
+    passengerCapacity: 1, icon: 'mini-lorry', sortOrder: 70, acceptingRequests: true
   }
 ];
 

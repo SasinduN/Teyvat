@@ -99,9 +99,12 @@ export const TEXT_AUDIT = `(() => {
     }
   }
 
-  // Overlaps. The floating buttons sit over the page on purpose, and so does
+  // Overlaps. The floating buttons and the ride page's phone bar (.ride-bar,
+  // held at the bottom of the screen) sit over the page on purpose, and so does
   // the fixed header once the page has scrolled; at the top, it must not.
-  const floating = window.scrollY > 0 ? '.te-floating-actions, .te-scroll-top, .te-nav' : '.te-floating-actions, .te-scroll-top';
+  // Their own text is still checked for clipping and overflow above.
+  const fixedOver = '.te-floating-actions, .te-scroll-top, .ride-bar';
+  const floating = window.scrollY > 0 ? fixedOver + ', .te-nav' : fixedOver;
   // What can be seen of a line: a clamped paragraph's hidden lines, or a place scrolled out of its row, don't count.
   const seen = (el, rect) => {
     let r = { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };

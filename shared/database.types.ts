@@ -32,7 +32,7 @@ export type PhotoAspect = 'square' | 'portrait' | 'landscape';
 export interface BookingVehicleRow {
   id: string;
   name: string;
-  type: 'Car' | 'SUV' | 'Van' | 'Minibus' | 'Bus';
+  type: 'Car' | 'SUV' | 'Van' | 'Minibus' | 'Bus' | 'Lorry';
   description: string | null;
   example_models: string[];
   min_passengers: number;
@@ -40,6 +40,8 @@ export interface BookingVehicleRow {
   luggage_capacity: number | null;
   luggage_per_passenger: number | null;
   air_conditioned: boolean;
+  kind: 'passenger' | 'goods';
+  max_load_kg: number | null;
   icon: 'mini' | 'car' | 'suv' | 'mini-van' | 'van' | 'ac-bus' | 'bus' | 'mini-lorry';
   image_url: string | null;
   sort_order: number;

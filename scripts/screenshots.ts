@@ -39,9 +39,10 @@
  * new-enquiry email each version would send (subject, sender name, text), from its own
  * `composeEmail`, drawn as a plain message card.
  *
- * `--ride` takes only the ride page's pairs (docs/plans/ride-vehicle-picker.md): its four states, light
+ * `--ride` takes only the ride page's pairs (docs/plans/ride-vehicle-picker.md): its states, light
  * and dark, phone and laptop, the home hero's two slides and Admin → Bookings, with bookings on in both
- * scratch databases.
+ * scratch databases. For a short retake: `--ride-states goods-empty,goods-filled` takes only those
+ * states (no hero, no admin), and `--phone-only` only the 375 px width.
  *
  * `--admin` adds the admin: the login page (empty, a password typed and
  * shown, after two wrong tries, locked), then (signed in as a throwaway
@@ -113,6 +114,10 @@ const { values } = parseArgs({
     brand: { type: 'boolean', default: false },
     /** Only the ride page's states, the home hero and Admin → Bookings, bookings on. */
     ride: { type: 'boolean', default: false },
+    /** With --ride: only these states (comma-separated names), and no hero or admin. */
+    'ride-states': { type: 'string' },
+    /** With --ride: only the 375 px width. */
+    'phone-only': { type: 'boolean', default: false },
     out: { type: 'string' }
   },
   strict: true
@@ -757,7 +762,7 @@ const FILL = (label: string, value: string) => `(() => {
   const label = [...document.querySelectorAll('label')].find((l) => l.textContent.trim() === ${JSON.stringify(label)});
   const input = label && document.getElementById(label.htmlFor);
   if (!input) return false;
-  const proto = input.tagName === 'SELECT' ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
+  const proto = input.tagName === 'SELECT' ? HTMLSelectElement.prototype : input.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
   Object.getOwnPropertyDescriptor(proto, 'value').set.call(input, ${JSON.stringify(value)});
   input.dispatchEvent(new Event(input.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true }));
   return true;
@@ -770,15 +775,22 @@ const CHOOSE = (id: string) => `(() => {
 })()`;
 const ROUTE = [FILL('Pickup location', 'Colombo airport'), FILL('Drop-off location', 'Galle'), FILL('Pickup date', '2099-12-20'), FILL('Pickup time', '09:00')];
 const ROUND_TRIP = `(document.querySelector('input[value=round_trip]')?.click(), true)`;
+/** The Goods tab (0029); before it there is none, so "before" stays on passengers. */
+const GOODS = `(document.querySelector('input[name=ride-mode][value=goods]')?.click(), true)`;
+const GOODS_WHAT = FILL('What are you moving?', 'Two suitcases, a bicycle and three boxes of books');
+const GOODS_WEIGHT = (kg: string) => FILL('Approximate weight in kg (optional)', kg);
+const GOODS_RIDER = `(document.querySelector('.ride-goods__rider input')?.click(), true)`;
+const GOODS_BACK = (load: string) => `(document.querySelector('input[name=ride-return-load][value=${load}]')?.click(), true)`;
 
 /**
- * `--ride`: the ride page's four states (nothing chosen, a vehicle chosen, a capacity error, a round
- * trip) at 1280 and 375 px, light and dark; the Admin → Bookings vehicle form; and the home hero with
+ * `--ride`: the ride page's states (nothing chosen, a vehicle chosen, a capacity error, the buses, a
+ * round trip, and the Goods tab: empty, filled in, over the weight limit, a round trip) at 1280 and
+ * 375 px, light and dark; the Admin → Bookings vehicle form (the Car, and the lorry); and the home hero with
  * bookings on: its first slide and the "Book a ride" slide. With `--text-size 120`, the "after" site at
  * 120%. Bookings are on in both scratch databases, and nowhere else.
  * Before 0027 there is no Mini, so "before" shows the capacity error with the Car and 6 passengers.
  */
-const RIDE_STATES: { name: string; steps: (before: boolean) => string[] }[] = [
+const RIDE_STATES: { name: string; steps: (before: boolean) => string[]; view?: string }[] = [
   { name: 'ride-nothing-chosen', steps: () => [] },
   { name: 'ride-vehicle-chosen', steps: () => [...ROUTE, FILL('Number of passengers', '2'), CHOOSE('car')] },
   {
@@ -794,16 +806,30 @@ const RIDE_STATES: { name: string; steps: (before: boolean) => string[] }[] = [
   {
     name: 'ride-round-trip',
     steps: () => [...ROUTE, ROUND_TRIP, FILL('Return date', '2099-12-27'), FILL('Return time', '17:30'), FILL('Number of passengers', '2'), CHOOSE('car')]
+  },
+  // The Mini Lorry (0029). Phones show the goods fields rather than the cards.
+  { name: 'goods-empty', steps: () => [GOODS], view: '.ride-mode' },
+  { name: 'goods-filled', steps: () => [...ROUTE, GOODS, GOODS_WHAT, GOODS_WEIGHT('60'), GOODS_RIDER], view: '.ride-goods' },
+  { name: 'goods-over-weight', steps: () => [...ROUTE, GOODS, GOODS_WHAT, GOODS_WEIGHT('101')], view: '#ride-weight' },
+  {
+    name: 'goods-round-trip',
+    steps: () => [...ROUTE, ROUND_TRIP, FILL('Return date', '2099-12-27'), FILL('Return time', '17:30'), GOODS, GOODS_WHAT, GOODS_RIDER, GOODS_BACK('rider')],
+    view: '.ride-goods__rider'
   }
 ];
 
 
 async function shootRide(chrome: Chrome, site: Site, out: string): Promise<void> {
   const before = site.label === 'before';
+  const only = values['ride-states']?.split(',').map((n) => n.trim()).filter(Boolean);
+  const unknown = only?.filter((n) => !RIDE_STATES.some((s) => s.name === n)) ?? [];
+  if (unknown.length) throw new Error(`--ride-states: no state named ${unknown.join(', ')}`);
+  const states = only ? RIDE_STATES.filter((s) => only.includes(s.name)) : RIDE_STATES;
+  const viewports = Object.entries(VIEWPORTS).filter(([, v]) => !values['phone-only'] || v.mobile);
   for (const dark of [false, true]) {
-    for (const [name, viewport] of Object.entries(VIEWPORTS)) {
+    for (const [name, viewport] of viewports) {
       const suffix = `${name}${dark ? '-dark' : ''}-${site.label}.jpg`;
-      for (const state of RIDE_STATES) {
+      for (const state of states) {
         const page = await open(chrome, `${site.url}/booking`, viewport, dark);
         await waitFor(page, `document.querySelector('.ride-form')`);
         // A draft would open WhatsApp: never, here.
@@ -824,7 +850,7 @@ async function shootRide(chrome: Chrome, site: Site, out: string): Promise<void>
         await page.evaluate(QUIET);
         if (viewport.mobile) {
           // The phone's bar sticks to the screen's bottom: a screenful, with the vehicles in it.
-          await page.evaluate(`(() => { const el = document.querySelector('.ride-vehicles, .ride-form select'); el?.scrollIntoView({ block: 'center' }); return true; })()`);
+          await page.evaluate(`(() => { const el = document.querySelector(${JSON.stringify(state.view ? `${state.view}, .ride-vehicles, .ride-form select` : '.ride-vehicles, .ride-form select')}); el?.scrollIntoView({ block: 'center' }); return true; })()`);
           await page.evaluate(QUIET);
           await shoot(page, join(out, `${state.name}-${suffix}`), false);
         } else {
@@ -833,6 +859,7 @@ async function shootRide(chrome: Chrome, site: Site, out: string): Promise<void>
         await closePage(page);
         console.log(`  ${state.name}-${suffix}`);
       }
+      if (only) continue;
       // The home hero: the first slide, then the "Book a ride" slide (the second).
       const home = await open(chrome, `${site.url}/`, viewport, dark);
       await home.evaluate(LOADED);
@@ -862,6 +889,11 @@ async function shootRide(chrome: Chrome, site: Site, out: string): Promise<void>
       await admin.evaluate(LOADED);
       await admin.evaluate(QUIET);
       await shoot(admin, join(out, `admin-bookings-${suffix}`), true);
+      // The lorry's form (0029); before it there is no lorry, so the Car's again.
+      await admin.evaluate(`([...document.querySelectorAll('button')].find((b) => b.textContent.startsWith('Edit Mini Lorry'))?.click(), true)`);
+      await sleep(150);
+      await admin.evaluate(QUIET);
+      await shoot(admin, join(out, `admin-bookings-lorry-${suffix}`), true);
       await closePage(admin);
       console.log(`  admin-bookings-${suffix}`);
     }

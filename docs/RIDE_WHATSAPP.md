@@ -8,6 +8,8 @@ The ordinary `/booking` ride form keeps pickup/drop-off, manual/GPS selection, d
 
 The draft includes pickup/drop-off labels, addresses when present, map links for available coordinates, trip type, departure and return details in Sri Lanka time, reversed return route, passenger count, the vehicle category with its passenger range (`Vehicle: Car (up to 4 passengers)`; since 0027, `docs/plans/ride-vehicle-picker.md`) and a request to confirm fare/availability.
 
+**Goods** (the Mini Lorry, 0029, `goodsWhatsAppUrl`): the same place and time lines, opening with "Hi! I'd like to enquire about moving goods in Sri Lanka." For a round trip, `On the way back: carrying goods` (or `empty`, or `rider only`). Then `Goods: …`, `Weight: about 60 kg` (or `Weight: not sure` when left blank), `Riding along: 1 person (next to the driver)` (or `nobody`) and `Vehicle: Mini Lorry (up to 100 kg)`, and the same fare/availability line.
+
 Only the catalogue is fetched by the ride form. No account/guest-session/history calls, ride POST, callback dialog, admin receipt or request-history UI. Missing or invalid configured number disables the handoff and explains unavailability. No hardcoded business number and no admin fallback. The production settings row is used after deployment; local absence does not require an API key or any overwrite of production settings.
 
 Public ride-flow markup changes were explicitly called out before editing. `/booking?tour=…`, tour submission, backend endpoints, admin records/settings and existing request history remain unchanged. No migration, dependency or server/configuration change.

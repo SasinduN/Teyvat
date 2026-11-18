@@ -1,18 +1,19 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BOOKING_API, bagsLabel, checkCapacity, groupBags, maxPassengers, offeredVehicle, passengerRange, smallestFit, sriLankaToday, type BookingCatalog, type BookingVehicle } from '@shared/booking';
-import { initialRide, rideSchema, withTripType, type RideInput } from '@shared/ride';
+import { BOOKING_API, bagsLabel, checkCapacity, checkLoad, checkRiders, groupBags, maxPassengers, offeredGoodsVehicle, offeredVehicle, smallestFit, sriLankaToday, vehicleRange, type BookingCatalog, type BookingVehicle } from '@shared/booking';
+import { goodsSchema, initialRide, RETURN_LOAD_LABELS, rideSchema, withTripType, type GoodsInput, type RideInput } from '@shared/ride';
 import { PAGE_NAMES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useFeatures, useSiteSettings } from '@/hooks/useSiteContent';
 import { bookingRequest } from '@/lib/booking-client';
-import { rideWhatsAppUrl } from '@shared/ride-whatsapp';
+import { goodsWhatsAppUrl, rideWhatsAppUrl } from '@shared/ride-whatsapp';
 import { normalizeWhatsAppNumber, whatsappNumberProblem } from '@shared/whatsapp';
 import { currentPickup, pickupWarning } from '@/lib/booking-geolocation';
 import { LocationField } from '@/components/booking/LocationField';
 import { rangeLabel, VehicleImage, VehiclePicker } from '@/components/booking/VehiclePicker';
 import { PassengerStepper } from '@/components/booking/PassengerStepper';
+import { GoodsFields, goodsWeight, initialGoods, type GoodsDraft } from '@/components/booking/GoodsFields';
 import { VehicleSketchFilter } from '@/components/booking/VehicleIcon';
 import { NotFoundPage } from './NotFoundPage';
 import '@/styles/booking.css';
@@ -24,6 +25,14 @@ function summaryBags(v: BookingVehicle, passengers: number): string {
   if (v.luggagePerPassenger !== null) return total !== null && checkCapacity(v, passengers) === null ? ` · up to ${total} bags` : ` · ${bagsLabel(v)}`;
   return total !== null ? ` · ${bagsLabel(v)}` : '';
 }
+
+/** The goods request: the ride's places and times, with the Goods tab's answers. */
+function goodsRequest(ride: RideInput, goods: GoodsDraft): GoodsInput {
+  const { passengers: _passengers, ...trip } = ride;
+  return { ...trip, goods: goods.what, weightKg: goodsWeight(goods.weight), riders: goods.rider ? 1 : 0, returnLoad: ride.tripType === 'round_trip' ? goods.returnLoad : null };
+}
+
+type Mode = 'passengers' | 'goods';
 
 const TourBookingPage = lazy(() => import('./TourBookingPage').then(m => ({ default: m.TourBookingPage })));
 const message = (error: unknown) => error instanceof Error ? error.message : 'Your request could not be sent. Please try again.';
@@ -45,6 +54,8 @@ function RideBookingForm() {
   const whatsappAvailable = !whatsappNumberProblem(normalizeWhatsAppNumber(whatsappNumber ?? ''));
   const [whatsAppDraft, setWhatsAppDraft] = useState('');
   const [form, setForm] = useState<RideInput>(initialRide);
+  const [mode, setMode] = useState<Mode>('passengers');
+  const [goods, setGoods] = useState<GoodsDraft>(initialGoods);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
   const [gpsBusy, setGpsBusy] = useState(false);
@@ -71,17 +82,36 @@ function RideBookingForm() {
   function update<K extends keyof RideInput>(key: K, value: RideInput[K]) {
     changed(f => ({ ...f, [key]: value }));
   }
+  function updateGoods(next: GoodsDraft) {
+    setGoods(next); setFields({}); setError(''); setWhatsAppDraft('');
+  }
   // Only categories taking requests are offered, in the admin's order (the catalog's).
   const offered = catalog?.vehicles.filter(offeredVehicle) ?? [];
-  const vehicle = offered.find(v => v.id === form.vehicleId);
+  // Goods (the Mini Lorry) have their own tab, shown only while one is taking requests.
+  const offeredGoods = catalog?.vehicles.filter(offeredGoodsVehicle) ?? [];
+  const goodsMode = mode === 'goods' && offeredGoods.length > 0;
+  const listed = goodsMode ? offeredGoods : offered;
+  const vehicle = listed.find(v => v.id === form.vehicleId);
+  /** A new tab keeps the places and times; the vehicle goes, unless the tab has only one. */
+  function switchMode(next: Mode) {
+    const only = next === 'goods' && offeredGoods.length === 1 ? offeredGoods[0].id : '';
+    setMode(next); changed(f => ({ ...f, vehicleId: only }));
+  }
   const counted = Number.isFinite(form.passengers);
-  const capacityError = vehicle && counted ? checkCapacity(vehicle, form.passengers) : null;
+  const capacityError = !goodsMode && vehicle && counted ? checkCapacity(vehicle, form.passengers) : null;
   const suggestion = capacityError && counted ? smallestFit(offered, form.passengers) : null;
+  const weightKg = goodsWeight(goods.weight);
+  const weighed = weightKg !== null && Number.isFinite(weightKg);
+  const loadError = goodsMode && vehicle && weighed ? checkLoad(vehicle, weightKg) : null;
   function validate() {
-    const result = rideSchema.safeParse(form);
+    const result = goodsMode ? goodsSchema.safeParse(goodsRequest(form, goods)) : rideSchema.safeParse(form);
     const errors: Record<string, string> = {};
     if (!result.success) for (const issue of result.error.issues) errors[issue.path.join('.')] = issue.message;
-    if (vehicle) { const capacity = checkCapacity(vehicle, form.passengers); if (capacity) errors.passengers = capacity; }
+    if (vehicle && goodsMode) {
+      if (loadError && !errors.weightKg) errors.weightKg = loadError;
+      const riders = checkRiders(vehicle, goods.rider ? 1 : 0);
+      if (riders) errors.riders = riders;
+    } else if (vehicle) { const capacity = checkCapacity(vehicle, form.passengers); if (capacity) errors.passengers = capacity; }
     else errors.vehicleId = 'Select a supported vehicle category.';
     setFields(errors);
     if (Object.keys(errors).length) { setError('Please check the highlighted ride details.'); return false; }
@@ -101,12 +131,12 @@ function RideBookingForm() {
   function submit() {
     if (!validate() || !vehicle) return;
     try {
-      const href = rideWhatsAppUrl(whatsappNumber, form, vehicle);
+      const href = goodsMode ? goodsWhatsAppUrl(whatsappNumber, goodsRequest(form, goods), vehicle) : rideWhatsAppUrl(whatsappNumber, form, vehicle);
       setWhatsAppDraft(href);
       window.open(href, '_blank', 'noopener,noreferrer');
     } catch (e) { setError(message(e)); }
   }
-  const available = offered.length > 0;
+  const available = listed.length > 0;
   const canSubmit = available && whatsappAvailable;
   const dateField = (key: 'departureDate' | 'departureTime' | 'returnDate' | 'returnTime', label: string, type: 'date' | 'time') => (
     <div><label htmlFor={`ride-${key}`}>{label}</label>
@@ -130,6 +160,10 @@ function RideBookingForm() {
       <div className="booking-grid ride-grid">
         <form id="ride-form" className="booking-card ride-form" noValidate onSubmit={e => { e.preventDefault(); submit(); }}>
           <fieldset><legend className="ride-sr-only">Your ride details</legend>
+            {offeredGoods.length > 0 && <fieldset className="ride-mode"><legend className="ride-legend">What are you booking?</legend>
+              <div className="ride-segmented">{(['passengers', 'goods'] as const).map(m => <label key={m} className={mode === m ? 'ride-segment is-selected' : 'ride-segment'}>
+                <input type="radio" name="ride-mode" value={m} checked={mode === m} onChange={() => switchMode(m)} />
+                {m === 'passengers' ? 'Passengers' : 'Goods'}</label>)}</div></fieldset>}
             <fieldset className="ride-trip"><legend className="ride-sr-only">Trip type</legend>
               <div className="ride-segmented">{(['one_way', 'round_trip'] as const).map(type => <label key={type} className={form.tripType === type ? 'ride-segment is-selected' : 'ride-segment'}>
                 <input type="radio" name="ride-trip-type" value={type} checked={form.tripType === type} onChange={() => changed(f => withTripType(f, type))} />
@@ -143,11 +177,15 @@ function RideBookingForm() {
             <div className="booking-pair">{dateField('departureDate', 'Pickup date', 'date')}{dateField('departureTime', 'Pickup time', 'time')}</div>
             {form.tripType === 'round_trip' && <div className="ride-return"><div className="ride-return__inner"><div className="booking-pair">{dateField('returnDate', 'Return date', 'date')}{dateField('returnTime', 'Return time', 'time')}</div></div></div>}
             <small>All times are Sri Lanka time (UTC+05:30).</small>
-            <PassengerStepper value={form.passengers} max={maxPassengers(offered)} onChange={value => update('passengers', value)}
-              error={fields.passengers || capacityError || undefined}
-              note={vehicle && !capacityError ? `${form.passengers} of ${vehicle.passengerCapacity} passengers` : undefined}
-              action={switchAction} />
-            {available && <VehiclePicker vehicles={offered} value={form.vehicleId} passengers={form.passengers} onChange={id => update('vehicleId', id)} error={fields.vehicleId} />}
+            {goodsMode
+              ? <GoodsFields value={goods} onChange={updateGoods} roundTrip={form.tripType === 'round_trip'}
+                  seats={(vehicle ?? offeredGoods[0]).passengerCapacity ?? 0} errors={fields} loadError={loadError} />
+              : <PassengerStepper value={form.passengers} max={maxPassengers(offered)} onChange={value => update('passengers', value)}
+                  error={fields.passengers || capacityError || undefined}
+                  note={vehicle && !capacityError ? `${form.passengers} of ${vehicle.passengerCapacity} passengers` : undefined}
+                  action={switchAction} />}
+            {available && <VehiclePicker vehicles={listed} value={form.vehicleId} passengers={form.passengers} weightKg={goodsMode && weighed ? weightKg : null}
+              onChange={id => update('vehicleId', id)} error={fields.vehicleId} />}
           </fieldset>
           <button type="submit" className="te-button te-button--primary ride-submit" disabled={!canSubmit}>Continue on WhatsApp</button>
           <p className="ride-consent">WhatsApp opens with your ride details. Review the message and tap Send to enquire. Fare and availability will be confirmed in the chat.</p>
@@ -167,13 +205,18 @@ function RideBookingForm() {
           <dl className="booking-summary"><dt>Pickup</dt><dd>{form.pickup.label || 'Not entered'}</dd><dt>Destination</dt><dd>{form.dropoff.label || 'Not entered'}</dd>
             <dt>Trip type</dt><dd>{form.tripType === 'round_trip' ? 'Round trip' : 'One way'}</dd><dt>Pickup time</dt><dd>{form.departureDate || 'Choose date'}{form.departureTime ? ` · ${form.departureTime}` : ''}</dd>
             {form.tripType === 'round_trip' && <><dt>Return</dt><dd>{form.returnDate || 'Choose date'}{form.returnTime ? ` · ${form.returnTime}` : ''}<small>{form.dropoff.label || 'Drop-off'} → {form.pickup.label || 'Pickup'}</small></dd></>}
-            <dt>Passengers</dt><dd>{counted ? form.passengers : 'Not entered'}</dd></dl>
+            {goodsMode ? <>
+              <dt>Goods</dt><dd className="ride-summary__goods">{goods.what.trim() || 'Not entered'}</dd>
+              <dt>Weight</dt><dd>{weighed ? `About ${weightKg} kg` : 'Not sure'}</dd>
+              <dt>Riding along</dt><dd>{goods.rider ? '1 person, next to the driver' : 'Goods only'}</dd>
+              {form.tripType === 'round_trip' && <><dt>On the way back</dt><dd>{goods.returnLoad ? RETURN_LOAD_LABELS[goods.returnLoad] : 'Not chosen'}</dd></>}
+            </> : <><dt>Passengers</dt><dd>{counted ? form.passengers : 'Not entered'}</dd></>}</dl>
           <p className="booking-price">Fare will be confirmed after reviewing your request.</p></aside>
       </div>
       {/* Phones: the summary becomes this bar, held at the bottom of the screen until the page ends. */}
       <div className="ride-bar" data-float-avoid data-keep-clear>
         {vehicle && <VehicleImage vehicle={vehicle} width={60} height={32} className="ride-bar__image" />}
-        <p className="ride-bar__name">{vehicle ? <><strong>{vehicle.name}</strong> <span>{passengerRange(vehicle)}</span></> : 'Choose a vehicle'}</p>
+        <p className="ride-bar__name">{vehicle ? <><strong>{vehicle.name}</strong> <span>{vehicleRange(vehicle)}</span></> : 'Choose a vehicle'}</p>
         <button type="submit" form="ride-form" className="te-button te-button--primary ride-bar__submit" disabled={!canSubmit}>Continue</button>
       </div></>}
   </div></div>;
