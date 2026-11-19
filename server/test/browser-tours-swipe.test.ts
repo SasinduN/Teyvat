@@ -325,17 +325,20 @@ describe('/tours: the tours as a row to swipe on phones', { skip, timeout: 8 * 6
     const state = await row(page);
     assert.equal(state.scrollable, false, 'no sideways scrolling');
     assert.ok(state.tops.every((top, i) => i === 0 || top > state.tops[i - 1]), 'one tour under another');
-    const layout = await page.evaluate<{ controls: string; sideBySide: boolean[]; shown: boolean[] }>(`(() => ({
+    const layout = await page.evaluate<{ controls: string; sideBySide: boolean[]; photoLeft: boolean[]; shown: boolean[] }>(`(() => ({
       controls: getComputedStyle(document.querySelector('.te-tour-swipe')).display,
       sideBySide: [...document.querySelectorAll('${LIST} .te-tour-row')].map((row) => {
         const photo = row.querySelector('.te-ed-photo').getBoundingClientRect();
         const body = row.querySelector('.te-tour-row__body').getBoundingClientRect();
         return photo.right <= body.left || body.right <= photo.left;
       }),
+      photoLeft: [...document.querySelectorAll('${LIST} .te-tour-row')].map((row) =>
+        row.querySelector('.te-ed-photo').getBoundingClientRect().left < row.querySelector('.te-tour-row__body').getBoundingClientRect().left),
       shown: ['.te-tour-row__label', '.te-tour-row__route', '.te-tour-row__map'].map((s) => getComputedStyle(document.querySelector('${LIST} ' + s)).display !== 'none')
     }))()`);
     assert.equal(layout.controls, 'none', 'no counter, dots or arrows');
     assert.deepEqual(layout.sideBySide, Array(TOURS).fill(true), 'photo beside text');
+    assert.deepEqual(layout.photoLeft, Array.from({ length: TOURS }, (_, i) => i % 2 === 0), 'the photo swaps sides down the page');
     assert.deepEqual(layout.shown, [true, true, true], 'the label, the route and View route on map stay');
   });
 });

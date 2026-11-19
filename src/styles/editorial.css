@@ -122,10 +122,15 @@ a.te-ed-card:hover .te-ed-card__title, a.te-ed-row:hover .te-ed-card__title { te
 /* Tours: photo and text side by side, swapping sides down the page. */
 .te-tour-list { display: grid; gap: clamp(2.5rem, 6vw, 4.5rem); }
 .te-tour-row { display: grid; gap: 1.25rem clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
+/*
+ * Each row is in an <li> now (the phones' swipe row). The bare `.te-tour-row:nth-child(even)`
+ * is the markup before that, which browser-home-baseline still renders at d233e32 with
+ * today's stylesheet; in today's markup it matches nothing.
+ */
 @media (min-width: 900px) {
   .te-tour-row { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
-  .te-tour-row:nth-child(even) { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
-  .te-tour-row:nth-child(even) > .te-ed-photo { order: 2; }
+  .te-tour-item:nth-child(even) > .te-tour-row, .te-tour-row:nth-child(even) { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+  .te-tour-item:nth-child(even) > .te-tour-row > .te-ed-photo, .te-tour-row:nth-child(even) > .te-ed-photo { order: 2; }
 }
 .te-tour-row h3 { margin-top: .25rem; color: var(--brand-primary); font-size: var(--heading-sub); font-weight: 700; line-height: 1.2; }
 .te-tour-row__desc { margin-top: .75rem; color: var(--text-secondary); line-height: 1.6; }
