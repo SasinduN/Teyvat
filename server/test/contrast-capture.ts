@@ -66,8 +66,12 @@ const targets = (roots: string, skip: string) => `(() => {
       }
       const texts = [...el.childNodes].filter((n) => n.nodeType === 3 && n.textContent.trim());
       if (texts.length === 0) continue;
+      // A line clamp's hidden lines are cut by the element itself, wholly: they aren't on screen to read.
+      // A line it only partly cuts (an ellipsis) is still measured.
+      const own = style.overflowX === 'visible' && style.overflowY === 'visible' ? null : el.getBoundingClientRect();
+      const outside = (r) => own && (r.top >= own.bottom - 0.5 || r.bottom <= own.top + 0.5 || r.left >= own.right - 0.5 || r.right <= own.left + 0.5);
       const rects = texts.flatMap((n) => { const range = document.createRange(); range.selectNodeContents(n); return [...range.getClientRects()]; })
-        .filter((r) => r.width > 0 && r.height > 0)
+        .filter((r) => r.width > 0 && r.height > 0 && !outside(r))
         .map((r) => visible(el, r))
         .filter(Boolean);
       if (rects.length === 0) continue;
