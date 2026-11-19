@@ -15,7 +15,8 @@
  * `summary.md` there: identical, or how much differs and where. A PR lists
  * the pages that changed; the author drags those pairs into it on GitHub.
  *
- * `--text-size` sets the admin's text size in the "after" site only.
+ * `--text-size` sets the admin's text size in the "after" site only; with
+ * `--text-size-both`, in both, so a pair compares the same size.
  *
  * For a short run (the laptop's memory, a time limit): `--only-dark` skips the
  * light theme and `--no-states` the named states, so a set can go in batches.
@@ -42,7 +43,7 @@
  * `--ride` takes only the ride page's pairs (docs/plans/ride-vehicle-picker.md): its states, light
  * and dark, phone and laptop, the home hero's two slides and Admin → Bookings, with bookings on in both
  * scratch databases. For a short retake: `--ride-states goods-empty,goods-filled` takes only those
- * states (no hero, no admin), and `--phone-only` only the 375 px width.
+ * states (no hero, no admin), and `--phone-only` only the 375 px width (for pages too).
  *
  * `--admin` adds the admin: the login page (empty, a password typed and
  * shown, after two wrong tries, locked), then (signed in as a throwaway
@@ -100,6 +101,7 @@ const { values } = parseArgs({
     'no-states': { type: 'boolean', default: false },
     admin: { type: 'boolean', default: false },
     'text-size': { type: 'string' },
+    'text-size-both': { type: 'boolean', default: false },
     /** A site's public URL: both versions show that site's R2 photos, as production does. */
     'live-photos': { type: 'string' },
     /** Every page opens with a saved wishlist, so /wishlist has cards and the header its count. */
@@ -236,7 +238,7 @@ async function prepare(site: Site): Promise<void> {
       await client.end();
     }
   }
-  if (site.label === 'after' && values['text-size']) {
+  if ((site.label === 'after' || values['text-size-both']) && values['text-size']) {
     const client = new Client({ connectionString: db });
     await client.connect();
     try {
@@ -954,7 +956,7 @@ async function main(): Promise<void> {
         continue;
       }
       for (const dark of themes) {
-        for (const [name, viewport] of Object.entries(VIEWPORTS)) {
+        for (const [name, viewport] of Object.entries(VIEWPORTS).filter(([, v]) => !values['phone-only'] || v.mobile)) {
           const suffix = `${name}${dark ? '-dark' : ''}-${site.label}.jpg`;
           for (const path of pages) {
             const page = await open(chrome, site.url + path, viewport, dark);
