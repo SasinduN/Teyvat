@@ -10,7 +10,9 @@ import './test-db';
  * `git show`) and once as it is now.
  *
  * Each section has its own baseline commit (`SECTIONS[].baseline`). They all
- * start at `bf94e25`, the last commit before phase 8. A PR that redesigns a
+ * start at `bf94e25`, the last commit before phase 8. A section redesigned on
+ * phones only moves its `phoneBaseline` (the widths under 768 px), so its
+ * desktop stays held to the older commit. A PR that redesigns a
  * section on purpose moves only that section's baseline, to the commit with
  * the approved design, with screenshots and the other teammate's approval
  * (CLAUDE.md; docs/plans/redesign-redo.md). No pixel may differ by more
@@ -60,18 +62,19 @@ const skip = !executable
 /**
  * The sections, with props both versions accept (each ignores the ones it
  * doesn't know). `baseline` is the commit whose version of the component
- * the section must still match. `height` is the viewport for fixed-position
- * ones; the rest are measured.
+ * the section must still match, and `phoneBaseline`, if set, the one for widths
+ * under 768 px. `height` is the viewport for fixed-position ones; the rest are
+ * measured.
  */
-const SECTIONS: { name: string; baseline: string; props: string; height?: number }[] = [
+const SECTIONS: { name: string; baseline: string; phoneBaseline?: string; props: string; height?: number }[] = [
   // Header groups (d999cb4): five top items, Discover and About as dropdowns (was ca26709, typography).
   { name: 'Navbar', baseline: 'd999cb4', props: '{ onOpenSearch() {}, onOpenPlanner() {}, onNavigateSection() {} }', height: 120 },
   // The editorial redesign (0bec8db): one large card and three smaller, a plain heading (was aee696e, the friend import).
   { name: 'DestinationSpotlight', baseline: '0bec8db', props: '{ onSelectDestination() {} }' },
   // The editorial redesign (d233e32): a lead row and plain rows (was ca26709, typography).
   { name: 'FeaturedExperiences', baseline: 'd233e32', props: '{ onSelectExperience() {} }' },
-  // d233e32: photo and text side by side (was ca26709).
-  { name: 'ToursSection', baseline: 'd233e32', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
+  // d233e32: photo and text side by side (was ca26709). Phones: the row to swipe (53752eb, was d233e32).
+  { name: 'ToursSection', baseline: 'd233e32', phoneBaseline: '53752eb', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
   // d233e32: an asymmetric grid, captions under the photos (was 4c6ae6c).
   { name: 'ExperiencesSection', baseline: 'd233e32', props: '{ onSelectCategory() {} }' },
   // 0bec8db: a lead story and plain rows (was ca26709).
@@ -80,17 +83,22 @@ const SECTIONS: { name: string; baseline: string; props: string; height?: number
   { name: 'SearchModal', baseline: 'ca26709', props: '{ isOpen: true, onClose() {}, onSelectDestination() {} }', height: 900 }
 ];
 
-const baselineOf = (name: string): string => SECTIONS.find((s) => s.name === name)!.baseline;
+/** The commit a section must match at `width`. */
+const baselineAt = (section: (typeof SECTIONS)[number], width: number): string =>
+  width < 768 && section.phoneBaseline ? section.phoneBaseline : section.baseline;
 
 const WIDTHS = [1280, 390];
 
-/** Serves `baseline:<Component>` from git, resolving its imports from today's src/components. */
+/** Every (section, commit) pair a test compares against, as `<name>@<commit>`. */
+const BASELINES = [...new Set(SECTIONS.flatMap((s) => WIDTHS.map((w) => `${s.name}@${baselineAt(s, w)}`)))];
+
+/** Serves `baseline:<Component>@<commit>` from git, resolving its imports from today's src/components. */
 const baselinePlugin: Plugin = {
   name: 'baseline',
   setup(b) {
     b.onResolve({ filter: /^baseline:/ }, (args) => ({ path: args.path.slice('baseline:'.length), namespace: 'baseline' }));
     b.onLoad({ filter: /.*/, namespace: 'baseline' }, (args) => ({
-      contents: execFileSync('git', ['show', `${baselineOf(args.path)}:src/components/${args.path}.tsx`], {
+      contents: execFileSync('git', ['show', `${args.path.split('@')[1]}:src/components/${args.path.split('@')[0]}.tsx`], {
         cwd: REPO_ROOT,
         encoding: 'utf8'
       }),
@@ -106,7 +114,11 @@ const baselinePlugin: Plugin = {
  * inside a router and a query client, as in the app.
  */
 async function bundle(version: 'baseline' | 'current'): Promise<string> {
-  const from = (name: string) => (version === 'baseline' ? `baseline:${name}` : `@/components/${name}`);
+  // Keyed `<name>@<commit>` for the baselines, `<name>` for today's.
+  const versions = version === 'baseline'
+    ? BASELINES.map((key) => ({ key, name: key.split('@')[0], from: `baseline:${key}` }))
+    : SECTIONS.map((s) => ({ key: s.name, name: s.name, from: `@/components/${s.name}` }));
+  const props = (name: string) => SECTIONS.find((s) => s.name === name)!.props;
   const result = await build({
     stdin: {
       contents: `
@@ -116,8 +128,8 @@ async function bundle(version: 'baseline' | 'current'): Promise<string> {
         import { MemoryRouter } from 'react-router-dom';
         import { fetchSiteContent } from '@/lib/api/content';
         import { queryKeys } from '@/lib/queryClient';
-        ${SECTIONS.map((s) => `import { ${s.name} } from '${from(s.name)}';`).join('\n')}
-        const sections = { ${SECTIONS.map((s) => `${s.name}: [${s.name}, ${s.props}]`).join(', ')} };
+        ${versions.map((v, i) => `import { ${v.name} as C${i} } from '${v.from}';`).join('\n')}
+        const sections = { ${versions.map((v, i) => `${JSON.stringify(v.key)}: [C${i}, ${props(v.name)}]`).join(', ')} };
         window.renderSection = async (name, payload) => {
           window.fetch = async () => new Response(JSON.stringify(payload), { headers: { 'Content-Type': 'application/json' } });
           const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
@@ -167,7 +179,8 @@ async function screenshot(
   css: string,
   payload: unknown,
   section: (typeof SECTIONS)[number],
-  width: number
+  width: number,
+  key: string
 ): Promise<{ page: Page; png: string }> {
   const page = await chrome.newPage();
   await page.send('Emulation.setDeviceMetricsOverride', { width, height: section.height ?? 900, deviceScaleFactor: 1, mobile: width < 500 });
@@ -182,7 +195,7 @@ async function screenshot(
     return true;
   })()`);
   await page.evaluate(script);
-  await page.evaluate(`window.renderSection(${JSON.stringify(section.name)}, ${JSON.stringify(payload)}).then(() => true)`);
+  await page.evaluate(`window.renderSection(${JSON.stringify(key)}, ${JSON.stringify(payload)}).then(() => true)`);
   await sleep(300);
 
   // Tall enough to show the whole section, so every in-view animation runs.
@@ -254,10 +267,11 @@ describe(`the home page's changed sections look as they did at their baseline co
 
   for (const section of SECTIONS) {
     for (const width of WIDTHS) {
-      test(`${section.name} at ${width}px: no pixel differs from ${section.baseline} by more than ${TOLERANCE} levels`, async () => {
-        const before = await screenshot(chrome, baselineScript, css, payload, section, width);
-        const control = await screenshot(chrome, baselineScript, css, payload, section, width);
-        const now = await screenshot(chrome, currentScript, css, payload, section, width);
+      const baseline = baselineAt(section, width);
+      test(`${section.name} at ${width}px: no pixel differs from ${baseline} by more than ${TOLERANCE} levels`, async () => {
+        const before = await screenshot(chrome, baselineScript, css, payload, section, width, `${section.name}@${baseline}`);
+        const control = await screenshot(chrome, baselineScript, css, payload, section, width, `${section.name}@${baseline}`);
+        const now = await screenshot(chrome, currentScript, css, payload, section, width, section.name);
 
         const keep = () => {
           const dir = mkdtempSync(join(tmpdir(), `site-home-${section.name}-${width}-`));
