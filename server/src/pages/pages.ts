@@ -149,7 +149,8 @@ async function tourCategoryPage(slug: string, brand: Brand): Promise<Resolved> {
       title: pageTitle(row.heading, brand),
       description: row.short_intro,
       path: paths.tourCategory(slug),
-      image: row.image ? photoResolver(await loadPhotoSets(pool)).resolvedPhoto(row.image) : null,
+      // The photo the page shows (`GET /api/content`): a seed photo becomes its verified one.
+      image: row.image ? photoResolver(await loadPhotoSets(pool)).publicPhoto('tour_categories', slug, row.image) : null,
       imageAlt: row.heading,
       type: 'website',
       breadcrumbs: [

@@ -94,6 +94,8 @@ describe('preloads, compression and the first layout, in Chrome', { skip, timeou
       '/', '/destinations', '/explore', '/when-to-go', '/tours', '/journal', '/experiences', '/plan', '/photo-credits', '/wishlist',
       `/destinations/${await firstId('destinations')}`,
       `/tours/${await firstId('tours')}`,
+      // A tour category's header is its photo (0030).
+      `/tours/category/${await firstId('tour_categories')}`,
       `/journal/${await firstId('articles')}`,
       `/experiences/${await firstId('featured_experiences')}`
     ];

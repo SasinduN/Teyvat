@@ -195,9 +195,10 @@ contentRouter.get(
       }
     }
     for (const row of payload.destinations) row.gallery = publicGallery(row.id, row.gallery).map(resolvedPhoto);
-    // An attraction's or a tour category's photo is its own pick (or none): only an R2 set to resolve.
+    // An attraction's photo is its own upload (or none): only an R2 set to resolve.
     for (const row of payload.attractions) if (row.image) row.image = resolvedPhoto(row.image);
-    for (const row of payload.tourCategories) if (row.image) row.image = resolvedPhoto(row.image);
+    // A tour category still on its seed photo shows that destination's verified one (0030); none stays none.
+    for (const row of payload.tourCategories) if (row.image) row.image = publicPhoto('tour_categories', row.id, row.image);
     const used = new Set(photoCollections.flatMap(([, rows]) => rows.map(row => row.image)));
     for (const row of payload.destinations) for (const image of row.gallery) used.add(image);
     for (const row of payload.attractions) if (row.image) used.add(row.image);

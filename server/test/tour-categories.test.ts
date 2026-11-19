@@ -198,6 +198,24 @@ describe('GET /api/content', () => {
     assert.deepEqual(payload.tours.find((t) => t.id === 'island-in-7-days')!.category_ids, ['cultural'], "nor is a draft's id on a tour");
   });
 
+  test("a category on its seed photo shows the destination's verified photo once it's in R2; an admin's pick stays", async () => {
+    // As in the screenshots' scratch databases: the R2 rows arrive after 0030 ran.
+    const yala = await seedPhotoSet('yala', 'https://test-bucket.r2.dev', [480, 1280]);
+    const ella = await seedPhotoSet('ella', 'https://test-bucket.r2.dev', [480, 1280]);
+    let payload = await content();
+    assert.equal(payload.tourCategories.find((c) => c.id === 'wildlife')!.image, yala.find((f) => f.width === 1280)!.url);
+    assert.equal(payload.tourCategories.find((c) => c.id === 'hill-country')!.image, ella.find((f) => f.width === 1280)!.url);
+    const destination = payload.destinations.find((d) => d.id === 'ella')!;
+    assert.equal(payload.tourCategories.find((c) => c.id === 'hill-country')!.image, destination.image, 'the same photo as Ella itself');
+
+    const pick = 'https://images.unsplash.com/photo-admin-pick?w=1200';
+    await pool.query(`update public.tour_categories set image = $1 where id = 'wildlife'`, [pick]);
+    await pool.query(`update public.tour_categories set image = null where id = 'family'`);
+    payload = await content();
+    assert.equal(payload.tourCategories.find((c) => c.id === 'wildlife')!.image, pick, "an admin's pick is never replaced");
+    assert.equal(payload.tourCategories.find((c) => c.id === 'family')!.image, null, 'none stays none');
+  });
+
   test('an empty price is null; a tour with none still shows', async () => {
     await pool.query(`update public.tours set price_from = null where id = 'southern-escape'`);
     const tour = (await content()).tours.find((t) => t.id === 'southern-escape')!;

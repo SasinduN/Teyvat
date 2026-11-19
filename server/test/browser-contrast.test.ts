@@ -34,7 +34,7 @@ const skip = !executable ? 'no Chrome found; set CHROME_PATH to run these' : !bu
 
 const PAGES = [
   '/', '/explore', '/plan', '/when-to-go', '/journal', '/destinations', '/destinations/ella', '/experiences',
-  '/experiences/safari-yala', '/tours', '/tours/island-in-7-days', '/journal/ultimate-ella-guide',
+  '/experiences/safari-yala', '/tours', '/tours/island-in-7-days', '/tours/category/cultural', '/tours/category/family', '/journal/ultimate-ella-guide',
   '/about', '/photo-credits', '/wishlist', '/unsubscribe', '/nope'
 ];
 

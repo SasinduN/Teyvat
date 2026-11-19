@@ -51,7 +51,8 @@ this file or anywhere else in git.
 | V | Ride page redesign (`docs/plans/ride-vehicle-picker.md`): vehicle categories (0027), the card picker, the passenger stepper, the phone bar, and the hero's "Book a ride" slide and button | done (#65) |
 | V+ | The buses (0028: AC Bus 1–20, Bus 1–52, bags per passenger) and the sketch-style icon set (plan, part 11) | done (#66) |
 | V++ | The Mini Lorry: goods mode on `/booking` (0029, plan part 12) | done (#67) |
-| TS | Tours on phones: a row to swipe, with a counter, dots and arrows (`docs/plans/tours-swipe-row.md`) | in review |
+| TS | Tours on phones: a row to swipe, with a counter, dots and arrows (`docs/plans/tours-swipe-row.md`) | done (#68) |
+| TC | Tour categories (`docs/plans/tour-categories.md`): 0030, `/tours` row, a page per category, the Tours menu, the tailor-made card (PR 1); new tour drafts through `content:import` (PR 2) | PR 1 in review |
 
 Update the Status column when a phase lands.
 
@@ -321,6 +322,20 @@ Update the Status column when a phase lands.
   `tabindex="-1"`) and Previous/Next shown on keyboard focus. Its controls keep out of the floating
   stack's column (`--tour-float-clear`) rather than joining `AVOID`. 768 px and up is unchanged, and
   `browser-home-baseline` holds ToursSection's 1280 px to `d233e32` (`phoneBaseline` moves only 390 px).
+- **Tour categories** (0030, `docs/plans/tour-categories.md`, `TourCategoryRow`, `TourCategoryPage`, `TailorMadeCard`):
+  - `tour_categories` (8 seeded, published) and `tour_category_links` (a tour in several, in order; the first is
+    its card's label). `tours.category` stays in the database and the admin, shown nowhere.
+  - `/tours/category/<id>`: 200 with its own head, a BreadcrumbList and an ItemList (names and links only: no
+    prices, no ratings); 404 when unknown or unpublished; `/tours/category` 301s to `/tours`. No tour may have
+    the id `category`. In the sitemap and `llms.txt`.
+  - Tours is a header group: All tours, then the published categories, from `/api/content`
+    (`navItems(features, categories)`). The Footer's list follows. `activeNavigationTarget` takes the longest match.
+  - A missing or 0 price reads "Price on request" (`shared/tour-price.ts`), never blank or $0.
+  - The tailor-made card ends every tour list, after it (the swipe row counts tours only): the enquiry form with
+    "Tailor-made trip", and a WhatsApp link while a number is set.
+  - On phones the category row stops short of the floating buttons' column, like the tour cards' buttons;
+    nothing new in `AVOID` (`browser-tour-categories`).
+  - Seed photos: a category on its seed photo shows the destination's verified one (`PHOTO_CORRECTIONS.tour_categories`).
 - **Pages and links** (phase 8):
   - Routes are in `src/App.tsx`; every public URL is built with `paths`
     (`shared/site-paths.ts`), and every link is a real `<a href>` (`Link`,

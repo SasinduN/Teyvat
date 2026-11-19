@@ -18,7 +18,9 @@
 -- docs/reviews/when-to-go-sources.md for the two best-time notes. Each photo is the
 -- R2 file of a destination's verified photo (media.photo_key, 1280 px) when
 -- media has it, as in production, else that destination's stored cover, as in
--- local and CI databases. Four seed tours are assigned, only while they exist.
+-- local and CI databases. A category still on that seed cover shows the verified
+-- photo once it is in R2 (shared/photo-corrections.ts, legacy-photo-references.json),
+-- as the destinations do. Four seed tours are assigned, only while they exist.
 --
 -- Re-runnable: a second run changes nothing, and an existing category or link
 -- (an admin's edit) is left alone.

@@ -26,6 +26,7 @@ import { newDecoder, shortfalls } from './contrast-capture';
 import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
 import { TEXT_AUDIT } from './text-audit';
 import { HOOK_TIMEOUT } from './timeouts';
+import { TOUR_CATEGORIES } from '../../scripts/fixtures/tourCategories';
 
 const ROOT = resolve(import.meta.dirname, '..', '..');
 const executable = findChrome();
@@ -460,7 +461,13 @@ describe('the wishlist, in Chrome', { skip, timeout: 8 * 60_000 }, () => {
       const page = await open('/about');
       try {
         const labels = await page.evaluate<string[]>(`[...document.querySelectorAll('.te-nav-links a')].map((a) => a.textContent.trim())`);
-        assert.deepEqual(labels, ['Explore map', 'Destinations', 'Experiences', 'When to go', 'Tours', 'Journal', 'About', 'Contact']);
+        // Tours is a group since 0030: All tours and the categories, inside it.
+        assert.deepEqual(labels, ['Explore map', 'Destinations', 'Experiences', 'When to go', 'All tours', ...TOUR_CATEGORIES.map((c) => c.name), 'Journal', 'About', 'Contact']);
+        assert.deepEqual(
+          await page.evaluate<string[]>(`[...document.querySelectorAll('.te-nav-links > *')].map((el) => (el.querySelector('button') ?? el).childNodes[0].textContent.trim())`),
+          ['Discover', 'Tours', 'Journal', 'About'],
+          'the same top-level items'
+        );
       } finally {
         await page.close();
       }

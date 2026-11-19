@@ -73,8 +73,9 @@ const SECTIONS: { name: string; baseline: string; phoneBaseline?: string; props:
   { name: 'DestinationSpotlight', baseline: '0bec8db', props: '{ onSelectDestination() {} }' },
   // The editorial redesign (d233e32): a lead row and plain rows (was ca26709, typography).
   { name: 'FeaturedExperiences', baseline: 'd233e32', props: '{ onSelectExperience() {} }' },
-  // d233e32: photo and text side by side (was ca26709). Phones: the row to swipe (53752eb, was d233e32).
-  { name: 'ToursSection', baseline: 'd233e32', phoneBaseline: '53752eb', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
+  // 4049ecb: the label is a tour's first category (tour categories, 0030; was d233e32, photo and
+  // text side by side). Phones: the row to swipe, with the same label change (4049ecb, was 53752eb).
+  { name: 'ToursSection', baseline: '4049ecb', phoneBaseline: '4049ecb', props: '{ onOpenInquiry() {}, onViewRoute() {} }' },
   // d233e32: an asymmetric grid, captions under the photos (was 4c6ae6c).
   { name: 'ExperiencesSection', baseline: 'd233e32', props: '{ onSelectCategory() {} }' },
   // 0bec8db: a lead story and plain rows (was ca26709).
