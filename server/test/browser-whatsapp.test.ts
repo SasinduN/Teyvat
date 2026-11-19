@@ -298,8 +298,10 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     await waitFor(page, `document.body.dataset.route === '/destinations/${id}'`, `${name}'s page`);
     await expectHref(page, expected({ kind: 'destination', id, name }), `${name}'s page`);
 
-    // A tour page, from the Tours list.
-    await follow(page, 'nav', 'Tours', '/tours');
+    // A tour category's page (0030), then a tour page, from the Tours list.
+    await follow(page, 'nav', 'Beach Tours', '/tours/category/beach');
+    await expectHref(page, expected({ kind: 'tourCategory', id: 'beach', name: 'Beach Tours' }), 'a tour category');
+    await follow(page, 'nav', 'All tours', '/tours');
     await expectHref(page, expected({ kind: 'general' }), 'the tours list');
     await follow(page, '#tours', 'View Full Journey', '/tours/island-in-7-days');
     await expectHref(page, expected({ kind: 'tour', id: 'island-in-7-days', title: 'Island in 7 Days' }), 'a tour page');
@@ -315,7 +317,7 @@ describe('the WhatsApp button, in Chrome', { skip }, () => {
     await expectHref(page, expected({ kind: 'general' }), 'home again');
 
     // A route on the Explore map (from /tours, redesign PR 3) counts while the map is on screen.
-    await follow(page, 'nav', 'Tours', '/tours');
+    await follow(page, 'nav', 'All tours', '/tours');
     await page.evaluate(`(() => {
       const card = [...document.querySelectorAll('#tours h3')].find((h) => h.textContent.trim() === 'Wild Sri Lanka Expedition').closest('.group');
       [...card.querySelectorAll('button')].find((b) => b.textContent.trim() === 'View route on map').click();

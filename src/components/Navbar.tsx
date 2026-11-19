@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Search, Menu, X, Compass, ArrowRight, Heart } from 'lucide-react';
 import { useModalFocus } from '@/hooks/useModalFocus';
-import { useBrand, useFeatures } from '@/hooks/useSiteContent';
+import { useBrand, useFeatures, useTourCategories } from '@/hooks/useSiteContent';
 import { copyrightLine } from '@shared/brand';
 import { activeNavigationTarget } from '@/lib/activeNavigation';
-import { isNavGroup, navItems, navSections, paths } from '@shared/site-paths';
+import { isNavGroup, navItems, navLinks, navSections, paths } from '@shared/site-paths';
 import { Logo } from './Logo';
 import { NavDropdown } from './NavDropdown';
 import { SiteLink } from './SiteLink';
@@ -31,8 +31,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const menuRef = useModalFocus(mobileMenuOpen, () => setMobileMenuOpen(false));
-  const activeTarget = activeNavigationTarget(location.pathname, location.hash);
   const features = useFeatures();
+  // Tours is a group: All tours, then each published category (0030).
+  const tourCategories = useTourCategories();
+  const activeTarget = activeNavigationTarget(location.pathname, location.hash, navLinks({ bookings: true }, tourCategories));
   const brand = useBrand();
   const wishlist = useWishlist();
   const phoneActionsRef = useRef<HTMLDivElement>(null);
@@ -80,7 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
 
             {/* Desktop Navigation Links */}
             <nav className="te-nav-links items-center" aria-label="Main Navigation">
-              {navItems(features).map((item) =>
+              {navItems(features, tourCategories).map((item) =>
                 isNavGroup(item) ? (
                   <NavDropdown key={item.label} label={item.label} links={item.links} activeTarget={activeTarget} />
                 ) : (
@@ -180,7 +182,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
           </button>
           <nav aria-label="Mobile navigation" className="space-y-6">
             <div className="space-y-6 pb-2" data-menu-sections>
-              {navSections(features).map((section) => (
+              {navSections(features, tourCategories).map((section) => (
                 <div key={section.label ?? section.links[0].to} data-menu-section={section.label ?? ''}>
                   {section.label && (
                     <p className="text-xs uppercase tracking-widest text-[var(--accent-text)] font-semibold mb-2">{section.label}</p>

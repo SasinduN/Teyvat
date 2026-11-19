@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { copyrightLine } from '@shared/brand';
 import { Logo } from './Logo';
-import { useBrand, useFeatures, useSiteSettings } from '@/hooks/useSiteContent';
+import { useBrand, useFeatures, useSiteSettings, useTourCategories } from '@/hooks/useSiteContent';
 import { useWishlist } from '@/lib/wishlist';
 import { MapPin, Phone, Mail, CheckCircle2, ArrowRight } from 'lucide-react';
 import { API_ROUTES } from '@shared/api';
@@ -28,7 +28,8 @@ const Social: React.FC<{ href: string | null | undefined; label: string; classNa
 export const Footer: React.FC = () => {
   const settings = useSiteSettings();
   const brand = useBrand();
-  const links = navLinks(useFeatures());
+  // The header's links, flat: the tour categories under All tours (0030).
+  const links = navLinks(useFeatures(), useTourCategories());
   const { available: wishlistAvailable } = useWishlist();
   const [email, setEmail] = useState('');
   /** The spam trap: a person never sees it, so it stays empty. */

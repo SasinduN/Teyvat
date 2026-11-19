@@ -2,8 +2,9 @@ import { TravelImage } from '@/components/TravelImage';
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useTours } from '@/hooks/useSiteContent';
+import { useTourCategories, useTours } from '@/hooks/useSiteContent';
 import { paths } from '@shared/site-paths';
+import { hasTourPrice, PRICE_ON_REQUEST } from '@shared/tour-price';
 import { TourPackage } from '../types';
 import { SaveButton } from './SaveButton';
 
@@ -11,6 +12,11 @@ interface ToursSectionProps {
   onOpenInquiry: (tourTitle: string) => void;
   /** Shows the tour's route on the map (and scrolls there). */
   onViewRoute?: (tour: TourPackage) => void;
+  /** The tours to list: a category's (its page). Left out: every published tour. */
+  tours?: TourPackage[];
+  /** The section's heading and the line under it, when not the full list's. */
+  title?: string;
+  lead?: string;
 }
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -25,8 +31,18 @@ const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)'
  * and a live region. Nothing advances on its own. Wider screens hide the controls, and the
  * list lays out as it always has.
  */
-export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onViewRoute }) => {
-  const tours = useTours();
+export const ToursSection: React.FC<ToursSectionProps> = ({
+  onOpenInquiry,
+  onViewRoute,
+  tours: listed,
+  title = 'Routes around the island',
+  lead = 'Multi-day routes planned by local experts. Dates, hotels and pace can all change.'
+}) => {
+  const all = useTours();
+  const tours = listed ?? all;
+  const categories = useTourCategories();
+  /** The card's label: the tour's first category (0030), none when it has none. */
+  const labelOf = (tour: TourPackage) => categories.find((c) => c.id === tour.categoryIds[0])?.name;
   const listId = useId();
   const list = useRef<HTMLUListElement>(null);
   const [active, setActive] = useState(0);
@@ -68,8 +84,8 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
     <section id="tours" className="te-ed-section">
       <div className="te-container">
         <div className="te-section-header te-ed-head">
-          <h2 className="te-ed-title font-heading">Routes around the island</h2>
-          <p>Multi-day routes planned by local experts. Dates, hotels and pace can all change.</p>
+          <h2 className="te-ed-title font-heading">{title}</h2>
+          <p>{lead}</p>
         </div>
 
         <ul ref={list} id={listId} className="te-tour-list" aria-label="Tour packages">
@@ -84,9 +100,11 @@ export const ToursSection: React.FC<ToursSectionProps> = ({ onOpenInquiry, onVie
                   />
                 </div>
                 <div className="te-tour-row__body">
-                  <p className="te-ed-label te-tour-row__label">{tour.category} tour</p>
+                  {labelOf(tour) && <p className="te-ed-label te-tour-row__label">{labelOf(tour)}</p>}
                   <h3 className="font-heading">{tour.title}</h3>
-                  <p className="te-ed-meta mt-2">{tour.days} days, {tour.days - 1} nights. From ${tour.priceFrom} USD.</p>
+                  <p className="te-ed-meta mt-2">
+                    {tour.days} days, {tour.days - 1} nights. {hasTourPrice(tour.priceFrom) ? `From $${tour.priceFrom} USD.` : `${PRICE_ON_REQUEST}.`}
+                  </p>
                   <p className="te-tour-row__desc">{tour.shortDesc}</p>
                   <p className="te-tour-row__route"><strong>Route:</strong> {tour.route.join(', ')}</p>
                   <div className="te-ed-actions te-tour-row__actions">

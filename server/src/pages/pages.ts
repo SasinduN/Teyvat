@@ -16,7 +16,7 @@ import { Router, type Request, type Response } from 'express';
 
 import { BRAND, type Brand } from '../../../shared/brand';
 import { homeDescription, homeTitle, PAGE_DESCRIPTIONS, PAGE_NAMES, pageTitle, type PageName } from '../../../shared/page-meta';
-import { paths } from '../../../shared/site-paths';
+import { paths, TOUR_CATEGORY_PATH_SEGMENT } from '../../../shared/site-paths';
 import { SLUG_PATTERN } from '../../../shared/content-schema';
 import { escapeHtml } from '../../../shared/html';
 import type { SiteConfig } from '../env';
@@ -112,6 +112,56 @@ const FIXED_PAGES: Record<string, () => Promise<[PageName | null, string | null,
 
 const isAdminPath = (path: string): boolean => path === '/admin' || path.startsWith('/admin/');
 
+/** `/tours/category`: no page of its own (it 301s to /tours); each category is under it (0030). */
+const TOUR_CATEGORY_ROOT = `${paths.tours}/${TOUR_CATEGORY_PATH_SEGMENT}`;
+const TOUR_CATEGORY_PREFIX = `${TOUR_CATEGORY_ROOT}/`;
+
+/** Published tours, in the site's order: all of them, or one category's. Names and links only. */
+async function tourItems(categoryId?: string): Promise<{ name: string; path: string }[]> {
+  const { rows } = categoryId
+    ? await pool.query<{ id: string; title: string }>(
+        `select t.id, t.title from public.tours t
+           join public.tour_category_links l on l.tour_id = t.id
+          where t.published and l.category_id = $1
+          order by t.sort_order asc, t.id asc`,
+        [categoryId]
+      )
+    : await pool.query<{ id: string; title: string }>('select id, title from public.tours where published order by sort_order asc, id asc');
+  return rows.map((row) => ({ name: row.title, path: paths.tour(row.id) }));
+}
+
+/**
+ * A tour category's page: its heading as the title, its short intro as the description,
+ * its photo to share, the breadcrumbs (Home, Tours, the category) and its tours. A 404
+ * for an unknown or unpublished id.
+ */
+async function tourCategoryPage(slug: string, brand: Brand): Promise<Resolved> {
+  if (!SLUG_PATTERN.test(slug)) return notFoundFor(brand);
+  const { rows } = await pool.query<{ name: string; heading: string; short_intro: string; image: string | null }>(
+    'select name, heading, short_intro, image from public.tour_categories where id = $1 and published',
+    [slug]
+  );
+  const row = rows[0];
+  if (!row) return notFoundFor(brand);
+  return {
+    status: 200,
+    meta: {
+      title: pageTitle(row.heading, brand),
+      description: row.short_intro,
+      path: paths.tourCategory(slug),
+      image: row.image ? photoResolver(await loadPhotoSets(pool)).resolvedPhoto(row.image) : null,
+      imageAlt: row.heading,
+      type: 'website',
+      breadcrumbs: [
+        { name: 'Home', path: paths.home },
+        { name: PAGE_NAMES.tours, path: paths.tours },
+        { name: row.name, path: paths.tourCategory(slug) }
+      ],
+      itemList: await tourItems(slug)
+    }
+  };
+}
+
 /**
  * Pages whose header (PageHero, or the home page's first slide) shows their share
  * image: the same first row, in the same order, that the page picks from
@@ -124,6 +174,7 @@ const HERO_IS_SHARE_IMAGE: ReadonlySet<string> = new Set([
 ]);
 
 export function heroIsShareImage(path: string): boolean {
+  // A tour category's header is its photo too (under /tours/, like a tour's).
   return HERO_IS_SHARE_IMAGE.has(path) || ROW_PAGES.some((page) => path.startsWith(page.prefix));
 }
 
@@ -152,9 +203,18 @@ export async function resolvePage(
   if (fixed) {
     const [name, description, image] = await fixed();
     const title = name ? pageTitle(PAGE_NAMES[name], brand) : homeTitle(brand);
+    // /tours lists every tour: its breadcrumbs and an ItemList of them (0030).
+    const structured =
+      path === paths.tours
+        ? { breadcrumbs: [{ name: 'Home', path: paths.home }, { name: PAGE_NAMES.tours, path: paths.tours }], itemList: await tourItems() }
+        : {};
     // A filtered list (/destinations?category=…) is the same page: the canonical path has no query.
-    return { status: 200, meta: { title, description: description ?? homeDescription(brand), path, image, type: 'website' } };
+    return { status: 200, meta: { title, description: description ?? homeDescription(brand), path, image, type: 'website', ...structured } };
   }
+
+  // Tour categories (0030), before the tours' own /tours/<id>.
+  if (path === TOUR_CATEGORY_ROOT) return { redirect: paths.tours };
+  if (path.startsWith(TOUR_CATEGORY_PREFIX)) return tourCategoryPage(path.slice(TOUR_CATEGORY_PREFIX.length), brand);
 
   for (const page of ROW_PAGES) {
     if (!path.startsWith(page.prefix)) continue;
@@ -276,6 +336,7 @@ async function sitemapXml(origin: string): Promise<string> {
     ['destinations', paths.destination],
     ['featured_experiences', paths.experience],
     ['tours', paths.tour],
+    ['tour_categories', paths.tourCategory],
     ['articles', paths.article]
   ] as const;
   const entries: { loc: string; lastmod?: string }[] = Object.keys(FIXED_PAGES).map((path) => ({ loc: origin + path }));
@@ -324,6 +385,7 @@ export async function llmsTxt(origin: string, brand: Brand = BRAND): Promise<str
     { heading: 'Destinations', sql: 'select id, name as title, short_description as description from public.destinations', path: paths.destination },
     { heading: 'Experiences', sql: 'select id, title, description from public.featured_experiences', path: paths.experience },
     { heading: 'Tours', sql: 'select id, title, short_desc as description from public.tours', path: paths.tour },
+    { heading: 'Tour categories', sql: 'select id, name as title, short_intro as description from public.tour_categories', path: paths.tourCategory },
     { heading: 'Journal', sql: 'select id, title, snippet as description from public.articles', path: paths.article }
   ] as const;
   // The tagline ends a sentence: a full stop only if it has none of its own.
