@@ -116,6 +116,16 @@ describe('photos at the right width, in Chrome', { skip, timeout: 8 * 60_000 }, 
   const scrollThrough = () => page.evaluate(`(async () => {
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     for (let y = 0; y < document.documentElement.scrollHeight; y += 400) { scrollTo(0, y); await wait(60); }
+    // A row that scrolls sideways (the tours on phones) is swiped through too: its lazy photos load
+    // as a visitor reaches them, not before.
+    const rows = [...document.querySelectorAll('main *')].filter((el) =>
+      /auto|scroll/.test(getComputedStyle(el).overflowX) && el.scrollWidth > el.clientWidth + 1);
+    for (const row of rows) {
+      row.scrollIntoView({ block: 'center', behavior: 'instant' });
+      for (let x = 0; x <= row.scrollWidth; x += Math.max(100, row.clientWidth / 2)) { row.scrollTo({ left: x, behavior: 'instant' }); await wait(60); }
+      await wait(${LATE_MS * 3});
+      row.scrollTo({ left: 0, behavior: 'instant' });
+    }
     await wait(${LATE_MS * 3});
     scrollTo(0, 0);
     await Promise.race([wait(5000), Promise.all([...document.images].filter((i) => !i.complete && i.loading !== 'lazy').map((i) => new Promise((r) => { i.onload = i.onerror = r; })))]);
