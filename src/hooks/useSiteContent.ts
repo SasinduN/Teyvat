@@ -40,6 +40,8 @@ export const useAttractions = () => useSiteContent().content.attractions;
 export const useExperienceCategories = () => useSiteContent().content.experienceCategories;
 export const useFeaturedExperiences = () => useSiteContent().content.featuredExperiences;
 export const useTours = () => useSiteContent().content.tours;
+/** Published tour categories, in order: the Tours menu, `/tours`'s row and the category pages. */
+export const useTourCategories = () => useSiteContent().content.tourCategories;
 export const useArticles = () => useSiteContent().content.articles;
 export const useHiddenGems = () => useSiteContent().content.hiddenGems;
 export const usePhotoStories = () => useSiteContent().content.photoStories;

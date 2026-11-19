@@ -2,9 +2,10 @@ import { TourPackage } from '../../src/types';
 
 /**
  * The approved tours, with their routes as the original place-name lists.
- * `stops` came later (0007): `scripts/route-stops.ts` derives them.
+ * `stops` came later (0007): `scripts/route-stops.ts` derives them. So did
+ * `categoryIds` (0030, `TOUR_CATEGORY_LINKS` in `tourCategories.ts`). Every one has a price.
  */
-export const TOURS: Omit<TourPackage, 'stops'>[] = [
+export const TOURS: (Omit<TourPackage, 'stops' | 'categoryIds' | 'priceFrom'> & { priceFrom: number })[] = [
   {
     id: 'island-in-7-days',
     title: 'Island in 7 Days',

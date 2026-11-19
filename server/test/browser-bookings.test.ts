@@ -26,6 +26,7 @@ import { PAGE_NAMES, pageTitle } from '../../shared/page-meta';
 import { BRAND } from '../../shared/brand';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
+import { TOUR_CATEGORIES } from '../../scripts/fixtures/tourCategories';
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
 import {
   assertConnectedToTestDatabase,
@@ -139,7 +140,8 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
   test('on: the link after Tours, Book This Tour with that tour chosen, and the form', async () => {
     const tour = await openPage(on, '/tours/island-in-7-days');
     const nav = await linkTexts(tour, 'header nav');
-    assert.equal(nav[nav.indexOf('Tours') + 1], 'Book Your Ride');
+    // Tours is a group: All tours, then the categories (0030). Book Your Ride comes after its last.
+    assert.equal(nav[nav.indexOf('All tours') + 1 + TOUR_CATEGORIES.length], 'Book Your Ride');
     assert.ok((await linkTexts(tour, 'footer')).includes('Book Your Ride'), 'footer');
     assert.ok((await buttonTexts(tour)).includes('Inquire About This Tour'));
     const href = await tour.evaluate<string>(`[...document.querySelectorAll('main a')].find((a) => a.textContent.trim() === 'Book This Tour').getAttribute('href')`);

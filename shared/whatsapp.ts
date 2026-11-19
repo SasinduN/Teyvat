@@ -37,6 +37,8 @@ export type WhatsAppContext =
   | { kind: 'tour'; id: string; title: string }
   | { kind: 'destination'; id: string; name: string }
   | { kind: 'experience'; id: string; title: string }
+  | { kind: 'tourCategory'; id: string; name: string }
+  | { kind: 'tailorMade' }
   | { kind: 'general' };
 
 /**
@@ -51,6 +53,10 @@ export function whatsappMessage(context: WhatsAppContext, origin: string): strin
       return `Hi! I'd like to know more about visiting ${context.name}. ${origin}${paths.destination(context.id)}`;
     case 'experience':
       return `Hi! I'm interested in the ${context.title} experience. ${origin}${paths.experience(context.id)}`;
+    case 'tourCategory':
+      return `Hi! I'm interested in your ${context.name}. ${origin}${paths.tourCategory(context.id)}`;
+    case 'tailorMade':
+      return "Hi! I'd like a tailor-made trip to Sri Lanka.";
     case 'general':
       return "Hi! I'd like help planning a trip to Sri Lanka.";
   }

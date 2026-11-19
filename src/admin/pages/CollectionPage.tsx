@@ -295,8 +295,15 @@ export const CollectionPage: React.FC = () => {
                   : '';
                 const metaValue = collection.metaField ? String(row[collection.metaField] ?? '') : '';
                 // An attraction's destination by name, once the names have loaded.
-                const meta = filterBy && collection.metaField === filterBy.field ? (destinationName.get(metaValue) ?? metaValue) : metaValue;
+                const meta =
+                  filterBy && collection.metaField === filterBy.field
+                    ? (destinationName.get(metaValue) ?? metaValue)
+                    : collection.table === 'tour_categories'
+                      ? `${metaValue || 0} ${metaValue === '1' ? 'tour' : 'tours'}`
+                      : metaValue;
                 const cascade = collection.table === 'destinations' ? attractionsOf(row.id) : 0;
+                // A tour category: how many tours lose it (the tours themselves stay).
+                const tourCount = collection.table === 'tour_categories' ? Number(row.tour_count ?? 0) : 0;
                 const isBusy = busyId === row.id;
 
                 return (
@@ -366,6 +373,11 @@ export const CollectionPage: React.FC = () => {
                           {cascade > 0 && (
                             <span className="max-w-[14rem] text-xs font-medium text-[var(--danger)]" data-cascade-warning>
                               Also deletes its {cascade} {cascade === 1 ? 'attraction' : 'attractions'}.
+                            </span>
+                          )}
+                          {tourCount > 0 && (
+                            <span className="max-w-[14rem] text-xs font-medium text-[var(--danger)]" data-cascade-warning>
+                              Takes it off {tourCount} {tourCount === 1 ? 'tour' : 'tours'}. The tours stay.
                             </span>
                           )}
                           <Button

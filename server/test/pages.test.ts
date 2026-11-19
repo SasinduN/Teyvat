@@ -21,6 +21,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, before, beforeEach, describe, test } from 'node:test';
 
+import type { SiteContentPayload } from '../../shared/api';
 import { homeDescription, homeTitle, PAGE_DESCRIPTIONS, PAGE_NAMES, pageTitle } from '../../shared/page-meta';
 import { createApp } from '../src/app';
 import type { SiteConfig } from '../src/env';
@@ -264,6 +265,73 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     }
   });
 
+  /** The JSON-LD blocks in a head, parsed. */
+  const jsonLdOf = (h: string): Record<string, unknown>[] =>
+    [...h.matchAll(/<script type="application\/ld\+json">([^<]*)<\/script>/g)].map((m) => JSON.parse(m[1]));
+
+  test('a tour category gets its own head, breadcrumbs and list of tours; unknown, unpublished and bad slugs are 404 (0030)', async () => {
+    const { status, head: h } = await head(open, '/tours/category/cultural');
+    assert.equal(status, 200);
+    assert.equal(titleOf(h), `Cultural tours in Sri Lanka | ${BRAND.name}`);
+    const row = (await pool.query(`select short_intro from public.tour_categories where id = 'cultural'`)).rows[0];
+    assert.equal(metaContent(h, 'description'), summarise(row.short_intro));
+    assert.equal(metaContent(h, 'og:title'), `Cultural tours in Sri Lanka | ${BRAND.name}`);
+    assert.equal(canonicalOf(h), `${SITE}/tours/category/cultural`);
+    assert.equal(metaContent(h, 'og:url'), `${SITE}/tours/category/cultural`);
+    const payload = (await (await fetch(`${open.baseUrl}/api/content`)).json()) as SiteContentPayload;
+    const category = payload.tourCategories.find((c) => c.id === 'cultural')!;
+    assert.equal(metaContent(h, 'og:image'), shareImage(category.image, SITE)!.url, 'the share image is the category photo');
+    assert.match(h, /<link rel="preload" as="image"/, 'its header photo is preloaded');
+
+    const blocks = jsonLdOf(h);
+    const crumbs = blocks.find((b) => b['@type'] === 'BreadcrumbList') as { itemListElement: { position: number; name: string; item: string }[] };
+    assert.deepEqual(crumbs.itemListElement, [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE}/` },
+      { '@type': 'ListItem', position: 2, name: 'Tours', item: `${SITE}/tours` },
+      { '@type': 'ListItem', position: 3, name: 'Cultural Tours', item: `${SITE}/tours/category/cultural` }
+    ]);
+    const list = blocks.find((b) => b['@type'] === 'ItemList') as { numberOfItems: number; itemListElement: { name: string; url: string }[] };
+    // The seed: Island in 7 Days (sort 0) and Cultural Sri Lanka (sort 1) are Cultural.
+    assert.deepEqual(list.itemListElement.map((i) => i.url), [`${SITE}/tours/island-in-7-days`, `${SITE}/tours/cultural-sri-lanka`]);
+    assert.equal(list.numberOfItems, 2);
+    const ld = JSON.stringify(blocks);
+    assert.doesNotMatch(ld, /rating|price|offers|aggregateRating/i, 'no ratings, no prices');
+
+    // An unpublished tour leaves the list; a category with none still has its page (the empty state).
+    await pool.query(`update public.tours set published = false where id = 'cultural-sri-lanka'`);
+    const fewer = jsonLdOf((await head(open, '/tours/category/cultural')).head).find((b) => b['@type'] === 'ItemList') as { itemListElement: unknown[] };
+    assert.equal(fewer.itemListElement.length, 1);
+    const empty = await head(open, '/tours/category/family');
+    assert.equal(empty.status, 200, 'no tours yet: still a page');
+    assert.equal((jsonLdOf(empty.head).find((b) => b['@type'] === 'ItemList') as { numberOfItems: number }).numberOfItems, 0);
+
+    for (const path of ['/tours/category/nowhere', '/tours/category/Not-A-Slug!', '/tours/category/beach/more']) {
+      const res = await get(closed, path);
+      assert.equal(res.status, 404, path);
+      assert.match(res.headers.get('content-type') ?? '', /text\/html/, path);
+    }
+    await pool.query(`update public.tour_categories set published = false where id = 'beach'`);
+    assert.equal((await get(closed, '/tours/category/beach')).status, 404, 'unpublished is not found');
+
+    for (const from of ['/tours/category', '/tours/category/']) {
+      let res = await get(closed, from);
+      if (res.headers.get('location') === '/tours/category') res = await get(closed, '/tours/category');
+      assert.equal(res.status, 301, from);
+      assert.equal(res.headers.get('location'), '/tours', from);
+    }
+  });
+
+  test('/tours: breadcrumbs and every published tour as an ItemList, without prices', async () => {
+    const blocks = jsonLdOf((await head(open, '/tours')).head);
+    const crumbs = blocks.find((b) => b['@type'] === 'BreadcrumbList') as { itemListElement: { name: string }[] };
+    assert.deepEqual(crumbs.itemListElement.map((c) => c.name), ['Home', 'Tours']);
+    const list = blocks.find((b) => b['@type'] === 'ItemList') as { itemListElement: { url: string }[] };
+    const published = (await pool.query(`select id from public.tours where published order by sort_order, id`)).rows.map((r) => `${SITE}/tours/${r.id}`);
+    assert.deepEqual(list.itemListElement.map((i) => i.url), published);
+    assert.doesNotMatch(JSON.stringify(blocks), /rating|price|offers/i);
+    assert.equal(blocks.filter((b) => b['@type'] === 'TravelAgency').length, 1, 'the brand block stays');
+  });
+
   test('the fixed pages, a filtered list, the 404 and the admin', async () => {
     let { head: h } = await head(open, '/');
     assert.equal(titleOf(h), homeTitle(BRAND));
@@ -444,8 +512,9 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
 
     const count = async (table: string) =>
       (await pool.query(`select count(*)::int as n from public.${table} where published`)).rows[0].n as number;
-    const rows = (await count('destinations')) + (await count('featured_experiences')) + (await count('tours')) + (await count('articles'));
+    const rows = (await count('destinations')) + (await count('featured_experiences')) + (await count('tours')) + (await count('tour_categories')) + (await count('articles'));
     assert.equal(locs.length, 10 + rows, 'the fixed pages plus every published row');
+    assert.ok(locs.includes(`${SITE}/tours/category/beach`), 'each published tour category (0030)');
     assert.ok(!locs.includes(`${SITE}/destinations/galle`), 'not the unpublished one');
     assert.ok(!locs.some((l) => l.includes('?')), 'no filtered lists');
     assert.match(xml, new RegExp(`<url><loc>${SITE}/destinations/ella</loc><lastmod>\\d{4}-\\d{2}-\\d{2}</lastmod></url>`));
@@ -479,8 +548,10 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     }
     const count = async (table: string) =>
       (await pool.query(`select count(*)::int as n from public.${table} where published`)).rows[0].n as number;
-    const rows = (await count('destinations')) + (await count('featured_experiences')) + (await count('tours')) + (await count('articles'));
+    const rows = (await count('destinations')) + (await count('featured_experiences')) + (await count('tours')) + (await count('tour_categories')) + (await count('articles'));
     assert.equal(links.length, 10 + rows, 'the fixed pages plus every published row');
+    assert.ok(text.includes('\n## Tour categories\n'), 'the tour categories (0030)');
+    assert.ok(links.includes(`${SITE}/tours/category/wildlife`));
     assert.ok(links.includes(`${SITE}/destinations/ella`));
     assert.ok(!links.includes(`${SITE}/destinations/galle`), 'not the unpublished one');
     assert.ok(!links.some((l) => /\/admin|\/api\/|\/unsubscribe/.test(l)), 'never the admin, the API or the unsubscribe page');

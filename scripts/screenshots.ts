@@ -45,6 +45,11 @@
  * scratch databases. For a short retake: `--ride-states goods-empty,goods-filled` takes only those
  * states (no hero, no admin), and `--phone-only` only the 375 px width (for pages too).
  *
+ * `--tour-categories` takes only the twelve pairs for tour categories (docs/plans/tour-categories.md):
+ * `/tours` and a category's page (Beach), phone and laptop, light and dark; the Tours dropdown;
+ * the phone menu; Admin → Tour Categories and the tour form's categories. "Before", the category
+ * page is a 404, Tours is a plain link and the admin has neither.
+ *
  * `--admin` adds the admin: the login page (empty, a password typed and
  * shown, after two wrong tries, locked), then (signed in as a throwaway
  * admin created in each scratch database) the dashboard, a collection, two
@@ -114,6 +119,8 @@ const { values } = parseArgs({
     attractions: { type: 'boolean', default: false },
     /** Only the ten pairs for the rebrand: header, footer, hero, phone menu, admin sign-in, an email. */
     brand: { type: 'boolean', default: false },
+    /** Only the twelve pairs for tour categories: /tours, a category page, the menus, the admin. */
+    'tour-categories': { type: 'boolean', default: false },
     /** Only the ride page's states, the home hero and Admin → Bookings, bookings on. */
     ride: { type: 'boolean', default: false },
     /** With --ride: only these states (comma-separated names), and no hero or admin. */
@@ -247,7 +254,7 @@ async function prepare(site: Site): Promise<void> {
       await client.end();
     }
   }
-  if (values.admin || values['when-to-go'] || values.attractions || values.ride) {
+  if (values.admin || values['when-to-go'] || values.attractions || values.ride || values['tour-categories']) {
     const client = new Client({ connectionString: db });
     await client.connect();
     try {
@@ -661,6 +668,63 @@ async function shootAttractions(chrome: Chrome, site: Site, out: string): Promis
   }
 }
 
+/** `--tour-categories`: twelve pairs. */
+const TOUR_CATEGORY_SHOTS: { name: string; viewport: typeof LAPTOP | typeof PHONE; dark?: boolean; path: string; kind: 'page' | 'dropdown' | 'menu' | 'admin' }[] = [
+  { name: 'tours-desktop', viewport: LAPTOP, path: '/tours', kind: 'page' },
+  { name: 'tours-desktop-dark', viewport: LAPTOP, dark: true, path: '/tours', kind: 'page' },
+  { name: 'tours-phone', viewport: PHONE, path: '/tours', kind: 'page' },
+  { name: 'tours-phone-dark', viewport: PHONE, dark: true, path: '/tours', kind: 'page' },
+  { name: 'category-beach-desktop', viewport: LAPTOP, path: '/tours/category/beach', kind: 'page' },
+  { name: 'category-beach-desktop-dark', viewport: LAPTOP, dark: true, path: '/tours/category/beach', kind: 'page' },
+  { name: 'category-beach-phone', viewport: PHONE, path: '/tours/category/beach', kind: 'page' },
+  { name: 'category-beach-phone-dark', viewport: PHONE, dark: true, path: '/tours/category/beach', kind: 'page' },
+  { name: 'tours-dropdown', viewport: LAPTOP, path: '/tours', kind: 'dropdown' },
+  { name: 'tours-phone-menu', viewport: PHONE, path: '/tours', kind: 'menu' },
+  { name: 'admin-tour-categories', viewport: LAPTOP, path: '/admin/tour-categories', kind: 'admin' },
+  { name: 'admin-tour-form-categories', viewport: LAPTOP, path: '/admin/tours/island-in-7-days', kind: 'admin' }
+];
+
+async function shootTourCategories(chrome: Chrome, site: Site, out: string): Promise<void> {
+  for (const shot of TOUR_CATEGORY_SHOTS) {
+    const file = join(out, `${shot.name}-${site.label}.jpg`);
+    const dark = Boolean(shot.dark);
+    if (shot.kind === 'page') {
+      const page = await open(chrome, site.url + shot.path, shot.viewport, dark);
+      await settle(page);
+      await shoot(page, file, true);
+      await closePage(page);
+    } else if (shot.kind === 'dropdown' || shot.kind === 'menu') {
+      const page = await open(chrome, site.url + shot.path, shot.viewport, dark);
+      await settle(page);
+      await page.evaluate(
+        shot.kind === 'dropdown'
+          ? `[...document.querySelectorAll('.te-nav-trigger')].find((b) => b.textContent.trim() === 'Tours')?.click(), true`
+          : `document.querySelector('header button[aria-label*="menu" i]')?.click(), true`
+      );
+      await sleep(400);
+      await page.evaluate(QUIET);
+      await shoot(page, file, false);
+      await closePage(page);
+    } else {
+      const page = await openAdmin(chrome, `${site.url}/admin/login`, shot.viewport, dark);
+      const status = await page.evaluate<number>(`fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(${JSON.stringify(SHOTS_ADMIN)})
+      }).then((r) => r.status)`);
+      if (status !== 200) throw new Error(`[${site.label}] admin sign-in failed (${status})`);
+      await page.send('Page.navigate', { url: site.url + shot.path });
+      await waitFor(page, `document.querySelector('main h1') || document.querySelector('main')?.innerText.length > 40`, 10_000);
+      await page.evaluate(LOADED);
+      // The tour form: its categories (after), or where they go, by the price (before).
+      await page.evaluate(`(document.querySelector('[data-tour-categories-field]') ?? document.querySelector('#field-price_from'))?.scrollIntoView({ block: 'center', behavior: 'instant' }), true`);
+      await page.evaluate(QUIET);
+      await shoot(page, file, shot.path.endsWith('tour-categories'));
+      await closePage(page);
+    }
+    console.log(`  ${shot.name}-${site.label}.jpg`);
+  }
+}
+
 /** `--brand`: ten pairs. */
 const BRAND_SHOTS: { name: string; viewport: typeof LAPTOP | typeof PHONE; dark?: boolean; kind: 'header' | 'footer' | 'hero' | 'menu' | 'login' | 'email' }[] = [
   { name: 'brand-header-desktop', viewport: LAPTOP, kind: 'header' },
@@ -949,6 +1013,10 @@ async function main(): Promise<void> {
       }
       if (values.brand) {
         await shootBrand(chrome, site, out);
+        continue;
+      }
+      if (values['tour-categories']) {
+        await shootTourCategories(chrome, site, out);
         continue;
       }
       if (values.ride) {

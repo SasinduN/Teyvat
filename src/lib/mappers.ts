@@ -19,6 +19,7 @@ import type {
   PhotoStory,
   Pillar,
   SiteSettings,
+  TourCategory,
   TourPackage
 } from '@/types';
 import type {
@@ -29,6 +30,7 @@ import type {
   HiddenGemRow,
   PhotoStoryRow,
   PillarRow,
+  TourCategoryRow,
 } from '@shared/database.types';
 import type { PublicDestinationRow, PublicFeaturedExperienceRow, PublicSiteSettings, PublicTourRow } from '@shared/api';
 import type { PublicImageCredit } from '@shared/image-credits';
@@ -144,9 +146,21 @@ export const toTourPackage = (r: PublicTourRow): TourPackage => ({
   image: r.image,
   highlights: r.highlights,
   includedPlaces: r.included_places,
-  priceFrom: Number(r.price_from),
+  priceFrom: r.price_from === null ? null : Number(r.price_from),
   category: r.category,
+  categoryIds: r.category_ids ?? [],
   itinerary: Array.isArray(r.itinerary) ? r.itinerary : []
+});
+
+export const toTourCategory = (r: TourCategoryRow): TourCategory => ({
+  id: r.id,
+  name: r.name,
+  heading: r.heading,
+  shortIntro: r.short_intro,
+  // Paragraphs are separated by a blank line, as in the When to go explainer.
+  intro: r.long_intro.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean),
+  image: opt(r.image),
+  bestTimeNote: opt(r.best_time_note)
 });
 
 export const toArticle = (r: ArticleRow): Article => ({

@@ -217,7 +217,9 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
       ['/destinations/ella', `document.querySelector('main [data-google-maps]')`],
       ['/experiences', `document.querySelector('main a[href^="/experiences/"]')`],
       ['/experiences/safari-yala', `document.querySelector('main h1')`],
-      ['/tours', `document.querySelector('#tours h3')`],
+      ['/tours', `document.querySelector('#tours h3') && document.querySelector('[data-tour-categories] img')`],
+      // A tour category's page (0030): its header photo and its tours.
+      ['/tours/category/cultural', `document.querySelector('#tours h3') && document.querySelector('[data-tailor-made]')`],
       // The route map loads Leaflet's own stylesheet, and the tiles.
       ['/tours/island-in-7-days', `document.querySelectorAll('[data-route-map] img.leaflet-tile').length > 0`],
       ['/journal/ultimate-ella-guide', `document.querySelector('main article')`],
@@ -234,8 +236,10 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     for (const [path, ready] of pages) {
       await visit(path, ready);
       // The brand's JSON-LD is in every page: inline, but data, never run, so the CSP lets it be.
+      // The tour lists add their breadcrumbs and an ItemList (0030).
       const ld = await page.evaluate<string[]>(`[...document.querySelectorAll('script[type="application/ld+json"]')].map((s) => JSON.parse(s.textContent)['@type'])`);
-      assert.deepEqual(ld, ['TravelAgency'], `${path}: one JSON-LD block`);
+      const lists = path === '/tours' || path.startsWith('/tours/category/');
+      assert.deepEqual(ld, lists ? ['TravelAgency', 'BreadcrumbList', 'ItemList'] : ['TravelAgency'], `${path}: its JSON-LD blocks`);
       const height = await page.evaluate<number>('document.body.scrollHeight');
       for (let y = 0; y <= height; y += 900) {
         await page.evaluate(`window.scrollTo(0, ${y})`);

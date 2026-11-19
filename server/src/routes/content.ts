@@ -23,6 +23,7 @@ import type {
   HiddenGemRow,
   PhotoStoryRow,
   PillarRow,
+  TourCategoryRow,
   TourRow
 } from '../../../shared/database.types';
 import { pool } from '../db';
@@ -30,6 +31,7 @@ import { publicImageCredits } from '../media/credits';
 import { asyncRoute } from '../http';
 import { sendText } from '../compress';
 import { publicStopsByTour } from '../tour-stops';
+import { publicCategoryIdsByTour } from '../tour-categories';
 import { photoResolver } from '../../../shared/public-photos';
 import { loadPhotoSets } from '../media/photo-sets';
 import photographs from '../../../shared/travel-photos.json';
@@ -44,6 +46,7 @@ const CONTENT_TABLES = [
   'experience_categories',
   'featured_experiences',
   'tours',
+  'tour_categories',
   'articles',
   'hidden_gems',
   'photo_stories',
@@ -128,7 +131,9 @@ contentRouter.get(
       siteSettings,
       stopsByTour,
       imageCredits,
-      attractions
+      attractions,
+      tourCategories,
+      categoryIdsByTour
     ] = await Promise.all([
       selectPublished<DestinationRow>('destinations'),
       selectPublished<ExperienceCategoryRow>('experience_categories'),
@@ -142,7 +147,9 @@ contentRouter.get(
       selectSiteSettings(),
       publicStopsByTour(pool),
       publicImageCredits(pool),
-      selectPublishedAttractions()
+      selectPublishedAttractions(),
+      selectPublished<TourCategoryRow>('tour_categories'),
+      publicCategoryIdsByTour(pool)
     ]);
     const photoSets = await loadPhotoSets(pool);
     const { resolvedPhoto, publicPhoto, publicGallery, photoStoryLocation, photoStoryCopy } = photoResolver(photoSets);
@@ -152,8 +159,13 @@ contentRouter.get(
       attractions,
       experienceCategories,
       featuredExperiences: featuredExperiences.map(withoutRating),
-      // Each tour carries its route stops, resolved, so the client joins nothing.
-      tours: tours.map((tour) => ({ ...tour, stops: stopsByTour.get(tour.id) ?? [] })),
+      // Each tour carries its route stops, resolved, and its published categories, so the client joins nothing.
+      tours: tours.map((tour) => ({
+        ...tour,
+        stops: stopsByTour.get(tour.id) ?? [],
+        category_ids: categoryIdsByTour.get(tour.id) ?? []
+      })),
+      tourCategories,
       articles,
       hiddenGems,
       photoStories,
@@ -185,9 +197,12 @@ contentRouter.get(
     for (const row of payload.destinations) row.gallery = publicGallery(row.id, row.gallery).map(resolvedPhoto);
     // An attraction's photo is its own upload (or none): only an R2 set to resolve.
     for (const row of payload.attractions) if (row.image) row.image = resolvedPhoto(row.image);
+    // A tour category still on its seed photo shows that destination's verified one (0030); none stays none.
+    for (const row of payload.tourCategories) if (row.image) row.image = publicPhoto('tour_categories', row.id, row.image);
     const used = new Set(photoCollections.flatMap(([, rows]) => rows.map(row => row.image)));
     for (const row of payload.destinations) for (const image of row.gallery) used.add(image);
     for (const row of payload.attractions) if (row.image) used.add(row.image);
+    for (const row of payload.tourCategories) if (row.image) used.add(row.image);
     payload.imageCredits = payload.imageCredits
       .map(credit => ({ ...credit, url: resolvedPhoto(credit.url) }))
       .filter(credit => used.has(credit.url));

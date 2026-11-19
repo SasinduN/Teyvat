@@ -20,6 +20,32 @@ export interface PageMeta {
   type: 'website' | 'article';
   /** Never indexed, whatever SITE_INDEXABLE says (the 404, the admin). */
   noindex?: boolean;
+  /** The trail to this page, as its breadcrumbs show it: a BreadcrumbList (paths relative to the site). */
+  breadcrumbs?: ReadonlyArray<{ name: string; path: string }>;
+  /** What the page lists, in order: an ItemList. Names and links only: no ratings, no prices. */
+  itemList?: ReadonlyArray<{ name: string; path: string }>;
+}
+
+/** schema.org's BreadcrumbList and ItemList for a page, with absolute URLs. */
+export function pageJsonLd(meta: Pick<PageMeta, 'breadcrumbs' | 'itemList'>, origin: string): Record<string, unknown>[] {
+  const url = (path: string) => `${origin}${path}`;
+  const blocks: Record<string, unknown>[] = [];
+  if (meta.breadcrumbs?.length) {
+    blocks.push({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: meta.breadcrumbs.map((crumb, i) => ({ '@type': 'ListItem', position: i + 1, name: crumb.name, item: url(crumb.path) }))
+    });
+  }
+  if (meta.itemList) {
+    blocks.push({
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      numberOfItems: meta.itemList.length,
+      itemListElement: meta.itemList.map((item, i) => ({ '@type': 'ListItem', position: i + 1, name: item.name, url: url(item.path) }))
+    });
+  }
+  return blocks;
 }
 
 export interface HeadSite {
@@ -141,6 +167,7 @@ export function renderHead(meta: PageMeta, site: HeadSite): string {
   tags.push(named('twitter:title', meta.title), named('twitter:description', description));
   if (image) tags.push(named('twitter:image', image.url), named('twitter:image:alt', alt));
   tags.push(`<script type="application/ld+json">${jsonForScript(brandJsonLd(site.brand, site.origin))}</script>`);
+  for (const block of pageJsonLd(meta, site.origin)) tags.push(`<script type="application/ld+json">${jsonForScript(block)}</script>`);
 
   return tags.join('\n    ');
 }

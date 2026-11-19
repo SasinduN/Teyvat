@@ -182,7 +182,7 @@ describe('text on photos: contrast over any photo, in Chrome', { skip }, () => {
 
   for (const mobile of [false, true]) {
     const width = mobile ? 'phone' : 'desktop';
-    for (const path of ['/', '/destinations', '/destinations/ella', '/plan', '/nope']) {
+    for (const path of ['/', '/destinations', '/destinations/ella', '/tours/category/beach', '/plan', '/nope']) {
       test(`${width} ${path}: the header's text, icons and controls meet AA over a white photo`, async () => {
         assert.deepEqual(await shortfalls(path, mobile), [], path);
       });

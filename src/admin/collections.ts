@@ -18,6 +18,7 @@ import {
   Newspaper,
   Route,
   Sparkles,
+  Tags,
   ThumbsUp,
   type LucideIcon
 } from 'lucide-react';
@@ -197,7 +198,9 @@ export const COLLECTIONS: CollectionDef[] = [
       id: '',
       subtitle: '',
       days: 7,
-      price_from: 1000,
+      // Empty: "Price on request" until a price is confirmed.
+      price_from: '',
+      category_ids: [],
       category: 'Full Island',
       image: '',
       short_desc: '',
@@ -207,6 +210,31 @@ export const COLLECTIONS: CollectionDef[] = [
       included_places: [],
       itinerary: [],
       published: true
+    }
+  },
+
+  {
+    slug: 'tour-categories',
+    table: 'tour_categories',
+    label: 'Tour Categories',
+    singular: 'Tour Category',
+    description: 'Travel styles on /tours, each with its own page listing its tours. Pick a tour’s categories on the tour.',
+    icon: Tags,
+    titleField: 'name',
+    subtitleField: 'short_intro',
+    imageField: 'image',
+    metaField: 'tour_count',
+    fields: FIELDS_BY_TABLE.tour_categories,
+    defaults: {
+      name: '',
+      id: '',
+      heading: '',
+      short_intro: '',
+      long_intro: '',
+      image: '',
+      best_time_note: '',
+      // A draft until its text and photo have been checked.
+      published: false
     }
   },
 

@@ -28,7 +28,8 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { after, before, beforeEach, describe, test } from 'node:test';
 
-import { NAV_LINKS } from '../../shared/site-paths';
+import { navLinks } from '../../shared/site-paths';
+import { TOUR_CATEGORIES } from '../../scripts/fixtures/tourCategories';
 import { BRAND } from '../../shared/brand';
 import { homeTitle } from '../../shared/page-meta';
 import { createApp } from '../src/app';
@@ -51,6 +52,8 @@ const executable = findChrome();
 const built = existsSync(join(REPO_ROOT, 'dist', 'index.html'));
 const skip = !executable ? 'no Chrome found; set CHROME_PATH to run these' : !built ? 'no build; run `npm run build` first' : false;
 
+/** The header's links with bookings off: Tours is All tours and 0030's eight categories. */
+const NAV_LINKS = navLinks({ bookings: false }, TOUR_CATEGORIES);
 const NAV_HREFS = NAV_LINKS.map((l) => l.to);
 
 // `--test-timeout` (60 s) applies to a suite as a whole too, and these 14 tests
@@ -160,10 +163,10 @@ describe('pages and links, in Chrome', { skip, timeout: 4 * 60_000 }, () => {
     );
     assert.deepEqual(
       await page.evaluate<string[]>(`[...document.querySelectorAll('[data-menu-section]')].map((s) => s.dataset.menuSection)`),
-      ['Discover', '', 'About'],
+      ['Discover', 'Tours', '', 'About'],
       'the groups are sections of the phone menu'
     );
-    await clickLink(page, '.fixed.inset-0', 'Tours');
+    await clickLink(page, '.fixed.inset-0', 'All tours');
     await at(page, '/tours');
     assert.equal(await page.evaluate<number>(`document.querySelectorAll('[aria-label="Close menu"]').length`), 0, 'the menu closed');
   });
