@@ -68,6 +68,8 @@ const CONTENT_TABLES = [
   'experience_categories',
   'featured_experiences',
   'tours',
+  // 0030's categories; their links to tours follow the tours (see `resetContent`).
+  'tour_categories',
   'articles',
   'hidden_gems',
   'photo_stories',
@@ -110,9 +112,10 @@ const SEED_SCHEMA = 'test_seed';
 let seedSnapshot = false;
 
 /**
- * Puts the content back to the approved baseline: empties the ten content
- * tables (and the tour stops), restores the 0002 seed with 0007's route
- * stops and Galle's four attractions (`insertTestAttractions`), and resets
+ * Puts the content back to the approved baseline: empties the eleven content
+ * tables (and the tour stops and category links), restores the 0002 seed with 0007's route
+ * stops, 0030's tour categories and links, and Galle's four attractions
+ * (`insertTestAttractions`), and resets
  * `site_settings` to its 0001 values as 0004 left them
  * (links NULL), with the fake WhatsApp number, so the button is on the page as it
  * is in production (`whatsappNumber` picks another, or null for none).
@@ -132,7 +135,7 @@ let seedSnapshot = false;
  */
 export async function resetContent(options: { whatsappNumber?: string | null } = {}): Promise<void> {
   await assertConnectedToTestDatabase();
-  const tables = [...CONTENT_TABLES, 'tour_stops'];
+  const tables = [...CONTENT_TABLES, 'tour_stops', 'tour_category_links'];
   // Booking requests reference tours and destinations, so they go too (0014), and so
   // does content:import's record of what it wrote (0023).
   const bookings = ['booking_notifications', 'booking_history', 'bookings', 'content_imports'];
@@ -148,6 +151,8 @@ export async function resetContent(options: { whatsappNumber?: string | null } =
     await pool.query(migration('0007_tour_stops.sql'));
     // Best months come from best_time, which 0002 just wrote (0002 knows nothing of the column).
     await pool.query(migration('0022_when_to_go.sql'));
+    // The tour categories and the seed tours' links (0030), with photos from the rows 0002 wrote.
+    await pool.query(migration('0030_tour_categories.sql'));
     await insertTestAttractions();
     await pool.query(`drop schema if exists ${SEED_SCHEMA} cascade; create schema ${SEED_SCHEMA}`);
     for (const t of tables) await pool.query(`create table ${SEED_SCHEMA}.${t} as table public.${t}`);

@@ -17,6 +17,7 @@ import { HIDDEN_GEMS } from './fixtures/hiddenGems';
 import { ARTICLES } from './fixtures/journal';
 import { PHOTO_STORIES } from './fixtures/photoStories';
 import { TOURS } from './fixtures/tours';
+import { TOUR_CATEGORIES, TOUR_CATEGORY_LINKS } from './fixtures/tourCategories';
 import { HERO_SLIDES } from './fixtures/heroSlides';
 import { PILLARS } from './fixtures/pillars';
 import { stopsFromRoute } from './route-stops';
@@ -30,6 +31,7 @@ import {
   toHiddenGem,
   toPhotoStory,
   toPillar,
+  toTourCategory,
   toTourPackage
 } from '../src/lib/mappers';
 import type {
@@ -40,7 +42,8 @@ import type {
   HeroSlideRow,
   HiddenGemRow,
   PhotoStoryRow,
-  PillarRow
+  PillarRow,
+  TourCategoryRow
 } from '../shared/database.types';
 import type { PublicTourRow } from '../shared/api';
 import type { TourStopPayload } from '../shared/tour-stops';
@@ -203,8 +206,22 @@ const tourRows: PublicTourRow[] = TOURS.map((t, i) => ({
   included_places: list(t.includedPlaces),
   price_from: t.priceFrom,
   category: t.category,
+  category_ids: [...(TOUR_CATEGORY_LINKS[t.id] ?? [])],
   // jsonb round-trips through JSON, so mirror that here.
   itinerary: JSON.parse(JSON.stringify(t.itinerary))
+}));
+
+// 0030: the long intro is one text with a blank line between paragraphs; the photo is
+// the destination's own (its R2 file in production).
+const tourCategoryRows: TourCategoryRow[] = TOUR_CATEGORIES.map((c, i) => ({
+  ...meta(i),
+  id: c.id,
+  name: c.name,
+  heading: c.heading,
+  short_intro: c.shortIntro,
+  long_intro: c.intro.join('\n\n'),
+  image: DESTINATIONS.find((d) => d.id === c.photo)!.image,
+  best_time_note: c.bestTimeNote ?? null
 }));
 
 const articleRows: ArticleRow[] = ARTICLES.map((a, i) => ({
@@ -278,13 +295,23 @@ compare(
   'tours',
   TOURS,
   // `stops` is new (the map draws them); the chips are what the approved card renders.
-  tourRows.map(toTourPackage).map(({ stops: _stops, ...tour }) => tour),
+  tourRows.map(toTourPackage).map(({ stops: _stops, categoryIds: _categoryIds, ...tour }) => tour),
   // The one approved change: on Island in 7 Days, "South Coast" became
   // Mirissa and Galle (docs/plans/map-routes.md). Every other chip is unchanged.
   (t) =>
     t.id === 'island-in-7-days'
       ? { ...t, route: t.route.flatMap((p) => (p === 'South Coast' ? ['Mirissa', 'Galle'] : [p])) }
       : t
+);
+compare(
+  'tour category links',
+  TOURS.map((t) => [...(TOUR_CATEGORY_LINKS[t.id] ?? [])]),
+  tourRows.map(toTourPackage).map((t) => t.categoryIds)
+);
+compare(
+  'tour categories',
+  TOUR_CATEGORIES.map(({ photo, ...c }) => ({ ...c, image: DESTINATIONS.find((d) => d.id === photo)!.image })),
+  tourCategoryRows.map(toTourCategory)
 );
 compare('articles', ARTICLES, articleRows.map(toArticle));
 compare('hidden gems', HIDDEN_GEMS, hiddenGemRows.map(toHiddenGem));

@@ -22,6 +22,7 @@ const PUBLIC_PAGE: Partial<Record<ContentTableName, (id: string) => string>> = {
   destinations: paths.destination,
   featured_experiences: paths.experience,
   tours: paths.tour,
+  tour_categories: paths.tourCategory,
   articles: paths.article
 };
 

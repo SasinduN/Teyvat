@@ -7,6 +7,7 @@ import { FieldHelp, FieldLabel, Input, Select, Textarea } from '@/admin/componen
 import { ImageListPicker, ImagePicker } from '@/admin/components/ImagePicker';
 import { type StopDraft, TourStopsField } from '@/admin/components/TourStopsField';
 import { LocationPicker, ReferenceSelect } from '@/admin/components/AttractionFields';
+import { TourCategoriesField } from '@/admin/components/TourCategoriesField';
 import {
   type ItineraryDay,
   ItineraryField,
@@ -342,5 +343,8 @@ function renderControl(
 
     case 'reference':
       return <ReferenceSelect id={id} value={asString(value)} invalid={invalid} onBlur={onBlur} onChange={onChange} />;
+
+    case 'tourCategories':
+      return <TourCategoriesField id={id} value={asStringArray(value)} onChange={onChange} />;
   }
 }
