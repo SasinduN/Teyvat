@@ -30,6 +30,7 @@
 | `0022_when_to_go.sql` | `destinations.best_months`, filled from `best_time` where the text is clear; `site_settings.when_to_go_explainer`, with its fact-checked default (`docs/reviews/when-to-go-sources.md`) |
 | `0023_attractions.sql` | `attractions` (places near a destination, drafts by default) and `content_imports` (what `npm run content:import` wrote, so it never overwrites an admin's edit) |
 | `0030_tour_categories.sql` | `tour_categories` (8 travel styles, seeded) and `tour_category_links`; `tours.price_from` may be NULL ("Price on request"); no tour may have the id `category` |
+| `0031_tour_drafts.sql` | `tours.best_months` (months 1 to 12, empty by default); `content_imports` may record tours (`npm run content:import`'s drafts) |
 
 **Where the rules live.** There is no row-level security: every connection is
 the API's single database role. Rules are enforced in two layers:
@@ -174,6 +175,7 @@ an inline literal in the original data file (now `scripts/fixtures/experiences.t
 | `price_from` | `numeric(10,2)` NULL | `priceFrom` | NULL (or 0): "Price on request" (0030) |
 | `category` | `text` | `category` | constrained union; no longer shown since 0030 (`tour_category_links` replaced it) |
 | `itinerary` | `jsonb` | `itinerary` | see below |
+| `best_months` | `integer[]` | (not mapped) | months 1 to 12, sorted (0031); empty: not set. Edited in the admin; the drafts say theirs in their text |
 
 `itinerary` is `jsonb` rather than a child table: it is always read and written
 as a whole with its parent tour, never queried across tours, and ordering
