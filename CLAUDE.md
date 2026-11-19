@@ -50,7 +50,8 @@ this file or anywhere else in git.
 | Q | Bug and performance audit (`docs/reviews/audit-2026-11.md`): the `<body>` shift, compression, `/api/content` and header photos preloaded, `browser-hero-contrast`'s hang | in review |
 | V | Ride page redesign (`docs/plans/ride-vehicle-picker.md`): vehicle categories (0027), the card picker, the passenger stepper, the phone bar, and the hero's "Book a ride" slide and button | done (#65) |
 | V+ | The buses (0028: AC Bus 1–20, Bus 1–52, bags per passenger) and the sketch-style icon set (plan, part 11) | done (#66) |
-| V++ | The Mini Lorry: goods mode on `/booking` (0029, plan part 12) | in review |
+| V++ | The Mini Lorry: goods mode on `/booking` (0029, plan part 12) | done (#67) |
+| TS | Tours on phones: a row to swipe, with a counter, dots and arrows (`docs/plans/tours-swipe-row.md`) | in review |
 
 Update the Status column when a phase lands.
 
@@ -315,6 +316,11 @@ Update the Status column when a phase lands.
   redirects them in the browser; phase 8b adds the server's 301. Keep both.
   It also sends the home page's old sections (`/#planner`, `/#journal`…)
   to their pages (`LEGACY_HOME_SECTIONS`, `shared/site-paths.ts`).
+- **Tours on phones** (`ToursSection`, `docs/plans/tours-swipe-row.md`): below 768 px the list is a
+  scroll-snap row, a card `min(85vw, 26rem)`, with a counter, pointer-only dots (`aria-hidden`,
+  `tabindex="-1"`) and Previous/Next shown on keyboard focus. Its controls keep out of the floating
+  stack's column (`--tour-float-clear`) rather than joining `AVOID`. 768 px and up is unchanged, and
+  `browser-home-baseline` holds ToursSection's 1280 px to `d233e32` (`phoneBaseline` moves only 390 px).
 - **Pages and links** (phase 8):
   - Routes are in `src/App.tsx`; every public URL is built with `paths`
     (`shared/site-paths.ts`), and every link is a real `<a href>` (`Link`,
