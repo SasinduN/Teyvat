@@ -50,6 +50,9 @@
  * the phone menu; Admin → Tour Categories and the tour form's categories. "Before", the category
  * page is a 404, Tours is a plain link and the admin has neither.
  *
+ * `--tour-form` takes only the tour editor, whole, on a laptop and a phone: two pairs (the new tour
+ * drafts' best months, docs/plans/new-tours.md).
+ *
  * `--admin` adds the admin: the login page (empty, a password typed and
  * shown, after two wrong tries, locked), then (signed in as a throwaway
  * admin created in each scratch database) the dashboard, a collection, two
@@ -121,6 +124,8 @@ const { values } = parseArgs({
     brand: { type: 'boolean', default: false },
     /** Only the twelve pairs for tour categories: /tours, a category page, the menus, the admin. */
     'tour-categories': { type: 'boolean', default: false },
+    /** Only the tour editor, whole, laptop and phone. */
+    'tour-form': { type: 'boolean', default: false },
     /** Only the ride page's states, the home hero and Admin → Bookings, bookings on. */
     ride: { type: 'boolean', default: false },
     /** With --ride: only these states (comma-separated names), and no hero or admin. */
@@ -254,7 +259,7 @@ async function prepare(site: Site): Promise<void> {
       await client.end();
     }
   }
-  if (values.admin || values['when-to-go'] || values.attractions || values.ride || values['tour-categories']) {
+  if (values.admin || values['when-to-go'] || values.attractions || values.ride || values['tour-categories'] || values['tour-form']) {
     const client = new Client({ connectionString: db });
     await client.connect();
     try {
@@ -669,7 +674,7 @@ async function shootAttractions(chrome: Chrome, site: Site, out: string): Promis
 }
 
 /** `--tour-categories`: twelve pairs. */
-const TOUR_CATEGORY_SHOTS: { name: string; viewport: typeof LAPTOP | typeof PHONE; dark?: boolean; path: string; kind: 'page' | 'dropdown' | 'menu' | 'admin' }[] = [
+const TOUR_CATEGORY_SHOTS: { name: string; viewport: typeof LAPTOP | typeof PHONE; dark?: boolean; path: string; kind: 'page' | 'dropdown' | 'menu' | 'admin'; whole?: boolean }[] = [
   { name: 'tours-desktop', viewport: LAPTOP, path: '/tours', kind: 'page' },
   { name: 'tours-desktop-dark', viewport: LAPTOP, dark: true, path: '/tours', kind: 'page' },
   { name: 'tours-phone', viewport: PHONE, path: '/tours', kind: 'page' },
@@ -684,8 +689,14 @@ const TOUR_CATEGORY_SHOTS: { name: string; viewport: typeof LAPTOP | typeof PHON
   { name: 'admin-tour-form-categories', viewport: LAPTOP, path: '/admin/tours/island-in-7-days', kind: 'admin' }
 ];
 
-async function shootTourCategories(chrome: Chrome, site: Site, out: string): Promise<void> {
-  for (const shot of TOUR_CATEGORY_SHOTS) {
+/** `--tour-form`: two pairs, the tour editor whole. */
+const TOUR_FORM_SHOTS: typeof TOUR_CATEGORY_SHOTS = [
+  { name: 'admin-tour-form-desktop', viewport: LAPTOP, path: '/admin/tours/wild-sri-lanka', kind: 'admin', whole: true },
+  { name: 'admin-tour-form-phone', viewport: PHONE, path: '/admin/tours/wild-sri-lanka', kind: 'admin', whole: true }
+];
+
+async function shootTourCategories(chrome: Chrome, site: Site, out: string, shots: typeof TOUR_CATEGORY_SHOTS): Promise<void> {
+  for (const shot of shots) {
     const file = join(out, `${shot.name}-${site.label}.jpg`);
     const dark = Boolean(shot.dark);
     if (shot.kind === 'page') {
@@ -716,9 +727,9 @@ async function shootTourCategories(chrome: Chrome, site: Site, out: string): Pro
       await waitFor(page, `document.querySelector('main h1') || document.querySelector('main')?.innerText.length > 40`, 10_000);
       await page.evaluate(LOADED);
       // The tour form: its categories (after), or where they go, by the price (before).
-      await page.evaluate(`(document.querySelector('[data-tour-categories-field]') ?? document.querySelector('#field-price_from'))?.scrollIntoView({ block: 'center', behavior: 'instant' }), true`);
+      if (!shot.whole) await page.evaluate(`(document.querySelector('[data-tour-categories-field]') ?? document.querySelector('#field-price_from'))?.scrollIntoView({ block: 'center', behavior: 'instant' }), true`);
       await page.evaluate(QUIET);
-      await shoot(page, file, shot.path.endsWith('tour-categories'));
+      await shoot(page, file, Boolean(shot.whole) || shot.path.endsWith('tour-categories'));
       await closePage(page);
     }
     console.log(`  ${shot.name}-${site.label}.jpg`);
@@ -1016,7 +1027,11 @@ async function main(): Promise<void> {
         continue;
       }
       if (values['tour-categories']) {
-        await shootTourCategories(chrome, site, out);
+        await shootTourCategories(chrome, site, out, TOUR_CATEGORY_SHOTS);
+        continue;
+      }
+      if (values['tour-form']) {
+        await shootTourCategories(chrome, site, out, TOUR_FORM_SHOTS);
         continue;
       }
       if (values.ride) {

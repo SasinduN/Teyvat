@@ -303,7 +303,7 @@ describe('the admin', () => {
 
   test('the shared schema: an optional number left empty is null; a required one still refuses', () => {
     const tours = schemaForTable('tours', 'update');
-    const base = { title: 't', subtitle: 's', days: 1, category: 'Culture', image: 'https://images.unsplash.com/x', short_desc: 'x', full_desc: 'x', stops: [{ kind: 'destination', destination_id: 'ella' }], highlights: [], included_places: [], itinerary: [], published: true };
+    const base = { title: 't', subtitle: 's', days: 1, category: 'Culture', image: 'https://images.unsplash.com/x', short_desc: 'x', full_desc: 'x', stops: [{ kind: 'destination', destination_id: 'ella' }], highlights: [], included_places: [], itinerary: [], best_months: [], published: true };
     assert.equal(tours.parse({ ...base, price_from: '' }).price_from, null);
     assert.equal(tours.parse({ ...base, price_from: null }).price_from, null);
     assert.equal(tours.parse({ ...base, price_from: '950' }).price_from, 950);

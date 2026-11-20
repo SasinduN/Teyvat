@@ -209,6 +209,7 @@ export const COLLECTIONS: CollectionDef[] = [
       highlights: [],
       included_places: [],
       itinerary: [],
+      best_months: [],
       published: true
     }
   },

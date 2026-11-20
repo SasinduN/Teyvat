@@ -207,6 +207,8 @@ const tourRows: PublicTourRow[] = TOURS.map((t, i) => ({
   price_from: t.priceFrom,
   category: t.category,
   category_ids: [...(TOUR_CATEGORY_LINKS[t.id] ?? [])],
+  // 0031: the seed's tours have none.
+  best_months: [],
   // jsonb round-trips through JSON, so mirror that here.
   itinerary: JSON.parse(JSON.stringify(t.itinerary))
 }));

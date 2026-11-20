@@ -1,0 +1,319 @@
+{
+  "checked": "2026-11-20",
+  "tours": [
+    {
+      "id": "east-coast-beaches",
+      "title": "East Coast Beaches",
+      "subtitle": "Sigiriya on the way, then the east coast's beaches in its dry months.",
+      "days": 7,
+      "categories": ["beach"],
+      "old_category": "Full Island",
+      "cover": "trincomalee",
+      "best_months": [5, 6, 7, 8, 9],
+      "stops": ["sigiriya", "trincomalee", "arugam-bay"],
+      "short_desc": "Sigiriya's rock, then the beaches around Trincomalee and the surf town of Arugam Bay, on the coast that is driest in the middle of the year.",
+      "full_desc": "The east coast has its dry season while the south and west have their rain, so this trip suits the middle of the year. It starts with a climb up Sigiriya, then spends most of its days by the sea at Trincomalee and Arugam Bay. Best from May to September. Included: a car and driver for the whole route, accommodation for the nights listed, and the transfers between stops. Entry tickets and anything else can be added: ask us.",
+      "highlights": [
+        "An early climb up Sigiriya",
+        "The beaches just north of Trincomalee",
+        "Koneswaram temple on Swami Rock",
+        "Arugam Bay, in its surf season"
+      ],
+      "itinerary": [
+        { "title": "Arrival and the drive to Sigiriya", "description": "From the airport, a drive inland to Sigiriya. The rest of the day is free.", "location": "Sigiriya" },
+        { "title": "Sigiriya", "description": "An early climb up Sigiriya, about an hour and a half with the gardens at its foot. The afternoon is free.", "location": "Sigiriya" },
+        { "title": "To Trincomalee", "description": "A drive east to Trincomalee. The afternoon is on the beach at Uppuveli or Nilaveli, just north of the town.", "location": "Trincomalee" },
+        { "title": "Trincomalee", "description": "A free day by the sea, with time to visit Koneswaram temple on Swami Rock, above the harbour.", "location": "Trincomalee" },
+        { "title": "Down the coast to Arugam Bay", "description": "A long day's drive south along the east coast to Arugam Bay, with stops on the way.", "location": "Arugam Bay" },
+        { "title": "Arugam Bay", "description": "A day on the beach. The surf season here runs from about April to October; outside it the waves are small.", "location": "Arugam Bay" },
+        { "title": "Departure", "description": "The drive back across the island to Colombo airport takes most of the day.", "location": "Colombo" }
+      ]
+    },
+    {
+      "id": "family-elephants-train-beach",
+      "title": "Elephants, a Train and the Beach",
+      "subtitle": "Nine days for families: a rock to climb, a train through the tea country, elephants and the sea.",
+      "days": 9,
+      "categories": ["family"],
+      "old_category": "Full Island",
+      "cover": "udawalawe",
+      "best_months": [12, 1, 2, 3],
+      "stops": ["sigiriya", "kandy", "ella", "udawalawe", "mirissa"],
+      "short_desc": "Sigiriya, Kandy, the train to Ella, a jeep safari at Udawalawe and two nights by the sea at Mirissa, with short drives and one main outing a day.",
+      "full_desc": "A route that keeps the days simple for children: one main outing a day, with time for a pool or an early night. The drives are split so none takes up a whole day. Best from December to March, the driest months in the hills and on the south coast. Included: a car and driver for the whole route, accommodation for the nights listed, and the transfers between stops. Safaris, entry tickets and anything else can be added: ask us.",
+      "highlights": [
+        "Sigiriya in the cooler morning",
+        "The train from Nanu Oya to Ella",
+        "A jeep safari at Udawalawe",
+        "Two nights by the sea at Mirissa"
+      ],
+      "itinerary": [
+        { "title": "Arrival and Sigiriya", "description": "From the airport, a drive inland to Sigiriya. The rest of the day is for settling in.", "location": "Sigiriya" },
+        { "title": "Sigiriya", "description": "Sigiriya in the cooler morning: the climb has many steps, so take it slowly. The afternoon is free.", "location": "Sigiriya" },
+        { "title": "To Kandy", "description": "A drive south to Kandy, and an evening walk round Kandy Lake to the Temple of the Tooth.", "location": "Kandy" },
+        { "title": "Kandy", "description": "A morning at the Royal Botanic Gardens in Peradeniya, just outside the town. The afternoon is free.", "location": "Kandy" },
+        { "title": "Into the hills, then the train", "description": "A drive up to Nanu Oya, near Nuwara Eliya, then the train through the tea country to Ella. The line from Kandy is still being repaired after Cyclone Ditwah, so the train starts at Nanu Oya; if it isn't running, we drive.", "location": "Ella" },
+        { "title": "Ella", "description": "A morning walk up Little Adam's Peak, a fairly easy climb through tea estates, and the walk to the Nine Arch Bridge.", "location": "Ella" },
+        { "title": "To Udawalawe", "description": "A drive down to Udawalawe and an afternoon jeep safari. The park is known for its elephants, but wild animals can't be guaranteed on any one drive.", "location": "Udawalawe" },
+        { "title": "To Mirissa", "description": "On the way, the Elephant Transit Home, which looks after orphaned calves until they can go back to the park. The afternoon is on the beach.", "location": "Mirissa" },
+        { "title": "Mirissa and departure", "description": "A last morning by the sea, then the drive to Colombo airport.", "location": "Mirissa / Colombo" }
+      ]
+    },
+    {
+      "id": "family-south-coast",
+      "title": "A Short South Coast Family Trip",
+      "subtitle": "Six days on the south: a river, elephants, a beach and Galle Fort.",
+      "days": 6,
+      "categories": ["family", "beach"],
+      "old_category": "Full Island",
+      "cover": "bentota",
+      "best_months": [12, 1, 2, 3],
+      "stops": ["bentota", "udawalawe", "mirissa", "galle"],
+      "short_desc": "Bentota's beach and river, a jeep safari at Udawalawe, Mirissa's beach and a walk on the walls of Galle Fort, in six days with short drives.",
+      "full_desc": "A short trip that stays near the south and west coasts, with one inland day for the elephants at Udawalawe. Best from December to March, when these coasts are usually driest. Included: a car and driver for the whole route, accommodation for the nights listed, and the transfers between stops. Safaris, boat trips and anything else can be added: ask us.",
+      "highlights": [
+        "A boat trip on the Bentota River",
+        "A jeep safari at Udawalawe",
+        "The Elephant Transit Home",
+        "An evening on Galle Fort's walls"
+      ],
+      "itinerary": [
+        { "title": "Arrival and Bentota", "description": "From the airport, a drive down the coast to Bentota, about 65 km south of Colombo. The afternoon is on the beach.", "location": "Bentota" },
+        { "title": "Bentota", "description": "A boat trip on the Bentota River in the morning, and a free afternoon.", "location": "Bentota" },
+        { "title": "To Udawalawe", "description": "A drive inland to Udawalawe and an afternoon jeep safari. The park is known for its elephants, but sightings can't be guaranteed.", "location": "Udawalawe" },
+        { "title": "To Mirissa", "description": "The Elephant Transit Home in the morning, then a drive to Mirissa and an afternoon on the beach.", "location": "Mirissa" },
+        { "title": "To Galle", "description": "A morning by the sea, then a short drive to Galle and an evening walk on the fort's walls.", "location": "Galle" },
+        { "title": "Departure", "description": "The drive up the highway to Colombo airport.", "location": "Galle / Colombo" }
+      ]
+    },
+    {
+      "id": "tea-country-slowly",
+      "title": "Tea Country, Slowly",
+      "subtitle": "A week in the hills: Kandy, Nuwara Eliya, Haputale and Ella, with the train between them.",
+      "days": 7,
+      "categories": ["hill-country"],
+      "old_category": "Full Island",
+      "cover": "nuwara-eliya",
+      "best_months": [12, 1, 2, 3],
+      "stops": ["kandy", "nuwara-eliya", "horton-plains", "haputale", "ella"],
+      "short_desc": "Kandy, the tea estates round Nuwara Eliya, an early walk on Horton Plains, the views from Haputale and the train to Ella.",
+      "full_desc": "Seven days in the central hills, with no more than a few hours on the road each day. Best from December to March, the hill country's driest months. Included: a car and driver for the whole route, accommodation for the nights listed, and the transfers between stops. Train tickets, entry fees and anything else can be added: ask us.",
+      "highlights": [
+        "The Temple of the Tooth in Kandy",
+        "The walk to World's End on Horton Plains",
+        "Lipton's Seat above Haputale",
+        "The train from Haputale to Ella"
+      ],
+      "itinerary": [
+        { "title": "Arrival and Kandy", "description": "From the airport, a drive to Kandy, and an evening visit to the Temple of the Tooth.", "location": "Kandy" },
+        { "title": "Kandy", "description": "The Royal Botanic Gardens at Peradeniya in the morning, and a slow afternoon round the lake.", "location": "Kandy" },
+        { "title": "To Nuwara Eliya", "description": "A drive up through tea estates to Nuwara Eliya, with a stop at a tea factory on the way.", "location": "Nuwara Eliya" },
+        { "title": "Horton Plains", "description": "An early start for Horton Plains: a 9 km loop on foot to World's End, a cliff with an 870 m drop, and Baker's Falls. The afternoon is free.", "location": "Horton Plains" },
+        { "title": "To Haputale", "description": "A drive to Haputale, then Lipton's Seat, the lookout above the Dambatenne tea estate, with views over five provinces on a clear day.", "location": "Haputale" },
+        { "title": "The train to Ella", "description": "The train from Haputale to Ella, on the stretch of line that reopened in June 2026. In the afternoon, an easy walk up Little Adam's Peak.", "location": "Ella" },
+        { "title": "Departure", "description": "The drive back to Colombo airport.", "location": "Ella / Colombo" }
+      ]
+    },
+    {
+      "id": "southwest-coast-rest",
+      "title": "Rest on the Southwest Coast",
+      "subtitle": "Eight slow days: four nights at Bentota and three at Galle.",
+      "days": 8,
+      "categories": ["wellness"],
+      "old_category": "Full Island",
+      "cover": "bentota",
+      "best_months": [12, 1, 2, 3],
+      "stops": ["bentota", "galle"],
+      "short_desc": "Two places and no early starts: four nights by the beach at Bentota and three inside or near Galle Fort, with time for Ayurveda treatments or yoga where your hotel offers them.",
+      "full_desc": "A trip for resting rather than sightseeing. There are only two stays, so you unpack twice, and most days have nothing planned. Many hotels at Bentota offer Ayurveda treatments and yoga; we can arrange them, or leave the days open. Best from December to March, when the southwest coast is usually driest. Included: a car and driver for the transfers, accommodation for the nights listed, and the drive between Bentota and Galle. Treatments and anything else can be added: ask us.",
+      "highlights": [
+        "Four nights by the beach at Bentota",
+        "Brief Garden, Bevis Bawa's garden inland from Bentota",
+        "Early mornings on Galle Fort's walls",
+        "Days with nothing planned"
+      ],
+      "itinerary": [
+        { "title": "Arrival and Bentota", "description": "From the airport, a drive down the coast to Bentota. The rest of the day is free.", "location": "Bentota" },
+        { "title": "Bentota", "description": "A free day. If your hotel offers Ayurveda treatments or yoga, this is a good day to start.", "location": "Bentota" },
+        { "title": "Bentota", "description": "A morning visit to Brief Garden, 11 km inland, the garden Bevis Bawa made on a former rubber estate. The afternoon is free.", "location": "Bentota" },
+        { "title": "Bentota", "description": "Another day with nothing planned: the beach, the pool, or a boat on the Bentota River.", "location": "Bentota" },
+        { "title": "To Galle", "description": "A short drive down the coast to Galle. The evening is for the fort's walls, when it's cooler.", "location": "Galle" },
+        { "title": "Galle", "description": "An early walk round the fort before it gets busy, and a free afternoon.", "location": "Galle" },
+        { "title": "Galle", "description": "A free day, by the sea or inside the fort.", "location": "Galle" },
+        { "title": "Departure", "description": "The drive up the highway to Colombo airport.", "location": "Galle / Colombo" }
+      ]
+    },
+    {
+      "id": "quiet-days-in-the-hills",
+      "title": "Quiet Days in the Hills",
+      "subtitle": "Eight unhurried days in Kandy, Haputale and Ella, with long stays and short drives.",
+      "days": 8,
+      "categories": ["wellness", "hill-country"],
+      "old_category": "Full Island",
+      "cover": "haputale",
+      "best_months": [12, 1, 2, 3],
+      "stops": ["kandy", "haputale", "ella"],
+      "short_desc": "Three stays in the cooler hills, with time to read, walk and rest, and Ayurveda treatments or yoga where your hotel offers them.",
+      "full_desc": "Slow travel in the hill country: three nights in Kandy, two in Haputale and two in Ella, with one short outing a day at most. We can book hotels that offer Ayurveda treatments and yoga, or leave the days open. Best from December to March, the hill country's driest months. Included: a car and driver for the whole route, accommodation for the nights listed, and the transfers between stops. Treatments, train tickets and anything else can be added: ask us.",
+      "highlights": [
+        "Three nights in Kandy",
+        "Adisham Bungalow and Lipton's Seat at Haputale",
+        "The train from Haputale to Ella",
+        "Short walks in the tea estates"
+      ],
+      "itinerary": [
+        { "title": "Arrival and Kandy", "description": "From the airport, a drive to Kandy. The rest of the day is free.", "location": "Kandy" },
+        { "title": "Kandy", "description": "A slow morning at the Royal Botanic Gardens in Peradeniya, and a free afternoon.", "location": "Kandy" },
+        { "title": "Kandy", "description": "A free day, and in the evening the Temple of the Tooth.", "location": "Kandy" },
+        { "title": "To Haputale", "description": "A drive through the tea country to Haputale, about 1,400 m up. The afternoon is free.", "location": "Haputale" },
+        { "title": "Haputale", "description": "Lipton's Seat in the morning, then Adisham Bungalow, a 19th-century house modelled on Leeds Castle. The afternoon is free.", "location": "Haputale" },
+        { "title": "The train to Ella", "description": "The train from Haputale to Ella, on the stretch of line that reopened in June 2026. The rest of the day is free.", "location": "Ella" },
+        { "title": "Ella", "description": "A free day, with a short walk to the Nine Arch Bridge if you'd like one.", "location": "Ella" },
+        { "title": "Departure", "description": "The drive back to Colombo airport.", "location": "Ella / Colombo" }
+      ]
+    },
+    {
+      "id": "rivers-and-ridges",
+      "title": "Rivers and Ridges",
+      "subtitle": "A week of rafting at Kitulgala, walking on Horton Plains and hiking around Ella.",
+      "days": 7,
+      "categories": ["adventure"],
+      "old_category": "Adventure",
+      "cover": "horton-plains",
+      "best_months": [12, 1, 2, 3],
+      "stops": ["kitulgala", "nuwara-eliya", "horton-plains", "ella"],
+      "short_desc": "White-water rafting on the Kelani River at Kitulgala, the 9 km loop to World's End on Horton Plains, and the hike up Ella Rock.",
+      "full_desc": "An active week that climbs from the river at Kitulgala into the hills. Rafting runs with a licensed operator, and whether it goes ahead depends on the river's level on the day. The walks are on foot for several hours, on uneven paths. Best from December to March, the hill country's driest months. Included: a car and driver for the whole route, accommodation for the nights listed, and the transfers between stops. Rafting, entry fees, guides and anything else can be added: ask us.",
+      "highlights": [
+        "White-water rafting on the Kelani River",
+        "The walk to World's End and Baker's Falls",
+        "The train from Nanu Oya to Ella",
+        "The hike up Ella Rock"
+      ],
+      "itinerary": [
+        { "title": "Arrival and Kitulgala", "description": "From the airport, a drive inland to Kitulgala, on the Kelani River. The afternoon is free.", "location": "Kitulgala" },
+        { "title": "Rafting on the Kelani River", "description": "White-water rafting with a licensed operator, starting a few kilometres upstream of the village. The operator decides on the day whether the river's level is right. In the afternoon, a walk in the forest, where many of the island's rainforest birds live.", "location": "Kitulgala" },
+        { "title": "Up to Nuwara Eliya", "description": "A drive up through the tea country to Nuwara Eliya.", "location": "Nuwara Eliya" },
+        { "title": "Horton Plains", "description": "An early start for the 9 km loop on Horton Plains, to World's End, a cliff with an 870 m drop, and Baker's Falls.", "location": "Horton Plains" },
+        { "title": "The train to Ella", "description": "The train from Nanu Oya, near Nuwara Eliya, to Ella, on the stretch of line that reopened in June 2026. If it isn't running, we drive.", "location": "Ella" },
+        { "title": "Ella Rock", "description": "The hike up Ella Rock: about two hours each way, along the railway line and through tea estates, and harder than Little Adam's Peak.", "location": "Ella" },
+        { "title": "Departure", "description": "The drive back to Colombo airport.", "location": "Ella / Colombo" }
+      ]
+    },
+    {
+      "id": "rock-climbs-and-surf",
+      "title": "Rock Climbs and Surf",
+      "subtitle": "Nine days: Sigiriya and Pidurangala, hiking in the Knuckles, then surf at Arugam Bay.",
+      "days": 9,
+      "categories": ["adventure"],
+      "old_category": "Adventure",
+      "cover": "arugam-bay",
+      "best_months": [5, 6, 7, 8, 9],
+      "stops": ["sigiriya", "knuckles", "arugam-bay"],
+      "short_desc": "Climbs up Pidurangala and Sigiriya, two days hiking in the Knuckles range with a guide, and three days at Arugam Bay in its surf season.",
+      "full_desc": "Rock, forest and sea, with a day set aside for the long drive from the Knuckles to the east coast and a day to rest after it. Surfing at Arugam Bay is seasonal: its season runs from about April to October, and this trip is for those months. Best from May to September, the east coast's dry season. Included: a car and driver for the whole route, accommodation for the nights listed, and the transfers between stops. Guides, surfboards, lessons, entry fees and anything else can be added: ask us.",
+      "highlights": [
+        "Pidurangala at sunrise",
+        "Two days hiking in the Knuckles range",
+        "A rest day after the long drive east",
+        "Surf at Arugam Bay in its season"
+      ],
+      "itinerary": [
+        { "title": "Arrival and Sigiriya", "description": "From the airport, a drive inland to Sigiriya. The rest of the day is free.", "location": "Sigiriya" },
+        { "title": "Pidurangala and Sigiriya", "description": "Pidurangala at sunrise, a 20 to 30 minute climb with a scramble over boulders at the top, about 1 km north of Sigiriya. Later, the climb up Sigiriya itself.", "location": "Sigiriya" },
+        { "title": "To the Knuckles", "description": "A drive south to the Knuckles range, and an afternoon walk with a local guide.", "location": "Knuckles" },
+        { "title": "Hiking in the Knuckles", "description": "A full day on foot with a local guide. The range is part of a UNESCO World Heritage site, and its higher slopes are often in cloud.", "location": "Knuckles" },
+        { "title": "The long drive east", "description": "A travel day: the drive from the Knuckles to Arugam Bay takes most of the day, with stops on the way.", "location": "Arugam Bay" },
+        { "title": "A day to rest", "description": "Nothing planned after the long drive: the beach, and a look at the waves.", "location": "Arugam Bay" },
+        { "title": "Surf", "description": "A day in the water, with a lesson if you're new to surfing.", "location": "Arugam Bay" },
+        { "title": "Surf", "description": "Another day for surfing, or the beach.", "location": "Arugam Bay" },
+        { "title": "Departure", "description": "The drive back across the island to Colombo airport takes most of the day.", "location": "Colombo" }
+      ]
+    },
+    {
+      "id": "hills-and-coast-for-two",
+      "title": "Hills and Coast for Two",
+      "subtitle": "Nine days for two: Kandy and the tea country, then Mirissa and Galle.",
+      "days": 9,
+      "categories": ["honeymoon"],
+      "old_category": "Full Island",
+      "cover": "ella",
+      "best_months": [12, 1, 2, 3],
+      "stops": ["kandy", "nuwara-eliya", "ella", "mirissa", "galle"],
+      "short_desc": "Kandy, a night in Nuwara Eliya, the train to Ella, then the south coast at Mirissa and Galle, with evenings left free.",
+      "full_desc": "Five stays, with the long drives split so that most days have time to spare. The hills come first, then the south coast. Best from December to March, when both are usually driest. Included: a car and driver for the whole route, accommodation for the nights listed, and the transfers between stops. Whale watching, entry fees and anything else can be added: ask us.",
+      "highlights": [
+        "The train from Nanu Oya to Ella",
+        "Sunrise from Little Adam's Peak",
+        "Two nights by the sea at Mirissa",
+        "Evenings on Galle Fort's walls"
+      ],
+      "itinerary": [
+        { "title": "Arrival and Kandy", "description": "From the airport, a drive to Kandy. The evening is free.", "location": "Kandy" },
+        { "title": "Kandy", "description": "A slow day: the Royal Botanic Gardens at Peradeniya, and the Temple of the Tooth in the evening.", "location": "Kandy" },
+        { "title": "To Nuwara Eliya", "description": "A drive up through tea estates to Nuwara Eliya. Bring a warm layer for the evening.", "location": "Nuwara Eliya" },
+        { "title": "The train to Ella", "description": "The train from Nanu Oya to Ella, on the stretch of line that reopened in June 2026. If it isn't running, we drive.", "location": "Ella" },
+        { "title": "Ella", "description": "Little Adam's Peak at sunrise, a fairly easy walk, then a free day.", "location": "Ella" },
+        { "title": "Down to Mirissa", "description": "A drive down from the hills to the south coast at Mirissa.", "location": "Mirissa" },
+        { "title": "Mirissa", "description": "A free day by the sea. From about December to April, a whale-watching boat can go out from Mirissa; sightings can't be guaranteed.", "location": "Mirissa" },
+        { "title": "To Galle", "description": "A short drive along the coast to Galle, and an evening on the fort's walls.", "location": "Galle" },
+        { "title": "Departure", "description": "The drive up the highway to Colombo airport.", "location": "Galle / Colombo" }
+      ]
+    },
+    {
+      "id": "ancient-cities-and-the-east-coast-for-two",
+      "title": "Ancient Cities and the East Coast for Two",
+      "subtitle": "A week for two: Sigiriya and Dambulla, then four nights at Trincomalee.",
+      "days": 7,
+      "categories": ["honeymoon", "beach"],
+      "old_category": "Full Island",
+      "cover": "trincomalee",
+      "best_months": [5, 6, 7, 8, 9],
+      "stops": ["sigiriya", "trincomalee"],
+      "short_desc": "Two nights at Sigiriya, with the cave temples of Dambulla nearby, then four nights by the sea at Trincomalee in the east coast's dry months.",
+      "full_desc": "Two stays only: Sigiriya for the rock and the cave temples, then the beaches round Trincomalee. Best from May to September, the east coast's dry season. Included: a car and driver for the whole route, accommodation for the nights listed, and the transfers between stops. Entry tickets and anything else can be added: ask us.",
+      "highlights": [
+        "An early climb up Sigiriya",
+        "The five cave temples of Dambulla",
+        "Four nights by the sea at Trincomalee",
+        "Koneswaram temple on Swami Rock"
+      ],
+      "itinerary": [
+        { "title": "Arrival and Sigiriya", "description": "From the airport, a drive inland to Sigiriya. The evening is free.", "location": "Sigiriya" },
+        { "title": "Sigiriya and Dambulla", "description": "An early climb up Sigiriya, then in the afternoon the Dambulla cave temples, about 19 km away: five caves with 153 Buddha statues and painted ceilings.", "location": "Sigiriya / Dambulla" },
+        { "title": "To Trincomalee", "description": "A drive east to Trincomalee, and an afternoon on the beach at Uppuveli or Nilaveli.", "location": "Trincomalee" },
+        { "title": "Trincomalee", "description": "A free day by the sea.", "location": "Trincomalee" },
+        { "title": "Trincomalee", "description": "Koneswaram temple on Swami Rock in the morning, and a free afternoon.", "location": "Trincomalee" },
+        { "title": "Trincomalee", "description": "A last free day on the coast.", "location": "Trincomalee" },
+        { "title": "Departure", "description": "The drive back across the island to Colombo airport.", "location": "Colombo" }
+      ]
+    },
+    {
+      "id": "southern-parks-and-whales",
+      "title": "Southern Parks and Whales",
+      "subtitle": "Six days: safaris at Udawalawe and Yala, then a whale-watching boat from Mirissa.",
+      "days": 6,
+      "categories": ["wildlife"],
+      "old_category": "Wildlife",
+      "cover": "yala",
+      "best_months": [12, 1, 2, 3],
+      "stops": ["udawalawe", "yala", "mirissa"],
+      "short_desc": "Jeep safaris at Udawalawe and Yala and a morning at sea off Mirissa, in the months when the south coast is driest and whale-watching boats go out.",
+      "full_desc": "Two national parks and the sea. Udawalawe is known for its elephants and Yala for its leopards, but these are wild animals and sightings can't be guaranteed on any drive or boat trip. Best from December to March: the south coast is usually driest then, and whale watching off Mirissa runs from about December to April. In recent years Yala, or some of its blocks, has closed for some weeks in September and October; the dates change each year, and we check them when you book. Included: a car and driver for the whole route, accommodation for the nights listed, and the transfers between stops. Safaris, the boat trip and anything else can be added: ask us.",
+      "highlights": [
+        "A jeep safari at Udawalawe",
+        "Two drives in Yala National Park",
+        "The Elephant Transit Home",
+        "A whale-watching boat from Mirissa, in season"
+      ],
+      "itinerary": [
+        { "title": "Arrival and Udawalawe", "description": "From the airport, a drive south to Udawalawe. The rest of the day is free.", "location": "Udawalawe" },
+        { "title": "Udawalawe", "description": "A morning jeep safari in Udawalawe National Park, where about 250 elephants live; sightings can't be guaranteed. Then the Elephant Transit Home, and a drive on towards Yala.", "location": "Udawalawe / Yala" },
+        { "title": "Yala", "description": "Jeep safaris in Yala in the early morning and late afternoon. The park is known for its leopards, but sightings can't be guaranteed.", "location": "Yala" },
+        { "title": "To Mirissa", "description": "A drive along the south coast to Mirissa, and an afternoon by the sea.", "location": "Mirissa" },
+        { "title": "Whale watching", "description": "An early boat from Mirissa, in season from about December to April. Blue whales are the large whales seen most often here, but sightings can't be guaranteed.", "location": "Mirissa" },
+        { "title": "Departure", "description": "The drive up the highway to Colombo airport.", "location": "Mirissa / Colombo" }
+      ]
+    }
+  ]
+}

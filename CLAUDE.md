@@ -52,7 +52,7 @@ this file or anywhere else in git.
 | V+ | The buses (0028: AC Bus 1–20, Bus 1–52, bags per passenger) and the sketch-style icon set (plan, part 11) | done (#66) |
 | V++ | The Mini Lorry: goods mode on `/booking` (0029, plan part 12) | done (#67) |
 | TS | Tours on phones: a row to swipe, with a counter, dots and arrows (`docs/plans/tours-swipe-row.md`) | done (#68) |
-| TC | Tour categories (`docs/plans/tour-categories.md`): 0030, `/tours` row, a page per category, the Tours menu, the tailor-made card (PR 1); new tour drafts through `content:import` (PR 2) | PR 1 in review |
+| TC | Tour categories (`docs/plans/tour-categories.md`): 0030, `/tours` row, a page per category, the Tours menu, the tailor-made card (PR 1); new tour drafts through `content:import` (PR 2) | PR 1 done (#69); PR 2 in review |
 
 Update the Status column when a phase lands.
 
@@ -336,6 +336,10 @@ Update the Status column when a phase lands.
   - On phones the category row stops short of the floating buttons' column, like the tour cards' buttons;
     nothing new in `AVOID` (`browser-tour-categories`).
   - Seed photos: a category on its seed photo shows the destination's verified one (`PHOTO_CORRECTIONS.tour_categories`).
+  - Tour drafts (0031, `docs/plans/new-tours.md`): `scripts/content/tours.json` (11, unpublished, no price,
+    `best_months` set) goes in through `npm run content:import` after `places.json` (`server/src/tours-import.ts`),
+    with the places' rules: never over an admin's edit, never re-creating a deleted tour. Sources and seasons:
+    `docs/reviews/new-tours-sources.md`. The hill train runs only from Nanu Oya since Cyclone Ditwah (20 Jun 2026).
 - **Pages and links** (phase 8):
   - Routes are in `src/App.tsx`; every public URL is built with `paths`
     (`shared/site-paths.ts`), and every link is a real `<a href>` (`Link`,

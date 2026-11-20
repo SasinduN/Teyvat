@@ -231,6 +231,7 @@ export const FIELDS_BY_TABLE: Record<ContentTableName, Field[]> = {
     { name: 'highlights', label: 'Highlights', type: 'stringList', span: 2 },
     { name: 'included_places', label: 'Included places', type: 'stringList', span: 2 },
     { name: 'itinerary', label: 'Day-by-day itinerary', type: 'itinerary', span: 2 },
+    { name: 'best_months', label: 'Best months', type: 'months', span: 2, help: 'Optional, and only from a source you can name. Say them in the description too.' },
     publishedField
   ],
 

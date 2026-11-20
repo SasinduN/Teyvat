@@ -1,6 +1,7 @@
 /**
  * `npm run content:import`: researched destinations and attractions from a JSON file
- * (`scripts/content/places.json`), into the database as drafts.
+ * (`scripts/content/places.json`), and tours (`scripts/content/tours.json`, since 0031),
+ * into the database as drafts.
  *
  *   - Upserts by slug, but only rows this import created and nobody has edited since:
  *     `public.content_imports` holds the `updated_at` each import left, and any other
@@ -27,7 +28,7 @@ import { sniffImage, SNIFF_BYTES } from '../../shared/image-sniff';
 import { createDownloader, type ImportOptions } from './media/import';
 import { newObjectKey, objectUrl, type MediaConfig } from './media/media';
 
-type Queryable = Pick<PoolClient, 'query'>;
+export type Queryable = Pick<PoolClient, 'query'>;
 
 /* --------------------------------------------------------------- the file */
 
@@ -43,7 +44,7 @@ const photoSchema = z.object({
   license_url: z.url({ protocol: /^https$/ }).nullable()
 });
 
-const months = z.array(z.number().int().min(1).max(12)).transform(normalizeMonths);
+export const months = z.array(z.number().int().min(1).max(12)).transform(normalizeMonths);
 
 const destinationSchema = z.object({
   id: z.string(),
@@ -156,7 +157,7 @@ function attractionRow(a: ImportAttraction, image: string | null): Record<string
 }
 
 /** What a row's content is, for "unchanged since the last run": stable key order. */
-function contentHash(item: ImportDestination | ImportAttraction): string {
+export function contentHash(item: unknown): string {
   const stable = (value: unknown): unknown =>
     Array.isArray(value) ? value.map(stable) : value && typeof value === 'object'
       ? Object.fromEntries(Object.keys(value).sort().map((k) => [k, stable((value as Record<string, unknown>)[k])]))
@@ -166,7 +167,7 @@ function contentHash(item: ImportDestination | ImportAttraction): string {
 
 /* ------------------------------------------------------------- the import */
 
-export type Table = 'destinations' | 'attractions';
+export type Table = 'destinations' | 'attractions' | 'tours';
 
 export interface RowOutcome {
   table: Table;
@@ -191,7 +192,7 @@ const SKIP = {
   noParent: (id: string) => `its destination "${id}" isn't in the database`
 };
 
-interface Existing {
+export interface Existing {
   exists: boolean;
   recorded: boolean;
   untouched: boolean;
@@ -199,7 +200,7 @@ interface Existing {
 }
 
 /** The row as it stands, and whether this import made it and nobody has saved it since. */
-async function current(db: Queryable, table: Table, id: string, lock: boolean): Promise<Existing> {
+export async function current(db: Queryable, table: Table, id: string, lock: boolean): Promise<Existing> {
   // The row first, locked when writing (a lock can't reach across an outer join).
   const row = await db.query(`select 1 from public.${table} where id = $1${lock ? ' for update' : ''}`, [id]);
   // Compared in SQL: updated_at has microseconds, which a JS Date would drop.
@@ -213,7 +214,7 @@ async function current(db: Queryable, table: Table, id: string, lock: boolean): 
   return { exists: (row.rowCount ?? 0) > 0, recorded: rows.length > 0, untouched: rows[0]?.untouched === true, hash: rows[0]?.hash ?? null };
 }
 
-function decide(existing: Existing, hash: string): Pick<RowOutcome, 'action' | 'reason'> {
+export function decide(existing: Existing, hash: string): Pick<RowOutcome, 'action' | 'reason'> {
   if (!existing.exists) return existing.recorded ? { action: 'skip', reason: SKIP.deleted } : { action: 'create' };
   if (!existing.recorded) return { action: 'skip', reason: SKIP.notOurs };
   if (!existing.untouched) return { action: 'skip', reason: SKIP.edited };

@@ -192,6 +192,8 @@ export interface TourRow extends Timestamps, Orderable {
   /** The old label (0001), no longer shown anywhere: `tour_category_links` replaced it (0030). */
   category: TourCategory;
   itinerary: ItineraryDayRow[];
+  /** Months 1 to 12, sorted (0031); empty: not set. */
+  best_months: number[];
 }
 
 /**

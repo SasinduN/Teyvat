@@ -280,7 +280,7 @@ describe('npm run content:import', () => {
   });
 
   test('the file passes: every row as the admin would check it, all photos from Commons with a credit', () => {
-    assert.equal(file.destinations.length, 6);
+    assert.equal(file.destinations.length, 7, 'the six from #57 and Kitulgala (new tour drafts)');
     assert.equal(file.attractions.length, 30);
     for (const row of [...file.destinations, ...file.attractions]) {
       if (!row.photo) continue;
@@ -309,7 +309,7 @@ describe('npm run content:import', () => {
     assert.deepEqual(await counts(), before);
     assert.deepEqual(downloads, []);
     const created = outcomes.filter((o) => o.action === 'create');
-    assert.equal(created.length, 6 + 30 - TEST_ATTRACTION_IDS.length);
+    assert.equal(created.length, 7 + 30 - TEST_ATTRACTION_IDS.length);
     // The seeded Galle four exist and weren't made by an import: left alone.
     const kept = outcomes.filter((o) => o.action === 'skip').map((o) => o.id).sort();
     assert.deepEqual(kept, [...TEST_ATTRACTION_IDS].sort());
@@ -322,10 +322,10 @@ describe('npm run content:import', () => {
     assert.equal(first.filter((o) => o.action === 'failed').length, 0, JSON.stringify(first.filter((o) => o.action === 'failed')));
     const created = first.filter((o) => o.action === 'create');
     const withPhoto = created.filter((o) => o.photo === 'upload');
-    assert.equal(created.length, 6 + 30 - TEST_ATTRACTION_IDS.length);
+    assert.equal(created.length, 7 + 30 - TEST_ATTRACTION_IDS.length);
 
     const after = await counts();
-    assert.equal(after.d, before.d + 6);
+    assert.equal(after.d, before.d + 7);
     assert.equal(after.a, before.a + 30 - TEST_ATTRACTION_IDS.length);
     assert.equal(store.objects.size, withPhoto.length);
     assert.equal(after.m, withPhoto.length);
@@ -436,7 +436,10 @@ describe('npm run content:import', () => {
     assert.match(output, /dry run: nothing is written/);
     assert.match(output, /destinations\/hiriketiya: create \(photo: none\)/);
     assert.match(output, /attractions\/jungle-beach: skip, already exists/);
-    assert.match(output, /32 would be created \(as drafts\)/);
+    // 33 places (Kitulgala too) and the 11 tour drafts, Kitulgala's tour counting it as there.
+    assert.match(output, /11 tours/);
+    assert.match(output, /tours\/rivers-and-ridges: create/);
+    assert.match(output, /44 would be created \(as drafts\)/);
     assert.deepEqual(await counts(), before);
   });
 });
