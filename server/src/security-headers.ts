@@ -10,7 +10,7 @@
  *   style-src    'self' 'unsafe-inline'          our CSS, plus the <style> the admin's
  *                                                 toast library (Sonner) injects at runtime
  *   font-src     'self'                          our DM Sans files (src/styles/fonts.css)
- *   img-src      'self' + allowedImageOrigins()   Unsplash and our R2 bucket
+ *   img-src      'self' + allowedImageOrigins()   Unsplash, R2's custom domain and our R2 bucket
  *                https://*.basemaps.cartocdn.com  the map tiles
  *   connect-src  'self'                          the browser only ever calls our /api
  *   frame-ancestors 'none'                       nobody may frame the site or the admin
@@ -24,8 +24,8 @@
  */
 import type { RequestHandler } from 'express';
 
-import { allowedImageOrigins, MAP_TILES_SOURCE } from '../../shared/image-hosts';
-import type { MediaConfig } from './media/media';
+import { MAP_TILES_SOURCE } from '../../shared/image-hosts';
+import { imageOriginsFor, type MediaConfig } from './media/media';
 import { OSM_TILES_ORIGIN } from '../../shared/map-tiles';
 
 /** One day to start. Raised to a year at launch (docs/LAUNCH-CHECKLIST.md). */
@@ -37,7 +37,7 @@ export function contentSecurityPolicy(media: MediaConfig | null): string {
     'script-src': ["'self'"],
     'style-src': ["'self'", "'unsafe-inline'"],
     'font-src': ["'self'"],
-    'img-src': ["'self'", ...allowedImageOrigins(media?.publicBaseUrl ?? null), MAP_TILES_SOURCE, OSM_TILES_ORIGIN],
+    'img-src': ["'self'", ...imageOriginsFor(media), MAP_TILES_SOURCE, OSM_TILES_ORIGIN],
     'connect-src': ["'self'"],
     'frame-ancestors': ["'none'"],
     'base-uri': ["'self'"],

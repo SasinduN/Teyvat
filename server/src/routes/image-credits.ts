@@ -11,7 +11,7 @@ import { Router, type Request } from 'express';
 
 import type { ImageCreditItem } from '../../../shared/api';
 import { fieldErrors } from '../../../shared/content-schema';
-import { allowedImageOrigins, IMAGE_HOST_REFUSED, isAllowedImageUrl } from '../../../shared/image-hosts';
+import { IMAGE_HOST_REFUSED, isAllowedImageUrl } from '../../../shared/image-hosts';
 import {
   imageCreditCreateSchema,
   imageCreditValuesSchema,
@@ -21,7 +21,7 @@ import { z } from '../../../shared/zod';
 import { requireAdmin } from '../auth/middleware';
 import { pool } from '../db';
 import { ApiError, asyncRoute } from '../http';
-import { mediaOf, usageOf } from '../media/media';
+import { imageOriginsFor, mediaOf, usageOf } from '../media/media';
 
 const COLUMNS = `url, author, license, license_url, source_url, created_at,
   to_char(updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as updated_at`;
@@ -71,7 +71,7 @@ imageCreditsRouter.post(
   asyncRoute(async (req, res) => {
     const values = parseOrThrow(imageCreditCreateSchema, req.body);
     // Only a photo the site could show: the same allow-list as image fields.
-    if (!isAllowedImageUrl(values.url, allowedImageOrigins(mediaOf(req)?.publicBaseUrl ?? null))) {
+    if (!isAllowedImageUrl(values.url, imageOriginsFor(mediaOf(req)))) {
       throw new ApiError('bad_request', 'Some fields need fixing.', { url: IMAGE_HOST_REFUSED });
     }
     const { rows } = await pool.query<ImageCreditRow>(

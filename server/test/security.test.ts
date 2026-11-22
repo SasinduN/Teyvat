@@ -92,7 +92,7 @@ describe('security headers', () => {
       'script-src': ["'self'"],
       'style-src': ["'self'", "'unsafe-inline'"],
       'font-src': ["'self'"],
-      'img-src': ["'self'", 'https://images.unsplash.com', BASE, 'https://basemaps.cartocdn.com', 'https://tile.openstreetmap.org'],
+      'img-src': ["'self'", 'https://images.unsplash.com', 'https://images.serendibluxetours.com', BASE, 'https://basemaps.cartocdn.com', 'https://tile.openstreetmap.org'],
       'connect-src': ["'self'"],
       'frame-ancestors': ["'none'"],
       'base-uri': ["'self'"],
@@ -104,7 +104,8 @@ describe('security headers', () => {
   test('without R2, the CSP has no bucket origin', () => {
     const csp = contentSecurityPolicy(null);
     assert.ok(!csp.includes('r2.dev'));
-    assert.match(csp, /img-src 'self' https:\/\/images\.unsplash\.com https:\/\/basemaps\.cartocdn\.com https:\/\/tile\.openstreetmap\.org;/);
+    // R2's custom domain is always there (docs/runbooks/move-r2-to-client.md); no bucket is.
+    assert.match(csp, /img-src 'self' https:\/\/images\.unsplash\.com https:\/\/images\.serendibluxetours\.com https:\/\/basemaps\.cartocdn\.com https:\/\/tile\.openstreetmap\.org;/);
   });
 });
 

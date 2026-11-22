@@ -47,12 +47,13 @@ this file or anywhere else in git.
 | G | When to go: best months per destination, a month slider and map on `/when-to-go`, the monsoon explainer (`docs/reviews/when-to-go-sources.md`) | done (#56) |
 | N | Nearby attractions: `attractions` (0023), the Nearby cards, small map markers, search, the wishlist; six new destinations and 30 attractions researched, imported as drafts by `npm run content:import` (`docs/reviews/places-sources.md`) | done (#57) |
 | B | Rebrand (the name, tagline and legal name are in `shared/brand.ts`): one brand source (`shared/brand.ts`, Admin → Settings, 0024), the wordmark and SL favicon, JSON-LD, `/site.webmanifest`, seed text (0025), `npm run brand:audit`, `npm run screenshots -- --brand` | in review |
-| Q | Bug and performance audit (`docs/reviews/audit-2026-11.md`): the `<body>` shift, compression, `/api/content` and header photos preloaded, `browser-hero-contrast`'s hang | in review |
+| Q | Bug and performance audit (`docs/reviews/audit-2026-11.md`): the `<body>` shift, compression, `/api/content` and header photos preloaded, `browser-hero-contrast`'s hang | done (#62) |
 | V | Ride page redesign (`docs/plans/ride-vehicle-picker.md`): vehicle categories (0027), the card picker, the passenger stepper, the phone bar, and the hero's "Book a ride" slide and button | done (#65) |
 | V+ | The buses (0028: AC Bus 1–20, Bus 1–52, bags per passenger) and the sketch-style icon set (plan, part 11) | done (#66) |
 | V++ | The Mini Lorry: goods mode on `/booking` (0029, plan part 12) | done (#67) |
 | TS | Tours on phones: a row to swipe, with a counter, dots and arrows (`docs/plans/tours-swipe-row.md`) | done (#68) |
-| TC | Tour categories (`docs/plans/tour-categories.md`): 0030, `/tours` row, a page per category, the Tours menu, the tailor-made card (PR 1); new tour drafts through `content:import` (PR 2) | PR 1 done (#69); PR 2 in review |
+| TC | Tour categories (`docs/plans/tour-categories.md`): 0030, `/tours` row, a page per category, the Tours menu, the tailor-made card (PR 1); new tour drafts through `content:import` (PR 2) | done (#69, #70) |
+| R2 | Move R2 to the client's Cloudflare account: `images.serendibluxetours.com` always allowed, `R2_PREVIOUS_PUBLIC_BASE_URL`, `media:rebase` covers the credits, `docs/runbooks/move-r2-to-client.md` | in review |
 
 Update the Status column when a phase lands.
 
@@ -63,9 +64,18 @@ Update the Status column when a phase lands.
     (`src/admin/components/ImagePicker.tsx`): upload, library or URL.
   - Nothing is deleted from R2 automatically; only a library delete removes
     an object.
-  - Image URLs must be on the allow-list in `shared/image-hosts.ts` (Unsplash
-    + the R2 origin). The same list builds the CSP's `img-src`. The
-    Wikimedia photos from 0010 were copied into R2 (`npm run
+  - Image URLs must be on the allow-list in `shared/image-hosts.ts` (Unsplash,
+    R2's custom domain `images.` on the brand's domain, the R2 origin, and
+    `R2_PREVIOUS_PUBLIC_BASE_URL`'s during a move). The same list builds the CSP's
+    `img-src`; every caller goes through `imageOriginsFor` (`media.ts`).
+  - `media:rebase` moves every URL that starts with the old base: `media` (photo
+    sets too), every image column (`STORED_IMAGE_COLUMNS`: the content fields plus
+    `OTHER_IMAGE_COLUMNS`, today `booking_vehicles.image_url`) and `image_credits`,
+    then reports any column in any table still mentioning it. Idempotent;
+    `--dry-run`, `--verify-files`. A `content:import` draft nobody saved stays
+    unsaved (`content_imports` follows). An image column outside the content tables
+    goes in `OTHER_IMAGE_COLUMNS`: `media-rebase.test` fails until it does.
+  - The Wikimedia photos from 0010 were copied into R2 (`npm run
     images:import`); 0013 puts any leftover back on its seed photo.
   - The owner-authorized exact-location rule (2026-10-14) pins the 20 known
     destination covers through `shared/public-photos.ts` for both public
@@ -410,10 +420,9 @@ Agreed, not started. Each one gets its own plan first.
 - **Mobile performance to 90** (`docs/reviews/audit-2026-11.md`, "Left"): measure
   production first; then server-rendered page headers or a smaller entry, each its own plan.
 - **`/booking?tour=…` layout shift** while its catalog loads (the same audit).
-- **`media:rebase` and photo credits:** make it update `image_credits.url`.
-  Do this before any custom-domain move, or credits on other uploads stop showing.
-- **R2 custom domain before launch:** `r2.dev` is rate-limited (launch checklist
-  item 9).
+- **Move R2 to the client's account and `images.serendibluxetours.com`:** Sasindu
+  runs `docs/runbooks/move-r2-to-client.md` (launch checklist item 9). A week after,
+  with no errors: unset `R2_PREVIOUS_PUBLIC_BASE_URL`, then a PR removes its support.
 - **The enquiry form moves 1 px after it opens:** the panel sits at a fractional
   position, and Chrome repaints some rows 1 px apart after the entrance (`browser-inquiry`'s
   `screenshot()`). Tiny; whole-pixel centring would end it.
@@ -558,6 +567,8 @@ Agreed, not started. Each one gets its own plan first.
   - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`,
     `R2_PUBLIC_BASE_URL`: image uploads. All five or none; missing ones turn
     uploads off without stopping the site.
+  - `R2_PREVIOUS_PUBLIC_BASE_URL`: only while R2 moves
+    (`docs/runbooks/move-r2-to-client.md`): the old base, still allowed for images.
   - `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` (and optionally `NOTIFY_EMAIL_FROM`):
     new-enquiry emails. Off without the first two.
   - `PUBLIC_SITE_URL`: the public `https://` origin. Every absolute URL the

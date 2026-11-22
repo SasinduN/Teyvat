@@ -41,7 +41,7 @@ import {
 import { rideSchema, rideRequestDataSchema } from '../../../shared/ride';
 import type { BookingRow } from '../../../shared/database.types';
 import { z } from '../../../shared/zod';
-import { allowedImageOrigins, IMAGE_HOST_REFUSED, isAllowedImageUrl } from '../../../shared/image-hosts';
+import { IMAGE_HOST_REFUSED, isAllowedImageUrl } from '../../../shared/image-hosts';
 import { readCookie, SESSION_COOKIE } from '../auth/cookies';
 import { findSession } from '../auth/sessions';
 import { requireAdmin, sessionOf } from '../auth/middleware';
@@ -49,7 +49,7 @@ import { dispatchBookingNotifications } from '../bookings/notifications';
 import { pool } from '../db';
 import { notifyConfig } from '../env';
 import { ApiError, asyncRoute, clientIp, sendError } from '../http';
-import { mediaOf } from '../media/media';
+import { imageOriginsFor, mediaOf } from '../media/media';
 
 export const BOOKING_COOKIE = '__Host-booking';
 const GUEST_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -522,7 +522,8 @@ bookingsRouter.put(
   asyncRoute(async (req, res) => {
     const v = parse(vehicleSchema, req.body);
     if (v.id !== req.params.id) throw new ApiError('bad_request', 'Vehicle ID mismatch.');
-    if (v.imageUrl && !isAllowedImageUrl(v.imageUrl, allowedImageOrigins(mediaOf(req)?.publicBaseUrl ?? null))) {
+    // The same allow-list as every image field: during an R2 move, the previous base too.
+    if (v.imageUrl && !isAllowedImageUrl(v.imageUrl, imageOriginsFor(mediaOf(req)))) {
       throw new ApiError('bad_request', IMAGE_HOST_REFUSED);
     }
     await pool.query(

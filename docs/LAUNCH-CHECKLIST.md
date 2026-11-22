@@ -76,14 +76,11 @@ off in a pull request, so the history shows when each was done.
       `PUBLIC_SITE_URL` to `https://<domain>` on the API service: every
       canonical link, share preview and sitemap entry is built from it.
       **Blocks:** 9, 10, 11, 17, and real visitors. **Who:** Owner + DNS admin.
-- [ ] **9. Move R2 to a custom domain** (e.g. `media.<domain>`). Today images
+- [ ] **9. Move R2 to a custom domain**: `images.serendibluxetours.com`, in a new
+      bucket on the client's Cloudflare account (which owns the domain). Today images
       are served from `r2.dev`, which Cloudflare rate-limits and describes as
-      for development.
-      1. Connect the domain to the bucket in Cloudflare.
-      2. `npm run media:rebase -- --from <r2.dev base> --to <new base> --dry-run --prod`,
-         then the same command without `--dry-run`.
-      3. Set `R2_PUBLIC_BASE_URL` to the new base in Railway and `.env`. The
-         CSP and the image allow-list follow automatically.
+      for development. Every step, in order, with checks and rollback:
+      [`docs/runbooks/move-r2-to-client.md`](runbooks/move-r2-to-client.md).
 
       **Blocks:** go-live. **Who:** Cloudflare admin + developer.
 - [ ] **10. Verify a sending domain in Resend.** Then set `NOTIFY_EMAIL_FROM`
