@@ -4,8 +4,9 @@
  *
  * Photos go through Admin → Media, into R2. Everything under public/ ships with
  * the site, so an image file there fails here, whether or not it has been
- * committed yet. Only the favicon and the logo may be there. SVGs aren't photos,
- * so they are allowed.
+ * committed yet. The only ones allowed are the logo's files, by exact path:
+ * public/brand/ as `npm run brand:assets` writes it (shared/brand-files.ts). SVGs
+ * aren't photos, so they are allowed.
  *
  * Screenshots live in docs/screenshots/, which is git-ignored and full on a
  * working laptop. So that check asks git what is tracked, not the disk; it fails
@@ -15,17 +16,21 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, dirname, join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { test } from 'node:test';
+
+import { BRAND_FILES } from '../../shared/brand-files';
 
 const ROOT = resolve(import.meta.dirname, '..', '..');
 const IMAGE_FILE = /\.(jpe?g|png|webp|avif)$/i;
-const ALLOWED = /^(favicon|logo)\.[^.]+$/i;
+/** Paths under public/, exactly: nothing else named like them, and nothing else in brand/. */
+const ALLOWED = new Set(BRAND_FILES.filter((f) => IMAGE_FILE.test(f.name)).map((f) => `brand/${f.name}`));
 
 function forbiddenImages(directory: string): string[] {
   return readdirSync(directory, { recursive: true, withFileTypes: true })
-    .filter((entry) => entry.isFile() && IMAGE_FILE.test(entry.name) && !ALLOWED.test(entry.name))
+    .filter((entry) => entry.isFile() && IMAGE_FILE.test(entry.name))
     .map((entry) => relative(directory, join(entry.parentPath, entry.name)).replace(/\\/g, '/'))
+    .filter((path) => !ALLOWED.has(path))
     .sort();
 }
 
@@ -46,20 +51,25 @@ test('no photos under public/', () => {
   assert.deepEqual(forbiddenImages(join(ROOT, 'public')), [], 'Upload these through Admin → Media (R2) instead of committing them');
 });
 
-test('the check finds every kind of image file, at any depth, and spares the favicon and logo', () => {
+test('the check finds every kind of image file, at any depth, and spares only the exact brand files', () => {
   withTemporaryDirectory((directory) => {
     const files = [
       'photo.jpg', 'photo.jpeg', 'photo.png', 'photo.webp', 'photo.avif', 'SHOUTING.JPG', 'assets/deep/er/ella-1280.webp',
-      'favicon.png', 'images/logo.webp', 'images/glass-noise.svg', 'theme-init.js', 'not-a-logo.png'
+      'favicon.png', 'images/logo.webp', 'images/glass-noise.svg', 'theme-init.js', 'not-a-logo.png',
+      // Allowed: on the list, at its path.
+      'brand/icon-512.png', 'brand/og-default.jpg', 'brand/emblem-40.webp',
+      // Not allowed: a stray photo in brand/, a brand file elsewhere or one folder down.
+      'brand/photo.jpg', 'icon-512.png', 'brand/sub/icon-512.png'
     ];
     for (const file of files) {
       mkdirSync(dirname(join(directory, file)), { recursive: true });
       writeFileSync(join(directory, file), '');
     }
     assert.deepEqual(forbiddenImages(directory), [
-      'SHOUTING.JPG', 'assets/deep/er/ella-1280.webp', 'not-a-logo.png', 'photo.avif', 'photo.jpeg', 'photo.jpg', 'photo.png', 'photo.webp'
+      'SHOUTING.JPG', 'assets/deep/er/ella-1280.webp', 'brand/photo.jpg', 'brand/sub/icon-512.png',
+      'favicon.png', 'icon-512.png', 'images/logo.webp', 'not-a-logo.png', 'photo.avif', 'photo.jpeg', 'photo.jpg', 'photo.png', 'photo.webp'
     ]);
-    assert.ok(!forbiddenImages(directory).some((file) => /^(favicon|logo)\./.test(basename(file))));
+    assert.ok(!forbiddenImages(directory).some((file) => ALLOWED.has(file)));
   });
 });
 
