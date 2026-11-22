@@ -150,7 +150,7 @@ npm run media:rebase -- --prod --from <OLD_BASE> --to https://images.serendiblux
 ```
 
 You type the production host back. Expect: "Every file is there", counts for the media
-library, each image column and `image_credits`, "Afterwards, nothing in any table mentions
+library, each image column (the vehicle categories' too) and `image_credits`, "Afterwards, nothing in any table mentions
 <OLD_BASE>", and "Nothing was changed". If a file is missing, it stops before changing
 anything: rerun the step 5 copy. If something "still mentions" the old base, look at it
 first (a setting or a paragraph quoting the address, say): the rebase never edits text.
@@ -270,7 +270,10 @@ Cloudflare account the old bucket's metrics show no reads (R2 → `<OLD_BUCKET>`
 - `media:rebase` changes only values that **start with** `<OLD_BASE>/`: Unsplash, other
   hosts, and a URL that merely contains the address are left alone. It reports, but never
   edits, any other column in any table that mentions the old base.
-- Rows it moves get a new `updated_at`, so `npm run content:import` afterwards treats them
-  as edited by an admin and leaves them alone, as it does for any edit.
+- Rows it moves get a new `updated_at`. A draft `npm run content:import` wrote (the places
+  and the tour drafts) that nobody had saved stays unsaved: its `content_imports` record
+  follows, so the import keeps updating it. One an admin had saved stays theirs.
+- Image columns outside the content tables move too: a vehicle category's image
+  (`booking_vehicles.image_url`, Admin → Bookings).
 - The credits (`image_credits`) are keyed by URL, so they move too. If a photo already has a
   credit on the new address, that one is kept and the old one is left and counted.

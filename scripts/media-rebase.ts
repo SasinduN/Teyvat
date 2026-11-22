@@ -83,6 +83,9 @@ async function main(): Promise<void> {
     if (result.creditsAlreadyMoved > 0) {
       console.log(`  image_credits left on the old base (already credited on the new one): ${result.creditsAlreadyMoved}`);
     }
+    if (result.imports > 0) {
+      console.log(`  content:import drafts still marked unedited (content_imports followed): ${result.imports}`);
+    }
     const total = result.media + result.credits + Object.values(result.columns).reduce((a, b) => a + b, 0);
     if (total === 0) console.log('\nNothing was under the old base: already moved, or the wrong --from.');
 

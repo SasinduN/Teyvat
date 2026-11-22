@@ -69,8 +69,12 @@ Update the Status column when a phase lands.
     `R2_PREVIOUS_PUBLIC_BASE_URL`'s during a move). The same list builds the CSP's
     `img-src`; every caller goes through `imageOriginsFor` (`media.ts`).
   - `media:rebase` moves every URL that starts with the old base: `media` (photo
-    sets too), every image column and `image_credits`, then reports any column in
-    any table still mentioning it. Idempotent; `--dry-run`, `--verify-files`.
+    sets too), every image column (`STORED_IMAGE_COLUMNS`: the content fields plus
+    `OTHER_IMAGE_COLUMNS`, today `booking_vehicles.image_url`) and `image_credits`,
+    then reports any column in any table still mentioning it. Idempotent;
+    `--dry-run`, `--verify-files`. A `content:import` draft nobody saved stays
+    unsaved (`content_imports` follows). An image column outside the content tables
+    goes in `OTHER_IMAGE_COLUMNS`: `media-rebase.test` fails until it does.
   - The Wikimedia photos from 0010 were copied into R2 (`npm run
     images:import`); 0013 puts any leftover back on its seed photo.
   - The owner-authorized exact-location rule (2026-10-14) pins the 20 known

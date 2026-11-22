@@ -1,7 +1,8 @@
 /**
- * One-off maintenance over every stored image URL. Both walk `IMAGE_COLUMNS`
- * (built from the shared field list), so a new image column is covered with
- * no change here. Used by `npm run images:audit` and `npm run media:rebase`.
+ * One-off maintenance over every stored image URL. Both walk `STORED_IMAGE_COLUMNS`:
+ * `IMAGE_COLUMNS` (built from the shared field list, so a new content image field
+ * is covered with no change here) plus the image columns outside the content
+ * tables, listed below. Used by `npm run images:audit` and `npm run media:rebase`.
  *
  * Moving R2 to another bucket or domain: docs/runbooks/move-r2-to-client.md.
  */
@@ -13,6 +14,22 @@ import { IMAGE_COLUMNS } from './media';
 
 type Queryable = Pick<PoolClient, 'query'>;
 
+/**
+ * Image columns outside the content tables, which `IMAGE_COLUMNS` can't see:
+ * a vehicle category's image from the media library (0027, Admin → Bookings).
+ * A new image column on a table that isn't a content table goes here;
+ * `media-rebase.test` fails until it does.
+ */
+export const OTHER_IMAGE_COLUMNS: readonly { table: string; column: string; list: boolean }[] = [
+  { table: 'booking_vehicles', column: 'image_url', list: false }
+];
+
+/** Every column holding an image URL, in any table: what the audit reads and the rebase moves. */
+export const STORED_IMAGE_COLUMNS: readonly { table: string; column: string; list: boolean }[] = [
+  ...IMAGE_COLUMNS.map(({ table, column, list }) => ({ table, column, list })),
+  ...OTHER_IMAGE_COLUMNS
+];
+
 export interface StoredImage {
   table: string;
   id: string;
@@ -20,10 +37,10 @@ export interface StoredImage {
   url: string;
 }
 
-/** Every image URL in the content tables, drafts included. */
+/** Every stored image URL (`STORED_IMAGE_COLUMNS`), drafts included. */
 export async function storedImages(db: Queryable): Promise<StoredImage[]> {
   const found: StoredImage[] = [];
-  for (const c of IMAGE_COLUMNS) {
+  for (const c of STORED_IMAGE_COLUMNS) {
     const sql = c.list
       ? `select t.id, u.url from public.${c.table} t, unnest(t."${c.column}") as u(url)`
       : `select t.id, t."${c.column}" as url from public.${c.table} t where t."${c.column}" is not null`;
@@ -51,11 +68,39 @@ export interface RebaseResult {
    * one credits a URL nothing uses any more, so it never shows.
    */
   creditsAlreadyMoved: number;
+  /**
+   * `content_imports` records carried forward: rows `content:import` made, untouched
+   * since, whose `updated_at` the rebase moved. Still untouched afterwards, so the
+   * import keeps updating them; a row an admin had saved stays theirs.
+   */
+  imports: number;
+}
+
+/**
+ * The rows `content:import` made that nobody has saved since (`row_updated_at` is
+ * still the row's `updated_at`), by table. The tables come from `content_imports`,
+ * and only one holding an image column is ever named in SQL.
+ */
+async function untouchedImports(db: Queryable): Promise<Map<string, string[]>> {
+  const imageTables = new Set(STORED_IMAGE_COLUMNS.map((c) => c.table));
+  const { rows: tables } = await db.query<{ table_name: string }>('select distinct table_name from public.content_imports');
+  const found = new Map<string, string[]>();
+  for (const { table_name: table } of tables) {
+    if (!imageTables.has(table)) continue;
+    const { rows } = await db.query<{ row_id: string }>(
+      `select ci.row_id from public.content_imports ci join public.${table} t on t.id = ci.row_id
+        where ci.table_name = $1 and ci.row_updated_at = t.updated_at`,
+      [table]
+    );
+    if (rows.length) found.set(table, rows.map((r) => r.row_id));
+  }
+  return found;
 }
 
 /**
  * Rewrites every URL under `from` to the same path under `to`: `media.url`
- * (uploads and photo sets), every image column, plain and list, and
+ * (uploads and photo sets), every image column, plain and list
+ * (`STORED_IMAGE_COLUMNS`: the vehicle categories' too), and
  * `image_credits.url`. Only a value that *starts with* `from` + "/" changes:
  * Unsplash, the seed's photos, and a URL that merely contains the old base are
  * left alone. A second run finds nothing under `from` and changes nothing.
@@ -64,7 +109,8 @@ export interface RebaseResult {
  *
  * Content rows it touches get a new `updated_at`, so an editor open on one
  * at that moment gets the usual 409 and reloads. Do it when nobody is
- * editing.
+ * editing. A row `content:import` made and nobody has saved stays that way:
+ * its `content_imports.row_updated_at` follows (`imports`).
  */
 export async function rebaseMedia(db: Queryable, fromBase: string, toBase: string): Promise<RebaseResult> {
   const from = `${normaliseBaseUrl(fromBase)}/`;
@@ -77,13 +123,15 @@ export async function rebaseMedia(db: Queryable, fromBase: string, toBase: strin
   if (from === to) throw new Error('--from and --to are the same.');
 
   const moved = (sql: string) => db.query(sql, [from, to]).then((r) => r.rowCount ?? 0);
+  // Before anything moves: the trigger gives every row it touches a new updated_at.
+  const imported = await untouchedImports(db);
 
   const media = await moved(
     `update public.media set url = $2 || substr(url, length($1) + 1) where starts_with(url, $1)`
   );
 
   const columns: Record<string, number> = {};
-  for (const c of IMAGE_COLUMNS) {
+  for (const c of STORED_IMAGE_COLUMNS) {
     columns[`${c.table}.${c.column}`] = await moved(
       c.list
         ? `update public.${c.table} set "${c.column}" = array(
@@ -104,7 +152,19 @@ export async function rebaseMedia(db: Queryable, fromBase: string, toBase: strin
     'select count(*)::int as n from public.image_credits where starts_with(url, $1)',
     [from]
   );
-  return { media, columns, credits, creditsAlreadyMoved: rows[0].n };
+  let imports = 0;
+  for (const [table, ids] of imported) {
+    imports += await db
+      .query(
+        `update public.content_imports ci set row_updated_at = t.updated_at
+           from public.${table} t
+          where ci.table_name = $1 and ci.row_id = any($2::text[]) and t.id = ci.row_id
+            and ci.row_updated_at <> t.updated_at`,
+        [table, ids]
+      )
+      .then((r) => r.rowCount ?? 0);
+  }
+  return { media, columns, credits, creditsAlreadyMoved: rows[0].n, imports };
 }
 
 const quoteIdent = (name: string): string => `"${name.replace(/"/g, '""')}"`;

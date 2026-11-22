@@ -7,29 +7,57 @@ import './test-db';
  * Cloudflare account (docs/runbooks/move-r2-to-client.md), on the test database:
  *
  *   - every URL under the old base moves: the media library (uploads and photo
- *     sets), every image column (destinations, attractions, the journal,
- *     hero slides…) and the photo credits, keyed by URL;
+ *     sets), every image column (destinations, attractions, tours, tour
+ *     categories, the journal, hero slides, the vehicle categories…) and the
+ *     photo credits, keyed by URL;
+ *   - every image-like column in the schema is one the rebase knows about;
+ *   - a draft content:import made, untouched since, stays untouched;
  *   - a dry run reports the same and changes nothing;
  *   - a second run changes nothing (idempotent);
  *   - nothing else changes: Unsplash, other buckets, a look-alike host, a URL
  *     that only mentions the old base, and the text of a setting;
  *   - what still mentions the old base afterwards is reported;
- *   - the CSP and the admin's validation allow the new domain always, and the
- *     old base while R2_PREVIOUS_PUBLIC_BASE_URL is set.
+ *   - the CSP and the admin's validation (the vehicle categories' too) allow
+ *     the new domain always, and the old base while R2_PREVIOUS_PUBLIC_BASE_URL
+ *     is set.
  */
 import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, test } from 'node:test';
 
+import { createApp } from '../src/app';
+import { current } from '../src/content-import';
 import { pool } from '../src/db';
 import { readPreviousR2Base } from '../src/env';
-import { columnsMentioning, missingFiles, rebaseMedia, runRebase, storedImages, urlsUnder } from '../src/media/maintenance';
-import { imageOriginsFor } from '../src/media/media';
+import {
+  columnsMentioning,
+  missingFiles,
+  rebaseMedia,
+  runRebase,
+  STORED_IMAGE_COLUMNS,
+  storedImages,
+  urlsUnder
+} from '../src/media/maintenance';
+import { imageOriginsFor, type MediaConfig } from '../src/media/media';
 import { loadPhotoSets } from '../src/media/photo-sets';
 import { memoryStore } from '../src/media/store';
 import { contentSecurityPolicy } from '../src/security-headers';
 import { allowedImageOrigins, isAllowedImageUrl, R2_CUSTOM_DOMAIN_ORIGIN, UNSPLASH_ORIGIN } from '../../shared/image-hosts';
-import { assertConnectedToTestDatabase, migrateTestDatabase, resetContent, seedPhotoSet } from './helpers';
+import {
+  assertConnectedToTestDatabase,
+  browserHeaders,
+  createUser,
+  listen,
+  login,
+  migrateTestDatabase,
+  PASSWORD,
+  resetAuthTables,
+  resetContent,
+  seedPhotoSet,
+  sessionTokenFrom,
+  withSession
+} from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
+import { seeded } from './vehicle-categories';
 
 const OLD = 'https://test-bucket.r2.dev';
 const NEW = 'https://images.example.lk';
@@ -39,6 +67,8 @@ const OTHER_BUCKET = 'https://other-bucket.r2.dev/library/7-cc.webp';
 /** Mentions the old base, but doesn't start with it. */
 const MENTIONS_ONLY = `https://web.archive.org/web/2026/${OLD}/library/2-bb.webp`;
 const EXPLAINER = `Our photos used to be at ${OLD}/library. Paragraph two.`;
+/** A vehicle category's image (0027): not a content table, and not in the library either. */
+const VEHICLE_IMAGE = `${OLD}/library/4-vv.webp`;
 
 before(async () => {
   migrateTestDatabase();
@@ -48,6 +78,8 @@ before(async () => {
 beforeEach(async () => {
   await resetContent();
   await pool.query('truncate public.media, public.image_credits');
+  // resetContent leaves the vehicle categories alone; the seed's have no image.
+  await pool.query('update public.booking_vehicles set image_url = null');
 }, HOOK_TIMEOUT);
 
 after(async () => {
@@ -78,6 +110,20 @@ async function seed(): Promise<void> {
   );
   await pool.query(
     `update public.hero_slides set image = '${OLD}/library/2-bb.webp' where id = (select id from public.hero_slides order by id limit 1)`
+  );
+  // Added since this PR was first opened: tour categories (0030), tour covers (the 0031
+  // drafts are tours rows) and the vehicle categories' images (0027).
+  await pool.query(
+    `update public.tour_categories set image = '${OLD}/library/2-bb.webp' where id = (select id from public.tour_categories order by id limit 1)`
+  );
+  await pool.query(`update public.tours set image = '${OLD}/library/2-bb.webp' where id = (select id from public.tours order by id limit 1)`);
+  await pool.query(`update public.booking_vehicles set image_url = $1 where id = 'van'`, [VEHICLE_IMAGE]);
+  // content:import's record: Ella as it left it (untouched), Galle saved in the admin since.
+  await pool.query(`update public.destinations set image = '${OLD}/library/2-bb.webp' where id = 'galle'`);
+  await pool.query(
+    `insert into public.content_imports (table_name, row_id, content_hash, row_updated_at)
+     select 'destinations', id, 'h', case when id = 'ella' then updated_at else updated_at - interval '1 day' end
+       from public.destinations where id in ('ella', 'galle')`
   );
   await pool.query(`update public.site_settings set when_to_go_explainer = $1`, [EXPLAINER]);
   await pool.query(
@@ -127,14 +173,18 @@ describe('media:rebase', () => {
     const result = await rebase({ dryRun: false });
     assert.equal(result.committed, true);
     assert.equal(result.media, 6, 'three uploads and three widths of a photo set');
-    assert.equal(result.columns['destinations.image'], 1);
+    assert.equal(result.columns['destinations.image'], 2, 'Ella and Galle');
     assert.equal(result.columns['destinations.gallery'], 1);
     assert.equal(result.columns['attractions.image'], 1);
     assert.equal(result.columns['articles.image'], 1);
     assert.equal(result.columns['articles.author_avatar'], 0, 'only mentions the old base');
     assert.equal(result.columns['hero_slides.image'], 1);
+    assert.equal(result.columns['tour_categories.image'], 1);
+    assert.equal(result.columns['tours.image'], 1);
+    assert.equal(result.columns['booking_vehicles.image_url'], 1);
     assert.equal(result.credits, 2);
     assert.equal(result.creditsAlreadyMoved, 0);
+    assert.equal(result.imports, 1, "Ella's import record followed; Galle's didn't");
 
     // Exactly the values that started with the old base changed; everything else is as it was.
     assert.deepEqual(await snapshot(), moved(before));
@@ -187,6 +237,7 @@ describe('media:rebase', () => {
     const again = await rebase({ dryRun: false });
     assert.equal(again.media, 0);
     assert.equal(again.credits, 0);
+    assert.equal(again.imports, 0);
     assert.deepEqual(Object.values(again.columns).filter((n) => n > 0), []);
     assert.deepEqual(await snapshot(), once);
     const stillAt = await pool.query(`select updated_at from public.destinations where id = 'ella'`);
@@ -238,8 +289,9 @@ describe('media:rebase', () => {
     await seed();
     const urls = await urlsUnder(pool, OLD);
     assert.deepEqual(urls, [...new Set(urls)].sort(), 'sorted, each once');
-    assert.equal(urls.length, 6, 'three uploads and three photo-set widths');
+    assert.equal(urls.length, 7, "three uploads, three photo-set widths and the vehicle's image");
     assert.ok(urls.includes(`${OLD}/destinations/1-aa.png`) && urls.includes(`${OLD}/attractions/3-dd.jpg`));
+    assert.ok(urls.includes(VEHICLE_IMAGE), 'an image column outside the content tables is checked too');
     assert.ok(urls.every((u) => u.startsWith(`${OLD}/`)));
     assert.ok(!urls.includes(LOOK_ALIKE) && !urls.includes(MENTIONS_ONLY) && !urls.includes(OTHER_BUCKET));
 
@@ -254,6 +306,42 @@ describe('media:rebase', () => {
     ]);
     assert.deepEqual(await missingFiles(onNew.slice(2), async (u) => answers.get(u)!), []);
     assert.deepEqual(await missingFiles([]), []);
+  });
+
+  test('a draft content:import made, untouched since, stays untouched: the import keeps updating it', async () => {
+    await seed();
+    const untouched = (id: string) => current(pool, 'destinations', id, false).then((e) => e.untouched);
+    assert.equal(await untouched('ella'), true);
+    assert.equal(await untouched('galle'), false);
+    const before = await pool.query(`select updated_at::text as at from public.destinations where id = 'ella'`);
+
+    await rebase({ dryRun: false });
+    const after = await pool.query(`select image, updated_at::text as at from public.destinations where id = 'ella'`);
+    assert.equal(after.rows[0].image, `${NEW}/destinations/1-aa.png`);
+    assert.notEqual(after.rows[0].at, before.rows[0].at, 'the row did change');
+    assert.equal(await untouched('ella'), true, 'not mistaken for an admin edit');
+    assert.equal(await untouched('galle'), false, 'an admin edit stays one');
+  });
+
+  test('every image-like column in the schema is one the rebase moves', async () => {
+    // By name: a column holding a picture's URL. Not URLs: media.photo_key (a photo set's
+    // name) and image_credits' other columns (licence and source links). media.url and
+    // image_credits.url the rebase moves on their own.
+    const { rows } = await pool.query<{ name: string }>(
+      `select c.table_name || '.' || c.column_name as name
+         from information_schema.columns c
+         join information_schema.tables t
+           on t.table_schema = c.table_schema and t.table_name = c.table_name and t.table_type = 'BASE TABLE'
+        where c.table_schema = 'public'
+          and c.column_name ~ '(image|gallery|avatar|photo|picture|cover|thumbnail)'
+          and (c.data_type in ('text', 'character varying') or (c.data_type = 'ARRAY' and c.udt_name in ('_text', '_varchar')))
+        order by 1`
+    );
+    const known = new Set(STORED_IMAGE_COLUMNS.map((c) => `${c.table}.${c.column}`));
+    const notUrls = new Set(['media.photo_key']);
+    const missing = rows.map((r) => r.name).filter((n) => !known.has(n) && !notUrls.has(n) && !n.startsWith('image_credits.'));
+    assert.deepEqual(missing, [], 'add these to IMAGE_COLUMNS (a content field) or OTHER_IMAGE_COLUMNS');
+    assert.ok(known.has('tour_categories.image') && known.has('booking_vehicles.image_url'));
   });
 
   test('columnsMentioning finds text in any table, and only counts it', async () => {
@@ -287,6 +375,36 @@ describe('the image allow-list during the move', () => {
     const afterwards = imageOriginsFor(media(null));
     assert.ok(!isAllowedImageUrl(`${OLD}/library/2-bb.webp`, afterwards));
     assert.ok(!contentSecurityPolicy(media(null)).includes(OLD));
+  });
+
+  test("a vehicle category's image follows the same allow-list as every image field", async () => {
+    await resetAuthTables();
+    await createUser();
+    const apps = await Promise.all(
+      [OLD, null].map((previous) =>
+        listen(createApp({ media: media(previous) as MediaConfig, bookings: true, notifier: { newInquiry() {} } }))
+      )
+    );
+    try {
+      const [during, afterwards] = await Promise.all(
+        apps.map(async (app) => {
+          const token = sessionTokenFrom(await login(app, 'admin@example.test', PASSWORD))!;
+          return (imageUrl: string | null) =>
+            fetch(`${app.baseUrl}/api/admin/booking-vehicles/van`, {
+              method: 'PUT',
+              headers: { ...browserHeaders(app), ...withSession(token) },
+              body: JSON.stringify({ ...seeded('van'), imageUrl })
+            }).then((r) => r.status);
+        })
+      );
+      assert.equal(await during(VEHICLE_IMAGE), 200, 'the old base, during the move');
+      assert.equal(await during(`${R2_CUSTOM_DOMAIN_ORIGIN}/library/4-vv.webp`), 200);
+      assert.equal(await afterwards(VEHICLE_IMAGE), 400, 'the old base, once the move is over');
+      assert.equal(await afterwards(`${NEW}/library/4-vv.webp`), 200);
+      assert.equal(await afterwards(null), 200);
+    } finally {
+      await Promise.all(apps.map((app) => app.close()));
+    }
   });
 
   test('R2_PREVIOUS_PUBLIC_BASE_URL: https only, trailing slash dropped', () => {
