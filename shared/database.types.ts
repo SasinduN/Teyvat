@@ -333,6 +333,8 @@ export interface SiteSettingsRow extends Timestamps {
   whatsapp_number: string | null;
   /** A percent of the browser's default: 100, 110 or 120 (0019). */
   text_size: number;
+  /** 0032: sunset (default), emerald or ocean (shared/palette.ts). */
+  palette: 'sunset' | 'emerald' | 'ocean';
   /** The stats strip, up to four (0021, `shared/site-stats.ts`). Empty: it is hidden. */
   stats: SiteStat[];
   /** /when-to-go's explainer: paragraphs separated by a blank line (0022). NULL hides it. */

@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { Button, FieldHelp, Input, Textarea } from '@/admin/components/ui';
 import { cn } from '@/utils/cn';
 import { TEXT_SIZES, DEFAULT_TEXT_SIZE } from '@shared/text-size';
+import { DEFAULT_PALETTE, PALETTE_LABELS, PALETTES, type Palette } from '@shared/palette';
 import { MONTH_NAMES, MONTH_NUMBERS, normalizeMonths } from '@shared/best-months';
 
 /* -------------------------------------------------------- string list field */
@@ -208,6 +209,83 @@ export const TextSizeField: React.FC<{
         <span className="te-text-size-preview__card">Card and description text looks like this.</span>
       </div>
       <FieldHelp>Live preview. Nothing changes for visitors until you save.</FieldHelp>
+    </fieldset>
+  );
+};
+
+/**
+ * The site's colour theme (docs/plans/brand-themes.md): a radio card per theme, each with
+ * three swatches named in words and a small light and dark preview. The previews carry
+ * their own `data-palette` and `data-theme`, so tokens.css colours them with the real
+ * tokens, whatever the admin itself is showing. Saved, the theme applies to every page
+ * (the server writes it on <html>), from each visitor's next page load.
+ */
+export const PaletteField: React.FC<{
+  value: Palette;
+  onChange: (value: Palette) => void;
+  label: string;
+}> = ({ value, onChange, label }) => {
+  const name = useId();
+  return (
+    <fieldset className="space-y-3" data-palette-field>
+      <legend className="block text-xs font-bold uppercase tracking-[0.12em] text-[var(--brand-primary)]">{label}</legend>
+      <div className="grid gap-3 lg:grid-cols-3">
+        {PALETTES.map((palette) => {
+          const { name: title, description } = PALETTE_LABELS[palette];
+          const chosen = value === palette;
+          return (
+            <label
+              key={palette}
+              data-palette-option={palette}
+              className={cn(
+                'te-palette-option flex cursor-pointer flex-col gap-3 rounded-xl border p-3.5 transition-colors',
+                chosen
+                  ? 'border-[var(--brand-secondary)] bg-[var(--background-secondary)]'
+                  : 'border-[var(--border-strong)] bg-[var(--surface)]'
+              )}
+            >
+              <span className="flex items-start gap-2.5">
+                <input
+                  type="radio"
+                  name={name}
+                  value={palette}
+                  checked={chosen}
+                  onChange={() => onChange(palette)}
+                  className="mt-1 h-4 w-4 shrink-0 accent-[var(--inverse-raised)]"
+                />
+                <span className="space-y-0.5">
+                  <span className="block text-sm font-semibold text-[var(--brand-primary)]">
+                    {title}{palette === DEFAULT_PALETTE ? ' (default)' : ''}
+                  </span>
+                  <span className="block text-xs text-[var(--text-secondary)]">{description}</span>
+                </span>
+              </span>
+              {/* Each preview is this theme, light then dark, from the real tokens. */}
+              <span className="grid grid-cols-2 gap-2">
+                {(['light', 'dark'] as const).map((mode) => (
+                  <span key={mode} className="te-palette-preview" data-palette={palette} data-theme={mode} aria-hidden="true">
+                    <span className="te-palette-preview__swatches">
+                      <span className="te-palette-preview__swatch te-palette-preview__swatch--page" />
+                      <span className="te-palette-preview__swatch te-palette-preview__swatch--brand" />
+                      <span className="te-palette-preview__swatch te-palette-preview__swatch--accent" />
+                    </span>
+                    <span className="te-palette-preview__heading">Sri Lanka</span>
+                    <span className="te-palette-preview__body">Tea country and the south coast.</span>
+                    <span className="te-palette-preview__link">A link</span>
+                    <span className="te-palette-preview__button">Plan</span>
+                  </span>
+                ))}
+              </span>
+              <span className="text-xs text-[var(--text-secondary)]">
+                Swatches: page, brand and accent colours. Previews: light, then dark.
+              </span>
+            </label>
+          );
+        })}
+      </div>
+      <FieldHelp>
+        Applies to every visitor (and this admin panel) on their next page load. Each visitor still chooses light or dark.
+      </FieldHelp>
     </fieldset>
   );
 };

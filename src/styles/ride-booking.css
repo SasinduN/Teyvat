@@ -101,8 +101,7 @@
 .ride-vehicle.is-selected .ride-vehicle__image { opacity: 1; }
 
 /* The summary: the chosen vehicle, large, then the ride. */
-.ride-page .ride-summary { background: var(--palette-sky-mist); }
-:root[data-theme="dark"] .ride-page .ride-summary { background: var(--palette-night-sky); }
+.ride-page .ride-summary { background: var(--cool-tint); }
 .ride-page .ride-summary h2 { font-size: var(--heading-card); margin-bottom: .8rem; }
 .ride-showcase { display: grid; place-items: center; min-height: 14rem; margin-bottom: 1rem; padding: 1rem; border-radius: var(--radius-md); background: var(--surface); overflow: hidden; }
 .ride-showcase__vehicle { display: grid; justify-items: center; gap: .75rem; width: 100%; margin: 0; text-align: center; animation: ride-showcase-in 320ms var(--ease-premium) both; }
@@ -123,7 +122,8 @@
 .ride-page .ride-success, .ride-page .ride-requests { margin: 1rem 0; }
 .ride-success h2 { font-size: var(--heading-card); }
 .ride-callback { width: min(440px, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto; background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 1.5rem; margin: auto; }
-.ride-callback::backdrop { background: rgb(16 31 27 / .55); }
+/* A browser whose ::backdrop doesn't inherit custom properties (before Chrome 122, Safari 17.4) gets a plain dim. */
+.ride-callback::backdrop { background: var(--scrim, rgb(0 0 0 / .55)); }
 .ride-callback h2 { font-size: var(--heading-sub); margin-bottom: .65rem; }
 
 @media (min-width: 768px) {

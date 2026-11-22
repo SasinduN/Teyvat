@@ -14,6 +14,7 @@ import { z } from './zod';
 
 import { normalizeMonths } from './best-months';
 import { isTextSize, TEXT_SIZES } from './text-size';
+import { isPalette, PALETTE_LABELS, PALETTES } from './palette';
 import { BRAND_MAX_LENGTH, BRAND_TEXT_DEFAULTS } from './brand';
 
 import {
@@ -93,6 +94,7 @@ export type Field =
   | (FieldBase & { type: 'whatsapp' })
   /** The site-wide text size (`shared/text-size.ts`), with a live preview. */
   | (FieldBase & { type: 'textSize' })
+  | (FieldBase & { type: 'palette' })
   /** The stats strip (`shared/site-stats.ts`): up to four rows. */
   | (FieldBase & { type: 'stats' })
   /** Months 1 to 12 (`shared/best-months.ts`): twelve checkboxes, select all and clear. */
@@ -347,6 +349,13 @@ export const SITE_SETTINGS_FIELDS: Field[] = [
     help: 'For the whole site and this admin panel, from the next page load.'
   },
   {
+    name: 'palette',
+    label: 'Site colour theme',
+    type: 'palette',
+    span: 2,
+    help: 'For every visitor and this admin panel, from their next page load. Visitors still choose light or dark.'
+  },
+  {
     name: 'stats',
     label: 'Stats strip',
     type: 'stats',
@@ -551,6 +560,9 @@ function schemaForField(field: Field, options: SchemaOptions = {}): z.ZodTypeAny
 
     case 'textSize':
       return z.unknown().refine(isTextSize, { message: `Choose ${TEXT_SIZES.join('%, ')}%.` });
+
+    case 'palette':
+      return z.unknown().refine(isPalette, { message: `Choose ${PALETTES.map((p) => PALETTE_LABELS[p].name).join(', ')}.` });
 
     case 'whatsapp':
       return z
