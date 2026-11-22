@@ -180,6 +180,7 @@ npm run build && npm start     # everything on http://localhost:8081
 | `npm run seed:dev` | Local database only: the fake WhatsApp number, if none is saved |
 | `npm run admin:create` | Create an admin, or `--reset-password` for an existing one (`--prod`) |
 | `npm run images:audit` | Read-only: stored image URLs the CSP would block (`--prod`; during an R2 move `--r2-base`, `--previous-base`) |
+| `npm run brand:assets` | Remakes the logo files in `public/brand/` from `design/brand/` (`sharp`, dev only); fails if one is over its budget. Commit the output |
 | `npm run brand:audit` | Read-only: table, id and column of rows that still name an earlier brand or the placeholder, never the text (`--prod`) |
 | `npm run media:rebase` | Move stored image URLs, the media library and the photo credits to a new R2 base (`--from`, `--to`, `--dry-run`, `--verify-files`, `--prod`). Safe to run twice. [`docs/runbooks/move-r2-to-client.md`](docs/runbooks/move-r2-to-client.md) |
 | `npm run images:import` | Copy the Wikimedia photos the content uses into R2 and repoint rows and credits (`--dry-run`, `--prod`) |
