@@ -15,7 +15,7 @@
 import { Router, type Request, type Response } from 'express';
 
 import { BRAND, BRAND_ASSETS, type Brand } from '../../../shared/brand';
-import { DEFAULT_PALETTE, PALETTE_THEME_COLOR, type Palette } from '../../../shared/palette';
+import { DEFAULT_PALETTE, PALETTE_BACKGROUND_COLOR, PALETTE_THEME_COLOR, type Palette } from '../../../shared/palette';
 import { homeDescription, homeTitle, PAGE_DESCRIPTIONS, PAGE_NAMES, pageTitle, type PageName } from '../../../shared/page-meta';
 import { paths, TOUR_CATEGORY_PATH_SEGMENT } from '../../../shared/site-paths';
 import { SLUG_PATTERN } from '../../../shared/content-schema';
@@ -292,7 +292,7 @@ export function webManifest(brand: Brand, palette: Palette = DEFAULT_PALETTE): R
     display: 'browser',
     // The browser's bar follows the admin's colour theme.
     theme_color: PALETTE_THEME_COLOR[palette],
-    background_color: brand.backgroundColor,
+    background_color: PALETTE_BACKGROUND_COLOR[palette],
     icons: brand.manifestIcons
   };
 }

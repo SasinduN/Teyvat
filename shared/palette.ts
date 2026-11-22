@@ -26,3 +26,10 @@ export const PALETTE_THEME_COLOR: Record<Palette, string> = {
   emerald: '#194D3B',
   ocean: '#0D3A49'
 };
+
+/** The manifest's `background_color` (the splash before the page paints): each theme's light page colour. */
+export const PALETTE_BACKGROUND_COLOR: Record<Palette, string> = {
+  sunset: '#FCF8F3',
+  emerald: '#FAFBF8',
+  ocean: '#F9F7F2'
+};

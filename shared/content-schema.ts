@@ -562,7 +562,9 @@ function schemaForField(field: Field, options: SchemaOptions = {}): z.ZodTypeAny
       return z.unknown().refine(isTextSize, { message: `Choose ${TEXT_SIZES.join('%, ')}%.` });
 
     case 'palette':
-      return z.unknown().refine(isPalette, { message: `Choose ${PALETTES.map((p) => PALETTE_LABELS[p].name).join(', ')}.` });
+      return z.unknown().refine(isPalette, {
+        message: `Choose ${PALETTES.slice(0, -1).map((p) => PALETTE_LABELS[p].name).join(', ')} or ${PALETTE_LABELS[PALETTES[PALETTES.length - 1]].name}.`
+      });
 
     case 'whatsapp':
       return z
