@@ -53,7 +53,8 @@ this file or anywhere else in git.
 | V++ | The Mini Lorry: goods mode on `/booking` (0029, plan part 12) | done (#67) |
 | TS | Tours on phones: a row to swipe, with a counter, dots and arrows (`docs/plans/tours-swipe-row.md`) | done (#68) |
 | TC | Tour categories (`docs/plans/tour-categories.md`): 0030, `/tours` row, a page per category, the Tours menu, the tailor-made card (PR 1); new tour drafts through `content:import` (PR 2) | done (#69, #70) |
-| R2 | Move R2 to the client's Cloudflare account: `images.serendibluxetours.com` always allowed, `R2_PREVIOUS_PUBLIC_BASE_URL`, `media:rebase` covers the credits, `docs/runbooks/move-r2-to-client.md` | in review |
+| R2 | Move R2 to the client's Cloudflare account: `images.serendibluxetours.com` always allowed, `R2_PREVIOUS_PUBLIC_BASE_URL`, `media:rebase` covers the credits, `docs/runbooks/move-r2-to-client.md` | done (#63); moved in production 22 Nov 2026 |
+| CH | One host: a page on www or `*.up.railway.app` gets a 301 to `PUBLIC_SITE_URL` (`server/src/canonical-host.ts`) | in review |
 
 Update the Status column when a phase lands.
 
@@ -383,6 +384,13 @@ Update the Status column when a phase lands.
     (title, description, canonical, Open Graph, Twitter), between the
     `<!--page-meta-->` markers. A new page type needs its path added there.
   - Every injected value goes through `escapeHtml` (`shared/html.ts`).
+  - **One host** (`server/src/canonical-host.ts`): with `PUBLIC_SITE_URL` set, a GET or
+    HEAD for a page on any other host (www, `*.up.railway.app`) is a 301 to the same path
+    and query there. Never `/api/*`: Railway's healthcheck calls `/api/health` on its own
+    host. The `Host` header decides (never `X-Forwarded-Host`), compared without case,
+    port or trailing dot, so the canonical host never loops. Off without `PUBLIC_SITE_URL`,
+    and `createApp`'s `canonicalOrigin` is separate from `site`, so tests that give `site`
+    a URL still fetch from 127.0.0.1 (`canonical-host.test`).
   - Every public page preloads `/api/content`, and those in `HERO_IS_SHARE_IMAGE`
     (`pages.ts`) their header photo, with the header's own `srcset` and `sizes`. A page
     whose header stops showing its share image comes out of that set (`browser-preload`).
@@ -420,9 +428,12 @@ Agreed, not started. Each one gets its own plan first.
 - **Mobile performance to 90** (`docs/reviews/audit-2026-11.md`, "Left"): measure
   production first; then server-rendered page headers or a smaller entry, each its own plan.
 - **`/booking?tour=…` layout shift** while its catalog loads (the same audit).
-- **Move R2 to the client's account and `images.serendibluxetours.com`:** Sasindu
-  runs `docs/runbooks/move-r2-to-client.md` (launch checklist item 9). A week after,
-  with no errors: unset `R2_PREVIOUS_PUBLIC_BASE_URL`, then a PR removes its support.
+- **After the R2 move (done 22 Nov 2026, #63):** a week later, with no errors, unset
+  `R2_PREVIOUS_PUBLIC_BASE_URL` in Railway, then a PR removes its support.
+- **The media library's "in use" check doesn't see vehicle images** (#65): `usageOf`
+  walks `IMAGE_COLUMNS` only, so deleting a photo a vehicle category uses
+  (`booking_vehicles.image_url`) gives no warning. `OTHER_IMAGE_COLUMNS`
+  (`maintenance.ts`) already lists the column.
 - **The enquiry form moves 1 px after it opens:** the panel sits at a fractional
   position, and Chrome repaints some rows 1 px apart after the entrance (`browser-inquiry`'s
   `screenshot()`). Tiny; whole-pixel centring would end it.

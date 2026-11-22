@@ -14,6 +14,7 @@ import express, { type Express } from 'express';
 
 import { API_ROUTES } from '../../shared/api';
 import { sameOrigin } from './auth/middleware';
+import { canonicalHost } from './canonical-host';
 import { bookingsEnabled, isProduction, notifyConfig, siteConfig, type SiteConfig } from './env';
 import { createNotifier, OFF, resendSender, type Notifier } from './inquiries/notify';
 import { loadBrand } from './brand';
@@ -60,6 +61,13 @@ export interface AppOptions {
   site?: SiteConfig;
   /** Booking requests on or off. Defaults to `BOOKINGS_ENABLED`; tests pass their own. */
   bookings?: boolean;
+  /**
+   * The origin every page request on another host is sent to with a 301
+   * (`canonical-host.ts`). Defaults to `PUBLIC_SITE_URL`, the same origin as the
+   * canonical links and the sitemap. Separate from `site`, because tests give
+   * `site` a URL and then fetch pages from 127.0.0.1; null turns it off.
+   */
+  canonicalOrigin?: string | null;
 }
 
 export function createApp(options: AppOptions = {}): Express {
@@ -87,6 +95,9 @@ export function createApp(options: AppOptions = {}): Express {
 
   // CSP, nosniff, framing, referrer and HSTS on every response.
   app.use(securityHeaders(app.locals.media as MediaConfig | null));
+
+  // www and *.up.railway.app pages: a 301 to PUBLIC_SITE_URL. Never /api (the healthcheck).
+  app.use(canonicalHost(options.canonicalOrigin === undefined ? siteConfig.url : options.canonicalOrigin));
 
   app.use(express.json({ limit: '100kb' }));
 

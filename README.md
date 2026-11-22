@@ -516,7 +516,7 @@ point-in-time recovery).
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL` | image uploads: all five or none |
 | `R2_PREVIOUS_PUBLIC_BASE_URL` | only during a move of R2: the old base, still allowed for images (`docs/runbooks/move-r2-to-client.md`) |
 | `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` (+ optional `NOTIFY_EMAIL_FROM`) | new-enquiry emails |
-| `PUBLIC_SITE_URL` | the public `https://` origin, for canonical links, share previews, the sitemap, `llms.txt` and the email's link (unset: each request's host) |
+| `PUBLIC_SITE_URL` | the public `https://` origin, for canonical links, share previews, the sitemap, `llms.txt` and the email's link; a page asked for on any other host (www, `*.up.railway.app`) gets a 301 to it, `/api/*` never (unset: each request's host, no redirect) |
 | `SITE_INDEXABLE` | `true` opens the site to search engines (and serves `/sitemap.xml` and `/llms.txt`); anything else keeps them out (launch checklist item 21) |
 | `BOOKINGS_ENABLED` | `true` turns booking requests on (`/booking`, its API, the links, *Admin → Bookings*); anything else keeps them off (launch checklist item 24) |
 | `VITE_CARTO_KEY` | the map's tile key. Read when the client is **built**, so a change needs a redeploy |

@@ -74,7 +74,10 @@ off in a pull request, so the history shows when each was done.
 - [ ] **8. Buy the domain.** Add it to the Railway API service as a custom
       domain and create the DNS records Railway gives. Then set
       `PUBLIC_SITE_URL` to `https://<domain>` on the API service: every
-      canonical link, share preview and sitemap entry is built from it.
+      canonical link, share preview and sitemap entry is built from it, and a
+      page asked for on any other host (www, `*.up.railway.app`) gets a 301 to it
+      (`server/src/canonical-host.ts`; `/api/*` never redirects). Add `www` as a
+      second custom domain too, so its visitors reach that redirect.
       **Blocks:** 9, 10, 11, 17, and real visitors. **Who:** Owner + DNS admin.
 - [ ] **9. Move R2 to a custom domain**: `images.serendibluxetours.com`, in a new
       bucket on the client's Cloudflare account (which owns the domain). Today images
