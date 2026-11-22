@@ -22,7 +22,7 @@ import { escapeHtml } from '../../../shared/html';
 import type { SiteConfig } from '../env';
 import { pool } from '../db';
 import { describeForLog } from '../http';
-import { injectHead, injectTextSize, keepHomeOnly, renderHead, type PageMeta } from './head';
+import { injectHead, injectTextSize, renderHead, type PageMeta } from './head';
 import { fullSrcSet } from '../../../shared/photo-assets';
 import { photoResolver } from '../../../shared/public-photos';
 import { DEFAULT_TEXT_SIZE, type TextSize } from '../../../shared/text-size';
@@ -507,7 +507,7 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
       head += `\n<link rel="preload" as="image" href="${escapeHtml(resolved.meta.image)}"${responsive} fetchpriority="high">`;
     }
     res.status(resolved.status).set('Cache-Control', 'no-cache');
-    await sendText(req, res, injectTextSize(keepHomeOnly(injectHead(template, head), path === '/'), textSize), 'html');
+    await sendText(req, res, injectTextSize(injectHead(template, head), textSize), 'html');
   });
 
   return router;

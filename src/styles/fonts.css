@@ -37,8 +37,8 @@
  * The heading serif and the accent script (docs/plans/brand-themes.md), self-hosted the
  * same way (SIL Open Font License, @fontsource): Playfair Display 600 for every heading
  * and the wordmark, Allura only for short accent words (`<Accent>`, `.te-accent`).
- * Playfair is preloaded on every page and Allura only on the home page (index.html,
- * between the `home-only` markers the server keeps only for `/`).
+ * Playfair is preloaded on every page (index.html); Allura isn't (it swaps in over its
+ * measured fallback).
  */
 @font-face {
   font-family: 'Playfair Display';

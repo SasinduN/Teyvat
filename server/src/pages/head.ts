@@ -189,17 +189,6 @@ export function injectTextSize(html: string, size: TextSize): string {
   return html.replace('<html', `<html data-text-size="${size}"`);
 }
 
-const HOME_ONLY = /\s*<!--home-only-->[\s\S]*?<!--\/home-only-->/;
-
-/**
- * `index.html` with its home-only block (the accent script's preload) kept for the home
- * page and dropped everywhere else, markers and all: only the home page's headline uses
- * that font, so other pages shouldn't spend the bandwidth.
- */
-export function keepHomeOnly(html: string, isHome: boolean): string {
-  return isHome ? html.replace(/<!--\/?home-only-->/g, '') : html.replace(HOME_ONLY, '');
-}
-
 export function injectHead(template: string, head: string): string {
   const start = template.indexOf(START);
   const end = template.indexOf(END);

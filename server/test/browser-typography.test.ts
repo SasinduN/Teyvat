@@ -137,20 +137,16 @@ describe('type on every page type, in Chrome', { skip, timeout: 6 * 60_000 }, ()
     await page.evaluate('document.fonts.ready.then(() => true)');
   }
 
-  test('preloads: the body weight and the heading serif everywhere, the script on the home page only; no font host', async () => {
+  test('preloads: the body weight and the heading serif, never the script; no font host', async () => {
     const fontPreloads = (html: string) => [...html.matchAll(/<link[^>]*rel="preload"[^>]*as="font"[^>]*>/g)].map((m) => m[0]);
-    const home = await (await fetch(`${app.baseUrl}/`)).text();
-    const other = await (await fetch(`${app.baseUrl}/tours`)).text();
-    const expected = [/dm-sans-latin-400-normal-/, /playfair-display-latin-600-normal-/];
-    assert.equal(fontPreloads(home).length, 3, fontPreloads(home).join('\n'));
-    assert.equal(fontPreloads(other).length, 2, fontPreloads(other).join('\n'));
-    for (const [i, file] of [...expected, /allura-latin-400-normal-/].entries()) {
-      assert.match(fontPreloads(home)[i], new RegExp(`href="/assets/${file.source}[^"]+\\.woff2"`));
-      assert.match(fontPreloads(home)[i], /crossorigin/);
-    }
-    for (const [i, file] of expected.entries()) assert.match(fontPreloads(other)[i], file);
-    for (const html of [home, other]) {
-      assert.doesNotMatch(html, /home-only/, 'the markers never reach a page');
+    for (const path of ['/', '/tours']) {
+      const html = await (await fetch(`${app.baseUrl}${path}`)).text();
+      const preloads = fontPreloads(html);
+      assert.equal(preloads.length, 2, preloads.join('\n'));
+      for (const [i, file] of ['dm-sans-latin-400-normal-', 'playfair-display-latin-600-normal-'].entries()) {
+        assert.match(preloads[i], new RegExp(`href="/assets/${file}[^"]+\\.woff2"`));
+        assert.match(preloads[i], /crossorigin/);
+      }
       assert.doesNotMatch(html, /fonts\.(googleapis|gstatic)\.com/);
     }
   });

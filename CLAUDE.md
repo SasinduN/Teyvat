@@ -113,9 +113,9 @@ Update the Status column when a phase lands.
     DM Sans 400 to 700 for text, nav, buttons and forms; Playfair Display 600 for
     headings and the wordmark (`--font-heading`, `--font-wordmark`); Allura 400 only for
     accent words (`--font-accent`). A new weight is a new `@font-face`.
-  - Preloaded (`index.html`): DM Sans 400 and Playfair 600 everywhere; Allura only on the
-    home page, between `<!--home-only-->` markers that `keepHomeOnly` (`server/src/pages/head.ts`)
-    strips on every other page.
+  - Preloaded (`index.html`): DM Sans 400 and Playfair 600 (without Playfair's, every page's
+    LCP came later in Lighthouse). Not Allura: preloading it cost the home page more than it
+    gave; it swaps in over its measured fallback instead.
   - One heading weight ships: headings have `font-synthesis-weight: none` (a `font-bold`
     heading uses 600, never a faked bold) and lining figures.
   - **Accent words** go only through `<Accent>` (`.te-accent`): in a heading, at most 24
