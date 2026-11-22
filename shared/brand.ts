@@ -42,8 +42,13 @@ export interface BrandAssets {
    * site's colour tokens (`Logo.tsx`), which follows an admin's name change.
    */
   logo: { onLight: string | null; onDark: string | null };
-  /** An SVG under `public/`: the "SL" monogram. */
+  /**
+   * The emblem's icons (public/brand/, made by `npm run brand:assets` from design/brand/):
+   * the favicon (.ico, 16 and 32), the iOS home-screen icon, and the manifest's icons.
+   */
   favicon: string;
+  appleTouchIcon: string;
+  manifestIcons: readonly { src: string; sizes: string; type: string; purpose: 'any' | 'maskable' }[];
   /**
    * The brand's domain: the example address on the admin's sign-in form, and
    * the contact email in fresh databases. Never the sender's address: emails
@@ -53,7 +58,7 @@ export interface BrandAssets {
   /**
    * The share image for pages that have no photo of their own: an absolute
    * https URL to a 1200 × 630 JPEG or PNG (on R2), or a site path. Link
-   * previews don't read SVG. Null: those pages share without an image.
+   * previews don't read SVG. The default is the whole logo on ivory.
    */
   ogImage: string | null;
   /** The web manifest's colours (hex): the header's green and the page's pearl. */
@@ -73,9 +78,15 @@ export const BRAND_TEXT_DEFAULTS: BrandText = {
 
 export const BRAND_ASSETS: BrandAssets = {
   logo: { onLight: null, onDark: null },
-  favicon: '/favicon.svg',
+  favicon: '/brand/favicon.ico',
+  appleTouchIcon: '/brand/apple-touch-icon.png',
+  manifestIcons: [
+    { src: '/brand/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+    { src: '/brand/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+    { src: '/brand/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+  ],
   emailDomain: 'serendibluxetours.com',
-  ogImage: null,
+  ogImage: '/brand/og-default.jpg',
   themeColor: '#194D3B',
   backgroundColor: '#FAFBF8'
 };

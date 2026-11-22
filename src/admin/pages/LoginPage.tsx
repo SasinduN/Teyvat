@@ -7,6 +7,7 @@ import { describeError } from '@/lib/errors';
 import { Button, Card, ErrorNote, FieldLabel, Input, PasswordInput } from '@/admin/components/ui';
 import { brandAddress } from '@shared/brand';
 import { documentBrand } from '@/lib/brand';
+import { LogoMark } from '@/components/Logo';
 
 /** The brand as the server wrote it into this page (the admin doesn't load content). */
 const brand = documentBrand();
@@ -101,9 +102,9 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--inverse-surface)] px-4 py-12">
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <div className="font-heading text-3xl font-bold text-white">{brand.name}</div>
-          <div className="mt-1 text-xs font-bold uppercase tracking-[0.25em] text-[var(--accent-text)]">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <LogoMark brand={brand} variant="light" size="xl" />
+          <div className="mt-3 text-xs font-bold uppercase tracking-[0.25em] text-[var(--accent-text)]">
             Content Admin
           </div>
         </div>

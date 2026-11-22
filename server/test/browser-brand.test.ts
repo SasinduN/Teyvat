@@ -74,17 +74,26 @@ describe('the brand in the browser', { skip, timeout: 4 * 60_000 }, () => {
   }
   const close = (page: Page) => page.send('Page.close').catch(() => undefined);
 
-  test('the wordmark: two lines in capitals, one accessible name, DM Sans', async () => {
+  test('the logo: the emblem, then two lines in capitals, one accessible name; the name in the heading serif', async () => {
     const page = await openPage('/about');
     try {
-      const logo = await page.evaluate<{ main: string; sub: string; mainCase: string; subCase: string; font: string; name: string; subBelow: boolean }>(`(() => {
+      const logo = await page.evaluate<{ main: string; sub: string; mainCase: string; subCase: string; font: string; subFont: string; name: string; subBelow: boolean; emblem: { alt: string | null; hidden: string | null; loaded: boolean; height: number; before: boolean } }>(`(() => {
         const main = document.querySelector('.te-nav .te-logo-main');
         const sub = document.querySelector('.te-nav .te-logo-sub');
-        const a = main.getBoundingClientRect(), b = sub.getBoundingClientRect();
+        const img = document.querySelector('.te-nav .te-logo-emblem img');
+        const a = main.getBoundingClientRect(), b = sub.getBoundingClientRect(), e = img.getBoundingClientRect();
         return {
+          emblem: {
+            alt: img.getAttribute('alt'),
+            hidden: img.closest('.te-emblem').getAttribute('aria-hidden'),
+            loaded: img.complete && img.naturalWidth > 0,
+            height: Math.round(e.height),
+            before: e.right <= a.left
+          },
           main: main.textContent, sub: sub.textContent,
           mainCase: getComputedStyle(main).textTransform, subCase: getComputedStyle(sub).textTransform,
           font: getComputedStyle(main).fontFamily,
+          subFont: getComputedStyle(sub).fontFamily,
           name: document.querySelector('.te-nav .te-home-link').textContent.replace(/\\s+/g, ' ').trim(),
           subBelow: b.top >= a.bottom - 1 && Math.abs(a.left - b.left) < 2
         };
@@ -93,7 +102,10 @@ describe('the brand in the browser', { skip, timeout: 4 * 60_000 }, () => {
       assert.equal(logo.sub, 'Tours');
       assert.equal(logo.mainCase, 'uppercase');
       assert.equal(logo.subCase, 'uppercase');
-      assert.match(logo.font, /DM Sans/);
+      assert.match(logo.font, /^"?Playfair Display"?,/, 'the name in the heading serif');
+      assert.match(logo.subFont, /^"?DM Sans"?,/, '"TOURS" in DM Sans');
+      // The emblem: decorative (the name beside it is the link's text), loaded, 40 px at 100%, before the name.
+      assert.deepEqual(logo.emblem, { alt: '', hidden: 'true', loaded: true, height: 40, before: true });
       assert.equal(logo.name, 'Serendib Luxe Tours homepage', 'the link reads as words, with a space between the lines');
       assert.ok(logo.subBelow, '"TOURS" sits under "SERENDIB LUXE", left-aligned');
       assert.equal(await page.evaluate<string>('document.title'), `About Us | ${BRAND.name}`);

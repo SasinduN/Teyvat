@@ -13,7 +13,8 @@ interface PageHeroProps {
   image?: string;
   crumbs: Crumb[];
   eyebrow?: string;
-  title: string;
+  /** Text, or text with an `<Accent>`. */
+  title: React.ReactNode;
   subtitle?: string;
   /** Small badges above the eyebrow (region, days, price). */
   chips?: React.ReactNode;

@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <!-- The favicon and the manifest's names come from shared/brand.ts (and Admin → Settings). -->
-    <link rel="icon" type="image/svg+xml" href="%BRAND_FAVICON%" />
+    <link rel="icon" href="%BRAND_FAVICON%" sizes="32x32" />
+    <link rel="apple-touch-icon" href="%BRAND_APPLE_TOUCH_ICON%" />
     <link rel="manifest" href="/site.webmanifest" />
     <!-- The light or dark theme, set before the first paint (classic, blocking,
          same-origin: no inline script). Keep it above the stylesheets. -->
@@ -17,8 +18,14 @@
     <title>%HOME_TITLE%</title>
     <meta name="description" content="%HOME_DESCRIPTION%" />
     <!--/page-meta-->
-        <!-- DM Sans is self-hosted (src/styles/fonts.css). Only the body weight is preloaded. -->
+    <!-- The fonts are self-hosted (src/styles/fonts.css). Preloaded: DM Sans's body weight and
+         the heading serif, on every page; the accent script only on the home page, where the
+         headline uses it (Express drops the marked block on every other page). -->
     <link rel="preload" as="font" type="font/woff2" href="/node_modules/@fontsource/dm-sans/files/dm-sans-latin-400-normal.woff2" crossorigin>
+    <link rel="preload" as="font" type="font/woff2" href="/node_modules/@fontsource/playfair-display/files/playfair-display-latin-600-normal.woff2" crossorigin>
+    <!--home-only-->
+    <link rel="preload" as="font" type="font/woff2" href="/node_modules/@fontsource/allura/files/allura-latin-400-normal.woff2" crossorigin>
+    <!--/home-only-->
     <!-- Leaflet's stylesheet is loaded by src/lib/leaflet.ts, only on pages with a map. -->
   </head>
   <body class="bg-[var(--background)] text-[var(--text-primary)] font-sans antialiased selection:bg-[var(--brand-secondary)] selection:text-[var(--on-secondary)]">

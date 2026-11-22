@@ -4,7 +4,7 @@
  * link previews (WhatsApp, Facebook, X) read, and the brand's JSON-LD. Pure
  * functions; `pages.ts` supplies the values.
  */
-import type { Brand } from '../../../shared/brand';
+import { BRAND_ASSETS, type Brand } from '../../../shared/brand';
 import { escapeHtml } from '../../../shared/html';
 import type { TextSize } from '../../../shared/text-size';
 
@@ -134,6 +134,8 @@ export function shareImage(raw: string | null, origin: string): ShareImage | nul
     url.searchParams.set('q', '80');
     return { url: url.toString(), ...SHARE_IMAGE_SIZE };
   }
+  // The brand's default (public/brand/og-default.jpg) is made at exactly this size.
+  if (value === BRAND_ASSETS.ogImage) return { url: url.toString(), ...SHARE_IMAGE_SIZE };
   return { url: url.toString() };
 }
 
@@ -185,6 +187,17 @@ const END = '<!--/page-meta-->';
  */
 export function injectTextSize(html: string, size: TextSize): string {
   return html.replace('<html', `<html data-text-size="${size}"`);
+}
+
+const HOME_ONLY = /\s*<!--home-only-->[\s\S]*?<!--\/home-only-->/;
+
+/**
+ * `index.html` with its home-only block (the accent script's preload) kept for the home
+ * page and dropped everywhere else, markers and all: only the home page's headline uses
+ * that font, so other pages shouldn't spend the bandwidth.
+ */
+export function keepHomeOnly(html: string, isHome: boolean): string {
+  return isHome ? html.replace(/<!--\/?home-only-->/g, '') : html.replace(HOME_ONLY, '');
 }
 
 export function injectHead(template: string, head: string): string {

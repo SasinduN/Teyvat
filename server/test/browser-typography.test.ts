@@ -3,11 +3,13 @@
 import './test-db';
 
 /**
- * The type system in Chrome, at the default text size: DM Sans, self-hosted,
- * and nothing else; the minimum sizes on every page type; 16 px inputs at any
- * text size (iPhones zoom into smaller ones); about 70 characters a line in
- * long text; one heading scale. And, without a browser, no hardcoded small
- * sizes coming back in the source.
+ * The type system in Chrome, at the default text size: self-hosted fonts and
+ * nothing else (DM Sans for text, Playfair Display 600 for headings, Allura only
+ * for accent words, docs/plans/brand-themes.md); the accent rules on every page
+ * type; the minimum sizes on every page type; 16 px inputs at any text size
+ * (iPhones zoom into smaller ones); about 70 characters a line in long text; one
+ * heading scale. And, without a browser, no hardcoded small sizes coming back in
+ * the source, and the script used nowhere but `<Accent>`.
  *
  * Needs `npm run build` and Chrome for the browser part; skipped otherwise.
  */
@@ -80,6 +82,20 @@ describe('the source', () => {
   test('no Google Fonts in the page', () => {
     assert.doesNotMatch(readFileSync(join(ROOT, 'index.html'), 'utf8'), /fonts\.(googleapis|gstatic)\.com/);
   });
+
+  test('the accent script is set only through <Accent> (.te-accent)', () => {
+    const rel = (f: string) => f.slice(ROOT.length + 1).replace(/\\/g, '/');
+    // The font and its token: declared in fonts.css and index.css, used by .te-accent alone (Accent.tsx names it).
+    const script = files
+      .filter((f) => /\.(css|tsx?)$/.test(f))
+      .flatMap((f) => (/Allura|--font-accent/.test(readFileSync(f, 'utf8')) ? [rel(f)] : []));
+    assert.deepEqual(script.sort(), ['src/components/Accent.tsx', 'src/index.css', 'src/styles/fonts.css']);
+    const css = readFileSync(join(ROOT, 'src', 'index.css'), 'utf8');
+    assert.deepEqual([...css.matchAll(/var\(--font-accent\)/g)].length, 1, 'only .te-accent uses it');
+    // The class: written by Accent.tsx only.
+    const classUsers = files.filter((f) => f.endsWith('.tsx') && readFileSync(f, 'utf8').includes('te-accent')).map(rel);
+    assert.deepEqual(classUsers, ['src/components/Accent.tsx']);
+  });
 });
 
 // `--test-timeout` (60 s) applies to a suite as a whole too; each test keeps it.
@@ -121,28 +137,105 @@ describe('type on every page type, in Chrome', { skip, timeout: 6 * 60_000 }, ()
     await page.evaluate('document.fonts.ready.then(() => true)');
   }
 
-  test('the served page preloads the body weight only, and links no font host', async () => {
-    const html = await (await fetch(`${app.baseUrl}/`)).text();
-    const preloads = [...html.matchAll(/<link[^>]*rel="preload"[^>]*as="font"[^>]*>/g)].map((m) => m[0]);
-    assert.equal(preloads.length, 1, preloads.join('\n'));
-    assert.match(preloads[0], /href="\/assets\/dm-sans-latin-400-normal-[^"]+\.woff2"/);
-    assert.match(preloads[0], /crossorigin/);
-    assert.doesNotMatch(html, /fonts\.(googleapis|gstatic)\.com/);
+  test('preloads: the body weight and the heading serif everywhere, the script on the home page only; no font host', async () => {
+    const fontPreloads = (html: string) => [...html.matchAll(/<link[^>]*rel="preload"[^>]*as="font"[^>]*>/g)].map((m) => m[0]);
+    const home = await (await fetch(`${app.baseUrl}/`)).text();
+    const other = await (await fetch(`${app.baseUrl}/tours`)).text();
+    const expected = [/dm-sans-latin-400-normal-/, /playfair-display-latin-600-normal-/];
+    assert.equal(fontPreloads(home).length, 3, fontPreloads(home).join('\n'));
+    assert.equal(fontPreloads(other).length, 2, fontPreloads(other).join('\n'));
+    for (const [i, file] of [...expected, /allura-latin-400-normal-/].entries()) {
+      assert.match(fontPreloads(home)[i], new RegExp(`href="/assets/${file.source}[^"]+\\.woff2"`));
+      assert.match(fontPreloads(home)[i], /crossorigin/);
+    }
+    for (const [i, file] of expected.entries()) assert.match(fontPreloads(other)[i], file);
+    for (const html of [home, other]) {
+      assert.doesNotMatch(html, /home-only/, 'the markers never reach a page');
+      assert.doesNotMatch(html, /fonts\.(googleapis|gstatic)\.com/);
+    }
   });
 
-  test('the only font files fetched are ours, and every text is DM Sans', async () => {
-    await visit('/destinations/ella', 1280);
-    const fonts = await page.evaluate<{ files: string[]; faces: string[] }>(`({
-      files: performance.getEntriesByType('resource').map((e) => e.name).filter((n) => /\\.(woff2?|ttf|otf)(\\?|$)|fonts\\.g/.test(n)),
-      faces: [...document.fonts].map((f) => f.family.replace(/"/g, '') + ' ' + f.weight + ' ' + f.style + ' ' + f.display)
-    })`);
-    assert.ok(fonts.files.length > 0, 'fonts were fetched');
-    for (const file of fonts.files) assert.match(file, new RegExp(`^${app.baseUrl}/assets/dm-sans-latin-(400|500|600|700)-normal-`));
-    assert.deepEqual(fonts.faces.sort(), [400, 500, 600, 700].map((w) => `DM Sans ${w} normal swap`));
+  test('the only font files fetched are ours: DM Sans for text, Playfair Display for headings', async () => {
+    for (const path of ['/destinations/ella', '/']) {
+      await visit(path, 1280);
+      const fonts = await page.evaluate<{ files: string[]; faces: string[] }>(`({
+        files: performance.getEntriesByType('resource').map((e) => e.name).filter((n) => /\\.(woff2?|ttf|otf)(\\?|$)|fonts\\.g/.test(n)),
+        faces: [...document.fonts].map((f) => f.family.replace(/"/g, '') + ' ' + f.weight + ' ' + f.style + ' ' + f.display)
+      })`);
+      assert.ok(fonts.files.length > 0, 'fonts were fetched');
+      for (const file of fonts.files) {
+        assert.match(file, new RegExp(`^${app.baseUrl}/assets/(dm-sans-latin-(400|500|600|700)|playfair-display-latin-600|allura-latin-400)-normal-`));
+      }
+      // The web fonts, then the measured local fallbacks (fonts.css), which download nothing.
+      assert.deepEqual(fonts.faces.filter((f) => !f.includes('Fallback')).sort(), [
+        'Allura 400 normal swap',
+        ...[400, 500, 600, 700].map((w) => `DM Sans ${w} normal swap`),
+        'Playfair Display 600 normal swap'
+      ]);
+      assert.deepEqual(fonts.faces.filter((f) => f.includes('Fallback')).map((f) => f.split(' ').slice(0, -3).join(' ')).sort(), [
+        'Allura Fallback DejaVu', 'Allura Fallback Georgia', 'Allura Fallback Times',
+        'Playfair Display Fallback DejaVu', 'Playfair Display Fallback Georgia', 'Playfair Display Fallback Times',
+        'Playfair Display Wordmark Fallback DejaVu', 'Playfair Display Wordmark Fallback Georgia', 'Playfair Display Wordmark Fallback Times'
+      ]);
+    }
+    // The script downloads only where an accent is on the page: the home page, not Ella's.
+    // A fresh tab, so nothing the home page asked for is carried over.
+    const shared = page;
+    page = await chrome.newPage();
+    try {
+      await page.send('Page.enable');
+      await visit('/destinations/ella', 1280);
+      const files = await page.evaluate<string[]>(`performance.getEntriesByType('resource').map((e) => e.name)`);
+      const status = await page.evaluate<string>(`[...document.fonts].find((f) => f.family === 'Allura').status`);
+      assert.ok(!files.some((f) => f.includes('allura')), `no accent, no script file: ${files.filter((f) => /woff/.test(f)).join(', ')}`);
+      assert.equal(status, 'unloaded');
+    } finally {
+      await page.send('Page.close').catch(() => undefined);
+      page = shared;
+    }
 
-    const families = await page.evaluate<string[]>(`[...new Set(['body', 'main h1', 'main h2', 'main p', '.te-nav-link', '.te-button', 'footer'].map((s) => getComputedStyle(document.querySelector(s)).fontFamily.split(',')[0].replace(/"/g, '')))]`);
-    assert.deepEqual(families, ['DM Sans']);
+    const first = (selector: string) => `getComputedStyle(document.querySelector('${selector}')).fontFamily.split(',')[0].replace(/"/g, '')`;
+    const text = await page.evaluate<string[]>(`[...new Set(['body', 'main p', '.te-nav-link', '.te-button', 'footer', 'input, textarea, select'].filter((s) => document.querySelector(s)).map((s) => ${first('X').replace("'X'", 's')}))]`);
+    assert.deepEqual(text, ['DM Sans'], 'body text, nav, buttons, footer and forms');
+    const headings = await page.evaluate<string[]>(`[...new Set(['main h1', 'main h2', '.te-logo-main'].map((s) => ${first('X').replace("'X'", 's')}))]`);
+    assert.deepEqual(headings, ['Playfair Display'], 'headings and the wordmark');
   });
+
+  for (const width of [375, 1280]) {
+    test(`accent words at ${width} px: in a heading, short, at least 2rem, at most two a page, the script nowhere else`, async () => {
+      const found: Record<string, number> = {};
+      for (const path of PAGES) {
+        await visit(path, width);
+        const result = await page.evaluate<{ accents: { text: string; px: number; inHeading: boolean; forbidden: string | null }[]; stray: string[] }>(`(() => {
+          const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+          const accents = [...document.querySelectorAll('.te-accent')].map((el) => ({
+            text: el.textContent.trim(),
+            px: parseFloat(getComputedStyle(el).fontSize) / rem * 16,
+            inHeading: Boolean(el.closest('h1, h2, h3')),
+            forbidden: el.closest('nav, button, label, input, select, textarea, footer, .te-button, [class*="price"], [class*="badge"]')?.tagName ?? null
+          }));
+          // Anything else set in the script: a face that isn't an accent's.
+          const stray = [...document.querySelectorAll('body *')]
+            .filter((el) => !el.closest('.te-accent') && getComputedStyle(el).fontFamily.replace(/"/g, '').startsWith('Allura'))
+            .map((el) => el.tagName + ' ' + (el.textContent || '').trim().slice(0, 40));
+          return { accents, stray };
+        })()`);
+        found[path] = result.accents.length;
+        assert.deepEqual(result.stray, [], `${path}: the script outside an accent`);
+        assert.ok(result.accents.length <= 2, `${path}: ${result.accents.length} accents`);
+        for (const a of result.accents) {
+          assert.ok(a.inHeading, `${path}: "${a.text}" isn't in a heading`);
+          assert.equal(a.forbidden, null, `${path}: "${a.text}" is inside ${a.forbidden}`);
+          assert.ok(a.text.length <= 24, `${path}: "${a.text}" is longer than 24 characters`);
+          assert.ok(a.px >= 32 - 0.01, `${path}: "${a.text}" is ${a.px.toFixed(1)} px at 100%, under 2rem`);
+        }
+      }
+      // The approved places: the hero and "Plan your trip" on the home page, the title on /explore.
+      assert.equal(found['/'], 2);
+      assert.equal(found['/explore'], 1);
+      assert.equal(Object.values(found).reduce((a, b) => a + b, 0), 3, JSON.stringify(found));
+    });
+  }
 
   for (const width of [375, 1280]) {
     for (const path of PAGES) {

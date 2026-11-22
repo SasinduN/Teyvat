@@ -1,4 +1,5 @@
 import { hasTourPrice, PRICE_ON_REQUEST } from '@shared/tour-price';
+import { Accent } from '@/components/Accent';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { HeroSection } from '@/components/HeroSection';
@@ -100,7 +101,7 @@ export function HomePage() {
             </div>
           )}
           <div className="te-reading-column">
-            <h2 id="home-plan-title" className="te-ed-title font-heading">Plan your trip</h2>
+            <h2 id="home-plan-title" className="te-ed-title font-heading">Plan <Accent>your trip</Accent></h2>
             <p className="te-ed-lead">
               Tell us the dates and what you want to see. We will suggest a route, then change it until it suits you.
             </p>

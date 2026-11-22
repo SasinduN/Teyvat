@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Accent } from '@/components/Accent';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { PageHero } from '@/components/PageHero';
@@ -62,7 +63,7 @@ export function ExplorePage() {
       <PageHero
         image={destinations.find((d) => d.featured)?.image ?? destinations[0]?.image}
         crumbs={[{ label: 'Home', to: paths.home }, { label: 'Explore' }]}
-        title="Explore Sri Lanka"
+        title={<>Explore <Accent>Sri Lanka</Accent></>}
         subtitle={PAGE_DESCRIPTIONS.explore}
       />
 

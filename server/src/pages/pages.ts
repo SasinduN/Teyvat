@@ -14,7 +14,7 @@
  */
 import { Router, type Request, type Response } from 'express';
 
-import { BRAND, type Brand } from '../../../shared/brand';
+import { BRAND, BRAND_ASSETS, type Brand } from '../../../shared/brand';
 import { homeDescription, homeTitle, PAGE_DESCRIPTIONS, PAGE_NAMES, pageTitle, type PageName } from '../../../shared/page-meta';
 import { paths, TOUR_CATEGORY_PATH_SEGMENT } from '../../../shared/site-paths';
 import { SLUG_PATTERN } from '../../../shared/content-schema';
@@ -22,7 +22,7 @@ import { escapeHtml } from '../../../shared/html';
 import type { SiteConfig } from '../env';
 import { pool } from '../db';
 import { describeForLog } from '../http';
-import { injectHead, injectTextSize, renderHead, type PageMeta } from './head';
+import { injectHead, injectTextSize, keepHomeOnly, renderHead, type PageMeta } from './head';
 import { fullSrcSet } from '../../../shared/photo-assets';
 import { photoResolver } from '../../../shared/public-photos';
 import { DEFAULT_TEXT_SIZE, type TextSize } from '../../../shared/text-size';
@@ -291,7 +291,7 @@ export function webManifest(brand: Brand): Record<string, unknown> {
     display: 'browser',
     theme_color: brand.themeColor,
     background_color: brand.backgroundColor,
-    icons: [{ src: brand.favicon, sizes: 'any', type: 'image/svg+xml', purpose: 'any' }]
+    icons: brand.manifestIcons
   };
 }
 
@@ -441,6 +441,11 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
     }
   });
 
+  // Browsers and crawlers ask for /favicon.ico whatever the page links: the brand's file.
+  router.get('/favicon.ico', (_req, res) => {
+    res.redirect(301, BRAND_ASSETS.favicon);
+  });
+
   // The web manifest: the brand's names and icon, per request like everything here.
   router.get('/site.webmanifest', async (_req, res, next) => {
     try {
@@ -502,7 +507,7 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
       head += `\n<link rel="preload" as="image" href="${escapeHtml(resolved.meta.image)}"${responsive} fetchpriority="high">`;
     }
     res.status(resolved.status).set('Cache-Control', 'no-cache');
-    await sendText(req, res, injectTextSize(injectHead(template, head), textSize), 'html');
+    await sendText(req, res, injectTextSize(keepHomeOnly(injectHead(template, head), path === '/'), textSize), 'html');
   });
 
   return router;
