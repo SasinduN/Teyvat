@@ -23,6 +23,7 @@ import { PageCrash } from '@/admin/components/PageCrash';
 import { ErrorBoundary } from '@/lib/ErrorBoundary';
 import { cn } from '@/utils/cn';
 import { documentBrand } from '@/lib/brand';
+import { LogoMark } from '@/components/Logo';
 
 /** The brand as the server wrote it into this page (the admin doesn't load content). */
 const brand = documentBrand();
@@ -86,8 +87,8 @@ export const AdminLayout: React.FC = () => {
   const sidebar = (
     <div className="flex h-full flex-col bg-[var(--inverse-surface)] p-4">
       <div className="mb-6 px-2 pt-2">
-        <div className="font-heading text-lg font-bold text-white">{brand.name}</div>
-        <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-text)]">
+        <LogoMark brand={brand} variant="light" size="sm" />
+        <div className="mt-2 text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-text)]">
           Content Admin
         </div>
       </div>

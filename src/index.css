@@ -10,7 +10,12 @@
 @layer base {
   :root {
     --font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-    --font-heading: var(--font-sans);
+    /* Headings and the wordmark: Playfair Display 600, with its measured fallbacks (fonts.css). */
+    --font-heading: 'Playfair Display', 'Playfair Display Fallback Georgia', 'Playfair Display Fallback Times', 'Playfair Display Fallback DejaVu', Georgia, serif;
+    /* The wordmark's main line: the same serif, with fallbacks measured on the name itself. */
+    --font-wordmark: 'Playfair Display', 'Playfair Display Wordmark Fallback Georgia', 'Playfair Display Wordmark Fallback Times', 'Playfair Display Wordmark Fallback DejaVu', Georgia, serif;
+    /* Short accent words only (`<Accent>`): Allura, with its measured fallbacks. */
+    --font-accent: 'Allura', 'Allura Fallback Georgia', 'Allura Fallback Times', 'Allura Fallback DejaVu', Georgia, serif;
   }
 
   /*
@@ -41,9 +46,32 @@
     overflow-x: hidden;
   }
 
+  /*
+   * One heading weight is shipped (600): a `font-bold` heading uses it as it is, never a
+   * faked bold. Lining figures, so "7 days" sits on the line (Playfair's default figures
+   * are old-style).
+   */
   h1, h2, h3, h4, .font-heading {
     font-family: var(--font-heading);
+    font-synthesis-weight: none;
+    font-variant-numeric: lining-nums;
   }
+}
+
+/*
+ * Accent words (`<Accent>`, docs/plans/brand-themes.md): the script, only for a few short
+ * words in a heading, at most two on a page, never under 2rem as rendered (browser-typography
+ * checks all three). Unlayered, so no heading utility changes its face or size. The line
+ * height keeps its box within the heading's line, whichever font is showing.
+ */
+.te-accent {
+  font-family: var(--font-accent);
+  font-weight: 400;
+  font-style: normal;
+  font-size: max(2rem, 1.25em);
+  line-height: .9;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 /* Form inputs: unlayered, so no utility can take them under 16 px. */
@@ -518,9 +546,22 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   .te-nav:has(.te-wish-icon--phone) .te-logo-main { font-size: var(--text-xs); letter-spacing: .02em; }
   .te-nav:has(.te-wish-icon--phone) .te-logo-sub { margin-top: .2rem; letter-spacing: .3em; }
 }
+/*
+ * A narrow header (under 40rem: phones and small tablets at 100%, further at larger text):
+ * the emblem sits above the name, like a crest, so the logo is only as wide as the name and
+ * the controls fit beside it at every width and text size (browser-wishlist and
+ * browser-text-size measure them all). Wider, the emblem sits beside the name.
+ */
+@container te-nav (max-width: 40rem) {
+  .te-nav .te-logo--text { flex-direction: column; gap: .125rem; }
+  .te-nav .te-logo-emblem { height: 1.75rem; }
+}
 @container te-nav (max-width: 21.4rem) { .te-wish-icon--phone { display: none; } }
-/* The narrowest phones at 120%: four won't fit either. The phone menu has Plan Your Journey. */
-@container te-nav (max-width: 16rem) { .te-nav-phone-actions > .te-button--primary { display: none; } }
+/*
+ * The narrowest phones at larger text (320 px at 110% and 120%, 344 px at 120%): four won't
+ * fit beside the serif name either. The phone menu has Plan Your Journey.
+ */
+@container te-nav (max-width: 17.5rem) { .te-nav-phone-actions > .te-button--primary { display: none; } }
 .te-hero {
   min-height: 100vh;
   min-height: 100dvh;
@@ -840,12 +881,43 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 }
 
 /*
- * The wordmark (Logo.tsx): "SERENDIB LUXE" large, "TOURS" small underneath, set
- * wide so the two lines start and end together. The small line never goes under
- * the 13 px label floor (text-xs), and takes --logo-accent: a gold picked per
- * background (the header's rules above; the footer's --accent on its deep green).
+ * The logo (Logo.tsx, docs/plans/brand-themes.md): the emblem, then "SERENDIB LUXE"
+ * in the heading serif with "TOURS" small underneath, set wide so the two lines start
+ * and end together. The small line never goes under the 13 px label floor (text-xs),
+ * and takes --logo-accent: a gold picked per background (the header's rules above;
+ * the footer's --accent on its deep green). The emblem's height is in rem, so it grows
+ * with the admin's text size like the name beside it.
  */
-.te-logo-main { letter-spacing: .06em; }
+.te-logo--text { gap: .625rem; }
+/* The frame takes the artwork's shape (47 x 40), so its width follows the height set on it. */
+.te-emblem { position: relative; display: inline-block; flex-shrink: 0; line-height: 0; aspect-ratio: 47 / 40; }
+.te-emblem picture, .te-emblem img { display: block; position: relative; height: 100%; width: 100%; }
+.te-logo-emblem { height: 2.5rem; }
+.te-logo[data-size="sm"] .te-logo-emblem { height: 2rem; }
+.te-logo[data-size="lg"] .te-logo-emblem { height: 2.75rem; }
+.te-logo[data-size="xl"] .te-logo-emblem { height: 4rem; }
+/*
+ * On a dark ground (the dark theme, the footer, the admin's dark panels, the header over
+ * the home photo, a photo header): a soft ivory circle a little larger than the sun, so
+ * the maroon ground line and palms have something to sit on. The sun's centre is 58% down
+ * the emblem and its radius 54% of the width; the circle is 108% of the sun.
+ */
+.te-emblem::before { content: none; }
+:is(.te-logo[data-variant="light"], :root[data-theme="dark"] .te-logo, .te-nav[data-home="true"][data-scrolled="false"] .te-logo) .te-emblem::before,
+.te-emblem--backed::before {
+  content: '';
+  position: absolute;
+  /* The emblem is 1.168 times as wide as tall: 58% of the height less 54% of the width is -5% of the height. */
+  left: -4%;
+  top: -5%;
+  width: 108%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--emblem-backing);
+}
+.te-logo-main { font-family: var(--font-wordmark); letter-spacing: .04em; }
+/* The 404 page's emblem, over its photo header: large, with the dark ground's circle. */
+.te-404-emblem { height: 4rem; }
 .te-logo-sub {
   margin-top: .3rem;
   font-size: var(--text-xs);

@@ -1,4 +1,5 @@
 import { TravelImage } from '@/components/TravelImage';
+import { Accent, accentable } from '@/components/Accent';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { Pause, Play, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -127,7 +128,7 @@ export const HeroSection: React.FC = () => {
           <h1
             className="te-hero-title font-heading text-4xl font-bold tracking-tight text-white leading-[1.1] mb-6 drop-shadow-md"
           >
-            {headline.lead && <>{headline.lead} <br className="hidden sm:inline" /></>}
+            {headline.lead && <>{accentable(headline.lead) ? <Accent>{headline.lead}</Accent> : headline.lead} <br className="hidden sm:inline" /></>}
             <span className="te-hero-emphasis font-heading">
               {headline.emphasis}
             </span>

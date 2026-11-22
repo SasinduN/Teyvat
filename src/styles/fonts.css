@@ -32,3 +32,124 @@
   font-display: swap;
   src: url('@fontsource/dm-sans/files/dm-sans-latin-700-normal.woff2') format('woff2');
 }
+
+/*
+ * The heading serif and the accent script (docs/plans/brand-themes.md), self-hosted the
+ * same way (SIL Open Font License, @fontsource): Playfair Display 600 for every heading
+ * and the wordmark, Allura only for short accent words (`<Accent>`, `.te-accent`).
+ * Playfair is preloaded on every page (index.html); Allura isn't (it swaps in over its
+ * measured fallback).
+ */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('@fontsource/playfair-display/files/playfair-display-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Allura';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('@fontsource/allura/files/allura-latin-400-normal.woff2') format('woff2');
+}
+
+/*
+ * Fallbacks with the web fonts' measurements, so text set in a local serif while the file
+ * loads takes the same width and height, and nothing moves when it swaps (CLS 0;
+ * browser-font-swap). One face per local serif, since each needs its own numbers; a face
+ * whose local font is missing is skipped. Georgia on Windows and macOS; Times New Roman,
+ * or Liberation Serif (which has its metrics), and DejaVu Serif on Linux.
+ *
+ * size-adjust is the web font's advance width over the local one's, on text the site sets
+ * in it (headings for Playfair, the accent words for Allura); ascent, descent and line gap
+ * are the web font's hhea metrics over that scaled em. Measured with fontTools from the
+ * @fontsource 5.3.0 files and Georgia 5.x, Times New Roman 7.x, Liberation Serif 2.1.5 and
+ * DejaVu Serif 2.37; redo them if a font file changes.
+ */
+@font-face {
+  font-family: 'Playfair Display Fallback Georgia';
+  font-weight: 600;
+  src: local('Georgia');
+  size-adjust: 102.63%;
+  ascent-override: 105.43%;
+  descent-override: 24.46%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Playfair Display Fallback Times';
+  font-weight: 600;
+  src: local('Times New Roman'), local('Liberation Serif');
+  size-adjust: 111.70%;
+  ascent-override: 96.87%;
+  descent-override: 22.47%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Playfair Display Fallback DejaVu';
+  font-weight: 600;
+  src: local('DejaVu Serif');
+  size-adjust: 88.78%;
+  ascent-override: 121.87%;
+  descent-override: 28.27%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Allura Fallback Georgia';
+  src: local('Georgia');
+  size-adjust: 78.71%;
+  ascent-override: 101.64%;
+  descent-override: 57.17%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Allura Fallback Times';
+  src: local('Times New Roman'), local('Liberation Serif');
+  size-adjust: 85.64%;
+  ascent-override: 93.41%;
+  descent-override: 52.55%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Allura Fallback DejaVu';
+  src: local('DejaVu Serif');
+  size-adjust: 67.84%;
+  ascent-override: 117.92%;
+  descent-override: 66.33%;
+  line-gap-override: 0%;
+}
+
+/*
+ * The wordmark's own fallbacks: "SERENDIB LUXE" in spaced capitals is wider in a local
+ * serif than the headings' average says (11 px at 22 px in Georgia), enough to nudge the
+ * header's links when the serif swaps in. Measured on that string alone, the same way;
+ * used only by .te-logo-main (index.css).
+ */
+@font-face {
+  font-family: 'Playfair Display Wordmark Fallback Georgia';
+  font-weight: 600;
+  src: local('Georgia');
+  size-adjust: 96.54%;
+  ascent-override: 112.08%;
+  descent-override: 26.00%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Playfair Display Wordmark Fallback Times';
+  font-weight: 600;
+  src: local('Times New Roman'), local('Liberation Serif');
+  size-adjust: 100.11%;
+  ascent-override: 108.08%;
+  descent-override: 25.07%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Playfair Display Wordmark Fallback DejaVu';
+  font-weight: 600;
+  src: local('DejaVu Serif');
+  size-adjust: 87.10%;
+  ascent-override: 124.23%;
+  descent-override: 28.82%;
+  line-gap-override: 0%;
+}

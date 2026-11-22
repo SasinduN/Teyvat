@@ -54,12 +54,21 @@ this file or anywhere else in git.
 | TS | Tours on phones: a row to swipe, with a counter, dots and arrows (`docs/plans/tours-swipe-row.md`) | done (#68) |
 | TC | Tour categories (`docs/plans/tour-categories.md`): 0030, `/tours` row, a page per category, the Tours menu, the tailor-made card (PR 1); new tour drafts through `content:import` (PR 2) | done (#69, #70) |
 | R2 | Move R2 to the client's Cloudflare account: `images.serendibluxetours.com` always allowed, `R2_PREVIOUS_PUBLIC_BASE_URL`, `media:rebase` covers the credits, `docs/runbooks/move-r2-to-client.md` | done (#63); moved in production 22 Nov 2026 |
-| CH | One host: a page on www or `*.up.railway.app` gets a 301 to `PUBLIC_SITE_URL` (`server/src/canonical-host.ts`) | in review |
+| CH | One host: a page on www or `*.up.railway.app` gets a 301 to `PUBLIC_SITE_URL` (`server/src/canonical-host.ts`) | done (#71) |
+| BT | The client's logo, three colour themes, the new font mix (`docs/plans/brand-themes.md`): PR A the logo and fonts (colours stay Emerald); PR B the themes and the admin picker | PR A in review |
 
 Update the Status column when a phase lands.
 
 ### Notes
 
+- **The logo** (`docs/plans/brand-themes.md`): the client's emblem (sun, Sigiriya, elephant)
+  beside the name as live text (`LogoMark`, `Logo`, `BrandEmblem`), never the artwork's maroon
+  lettering. The originals are Canva SVGs wrapping a PNG, kept in `design/brand/` and never
+  shipped; `npm run brand:assets` (`scripts/brand-assets.ts`, `sharp`, dev only) makes
+  `public/brand/` (emblem 1x to 3x, favicon, iOS and manifest icons, the email logo, the
+  default share image), each within its budget (`shared/brand-files.ts`, `brand-assets.test`).
+  On dark ground the emblem has a soft ivory circle behind it (`--emblem-backing`). In a
+  header narrower than 40rem it sits above the name, like a crest, so the controls fit.
 - **Images:**
   - Every form uses `ImagePicker` / `ImageListPicker`
     (`src/admin/components/ImagePicker.tsx`): upload, library or URL.
@@ -99,10 +108,25 @@ Update the Status column when a phase lands.
     importing `'zod'` directly brings back an `eval` probe the CSP reports.
   - A new external host needs asking about first (Standing rules), then adding
     to the CSP; `server/test/browser-csp.test.ts` fails until it is.
-- **Type** (`src/styles/tokens.css`, `fonts.css`):
-  - DM Sans, self-hosted through `@fontsource/dm-sans`: Latin only, weights
-    400, 500, 600 and 700, no italics. Only 400 is preloaded (`index.html`). A
-    new weight is a new `@font-face`; there is no font CDN.
+- **Type** (`src/styles/tokens.css`, `fonts.css`, `docs/plans/brand-themes.md`):
+  - Three fonts, self-hosted through `@fontsource` (Latin only, no italics, no font CDN):
+    DM Sans 400 to 700 for text, nav, buttons and forms; Playfair Display 600 for
+    headings and the wordmark (`--font-heading`, `--font-wordmark`); Allura 400 only for
+    accent words (`--font-accent`). A new weight is a new `@font-face`.
+  - Preloaded (`index.html`): DM Sans 400 and Playfair 600 (without Playfair's, every page's
+    LCP came later in Lighthouse). Not Allura: preloading it cost the home page more than it
+    gave; it swaps in over its measured fallback instead.
+  - One heading weight ships: headings have `font-synthesis-weight: none` (a `font-bold`
+    heading uses 600, never a faked bold) and lining figures.
+  - **Accent words** go only through `<Accent>` (`.te-accent`): in a heading, at most 24
+    characters, at least 2rem, at most two on a page, never nav, buttons, forms, prices or
+    badges. Today: the hero's first part ("Sri Lanka,", `accentable`), "Plan *your trip*",
+    "Explore *Sri Lanka*". `browser-typography` checks every page type and the source.
+  - **Fallback faces** (`fonts.css`) carry the web fonts' measurements per local serif
+    (Georgia; Times New Roman or Liberation Serif; DejaVu Serif), and the wordmark has its own,
+    measured on "SERENDIB LUXE": a late font changes letter shapes, never line breaks or
+    widths. `browser-font-swap` holds the fonts back a second and expects CLS 0. Redo the
+    numbers if a font file changes (the method is in `fonts.css`).
   - Tailwind's `text-*` sizes are redefined in `@theme` (`tokens.css`), so
     `text-xs` is 13 px (labels, badges), `text-sm` 15 px (cards, descriptions),
     `text-base` 16 to 17 px, and `text-xl` and up are the `--heading-*`
@@ -443,6 +467,12 @@ Agreed, not started. Each one gets its own plan first.
   aside from the zoom buttons"); the cause is unknown. Its diagnostic is in the
   test (#21, `explainOnFailure`) and prints when the check fails.
 - **Replace the Belilena image** in the admin (Sasindu).
+- **The CSP allows `https://tile.openstreetmap.org`:** it's the maps' fallback when
+  `VITE_CARTO_KEY` isn't set (`shared/map-tiles.ts`). OpenStreetMap's tile servers don't allow
+  heavy commercial use: check the production build has the CARTO key, then remove the OSM
+  fallback and its CSP entry, or keep it only for local runs.
+- **HSTS is `max-age=86400`:** raise it to a year (`max-age=31536000`, without `preload`)
+  once the domain has been stable for a few weeks.
 
 ## Standing rules
 
@@ -547,12 +577,13 @@ Agreed, not started. Each one gets its own plan first.
   removal is in the backlog); `img-src` has Unsplash, R2 and the map tile hosts.
 - **New photos go through Admin → Media (R2), never into the repo.**
   `no-committed-images` fails on any jpg, png, webp or avif under `public/`, except
-  the favicon and the logo.
+  the exact logo files in `public/brand/` (`shared/brand-files.ts`).
 - **Screenshots are never committed** (`docs/screenshots/` is git-ignored, and
   `no-committed-images` fails if anything there is tracked).
 - **AA contrast in both themes. One `h1` per page.**
-- **DM Sans everywhere (self-hosted). Body text at least 16 px on phones. The
-  admin's text size options are 100, 110 and 120%.**
+- **Self-hosted fonts only: DM Sans for text, Playfair Display for headings, Allura for
+  accent words. Body text at least 16 px on phones. The admin's text size options are 100,
+  110 and 120%.**
 - **The brand is in `shared/brand.ts`.** Everything the site says about itself
   comes from there, with Admin → Settings on top (brand name, short name,
   tagline, legal name, home headline). Never write the name, tagline or legal

@@ -1,3 +1,4 @@
+import { BrandEmblem } from '@/components/BrandEmblem';
 import { TravelImage } from '@/components/TravelImage';
 import { Link } from 'react-router-dom';
 import { DestinationCard, SectionHead } from '@/components/PageCards';
@@ -21,7 +22,8 @@ export function NotFoundPage() {
         <div className="te-page-hero-overlay absolute inset-0" />
         <div className="te-container te-page-hero-content relative z-10"
         ><div className="te-page-hero-copy space-y-6">
-          <span className="inline-block text-xs font-bold uppercase tracking-[0.25em] text-[var(--accent-text)]">
+          <BrandEmblem className="te-emblem--backed te-404-emblem" />
+          <span className="block text-xs font-bold uppercase tracking-[0.25em] text-[var(--accent-text)]">
             Error 404
           </span>
           <h1 className="te-page-title font-heading font-bold leading-tight">

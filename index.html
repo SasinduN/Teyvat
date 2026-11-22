@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <!-- The favicon and the manifest's names come from shared/brand.ts (and Admin → Settings). -->
-    <link rel="icon" type="image/svg+xml" href="%BRAND_FAVICON%" />
+    <link rel="icon" href="%BRAND_FAVICON%" sizes="32x32" />
+    <link rel="apple-touch-icon" href="%BRAND_APPLE_TOUCH_ICON%" />
     <link rel="manifest" href="/site.webmanifest" />
     <!-- The light or dark theme, set before the first paint (classic, blocking,
          same-origin: no inline script). Keep it above the stylesheets. -->
@@ -17,8 +18,12 @@
     <title>%HOME_TITLE%</title>
     <meta name="description" content="%HOME_DESCRIPTION%" />
     <!--/page-meta-->
-        <!-- DM Sans is self-hosted (src/styles/fonts.css). Only the body weight is preloaded. -->
+    <!-- The fonts are self-hosted (src/styles/fonts.css). Preloaded: DM Sans's body weight and
+         the heading serif (without it, every page's headline came later in Lighthouse). Not
+         the accent script: it swaps in over its measured fallback without moving anything
+         (browser-font-swap), and preloading it cost the home page more than it gave. -->
     <link rel="preload" as="font" type="font/woff2" href="/node_modules/@fontsource/dm-sans/files/dm-sans-latin-400-normal.woff2" crossorigin>
+    <link rel="preload" as="font" type="font/woff2" href="/node_modules/@fontsource/playfair-display/files/playfair-display-latin-600-normal.woff2" crossorigin>
     <!-- Leaflet's stylesheet is loaded by src/lib/leaflet.ts, only on pages with a map. -->
   </head>
   <body class="bg-[var(--background)] text-[var(--text-primary)] font-sans antialiased selection:bg-[var(--brand-secondary)] selection:text-[var(--on-secondary)]">

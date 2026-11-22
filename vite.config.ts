@@ -22,7 +22,8 @@ const pageMetaDefaults = (): Plugin => ({
     html
       .replace("%HOME_TITLE%", escapeHtml(homeTitle(BRAND)))
       .replace("%HOME_DESCRIPTION%", escapeHtml(homeDescription(BRAND)))
-      .replace("%BRAND_FAVICON%", escapeHtml(BRAND.favicon)),
+      .replace("%BRAND_FAVICON%", escapeHtml(BRAND.favicon))
+      .replace("%BRAND_APPLE_TOUCH_ICON%", escapeHtml(BRAND.appleTouchIcon)),
 });
 
 // https://vite.dev/config/

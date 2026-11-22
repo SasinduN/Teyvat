@@ -4,7 +4,7 @@
  * link previews (WhatsApp, Facebook, X) read, and the brand's JSON-LD. Pure
  * functions; `pages.ts` supplies the values.
  */
-import type { Brand } from '../../../shared/brand';
+import { BRAND_ASSETS, type Brand } from '../../../shared/brand';
 import { escapeHtml } from '../../../shared/html';
 import type { TextSize } from '../../../shared/text-size';
 
@@ -134,6 +134,8 @@ export function shareImage(raw: string | null, origin: string): ShareImage | nul
     url.searchParams.set('q', '80');
     return { url: url.toString(), ...SHARE_IMAGE_SIZE };
   }
+  // The brand's default (public/brand/og-default.jpg) is made at exactly this size.
+  if (value === BRAND_ASSETS.ogImage) return { url: url.toString(), ...SHARE_IMAGE_SIZE };
   return { url: url.toString() };
 }
 

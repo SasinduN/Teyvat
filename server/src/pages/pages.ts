@@ -14,7 +14,7 @@
  */
 import { Router, type Request, type Response } from 'express';
 
-import { BRAND, type Brand } from '../../../shared/brand';
+import { BRAND, BRAND_ASSETS, type Brand } from '../../../shared/brand';
 import { homeDescription, homeTitle, PAGE_DESCRIPTIONS, PAGE_NAMES, pageTitle, type PageName } from '../../../shared/page-meta';
 import { paths, TOUR_CATEGORY_PATH_SEGMENT } from '../../../shared/site-paths';
 import { SLUG_PATTERN } from '../../../shared/content-schema';
@@ -291,7 +291,7 @@ export function webManifest(brand: Brand): Record<string, unknown> {
     display: 'browser',
     theme_color: brand.themeColor,
     background_color: brand.backgroundColor,
-    icons: [{ src: brand.favicon, sizes: 'any', type: 'image/svg+xml', purpose: 'any' }]
+    icons: brand.manifestIcons
   };
 }
 
@@ -439,6 +439,11 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
     } catch (error) {
       next(error);
     }
+  });
+
+  // Browsers and crawlers ask for /favicon.ico whatever the page links: the brand's file.
+  router.get('/favicon.ico', (_req, res) => {
+    res.redirect(301, BRAND_ASSETS.favicon);
   });
 
   // The web manifest: the brand's names and icon, per request like everything here.

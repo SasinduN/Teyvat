@@ -203,23 +203,40 @@ describe('the brand from the database', () => {
     assert.equal(manifest.name, 'Serendib Luxe Tours');
     assert.equal(manifest.short_name, 'Serendib Luxe');
     assert.equal(manifest.description, BRAND.tagline);
-    assert.deepEqual(manifest.icons, [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }]);
+    assert.deepEqual(manifest.icons, [
+      { src: '/brand/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/brand/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/brand/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+    ]);
     assert.equal(manifest.theme_color, BRAND.themeColor);
 
     await saveOverride();
     manifest = await (await fetch(`${app.baseUrl}/site.webmanifest`)).json();
     assert.equal(manifest.name, OVERRIDE.brand_name);
     assert.equal(manifest.short_name, OVERRIDE.brand_short_name);
-    res = await fetch(`${app.baseUrl}/favicon.svg`);
-    if (built) assert.equal(res.status, 200, 'the icon it names exists');
+    if (built) {
+      for (const icon of manifest.icons) {
+        res = await fetch(`${app.baseUrl}${icon.src}`);
+        assert.equal(res.status, 200, `${icon.src} exists`);
+        assert.equal(res.headers.get('content-type'), 'image/png');
+      }
+    }
+    // Asked for at the root whatever the page links: the brand's file.
+    res = await fetch(`${app.baseUrl}/favicon.ico`, { redirect: 'manual' });
+    assert.equal(res.status, 301);
+    assert.equal(res.headers.get('location'), BRAND.favicon);
   });
 
-  test('index.html links the manifest and the brand’s favicon', () => {
+  test('index.html links the manifest, the brand’s favicon and its iOS icon', () => {
     const html = readFileSync(join(REPO_ROOT, 'index.html'), 'utf8');
     assert.ok(html.includes('<link rel="manifest" href="/site.webmanifest" />'));
-    assert.ok(html.includes('href="%BRAND_FAVICON%"'));
-    const favicon = readFileSync(join(REPO_ROOT, 'public', BRAND.favicon), 'utf8');
-    assert.match(favicon, />SL<\/text>/, 'the SL monogram');
+    assert.ok(html.includes('<link rel="icon" href="%BRAND_FAVICON%" sizes="32x32" />'));
+    assert.ok(html.includes('<link rel="apple-touch-icon" href="%BRAND_APPLE_TOUCH_ICON%" />'));
+    // A real .ico (reserved 0, type 1) holding PNG images, and a real PNG for iOS.
+    const ico = readFileSync(join(REPO_ROOT, 'public', BRAND.favicon));
+    assert.deepEqual([ico.readUInt16LE(0), ico.readUInt16LE(2)], [0, 1]);
+    const apple = readFileSync(join(REPO_ROOT, 'public', BRAND.appleTouchIcon));
+    assert.equal(apple.subarray(1, 4).toString('latin1'), 'PNG');
   });
 
   test('llms.txt: the brand, then the override', async () => {

@@ -33,7 +33,8 @@
   --palette-sky: #B9E3F4;
   --palette-sky-mist: #EAF7FC;
   --palette-border: #DCE7DF;
-  --palette-border-strong: #849B8E;
+  /* Input edges: #849B8E in the import was 2.97:1 on a card; a shade darker passes 3:1 on card, page and tint (brand-themes plan). */
+  --palette-border-strong: #798F83;
   --palette-deep-gold: #80683B;
   --palette-night: #101F1B;
   --palette-night-raised: #172D26;
@@ -88,6 +89,8 @@
    * in the light theme and the design canvas's #ECEAE4 on dark ground (the dark theme, the hero's
    * ride slide); gold for hubs, lights, cargo and the bus stripe; a selected (gold) card's ink is dark.
    */
+  /* The soft ivory circle behind the emblem on dark ground (index.css, .te-emblem::before): the same in both themes. */
+  --emblem-backing: rgb(251 241 228 / .12);
   --vehicle-ink-on-dark: #ECEAE4;
   --vehicle-ink: var(--palette-charcoal-ink);
   --vehicle-gold: #F5C518;
@@ -204,7 +207,8 @@
   --text-on-tint: var(--palette-muted-text);
   --inverse-surface: var(--palette-forest-night);
   --border: rgb(240 245 239 / .13);
-  --border-strong: rgb(240 245 239 / .25);
+  /* Input edges: .25 was 2.09:1 on a card; .42 passes 3:1 on card, page and tint (brand-themes plan). */
+  --border-strong: rgb(240 245 239 / .42);
   --emerald-edge: var(--palette-lagoon-glow);
   --sand: var(--palette-ivory-text);
   --danger: #ffb4ab;
@@ -254,7 +258,8 @@
    */
   --heading-hero: clamp(2.25rem, 1.75rem + 2.4vw, 4rem);
   --heading-page: clamp(2rem, 1.6rem + 1.8vw, 3.25rem);
-  --heading-page-weight: 700;
+  /* Playfair Display ships one weight, 600 (fonts.css). */
+  --heading-page-weight: 600;
   --heading-page-leading: 1.12;
   --heading-page-tracking: -.025em;
   --heading-section: clamp(1.75rem, 1.5rem + 1.25vw, 2.75rem);
