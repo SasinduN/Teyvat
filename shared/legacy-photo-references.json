@@ -293,5 +293,45 @@
     "table": "hero_slides",
     "id": "mirissa-shoreline",
     "image": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=2000"
+  },
+  {
+    "table": "tour_categories",
+    "id": "beach",
+    "image": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200"
+  },
+  {
+    "table": "tour_categories",
+    "id": "family",
+    "image": "https://images.unsplash.com/photo-1581852017103-68accd5509b6?auto=format&fit=crop&q=80&w=1200"
+  },
+  {
+    "table": "tour_categories",
+    "id": "hill-country",
+    "image": "https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&q=80&w=1200"
+  },
+  {
+    "table": "tour_categories",
+    "id": "wellness",
+    "image": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200"
+  },
+  {
+    "table": "tour_categories",
+    "id": "adventure",
+    "image": "https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&q=80&w=1200"
+  },
+  {
+    "table": "tour_categories",
+    "id": "honeymoon",
+    "image": "https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&q=80&w=1200"
+  },
+  {
+    "table": "tour_categories",
+    "id": "cultural",
+    "image": "https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&q=80&w=1200"
+  },
+  {
+    "table": "tour_categories",
+    "id": "wildlife",
+    "image": "https://images.unsplash.com/photo-1549366021-9f761d450615?auto=format&fit=crop&q=80&w=1200"
   }
 ]

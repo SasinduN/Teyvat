@@ -20,6 +20,7 @@ import {
   toPhotoStory,
   toPillar,
   toSiteSettings,
+  toTourCategory,
   toTourPackage,
   type ExperienceCategory
 } from '@/lib/mappers';
@@ -35,6 +36,7 @@ import type {
   PhotoStory,
   Pillar,
   SiteSettings,
+  TourCategory,
   TourPackage
 } from '@/types';
 
@@ -46,6 +48,8 @@ export interface SiteContent {
   experienceCategories: ExperienceCategory[];
   featuredExperiences: ExperienceItem[];
   tours: TourPackage[];
+  /** Published, in order (0030). */
+  tourCategories: TourCategory[];
   articles: Article[];
   hiddenGems: HiddenGem[];
   photoStories: PhotoStory[];
@@ -67,6 +71,7 @@ export const EMPTY_CONTENT: SiteContent = {
   experienceCategories: [],
   featuredExperiences: [],
   tours: [],
+  tourCategories: [],
   articles: [],
   hiddenGems: [],
   photoStories: [],
@@ -102,6 +107,7 @@ export async function fetchSiteContent(): Promise<SiteContent> {
     experienceCategories: payload.experienceCategories.map(toExperienceCategory),
     featuredExperiences: payload.featuredExperiences.map(toExperienceItem),
     tours: payload.tours.map(toTourPackage),
+    tourCategories: payload.tourCategories.map(toTourCategory),
     articles: payload.articles.map(toArticle),
     hiddenGems: payload.hiddenGems.map(toHiddenGem),
     photoStories: payload.photoStories.map(toPhotoStory),

@@ -5,12 +5,16 @@ import {
   BOOKING_API,
   BOOKING_STATUSES,
   canTransition,
+  VEHICLE_ICON_LABELS,
+  VEHICLE_ICONS,
   type BookingRecord,
   type BookingStatus,
   type BookingVehicle
 } from '@shared/booking';
 import { useFeatures, useSiteContent } from '@/hooks/useSiteContent';
 import { bookingRequest } from '@/lib/booking-client';
+import { ImagePicker } from '@/admin/components/ImagePicker';
+import { VehicleIcon, VehicleSketchFilter } from '@/components/booking/VehicleIcon';
 import {
   Badge,
   Button,
@@ -37,10 +41,22 @@ const EMPTY_VEHICLE: BookingVehicle = {
   id: '',
   name: '',
   type: 'Car',
+  kind: 'passenger',
+  description: null,
+  exampleModels: [],
+  minPassengers: 1,
   passengerCapacity: null,
   luggageCapacity: null,
+  luggagePerPassenger: null,
+  airConditioned: false,
+  maxLoadKg: null,
+  icon: 'car',
+  imageUrl: null,
+  sortOrder: 0,
   acceptingRequests: false
 };
+
+const VEHICLE_TYPES: readonly BookingVehicle['type'][] = ['Car', 'SUV', 'Van', 'Minibus', 'Bus', 'Lorry'];
 
 const when = (iso: string) => new Date(iso).toLocaleString('en-GB', { timeZone: 'Asia/Colombo' });
 
@@ -121,7 +137,8 @@ const Bookings: React.FC = () => {
     setError('');
     setNotice('');
     try {
-      await bookingRequest(`${BOOKING_API.vehicles}/${encodeURIComponent(vehicle.id)}`, 'PUT', vehicle);
+      const exampleModels = vehicle.exampleModels.map((m) => m.trim()).filter(Boolean);
+      await bookingRequest(`${BOOKING_API.vehicles}/${encodeURIComponent(vehicle.id)}`, 'PUT', { ...vehicle, exampleModels });
       setVehicle(EMPTY_VEHICLE);
       setNotice('Vehicle category saved.');
       await load();
@@ -236,14 +253,15 @@ const Bookings: React.FC = () => {
       </Card>
 
       <Card className="p-5">
+        <VehicleSketchFilter />
         <h2 className="font-heading text-lg font-bold text-[var(--brand-primary)]">Vehicle categories</h2>
         <FieldHelp>
-          Enter real passenger and luggage capacities. Taking requests for a category doesn't mean a vehicle is free: you still confirm each one.
+          Enter real passenger and luggage capacities, not counting the driver: every ride comes with one. Taking requests for a category doesn't mean a vehicle is free: you still confirm each one. The ride page shows categories taking requests, in sort order.
         </FieldHelp>
         <div className="my-3 flex flex-wrap gap-2">
           {vehicles.map((v) => (
             <Button key={v.id} variant="secondary" disabled={busy} onClick={() => setVehicle(v)}>
-              Edit {v.name} ({v.acceptingRequests ? 'taking requests' : 'off'})
+              Edit {v.name} ({v.kind === 'goods' && v.maxLoadKg !== null ? `up to ${v.maxLoadKg} kg, ` : ''}{v.acceptingRequests ? 'taking requests' : 'off'})
             </Button>
           ))}
           <Button variant="ghost" disabled={busy} onClick={() => setVehicle(EMPTY_VEHICLE)}>
@@ -273,14 +291,82 @@ const Bookings: React.FC = () => {
           <div className="space-y-1.5">
             <FieldLabel htmlFor="vehicle-type">Type</FieldLabel>
             <Select id="vehicle-type" value={vehicle.type} onChange={(e) => setVehicle((v) => ({ ...v, type: e.target.value as BookingVehicle['type'] }))}>
-              {(['Car', 'SUV', 'Van', 'Minibus'] as const).map((t) => (
+              {VEHICLE_TYPES.map((t) => (
                 <option key={t}>{t}</option>
               ))}
             </Select>
           </div>
           <div className="space-y-1.5">
+            <FieldLabel htmlFor="vehicle-kind">Carries</FieldLabel>
+            <Select
+              id="vehicle-kind"
+              value={vehicle.kind}
+              onChange={(e) => {
+                const kind = e.target.value as BookingVehicle['kind'];
+                // Goods have a load, not bags; passengers have no load.
+                setVehicle((v) => (kind === 'goods' ? { ...v, kind, luggageCapacity: null, luggagePerPassenger: null } : { ...v, kind, maxLoadKg: null }));
+              }}
+            >
+              <option value="passenger">Passengers</option>
+              <option value="goods">Goods</option>
+            </Select>
+            <FieldHelp>Goods categories show on the ride page's Goods tab.</FieldHelp>
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <FieldLabel htmlFor="vehicle-description">Description</FieldLabel>
+            <Input
+              id="vehicle-description"
+              maxLength={200}
+              value={vehicle.description ?? ''}
+              onChange={(e) => setVehicle((v) => ({ ...v, description: e.target.value || null }))}
+            />
+            <FieldHelp>One line on the ride page's card.</FieldHelp>
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <FieldLabel htmlFor="vehicle-models">Example models</FieldLabel>
+            <Input
+              id="vehicle-models"
+              maxLength={400}
+              value={vehicle.exampleModels.join(', ')}
+              onChange={(e) =>
+                setVehicle((v) => ({ ...v, exampleModels: e.target.value.split(',').map((m) => m.trimStart()).filter((m, i, all) => m || i === all.length - 1) }))
+              }
+              onBlur={() => setVehicle((v) => ({ ...v, exampleModels: v.exampleModels.map((m) => m.trim()).filter(Boolean) }))}
+            />
+            <FieldHelp>Separated by commas, at most six. For example: Toyota Prius, Toyota Axio.</FieldHelp>
+          </div>
+          {vehicle.kind === 'goods' && (
+            <div className="space-y-1.5">
+              <FieldLabel htmlFor="vehicle-load" required={vehicle.acceptingRequests}>
+                Maximum load (kg)
+              </FieldLabel>
+              <Input
+                id="vehicle-load"
+                type="number"
+                min={1}
+                max={10000}
+                required={vehicle.acceptingRequests}
+                value={vehicle.maxLoadKg ?? ''}
+                onChange={(e) => setVehicle((v) => ({ ...v, maxLoadKg: e.target.value === '' ? null : Number(e.target.value) }))}
+              />
+              <FieldHelp>The ride page refuses anything heavier.</FieldHelp>
+            </div>
+          )}
+          {vehicle.kind === 'passenger' && <div className="space-y-1.5">
+            <FieldLabel htmlFor="vehicle-min">Fewest passengers</FieldLabel>
+            <Input
+              id="vehicle-min"
+              type="number"
+              min={1}
+              max={100}
+              required
+              value={vehicle.minPassengers}
+              onChange={(e) => setVehicle((v) => ({ ...v, minPassengers: Number(e.target.value) || 1 }))}
+            />
+          </div>}
+          <div className="space-y-1.5">
             <FieldLabel htmlFor="vehicle-capacity" required={vehicle.acceptingRequests}>
-              Passengers
+              {vehicle.kind === 'goods' ? 'Seats next to the driver' : 'Most passengers'}
             </FieldLabel>
             <Input
               id="vehicle-capacity"
@@ -291,9 +377,11 @@ const Bookings: React.FC = () => {
               value={vehicle.passengerCapacity ?? ''}
               onChange={(e) => setVehicle((v) => ({ ...v, passengerCapacity: e.target.value === '' ? null : Number(e.target.value) }))}
             />
+            {vehicle.kind === 'goods' && <FieldHelp>Riders only, never in the back.</FieldHelp>}
           </div>
+          {vehicle.kind === 'passenger' && <>
           <div className="space-y-1.5">
-            <FieldLabel htmlFor="vehicle-luggage">Bags (optional)</FieldLabel>
+            <FieldLabel htmlFor="vehicle-luggage">Bags for the vehicle (optional)</FieldLabel>
             <Input
               id="vehicle-luggage"
               type="number"
@@ -303,6 +391,54 @@ const Bookings: React.FC = () => {
               onChange={(e) => setVehicle((v) => ({ ...v, luggageCapacity: e.target.value === '' ? null : Number(e.target.value) }))}
             />
           </div>
+          <div className="space-y-1.5">
+            <FieldLabel htmlFor="vehicle-luggage-each">Bags per passenger (optional)</FieldLabel>
+            <Input
+              id="vehicle-luggage-each"
+              type="number"
+              min={1}
+              max={10}
+              value={vehicle.luggagePerPassenger ?? ''}
+              onChange={(e) => setVehicle((v) => ({ ...v, luggagePerPassenger: e.target.value === '' ? null : Number(e.target.value) }))}
+            />
+            <FieldHelp>Use one of the two. Per passenger, the ride page works out the group's total.</FieldHelp>
+          </div>
+          </>}
+          <div className="space-y-1.5">
+            <FieldLabel htmlFor="vehicle-sort">Sort order</FieldLabel>
+            <Input
+              id="vehicle-sort"
+              type="number"
+              min={0}
+              max={10000}
+              value={vehicle.sortOrder}
+              onChange={(e) => setVehicle((v) => ({ ...v, sortOrder: Number(e.target.value) || 0 }))}
+            />
+            <FieldHelp>Smaller numbers come first.</FieldHelp>
+          </div>
+          <div className="space-y-1.5">
+            <FieldLabel htmlFor="vehicle-icon">Icon</FieldLabel>
+            <div className="flex items-center gap-3">
+              <Select id="vehicle-icon" value={vehicle.icon} onChange={(e) => setVehicle((v) => ({ ...v, icon: e.target.value as BookingVehicle['icon'] }))}>
+                {VEHICLE_ICONS.map((icon) => (
+                  <option key={icon} value={icon}>
+                    {VEHICLE_ICON_LABELS[icon]}
+                  </option>
+                ))}
+              </Select>
+              <VehicleIcon name={vehicle.icon} width={75} height={40} />
+            </div>
+            <FieldHelp>Shown on the ride page unless an image is chosen below.</FieldHelp>
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <FieldLabel htmlFor="vehicle-image">Image (optional)</FieldLabel>
+            <ImagePicker id="vehicle-image" folder="library" value={vehicle.imageUrl ?? ''} onChange={(url) => setVehicle((v) => ({ ...v, imageUrl: url || null }))} />
+            <FieldHelp>If set, it replaces the icon: the vehicle on a transparent background, facing right.</FieldHelp>
+          </div>
+          <label className="flex items-center gap-2 self-end text-sm text-[var(--text-primary)]">
+            <input type="checkbox" checked={vehicle.airConditioned} onChange={(e) => setVehicle((v) => ({ ...v, airConditioned: e.target.checked }))} />
+            Air-conditioned (an AC badge on its card)
+          </label>
           <label className="flex items-center gap-2 self-end text-sm text-[var(--text-primary)]">
             <input type="checkbox" checked={vehicle.acceptingRequests} onChange={(e) => setVehicle((v) => ({ ...v, acceptingRequests: e.target.checked }))} />
             Take booking requests for this category

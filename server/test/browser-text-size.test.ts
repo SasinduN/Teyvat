@@ -45,6 +45,9 @@ const PAGES = [
   '/experiences/safari-yala',
   '/tours',
   '/tours/island-in-7-days',
+  // A tour category with tours, and one with none yet (its empty state), 0030.
+  '/tours/category/cultural',
+  '/tours/category/family',
   '/booking',
   '/about',
   '/photo-credits',

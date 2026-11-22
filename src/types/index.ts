@@ -79,14 +79,31 @@ export interface TourPackage {
   image: string;
   highlights: string[];
   includedPlaces: string[];
-  priceFrom: number;
+  /** Null (or 0): "Price on request" (`tourPrice`). */
+  priceFrom: number | null;
+  /** The old label (0001): no longer shown anywhere. */
   category: 'Luxury' | 'Culture' | 'Wildlife' | 'Adventure' | 'Full Island';
+  /** Its published categories, in the admin's order: the first is the card's label. */
+  categoryIds: string[];
   itinerary: {
     day: number;
     title: string;
     description: string;
     location: string;
   }[];
+}
+
+/** A travel style with its own page, `/tours/category/<id>` (0030). */
+export interface TourCategory {
+  id: string;
+  name: string;
+  /** The page's h1: "Beach tours in Sri Lanka". */
+  heading: string;
+  shortIntro: string;
+  /** The long intro, one string per paragraph. */
+  intro: string[];
+  image?: string;
+  bestTimeNote?: string;
 }
 
 export interface Article {

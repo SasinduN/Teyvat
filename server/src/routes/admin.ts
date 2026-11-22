@@ -32,6 +32,18 @@ import { ApiError, asyncRoute, sendError } from '../http';
 import { fieldPathsFor, imageOriginsFor, imageUrlsIn, isUnderBase, mediaOf } from '../media/media';
 import type { TourStopInput } from '../../../shared/tour-stops';
 import { adminStops, refuseIfOnARoute, replaceStops } from '../tour-stops';
+import { adminCategoryIds, replaceCategoryLinks } from '../tour-categories';
+
+/**
+ * A tour's categories, when the write sent them (an older client leaves them out, and
+ * then they stay as they are). Inside the row's transaction, after its version check.
+ */
+async function writeCategoryLinks(client: PoolClient, tourId: string, values: Record<string, unknown>): Promise<string[]> {
+  if (Array.isArray(values.category_ids)) {
+    await replaceCategoryLinks(client, tourId, values.category_ids as string[]);
+  }
+  return adminCategoryIds(client, tourId);
+}
 
 /* ---------------------------------------------------------------- helpers */
 
@@ -186,8 +198,13 @@ adminRouter.get(
   '/admin/content/:table',
   asyncRoute(async (req, res) => {
     const table = tableOf(req);
+    // A category's list row says how many tours it holds: the warning before a delete.
+    const extra =
+      table === 'tour_categories'
+        ? ', (select count(*)::int from public.tour_category_links l where l.category_id = tour_categories.id) as tour_count'
+        : '';
     const { rows } = await pool.query(
-      `select *, ${REVISION_COLUMN} from public.${table} order by sort_order asc, id asc`
+      `select *, ${REVISION_COLUMN}${extra} from public.${table} order by sort_order asc, id asc`
     );
     res.json(rows);
   })
@@ -213,7 +230,11 @@ adminRouter.get(
     const { rows } = await pool.query(`select *, ${REVISION_COLUMN} from public.${table} where id = $1`, [id]);
     if (!rows[0]) throw new ApiError('not_found', 'That record no longer exists.');
     // A tour's route stops are a table of their own; the form edits them with the row.
-    res.json(table === 'tours' ? { ...rows[0], stops: await adminStops(pool, id) } : rows[0]);
+    res.json(
+      table === 'tours'
+        ? { ...rows[0], stops: await adminStops(pool, id), category_ids: await adminCategoryIds(pool, id) }
+        : rows[0]
+    );
   })
 );
 
@@ -289,7 +310,7 @@ adminRouter.post(
       if (table === 'tours') {
         const stops = values.stops as TourStopInput[];
         await replaceStops(client, rows[0].id, stops);
-        return { ...rows[0], stops };
+        return { ...rows[0], stops, category_ids: await writeCategoryLinks(client, rows[0].id, values) };
       }
       return rows[0];
     });
@@ -336,7 +357,7 @@ adminRouter.put(
       if (rows[0] && table === 'tours') {
         const stops = values.stops as TourStopInput[];
         await replaceStops(client, id, stops);
-        return { ...rows[0], stops };
+        return { ...rows[0], stops, category_ids: await writeCategoryLinks(client, id, values) };
       }
       return rows[0];
     });

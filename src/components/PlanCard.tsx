@@ -1,13 +1,14 @@
 import React from 'react';
 import { usePublicSite } from '@/context/PublicSiteContext';
+import { hasTourPrice, PRICE_ON_REQUEST } from '@shared/tour-price';
 
 interface PlanCardProps {
   title: string;
   text: string;
   /** The main button's label; it opens the enquiry form with the page's subject. */
   cta: string;
-  /** A tour's starting price. */
-  priceFrom?: number;
+  /** A tour's starting price; null (or 0) is "Price on request". Left out: no price line. */
+  priceFrom?: number | null;
 }
 
 /**
@@ -20,7 +21,9 @@ export const PlanCard: React.FC<PlanCardProps> = ({ title, text, cta, priceFrom 
   return (
     <div className="te-plan-card">
       {priceFrom !== undefined && (
-        <p className="te-plan-card__price">From ${priceFrom} <span>per person</span></p>
+        hasTourPrice(priceFrom)
+          ? <p className="te-plan-card__price">From ${priceFrom} <span>per person</span></p>
+          : <p className="te-plan-card__price">{PRICE_ON_REQUEST}</p>
       )}
       <h2 className="font-heading">{title}</h2>
       <p>{text}</p>

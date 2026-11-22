@@ -1,3 +1,4 @@
+import { hasTourPrice, PRICE_ON_REQUEST } from '@shared/tour-price';
 import { Link, useParams } from 'react-router-dom';
 import { HeroChip, PageHero } from '@/components/PageHero';
 import { SectionHead, TourCard } from '@/components/PageCards';
@@ -35,7 +36,7 @@ function TourView({ t }: { t: TourPackage }) {
             <HeroChip gold>
               {t.days} Days / {t.days - 1} Nights
             </HeroChip>
-            <HeroChip>From ${t.priceFrom} USD</HeroChip>
+            <HeroChip>{hasTourPrice(t.priceFrom) ? `From $${t.priceFrom} USD` : PRICE_ON_REQUEST}</HeroChip>
           </>
         }
         eyebrow={`${t.category} Tour`}

@@ -42,6 +42,11 @@ export const APPLIED_MIGRATIONS: Readonly<Record<string, string>> = {
   '0024_site_settings_brand.sql': '41fce8b396c878a4a292115c3991e5c47017c4da6247d59e36188bab49826a12',
   '0025_rebrand_seed_text.sql': '0af53134def62b8bbeb0d449d2c0aa5d1bc284567eb9d23576bdc6b050980693',
   '0026_seed_contact_placeholders.sql': '0e1db0b6659c07f48dee5e9d8486481f4899224312162b68f97b92a4bf20cff7',
+  '0027_vehicle_categories.sql': '80ce62eb6c839c798b82d09142d3bb8dd4a1ddc2e66528bd5d75c87a62ea92f2',
+  '0028_bus_categories.sql': 'f8f8462246566b14b3aff0f685bcae8d718a887af850bd3fcf25f689380e4e2d',
+  '0029_mini_lorry.sql': '658f70a1f93142b33eb8d4035c2d07e736bd7abc36531dbf6a1e60bf69a51e6c',
+  '0030_tour_categories.sql': '9576a741bf4da970ad46e47b10a21df987b09f5041996345b272808eea436e32',
+  '0031_tour_drafts.sql': 'f5d5bdacfeacaafcaa1538bc69ce12472cf0e820d76dae72063117f8dfb3888b',
 };
 
 /** A migration's hash, as listed above: SHA-256 of its text with \r\n as \n. */

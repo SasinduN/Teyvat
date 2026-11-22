@@ -19,6 +19,7 @@ import { after, before, describe, test } from 'node:test';
 
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
+import { TOUR_CATEGORIES } from '../../scripts/fixtures/tourCategories';
 import { findChrome, launchChrome, saveTheme, type Chrome, type Page } from './chrome';
 import { CONTRAST } from './contrast';
 import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
@@ -203,7 +204,10 @@ describe('the header groups', { skip, timeout: 4 * 60_000 }, () => {
       ['/destinations/ella', ['Discover'], [['Destinations', 'page']]],
       ['/experiences/safari-yala', ['Discover'], [['Experiences', 'page']]],
       ['/when-to-go', ['Discover'], [['When to go', 'page']]],
-      ['/tours', [], [['Tours', 'page']]],
+      ['/tours', ['Tours'], [['All tours', 'page']]],
+      ['/tours/island-in-7-days', ['Tours'], [['All tours', 'page']]],
+      // A category's page is its own link, not All tours (the longest match, 0030).
+      ['/tours/category/beach', ['Tours'], [['Beach Tours', 'page']]],
       ['/journal', [], [['Journal', 'page']]],
       ['/booking', [], [['Book Your Ride', 'page']]],
       ['/about', ['About'], [['About', 'page']]],
@@ -248,7 +252,8 @@ describe('the header groups', { skip, timeout: 4 * 60_000 }, () => {
           for (const path of ['/destinations', '/']) {
             const page = await openPage(path, { theme, width });
             try {
-              for (const label of ['Discover', 'About']) {
+              // Tours holds All tours and the eight categories (0030): the longest list.
+              for (const label of ['Discover', 'Tours', 'About']) {
                 await clickAt(page, trigger(label));
                 await poll(page, isOpen(label), `${label} open`, 2_000);
                 await sleep(250);
@@ -294,7 +299,8 @@ describe('the header groups', { skip, timeout: 4 * 60_000 }, () => {
       }))`);
       assert.deepEqual(sections, [
         { heading: 'Discover', links: ['Explore map', 'Destinations', 'Experiences', 'When to go'] },
-        { heading: '', links: ['Tours', 'Book Your Ride', 'Journal'] },
+        { heading: 'Tours', links: ['All tours', ...TOUR_CATEGORIES.map((c) => c.name)] },
+        { heading: '', links: ['Book Your Ride', 'Journal'] },
         { heading: 'About', links: ['About', 'Contact'] }
       ]);
       assert.equal(await page.evaluate<string>(`document.querySelector('#mobile-navigation a[aria-current]').textContent.trim()`), 'Contact');

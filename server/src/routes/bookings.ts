@@ -41,6 +41,7 @@ import {
 import { rideSchema, rideRequestDataSchema } from '../../../shared/ride';
 import type { BookingRow } from '../../../shared/database.types';
 import { z } from '../../../shared/zod';
+import { allowedImageOrigins, IMAGE_HOST_REFUSED, isAllowedImageUrl } from '../../../shared/image-hosts';
 import { readCookie, SESSION_COOKIE } from '../auth/cookies';
 import { findSession } from '../auth/sessions';
 import { requireAdmin, sessionOf } from '../auth/middleware';
@@ -48,6 +49,7 @@ import { dispatchBookingNotifications } from '../bookings/notifications';
 import { pool } from '../db';
 import { notifyConfig } from '../env';
 import { ApiError, asyncRoute, clientIp, sendError } from '../http';
+import { mediaOf } from '../media/media';
 
 export const BOOKING_COOKIE = '__Host-booking';
 const GUEST_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -98,9 +100,14 @@ async function limit(req: Request, action: LimitedAction): Promise<void> {
 }
 
 const uuid = z.string().uuid();
-const VEHICLE_SQL = `select id, name, type, passenger_capacity as "passengerCapacity",
-  luggage_capacity as "luggageCapacity", accepting_requests as "acceptingRequests"
+const VEHICLE_SQL = `select id, name, type, kind, description, example_models as "exampleModels",
+  min_passengers as "minPassengers", passenger_capacity as "passengerCapacity",
+  luggage_capacity as "luggageCapacity", luggage_per_passenger as "luggagePerPassenger",
+  air_conditioned as "airConditioned", max_load_kg as "maxLoadKg", icon, image_url as "imageUrl", sort_order as "sortOrder",
+  accepting_requests as "acceptingRequests"
   from public.booking_vehicles`;
+/** The picker's order: the admin's sort order, then the name. */
+const VEHICLE_ORDER = 'order by sort_order, name';
 /** A tour's route as booking locations: a published destination's own name and place, else the stop's. */
 const TOUR_STOPS_SQL = `select coalesce(d.name, s.name) as label, coalesce(d.latitude, s.lat) as lat,
   coalesce(d.longitude, s.lng) as lng,
@@ -254,7 +261,7 @@ bookingsRouter.get(
     const tours = (await pool.query<{ id: string; title: string }>('select id, title from public.tours where published order by sort_order, id')).rows;
     const withStops = [];
     for (const t of tours) withStops.push({ ...t, stops: (await pool.query<BookingLocation>(TOUR_STOPS_SQL, [t.id])).rows });
-    const vehicles = (await pool.query<BookingVehicle>(`${VEHICLE_SQL} order by name`)).rows;
+    const vehicles = (await pool.query<BookingVehicle>(`${VEHICLE_SQL} ${VEHICLE_ORDER}`)).rows;
     const catalog: BookingCatalog = { destinations, tours: withStops, vehicles, notificationsConfigured: Boolean(notifyConfig) };
     res.json(catalog);
   })
@@ -506,7 +513,7 @@ bookingsRouter.patch(
 bookingsRouter.get(
   '/admin/booking-vehicles',
   asyncRoute(async (_req, res) => {
-    res.json({ vehicles: (await pool.query(`${VEHICLE_SQL} order by name`)).rows });
+    res.json({ vehicles: (await pool.query(`${VEHICLE_SQL} ${VEHICLE_ORDER}`)).rows });
   })
 );
 
@@ -515,11 +522,19 @@ bookingsRouter.put(
   asyncRoute(async (req, res) => {
     const v = parse(vehicleSchema, req.body);
     if (v.id !== req.params.id) throw new ApiError('bad_request', 'Vehicle ID mismatch.');
+    if (v.imageUrl && !isAllowedImageUrl(v.imageUrl, allowedImageOrigins(mediaOf(req)?.publicBaseUrl ?? null))) {
+      throw new ApiError('bad_request', IMAGE_HOST_REFUSED);
+    }
     await pool.query(
-      `insert into public.booking_vehicles (id, name, type, passenger_capacity, luggage_capacity, accepting_requests)
-       values ($1, $2, $3, $4, $5, $6)
-       on conflict (id) do update set name = $2, type = $3, passenger_capacity = $4, luggage_capacity = $5, accepting_requests = $6`,
-      [v.id, v.name, v.type, v.passengerCapacity, v.luggageCapacity, v.acceptingRequests]
+      `insert into public.booking_vehicles (id, name, type, description, example_models, min_passengers,
+         passenger_capacity, luggage_capacity, luggage_per_passenger, air_conditioned, icon, image_url, sort_order, accepting_requests,
+         kind, max_load_kg)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+       on conflict (id) do update set name = $2, type = $3, description = $4, example_models = $5, min_passengers = $6,
+         passenger_capacity = $7, luggage_capacity = $8, luggage_per_passenger = $9, air_conditioned = $10, icon = $11,
+         image_url = $12, sort_order = $13, accepting_requests = $14, kind = $15, max_load_kg = $16`,
+      [v.id, v.name, v.type, v.description, v.exampleModels, v.minPassengers, v.passengerCapacity, v.luggageCapacity,
+        v.luggagePerPassenger, v.airConditioned, v.icon, v.imageUrl, v.sortOrder, v.acceptingRequests, v.kind, v.maxLoadKg]
     );
     res.json(v);
   })

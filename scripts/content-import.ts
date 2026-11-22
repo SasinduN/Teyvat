@@ -1,8 +1,10 @@
 /**
- * Researched destinations and attractions (`scripts/content/places.json`) into the
- * database, as unpublished drafts, with their photos copied to R2 and credited. See
- * `server/src/content-import.ts` for exactly what it does, and
- * `docs/reviews/places-sources.md` for where every fact and photo came from.
+ * Researched destinations and attractions (`scripts/content/places.json`), then tours
+ * (`scripts/content/tours.json`), into the database as unpublished drafts, with the places'
+ * photos copied to R2 and credited. See `server/src/content-import.ts` and
+ * `server/src/tours-import.ts` for exactly what each does, and
+ * `docs/reviews/places-sources.md` and `docs/reviews/new-tours-sources.md` for where every
+ * fact and photo came from.
  *
  *   npm run content:import -- --dry-run          # what it would do; reads only
  *   npm run content:import                       # the local DATABASE_URL (needs R2, or --skip-photos)
@@ -24,9 +26,12 @@ import { Client } from 'pg';
 import { scriptDatabaseUrl } from '../shared/database-target';
 import { connectionTargetFor, privateHostHint } from '../shared/pg-connection';
 import { importPlaces, parsePlacesFile } from '../server/src/content-import';
+import { importTours, parseToursFile } from '../server/src/tours-import';
 import { mediaFromEnv } from '../server/src/media/media';
 
-const DEFAULT_FILE = resolve(dirname(fileURLToPath(import.meta.url)), 'content', 'places.json');
+const CONTENT = resolve(dirname(fileURLToPath(import.meta.url)), 'content');
+const DEFAULT_FILE = resolve(CONTENT, 'places.json');
+const DEFAULT_TOURS_FILE = resolve(CONTENT, 'tours.json');
 
 async function main(): Promise<void> {
   const { values } = parseArgs({
@@ -34,7 +39,8 @@ async function main(): Promise<void> {
       'dry-run': { type: 'boolean', default: false },
       prod: { type: 'boolean', default: false },
       'skip-photos': { type: 'boolean', default: false },
-      file: { type: 'string', default: DEFAULT_FILE }
+      file: { type: 'string', default: DEFAULT_FILE },
+      'tours-file': { type: 'string', default: DEFAULT_TOURS_FILE }
     },
     strict: true
   });
@@ -43,6 +49,7 @@ async function main(): Promise<void> {
 
   // Checked before anything connects: a bad file stops here.
   const file = parsePlacesFile(JSON.parse(readFileSync(values.file, 'utf8')));
+  const tours = parseToursFile(JSON.parse(readFileSync(values['tours-file'], 'utf8')));
   const url = await scriptDatabaseUrl({ prod: values.prod, script: 'content:import' });
   const media = mediaFromEnv();
   if (!media && !dryRun && !skipPhotos) {
@@ -56,9 +63,17 @@ async function main(): Promise<void> {
     const { rows } = await client.query<{ db: string }>('select current_database() as db');
     console.log(`database: ${rows[0].db} on ${new URL(target.connectionString).hostname}`);
     console.log(`R2: ${skipPhotos ? '(photos skipped)' : media ? media.publicBaseUrl : '(not configured)'}`);
-    console.log(`file: ${file.destinations.length} destinations, ${file.attractions.length} attractions${dryRun ? ' (dry run: nothing is written)' : ''}\n`);
+    console.log(
+      `files: ${file.destinations.length} destinations, ${file.attractions.length} attractions, ${tours.tours.length} tours` +
+        `${dryRun ? ' (dry run: nothing is written)' : ''}\n`
+    );
 
-    const outcomes = await importPlaces(client, file, { dryRun, media, skipPhotos, log: (line) => console.log(line) });
+    const log = (line: string) => console.log(line);
+    // The places first: a destination they create is a stop on a tour.
+    const outcomes = [
+      ...(await importPlaces(client, file, { dryRun, media, skipPhotos, log })),
+      ...(await importTours(client, tours, { dryRun, plannedDestinations: file.destinations.map((d) => d.id), log }))
+    ];
     const count = (action: string) => outcomes.filter((o) => o.action === action).length;
     const verb = dryRun ? 'would be' : 'were';
     console.log(

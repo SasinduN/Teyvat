@@ -26,6 +26,7 @@ import { PAGE_NAMES, pageTitle } from '../../shared/page-meta';
 import { BRAND } from '../../shared/brand';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
+import { TOUR_CATEGORIES } from '../../scripts/fixtures/tourCategories';
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
 import {
   assertConnectedToTestDatabase,
@@ -139,7 +140,8 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
   test('on: the link after Tours, Book This Tour with that tour chosen, and the form', async () => {
     const tour = await openPage(on, '/tours/island-in-7-days');
     const nav = await linkTexts(tour, 'header nav');
-    assert.equal(nav[nav.indexOf('Tours') + 1], 'Book Your Ride');
+    // Tours is a group: All tours, then the categories (0030). Book Your Ride comes after its last.
+    assert.equal(nav[nav.indexOf('All tours') + 1 + TOUR_CATEGORIES.length], 'Book Your Ride');
     assert.ok((await linkTexts(tour, 'footer')).includes('Book Your Ride'), 'footer');
     assert.ok((await buttonTexts(tour)).includes('Inquire About This Tour'));
     const href = await tour.evaluate<string>(`[...document.querySelectorAll('main a')].find((a) => a.textContent.trim() === 'Book This Tour').getAttribute('href')`);
@@ -152,15 +154,16 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
   });
 
   async function fill(page: Page, label: string, value: string) {
-    await page.evaluate(`(() => { const label = [...document.querySelectorAll('label')].find(l => l.textContent.trim() === ${JSON.stringify(label)}); const input = document.getElementById(label.htmlFor); const prototype = input.tagName === 'SELECT' ? HTMLSelectElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(prototype, 'value').set.call(input, ${JSON.stringify(value)}); input.dispatchEvent(new Event(input.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); return true; })()`);
+    await page.evaluate(`(() => { const label = [...document.querySelectorAll('label')].find(l => l.textContent.trim() === ${JSON.stringify(label)}); const input = document.getElementById(label.htmlFor); const prototype = input.tagName === 'SELECT' ? HTMLSelectElement.prototype : input.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(prototype, 'value').set.call(input, ${JSON.stringify(value)}); input.dispatchEvent(new Event(input.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); return true; })()`);
   }
 
   test('ride: seven inputs, live summary, conditional returns and all five responsive widths', async () => {
     const page = await openPage(on, '/booking');
     await waitFor(page, `document.querySelector('.ride-form')`, 'ride form');
     assert.equal(await page.evaluate<string>(`document.querySelector('main h1').textContent`), 'Book Your Ride');
-    assert.equal(await page.evaluate<number>(`document.querySelectorAll('.ride-form input:not([type=radio]), .ride-form select').length`), 6);
-    assert.equal(await page.evaluate<boolean>(`Boolean(document.querySelector('.ride-summary'))`), false, 'no empty summary');
+    assert.equal(await page.evaluate<number>(`document.querySelectorAll('.ride-form input:not([type=radio]), .ride-form select').length`), 5, 'pickup, drop-off, date, time, passengers');
+    assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('.ride-vehicle__input')].map((r) => r.value)`), ['mini', 'car', 'suv', 'ac-bus', 'bus'], 'the categories taking requests, in order');
+    assert.ok(await page.evaluate<boolean>(`document.querySelector('.ride-summary').textContent.includes('Choose a vehicle')`), 'the placeholder before a choice');
     assert.equal(await page.evaluate<boolean>(`/Contact details|Customer name|Travel notes|Tours \(optional\)/.test(document.querySelector('.ride-form').textContent)`), false);
     await fill(page, 'Pickup location', 'Matara'); await fill(page, 'Drop-off location', 'Galle');
     await waitFor(page, `document.querySelector('.ride-summary')?.textContent.includes('Matara') && document.querySelector('.ride-summary')?.textContent.includes('Galle')`, 'live route');
@@ -175,10 +178,17 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     for (const width of [320, 375, 768, 1024, 1440]) {
       await page.send('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile: width < 768 });
       await sleep(150);
-      const layout = await page.evaluate<{ overflow: boolean; form: { x: number; bottom: number }; summary: { x: number; y: number } }>(`(() => { const f = document.querySelector('.ride-form').getBoundingClientRect(); const s = document.querySelector('.ride-summary').getBoundingClientRect(); return { overflow: document.documentElement.scrollWidth > innerWidth, form: {x:f.x,bottom:f.bottom}, summary:{x:s.x,y:s.y} }; })()`);
+      await page.evaluate('window.scrollTo(0, 0), true');
+      await sleep(100);
+      const layout = await page.evaluate<{ overflow: boolean; form: { x: number }; summary: { x: number; shown: boolean }; bar: { shown: boolean; bottom: number }; screen: number }>(`(() => { const f = document.querySelector('.ride-form').getBoundingClientRect(); const s = document.querySelector('.ride-summary'); const b = document.querySelector('.ride-bar'); return { overflow: document.documentElement.scrollWidth > innerWidth, form: {x:f.x}, summary:{x:s.getBoundingClientRect().x, shown: getComputedStyle(s).display !== 'none'}, bar: { shown: getComputedStyle(b).display !== 'none', bottom: b.getBoundingClientRect().bottom }, screen: innerHeight }; })()`);
       assert.equal(layout.overflow, false, `no overflow at ${width}`);
-      if (width < 768) assert.ok(layout.summary.y >= layout.form.bottom, `summary below at ${width}`);
-      else assert.ok(layout.summary.x > layout.form.x, `summary beside at ${width}`);
+      if (width < 768) {
+        assert.equal(layout.summary.shown, false, `the summary becomes the bar at ${width}`);
+        assert.ok(layout.bar.shown && Math.abs(layout.bar.bottom - layout.screen) <= 1, `the bar holds the screen's bottom at ${width}`);
+      } else {
+        assert.ok(layout.summary.shown && layout.summary.x > layout.form.x, `summary beside at ${width}`);
+        assert.equal(layout.bar.shown, false, `no bar at ${width}`);
+      }
       const shot = await page.send('Page.captureScreenshot', { captureBeyondViewport: true });
       const directory = join(REPO_ROOT, 'docs/qa-results/rides'); mkdirSync(directory, { recursive: true });
       writeFileSync(join(directory, `ride-${width}.png`), Buffer.from(shot.data as string, 'base64'));
@@ -209,7 +219,7 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     await waitFor(page, `document.body.textContent.includes('must be different')`, 'invalid identical route');
     assert.equal(await page.evaluate<number>('window.__rideOpened.length'), 0);
     await fill(page, 'Drop-off location', 'Galle'); await fill(page, 'Pickup date', '2099-12-20');
-    await fill(page, 'Pickup time', '09:00'); await fill(page, 'Number of passengers', '5'); await fill(page, 'Vehicle category', 'car');
+    await fill(page, 'Pickup time', '09:00'); await fill(page, 'Number of passengers', '5'); await page.evaluate(`document.querySelector('.ride-vehicle__input[value=car]').click(), true`);
     await page.evaluate(`document.querySelector('.ride-form').requestSubmit(), true`);
     await waitFor(page, `document.querySelector('#ride-passengers').getAttribute('aria-invalid') === 'true'`, 'capacity validation');
     assert.equal(await page.evaluate<number>('window.__rideOpened.length'), 0);
@@ -228,7 +238,7 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     const url = new URL(opened[0].url); assert.equal(url.origin, 'https://wa.me'); assert.equal(url.pathname, '/94771236478');
     assert.equal(opened[0].target, '_blank'); assert.equal(opened[0].features, 'noopener,noreferrer');
     const message = url.searchParams.get('text')!;
-    for (const part of ['Pickup: Matara', 'Drop-off: Galle', '2099-12-20 09:00', '2099-12-21 17:30', 'Return route: Galle → Matara', 'Passengers: 2', 'Vehicle: Car', 'UTC+05:30']) assert.ok(message.includes(part), part);
+    for (const part of ['Pickup: Matara', 'Drop-off: Galle', '2099-12-20 09:00', '2099-12-21 17:30', 'Return route: Galle → Matara', 'Passengers: 2', 'Vehicle: Car (up to 4 passengers)', 'UTC+05:30']) assert.ok(message.includes(part), part);
     assert.equal(await page.evaluate<string>(`document.querySelector('.ride-form a[href^="https://wa.me/"]').href`), url.href, 'popup fallback has the same draft after URL normalization');
     assert.equal(await page.evaluate<boolean>(`Boolean(document.querySelector('dialog, .ride-success, .ride-requests'))`), false, 'no admin callback, receipt or request history');
     const requests = await page.evaluate<{path:string;method:string}[]>('window.__bookingRequests');
@@ -237,6 +247,192 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     await fill(page, 'Drop-off location', 'Colombo');
     await waitFor(page, `!document.querySelector('.ride-form a[href^="https://wa.me/"]')`, 'old draft cleared after edits');
     await pool.query('update public.site_settings set whatsapp_number = null where id');
+  });
+
+  test('ride: the vehicle cards are a radio group: arrow keys, a visible focus ring, names with capacity', async () => {
+    const page = await openPage(on, '/booking');
+    await waitFor(page, `document.querySelector('.ride-vehicle__input')`, 'the cards');
+    assert.equal(await page.evaluate<string>(`document.querySelector('.ride-vehicles legend').textContent`), 'Vehicle');
+    assert.equal(await page.evaluate<number>(`(document.querySelector('main').innerText.match(/Driver included/g) ?? []).length`), 1, 'said once');
+    assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('.ride-vehicle__input')].map((r) => r.getAttribute('aria-label'))`),
+      ['Mini, up to 3 passengers', 'Car, up to 4 passengers', 'SUV, up to 5 passengers', 'AC Bus, up to 20 passengers', 'Bus, up to 52 passengers']);
+    // The AC Bus wears an AC badge (with its snowflake), and the buses count bags per passenger.
+    assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('.ride-vehicle__input[value=ac-bus] ~ .ride-vehicle__badges .ride-vehicle__badge')].map((b) => b.textContent)`), ['AC', 'Up to 20 passengers', '2 bags each']);
+    assert.equal(await page.evaluate<number>(`document.querySelectorAll('.ride-vehicle__badge--ac').length`), 1, 'only the AC Bus');
+    assert.equal(await page.evaluate<string>(`document.querySelector('.ride-vehicle__input[value=ac-bus]').closest('.ride-vehicle').querySelector('svg[data-vehicle-icon]').dataset.vehicleIcon`), 'ac-bus');
+    await page.send('Page.bringToFront');
+    await page.evaluate(`document.querySelector('.ride-vehicle__input[value=car]').focus(), true`);
+    await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', text: ' ', windowsVirtualKeyCode: 32 });
+    await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+    await waitFor(page, `document.querySelector('.ride-vehicle__input[value=car]').checked`, 'Space chooses');
+    await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'ArrowRight', code: 'ArrowRight', windowsVirtualKeyCode: 39 });
+    await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'ArrowRight', code: 'ArrowRight', windowsVirtualKeyCode: 39 });
+    await waitFor(page, `document.querySelector('.ride-vehicle__input[value=suv]').checked && document.querySelector('.ride-vehicle.is-selected .ride-vehicle__name').textContent === 'SUV'`, 'the arrow key moves the choice');
+    const ring = await page.evaluate<{ style: string; width: string }>(`(() => { const s = getComputedStyle(document.activeElement.closest('.ride-vehicle')); return { style: s.outlineStyle, width: s.outlineWidth }; })()`);
+    assert.deepEqual(ring, { style: 'solid', width: '3px' }, 'the focused card shows its ring');
+    await waitFor(page, `document.querySelector('.ride-showcase figcaption')?.textContent.includes('SUV')`, 'the summary shows the choice');
+    // No image chosen: the category's own icon, inline, in the summary and on the card.
+    assert.equal(await page.evaluate<string>(`document.querySelector('.ride-showcase svg[data-vehicle-icon]').dataset.vehicleIcon`), 'suv');
+    // The sketch icons are outlines on the card's own colour. The selected card's ink is #161616 on
+    // the gold, the hubs too; the others keep the theme's ink (charcoal here) and the gold hubs.
+    const ink = await page.evaluate<{ selected: { stroke: string; fill: string; hub: string }; other: { stroke: string; fill: string; hub: string } }>(`(() => {
+      const card = (id) => document.querySelector('.ride-vehicle__input[value=' + id + ']').closest('.ride-vehicle');
+      const look = (id) => { const body = getComputedStyle(card(id).querySelector('.vi-body')); return { stroke: body.stroke, fill: body.fill, hub: getComputedStyle(card(id).querySelector('.vi-gold')).fill }; };
+      return { selected: look('suv'), other: look('car') };
+    })()`);
+    assert.equal(ink.selected.stroke, 'rgb(22, 22, 22)', 'selected ink: #161616');
+    // (Not the card's computed background: that is still mid-transition here.)
+    assert.equal(ink.selected.fill, 'rgb(213, 182, 123)', 'the outline is filled with the card itself (the gold, --accent)');
+    assert.equal(ink.selected.hub, 'rgb(22, 22, 22)', 'dark hubs on the gold');
+    assert.notEqual(ink.other.stroke, ink.selected.stroke);
+    assert.equal(ink.other.hub, 'rgb(245, 197, 24)', 'gold hubs elsewhere');
+    // The wobble: one filter on the page, used by the icons on a laptop.
+    assert.equal(await page.evaluate<number>(`document.querySelectorAll('filter#vehicle-sketch').length`), 1);
+    assert.match(await page.evaluate<string>(`getComputedStyle(document.querySelector('.ride-vehicle .vi-sketch')).filter`), /vehicle-sketch/);
+    // Two badges from the catalog: passengers and bags.
+    assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('.ride-vehicle__input[value=car] ~ .ride-vehicle__badges .ride-vehicle__badge')].map((b) => b.textContent)`), ['Up to 4 passengers', '4 bags']);
+    // Every vehicle image has its size before it loads.
+    assert.ok(await page.evaluate<boolean>(`[...document.querySelectorAll('.ride-vehicle__image, .ride-showcase__image')].every((i) => i.getAttribute('width') && i.getAttribute('height'))`));
+  });
+
+  test('ride: a card that is too small is dimmed but choosable, and offers the smallest that fits', async () => {
+    const page = await openPage(on, '/booking');
+    await waitFor(page, `document.querySelector('.ride-vehicle__input')`, 'the cards');
+    const plus = `[...document.querySelectorAll('.ride-stepper__button')].find((b) => b.getAttribute('aria-label') === 'One passenger more')`;
+    const minus = `[...document.querySelectorAll('.ride-stepper__button')].find((b) => b.getAttribute('aria-label') === 'One passenger fewer')`;
+    assert.equal(await page.evaluate<boolean>(`${minus}.disabled`), true, 'not below 1');
+    for (let i = 0; i < 3; i += 1) await page.evaluate(`${plus}.click(), true`);
+    await waitFor(page, `document.querySelector('#ride-passengers').value === '4'`, 'the stepper counts');
+    const mini = `document.querySelector('.ride-vehicle__input[value=mini]').closest('.ride-vehicle')`;
+    await waitFor(page, `${mini}.classList.contains('is-dimmed') && ${mini}.textContent.includes('Too small for 4')`, 'Mini dimmed');
+    await page.evaluate(`document.querySelector('.ride-vehicle__input[value=mini]').click(), true`);
+    await waitFor(page, `document.querySelector('#ride-passengers-error')?.textContent === 'Passenger count exceeds vehicle capacity.'`, 'the capacity error by the passengers');
+    assert.equal(await page.evaluate<string>(`document.querySelector('#ride-passengers').getAttribute('aria-invalid')`), 'true');
+    assert.ok(await page.evaluate<boolean>(`document.querySelector('.ride-vehicle__input[value=mini]').checked`), 'the choice stays');
+    await page.evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Switch to Car').click(), true`);
+    await waitFor(page, `document.querySelector('.ride-vehicle__input[value=car]').checked && !document.querySelector('#ride-passengers-error')`, 'one tap to the Car');
+    assert.equal(await page.evaluate<string>(`document.querySelector('#ride-passengers-note').textContent`), '4 of 4 passengers');
+    // The limit is the largest category's: the SUV's 5.
+    await page.evaluate(`${plus}.click(), true`);
+    await waitFor(page, `document.querySelector('#ride-passengers').value === '5'`, 'five');
+    await waitFor(page, `[...document.querySelectorAll('button')].some((b) => b.textContent === 'Switch to SUV')`, 'the SUV offered for 5');
+    // Past the SUV: the AC Bus is the smallest that fits, up to 20; then the Bus.
+    await fill(page, 'Number of passengers', '12');
+    await waitFor(page, `[...document.querySelectorAll('button')].some((b) => b.textContent === 'Switch to AC Bus')`, 'the AC Bus offered for 12');
+    await page.evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Switch to AC Bus').click(), true`);
+    await waitFor(page, `document.querySelector('.ride-showcase figcaption')?.textContent.includes('up to 24 bags')`, 'the bags for the group: 12 × 2');
+    await fill(page, 'Number of passengers', '30');
+    await waitFor(page, `[...document.querySelectorAll('button')].some((b) => b.textContent === 'Switch to Bus')`, 'the Bus offered for 30');
+    // The limit is the largest category's: the Bus's 52.
+    await fill(page, 'Number of passengers', '52');
+    await waitFor(page, `document.querySelector('#ride-passengers').value === '52' && ${plus}.disabled`, 'not above the largest category (52)');
+  });
+
+  test('goods: the Mini Lorry on its own tab: what, an optional weight up to 100 kg, one rider, the way back', async () => {
+    await pool.query(`update public.site_settings set whatsapp_number='94771236478' where id`);
+    const page = await openPage(on, '/booking');
+    await waitFor(page, `document.querySelector('.ride-vehicle__input')`, 'the cards');
+    await page.evaluate(`window.__rideOpened = []; window.open = (url) => { window.__rideOpened.push(url); return null; }; true`);
+    const text = (selector: string) => page.evaluate<string | null>(`document.querySelector(${JSON.stringify(selector)})?.textContent ?? null`);
+    const cards = () => page.evaluate<string[]>(`[...document.querySelectorAll('.ride-vehicle__input')].map((r) => r.value)`);
+    assert.equal(await text('.ride-mode legend'), 'What are you booking?');
+    assert.ok(!(await cards()).includes('mini-lorry'), 'Passengers never shows the lorry');
+    await fill(page, 'Pickup location', 'Matara'); await fill(page, 'Drop-off location', 'Galle');
+    await fill(page, 'Pickup date', '2099-12-20'); await fill(page, 'Pickup time', '09:00');
+
+    await page.evaluate(`document.querySelector('input[name=ride-mode][value=goods]').click(), true`);
+    await waitFor(page, `document.querySelector('#ride-goods')`, 'the goods fields');
+    assert.deepEqual(await cards(), ['mini-lorry'], 'only the lorry');
+    assert.equal(await page.evaluate<boolean>(`document.querySelector('.ride-vehicle__input[value=mini-lorry]').checked`), true, 'chosen, as the only one');
+    assert.deepEqual(await page.evaluate<string[]>(`[...document.querySelectorAll('.ride-vehicle__badge')].map((b) => b.textContent)`), ['Goods', 'Up to 100 kg']);
+    assert.equal(await page.evaluate<string>(`document.querySelector('.ride-vehicle__input').getAttribute('aria-label')`), 'Mini Lorry, up to 100 kg');
+    assert.equal(await page.evaluate<boolean>(`Boolean(document.querySelector('#ride-passengers'))`), false, 'no passenger count');
+    assert.ok((await text('.ride-summary'))!.includes('Up to 100 kg'), 'the summary shows the lorry');
+    assert.equal(await text('.ride-bar__name span'), 'up to 100 kg');
+    // The refused-goods note and the weight hint are tied to their fields.
+    const describedBy = (id: string) => page.evaluate<string>(`document.querySelector('#${id}').getAttribute('aria-describedby').split(' ').map((d) => document.getElementById(d).textContent).join(' | ')`);
+    assert.equal(await describedBy('ride-goods'), "We don't carry anything illegal, or dangerous goods such as gas cylinders, fuel, fireworks, explosives, or corrosive or toxic chemicals.");
+    assert.equal(await describedBy('ride-weight'), "Not sure? Leave it blank and list the items; we'll confirm on WhatsApp.");
+    assert.ok(await page.evaluate<boolean>(`!document.querySelector('#ride-weight').required`), 'the weight is optional');
+
+    // What's missing, then over the limit.
+    await page.evaluate(`document.querySelector('.ride-form').requestSubmit(), true`);
+    await waitFor(page, `document.querySelector('#ride-goods-error')?.textContent === 'Tell us what you’re moving.'`, 'what is required');
+    await fill(page, 'What are you moving?', 'Two suitcases and a bicycle');
+    await fill(page, 'Approximate weight in kg (optional)', '101');
+    await waitFor(page, `document.querySelector('#ride-weight-error')?.textContent === 'The Mini Lorry carries up to 100 kg.'`, 'over the limit, as typed');
+    assert.equal(await page.evaluate<string>(`document.querySelector('#ride-weight').getAttribute('aria-invalid')`), 'true');
+    assert.ok((await text('.ride-vehicle'))!.includes('Too heavy for 101 kg'), 'the card says why');
+    await page.evaluate(`document.querySelector('.ride-form').requestSubmit(), true`);
+    await sleep(200);
+    assert.equal(await page.evaluate<number>('window.__rideOpened.length'), 0, 'no draft over the limit');
+    await fill(page, 'Approximate weight in kg (optional)', '100');
+    await waitFor(page, `!document.querySelector('#ride-weight-error')`, '100 kg is fine');
+    await fill(page, 'Approximate weight in kg (optional)', '');
+
+    // The way back: round trip only; "Rider only" only with the rider.
+    const backs = () => page.evaluate<string[]>(`[...document.querySelectorAll('input[name=ride-return-load]')].map((r) => r.closest('label').textContent)`);
+    assert.deepEqual(await backs(), [], 'one way: no way back');
+    await page.evaluate(`document.querySelector('input[value=round_trip]').click(), true`);
+    await waitFor(page, `document.querySelector('input[name=ride-return-load]')`, 'the way back');
+    assert.equal(await text('.ride-goods__back legend'), 'On the way back');
+    assert.deepEqual(await backs(), ['Carrying goods', 'Empty']);
+    const rider = `document.querySelector('.ride-goods__rider input')`;
+    assert.equal(await text('.ride-goods__rider'), 'Someone will ride along: one seat, next to the driver');
+    assert.equal(await page.evaluate<string>(`document.getElementById(${rider}.getAttribute('aria-describedby')).textContent`), 'Nobody rides in the back. If more people are travelling, book a car or van as well.');
+    await page.evaluate(`${rider}.click(), true`);
+    await waitFor(page, `document.querySelectorAll('input[name=ride-return-load]').length === 3`, 'rider only, with a rider');
+    assert.deepEqual(await backs(), ['Carrying goods', 'Empty', 'Rider only']);
+    await page.evaluate(`document.querySelector('input[name=ride-return-load][value=rider]').click(), true`);
+    await page.evaluate(`${rider}.click(), true`);
+    await waitFor(page, `document.querySelectorAll('input[name=ride-return-load]').length === 2 && ![...document.querySelectorAll('input[name=ride-return-load]')].some((r) => r.checked)`, 'unticking clears rider only');
+    await page.evaluate(`${rider}.click(), true`);
+    await fill(page, 'Return date', '2099-12-21'); await fill(page, 'Return time', '17:30');
+    await page.evaluate(`document.querySelector('.ride-form').requestSubmit(), true`);
+    await waitFor(page, `document.querySelector('#ride-return-load-error')?.textContent === 'Choose what the lorry carries on the way back.'`, 'the way back is required');
+    await page.evaluate(`document.querySelector('input[name=ride-return-load][value=rider]').click(), true`);
+    assert.ok((await text('.ride-summary'))!.includes('1 person, next to the driver'));
+    assert.ok((await text('.ride-summary'))!.includes('Not sure'), 'no weight: not sure');
+    await page.evaluate(`document.querySelector('.ride-form').requestSubmit(), true`);
+    await waitFor(page, `window.__rideOpened.length === 1`, 'the goods draft');
+    const message = new URL(await page.evaluate<string>('window.__rideOpened[0]')).searchParams.get('text')!;
+    for (const line of ["Hi! I'd like to enquire about moving goods in Sri Lanka.", 'Trip type: Round trip', 'On the way back: rider only', 'Goods: Two suitcases and a bicycle', 'Weight: not sure', 'Riding along: 1 person (next to the driver)', 'Vehicle: Mini Lorry (up to 100 kg)']) assert.ok(message.split('\n').includes(line), line);
+    assert.ok(!message.includes('Passengers:'));
+    const requests = await page.evaluate<{ path: string; method: string }[]>('window.__bookingRequests');
+    assert.ok(requests.every((r) => r.method === 'GET' && r.path === '/api/bookings/catalog'), 'goods go through WhatsApp only');
+
+    // Back to Passengers: the places and dates stay, the lorry goes, the stepper is back.
+    await page.evaluate(`document.querySelector('input[name=ride-mode][value=passengers]').click(), true`);
+    await waitFor(page, `document.querySelector('#ride-passengers')`, 'the stepper back');
+    assert.ok(!(await cards()).includes('mini-lorry'));
+    assert.equal(await page.evaluate<string>(`document.querySelector('#ride-departureDate').value`), '2099-12-20');
+    assert.ok((await text('.ride-summary'))!.includes('Matara'));
+    assert.equal(await page.evaluate<boolean>(`[...document.querySelectorAll('.ride-vehicle__input')].some((r) => r.checked)`), false, 'the vehicle choice goes');
+    assert.equal(await page.evaluate<boolean>(`document.documentElement.scrollWidth > innerWidth`), false);
+    await pool.query('update public.site_settings set whatsapp_number = null where id');
+  });
+
+  test('goods: with the lorry switched off, there is no Passengers / Goods switch', async () => {
+    await pool.query(`update public.booking_vehicles set accepting_requests = false where id = 'mini-lorry'`);
+    try {
+      const page = await openPage(on, '/booking');
+      await waitFor(page, `document.querySelector('.ride-vehicle__input')`, 'the cards');
+      assert.equal(await page.evaluate<boolean>(`Boolean(document.querySelector('.ride-mode, input[name=ride-mode]'))`), false);
+      assert.equal(await page.evaluate<boolean>(`Boolean(document.querySelector('#ride-passengers'))`), true);
+    } finally {
+      await pool.query(`update public.booking_vehicles set accepting_requests = true where id = 'mini-lorry'`);
+    }
+  });
+
+  test('ride: with reduced motion the return fields and the chosen vehicle appear without moving', async () => {
+    const page = await openPage(on, '/booking');
+    await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+    await waitFor(page, `document.querySelector('.ride-vehicle__input')`, 'the cards');
+    await page.evaluate(`document.querySelector('input[value=round_trip]').click(), document.querySelector('.ride-vehicle__input[value=car]').click(), true`);
+    await waitFor(page, `document.querySelector('.ride-return') && document.querySelector('.ride-showcase__vehicle')`, 'both shown');
+    assert.deepEqual(await page.evaluate<string[]>(`['.ride-return', '.ride-showcase__vehicle'].map((s) => getComputedStyle(document.querySelector(s)).animationName)`), ['none', 'none']);
+    await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
+    assert.deepEqual(await page.evaluate<string[]>(`['.ride-return', '.ride-showcase__vehicle'].map((s) => getComputedStyle(document.querySelector(s)).animationName)`), ['ride-reveal', 'ride-showcase-in']);
   });
 
   test('on: GPS only when asked, with the explanation beside the button', async () => {
@@ -262,5 +458,14 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     await page.send('Page.navigate', { url: `${on.baseUrl}/admin/bookings` });
     await waitFor(page, `document.body.textContent.includes('Vehicle categories') && document.body.textContent.includes('No booking requests')`, 'the bookings page');
     assert.equal(await page.evaluate<boolean>(`document.body.textContent.includes('Bookings are switched off')`), false);
+    // The lorry: a goods category, its load in place of the passenger range and bags.
+    await page.evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent.startsWith('Edit Mini Lorry')).click(), true`);
+    await waitFor(page, `document.querySelector('#vehicle-kind')?.value === 'goods'`, 'the lorry open');
+    assert.equal(await page.evaluate<string>(`document.querySelector('#vehicle-load').value`), '100');
+    assert.equal(await page.evaluate<string>(`document.querySelector('label[for=vehicle-capacity]').firstChild.textContent`), 'Seats next to the driver');
+    assert.equal(await page.evaluate<boolean>(`Boolean(document.querySelector('#vehicle-min, #vehicle-luggage, #vehicle-luggage-each'))`), false, 'no range or bags for goods');
+    assert.equal(await page.evaluate<string>(`document.querySelector('#vehicle-type').value`), 'Lorry');
+    await page.evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent.startsWith('Edit Car')).click(), true`);
+    await waitFor(page, `document.querySelector('#vehicle-kind')?.value === 'passenger' && document.querySelector('#vehicle-luggage') && !document.querySelector('#vehicle-load')`, 'a passenger category: no load');
   });
 });

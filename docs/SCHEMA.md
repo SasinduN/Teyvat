@@ -29,6 +29,8 @@
 | `0021_site_stats_plain_copy.sql` | `site_settings.stats` (up to four); plainer seed copy, replacing only text still equal to the seed |
 | `0022_when_to_go.sql` | `destinations.best_months`, filled from `best_time` where the text is clear; `site_settings.when_to_go_explainer`, with its fact-checked default (`docs/reviews/when-to-go-sources.md`) |
 | `0023_attractions.sql` | `attractions` (places near a destination, drafts by default) and `content_imports` (what `npm run content:import` wrote, so it never overwrites an admin's edit) |
+| `0030_tour_categories.sql` | `tour_categories` (8 travel styles, seeded) and `tour_category_links`; `tours.price_from` may be NULL ("Price on request"); no tour may have the id `category` |
+| `0031_tour_drafts.sql` | `tours.best_months` (months 1 to 12, empty by default); `content_imports` may record tours (`npm run content:import`'s drafts) |
 
 **Where the rules live.** There is no row-level security: every connection is
 the API's single database role. Rules are enforced in two layers:
@@ -170,9 +172,10 @@ an inline literal in the original data file (now `scripts/fixtures/experiences.t
 | `image` | `text` | `image` | |
 | `highlights` | `text[]` | `highlights` | |
 | `included_places` | `text[]` | `includedPlaces` | |
-| `price_from` | `numeric(10,2)` | `priceFrom` | |
-| `category` | `text` | `category` | constrained union |
+| `price_from` | `numeric(10,2)` NULL | `priceFrom` | NULL (or 0): "Price on request" (0030) |
+| `category` | `text` | `category` | constrained union; no longer shown since 0030 (`tour_category_links` replaced it) |
 | `itinerary` | `jsonb` | `itinerary` | see below |
+| `best_months` | `integer[]` | (not mapped) | months 1 to 12, sorted (0031); empty: not set. Edited in the admin; the drafts say theirs in their text |
 
 `itinerary` is `jsonb` rather than a child table: it is always read and written
 as a whole with its parent tour, never queried across tours, and ordering
@@ -213,6 +216,35 @@ mistyped coordinates.
   tours.
 - **Tests:** `resetContent()` re-adds `tours.route`, replays 0002 and then
   0007, so every reset runs the real conversion.
+
+## `tour_categories` → `TourCategory` (since 0030; 8 rows)
+
+A travel style with its page at `/tours/category/<id>` (`docs/plans/tour-categories.md`).
+
+| Column | Type | Domain field | Notes |
+| --- | --- | --- | --- |
+| `id` | `text` PK | `id` | the slug |
+| `name` | `text` | `name` | the tile, the Tours menu, the footer, a tour card's label |
+| `heading` | `text` | `heading` | the page's h1 and title |
+| `short_intro` | `text` | `shortIntro` | at most 300 characters; the tile and the meta description |
+| `long_intro` | `text` | `intro` | paragraphs separated by a blank line |
+| `image` | `text` NULL | `image` | `https://` only; seeded from a destination's verified photo |
+| `best_time_note` | `text` NULL | `bestTimeNote` | only where a source supports it; links to `/when-to-go` |
+
+Plus `sort_order`, `published`, timestamps. A category still on its seed photo shows
+that destination's verified photo once it's in R2 (`shared/photo-corrections.ts`).
+
+## `tour_category_links` (since 0030)
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `tour_id` | `text` | FK `tours`, `ON DELETE CASCADE` |
+| `category_id` | `text` | FK `tour_categories`, `ON DELETE CASCADE` |
+| `position` | `integer` | the tour's own order; 0 is its card's label |
+
+Primary key `(tour_id, category_id)`. `GET /api/content` gives each tour
+`category_ids` (published categories only, in order); the admin's tour form reads
+and writes them with the tour (`category_ids`, left out: unchanged).
 
 ## `articles` → `Article` (6 rows)
 

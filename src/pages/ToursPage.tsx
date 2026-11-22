@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { PageHero } from '@/components/PageHero';
+import { TailorMadeCard } from '@/components/TailorMadeCard';
+import { TourCategoryRow } from '@/components/TourCategoryRow';
 import { ToursSection } from '@/components/ToursSection';
 import { usePageTitle, usePublicSite } from '@/context/PublicSiteContext';
 import { useTours } from '@/hooks/useSiteContent';
@@ -8,8 +10,8 @@ import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
 /**
- * `/tours`: the home page's tour cards, as they are. "View route on map"
- * goes to the home page's map with that tour's route showing.
+ * `/tours`: the tour categories (each a link to its page), then every tour, then the
+ * tailor-made card. "View route on map" goes to the Explore map with that tour's route.
  */
 export function ToursPage() {
   usePageTitle(PAGE_NAMES.tours);
@@ -25,11 +27,17 @@ export function ToursPage() {
         title="Tours"
         subtitle={PAGE_DESCRIPTIONS.tours}
       />
+      <Section name="TourCategoryRow">
+        <TourCategoryRow />
+      </Section>
       <Section name="ToursSection">
         <ToursSection
           onOpenInquiry={openInquiry}
           onViewRoute={(tour) => navigate(paths.tourOnMap(tour.id))}
         />
+      </Section>
+      <Section name="TailorMadeCard">
+        <TailorMadeCard />
       </Section>
     </>
   );

@@ -8,9 +8,12 @@ import './test-db';
  */
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { after, before, beforeEach, describe, mock, test } from 'node:test';
 
-import { blankLocation, type BookingInput, type BookingRecord } from '../../shared/booking';
+import { blankLocation, type BookingInput, type BookingRecord, type BookingVehicle } from '../../shared/booking';
 import { createApp } from '../src/app';
 import { BRAND } from '../../shared/brand';
 import { dispatchBookingNotifications } from '../src/bookings/notifications';
@@ -31,6 +34,20 @@ import {
   type RunningApp
 } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
+import { SEEDED_VEHICLES, seeded } from './vehicle-categories';
+
+const MIGRATION_0028 = readFileSync(
+  resolve(dirname(fileURLToPath(import.meta.url)), '../../db/migrations/0028_bus_categories.sql'),
+  'utf8'
+);
+const MIGRATION_0027 = readFileSync(
+  resolve(dirname(fileURLToPath(import.meta.url)), '../../db/migrations/0027_vehicle_categories.sql'),
+  'utf8'
+);
+const MIGRATION_0029 = readFileSync(
+  resolve(dirname(fileURLToPath(import.meta.url)), '../../db/migrations/0029_mini_lorry.sql'),
+  'utf8'
+);
 
 const valid = (): BookingInput => ({
   tourId: null,
@@ -360,6 +377,142 @@ describe('bookings switched on', () => {
       body: JSON.stringify({ id: 'car', name: 'Car', type: 'Car', passengerCapacity: null, luggageCapacity: null, acceptingRequests: true })
     });
     assert.equal(bad.status, 400);
+  });
+
+  test('vehicle categories (0027): the catalogue has every card field, in the admin\'s order', async () => {
+    const c = await (await fetch(`${app.baseUrl}/api/bookings/catalog`)).json();
+    const vehicles: BookingVehicle[] = c.vehicles.filter((v: BookingVehicle) => v.id !== 'test-car');
+    assert.deepEqual(vehicles, SEEDED_VEHICLES, 'the migration and server/test/vehicle-categories.ts agree');
+  });
+
+  // Five requests: the rate limit is 5 per IP in 15 minutes, refused ones included.
+  test('vehicle categories: the server takes the AC Bus up to 20 and the Bus up to 52, and no more', async () => {
+    const ride = (vehicleId: string, passengers: number) =>
+      submitRide({ details: { ...rideDetails(), vehicleId, passengers }, callbackPhone: '+94 771234567' });
+    assert.equal((await ride('ac-bus', 20)).status, 201);
+    const over = await ride('ac-bus', 21);
+    assert.equal(over.status, 400);
+    assert.match((await over.json()).error.message, /exceeds vehicle capacity/);
+    assert.equal((await ride('bus', 52)).status, 201);
+    assert.equal((await ride('bus', 53)).status, 400);
+    assert.equal((await ride('van', 2)).status, 400, 'a category switched off takes nobody');
+  });
+
+  test("vehicle categories: 0028 replaces only 0027's placeholder bus, and keeps an admin's edit", async () => {
+    const bus = () => pool.query(`select min_passengers, passenger_capacity, luggage_per_passenger, accepting_requests, description
+      from public.booking_vehicles where id = 'bus'`).then((r) => r.rows[0]);
+    const placeholder = `update public.booking_vehicles set min_passengers = 10, passenger_capacity = 30, luggage_per_passenger = null,
+      accepting_requests = false, description = 'A coach for larger groups and tours.' where id = 'bus'`;
+    try {
+      await pool.query(placeholder);
+      await pool.query(MIGRATION_0028);
+      assert.deepEqual(await bus(), { min_passengers: 1, passenger_capacity: 52, luggage_per_passenger: 2, accepting_requests: true, description: seeded('bus').description });
+
+      await pool.query(placeholder);
+      await pool.query("update public.booking_vehicles set passenger_capacity = 40, description = 'Staff wording' where id = 'bus'");
+      await pool.query(MIGRATION_0028);
+      assert.deepEqual(await bus(), { min_passengers: 10, passenger_capacity: 40, luggage_per_passenger: null, accepting_requests: false, description: 'Staff wording' }, "an admin's edit stays");
+      assert.equal(Number((await pool.query("select count(*) from public.booking_vehicles where id = 'ac-bus'")).rows[0].count), 1, 'the AC Bus once');
+    } finally {
+      await pool.query(`update public.booking_vehicles set min_passengers = 1, passenger_capacity = 52, luggage_per_passenger = 2,
+        accepting_requests = true, description = $1 where id = 'bus'`, [seeded('bus').description]);
+    }
+  });
+
+  test('goods (0029): the server refuses the Mini Lorry for a ride or a tour request; nothing is stored', async () => {
+    const ride = await submitRide({ details: { ...rideDetails(), vehicleId: 'mini-lorry', passengers: 1 }, callbackPhone: '+94 771234567' });
+    assert.equal(ride.status, 400);
+    assert.match((await ride.json()).error.message, /goods, not passengers/);
+    assert.equal((await submit({ ...valid(), vehicleId: 'mini-lorry', passengers: 1 })).status, 400);
+    assert.equal(await count('bookings'), 0);
+  });
+
+  test("goods (0029): a second run changes nothing, an existing lorry row stays, and the admin's SUV stays", async () => {
+    const lorry = () => pool.query(`select name, type, kind, max_load_kg, passenger_capacity, luggage_capacity, accepting_requests, description
+      from public.booking_vehicles where id = 'mini-lorry'`).then((r) => r.rows[0]);
+    const suv = () => pool.query("select passenger_capacity, luggage_capacity, accepting_requests from public.booking_vehicles where id = 'suv'").then((r) => r.rows[0]);
+    const seededLorry = { name: 'Mini Lorry', type: 'Lorry', kind: 'goods', max_load_kg: 100, passenger_capacity: 1, luggage_capacity: null, accepting_requests: true, description: seeded('mini-lorry').description };
+    try {
+      await pool.query(MIGRATION_0029);
+      assert.deepEqual(await lorry(), seededLorry, 'a second run');
+      assert.equal(Number((await pool.query("select count(*) from public.booking_vehicles where id = 'mini-lorry'")).rows[0].count), 1);
+
+      // The SUV's numbers come from Admin → Bookings (5 passengers, 6 bags); 0029 never touches them.
+      await pool.query("update public.booking_vehicles set passenger_capacity = 5, luggage_capacity = 6 where id = 'suv'");
+      await pool.query("update public.booking_vehicles set max_load_kg = 120, accepting_requests = false, description = 'Staff wording' where id = 'mini-lorry'");
+      await pool.query(MIGRATION_0029);
+      assert.deepEqual(await suv(), { passenger_capacity: 5, luggage_capacity: 6, accepting_requests: true }, "the admin's SUV");
+      assert.deepEqual(await lorry(), { ...seededLorry, max_load_kg: 120, accepting_requests: false, description: 'Staff wording' }, "an admin's lorry edit stays");
+
+      // The database holds the goods rules too.
+      await assert.rejects(pool.query("update public.booking_vehicles set luggage_capacity = 2 where id = 'mini-lorry'"), /booking_vehicles_goods_rules/, 'no bags for goods');
+      await assert.rejects(pool.query("update public.booking_vehicles set max_load_kg = null, accepting_requests = true where id = 'mini-lorry'"), /booking_vehicles_goods_rules/, 'a load before taking requests');
+      await assert.rejects(pool.query("update public.booking_vehicles set max_load_kg = 100 where id = 'car'"), /booking_vehicles_goods_rules/, 'no load for passengers');
+    } finally {
+      await pool.query("update public.booking_vehicles set passenger_capacity = 5, luggage_capacity = 3 where id = 'suv'");
+      await pool.query("update public.booking_vehicles set max_load_kg = 100, accepting_requests = true, description = $1 where id = 'mini-lorry'", [seeded('mini-lorry').description]);
+    }
+  });
+
+  test('goods (0029): the admin saves a goods category, and refuses one taking requests without a load', async () => {
+    const put = (body: unknown) => fetch(`${app.baseUrl}/api/admin/booking-vehicles/mini-lorry`, {
+      method: 'PUT',
+      headers: { ...browserHeaders(app), ...withSession(adminToken) },
+      body: JSON.stringify(body)
+    });
+    const edited = { ...seeded('mini-lorry'), maxLoadKg: 120, passengerCapacity: 1, exampleModels: ['Tata Ace'] };
+    try {
+      assert.equal((await put(edited)).status, 200);
+      const list = await (await fetch(`${app.baseUrl}/api/admin/booking-vehicles`, { headers: withSession(adminToken) })).json();
+      assert.deepEqual(list.vehicles.find((v: BookingVehicle) => v.id === 'mini-lorry'), edited);
+      assert.equal((await put({ ...edited, maxLoadKg: null })).status, 400, 'taking requests needs a load');
+      assert.equal((await put({ ...edited, luggageCapacity: 2 })).status, 400, 'goods have no bags');
+      assert.equal((await put({ ...edited, kind: 'passenger' })).status, 400, 'a passenger category has no load');
+    } finally {
+      assert.equal((await put(seeded('mini-lorry'))).status, 200);
+    }
+  });
+
+  test("vehicle categories: the admin's save keeps every new field, and refuses an image from elsewhere", async () => {
+    const put = (body: unknown) => fetch(`${app.baseUrl}/api/admin/booking-vehicles/van`, {
+      method: 'PUT',
+      headers: { ...browserHeaders(app), ...withSession(adminToken) },
+      body: JSON.stringify(body)
+    });
+    const edited = { ...seeded('van'), description: 'Edited by staff.', exampleModels: ['Toyota HiAce'], minPassengers: 2, sortOrder: 5, icon: 'bus', imageUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957' };
+    try {
+      assert.equal((await put(edited)).status, 200);
+      const list = await (await fetch(`${app.baseUrl}/api/admin/booking-vehicles`, { headers: withSession(adminToken) })).json();
+      assert.deepEqual(list.vehicles.find((v: BookingVehicle) => v.id === 'van'), edited);
+      assert.equal((await put({ ...edited, imageUrl: 'https://example.com/van.png' })).status, 400, 'not on the image allow-list');
+      assert.equal((await put({ ...edited, minPassengers: 10 })).status, 400, 'a minimum above the capacity');
+      assert.equal((await put({ ...edited, icon: 'rocket' })).status, 400, 'only the seven icons');
+      assert.equal((await put({ ...edited, imageUrl: '/images/vehicles/van.svg' })).status, 400, 'images come from the media library');
+    } finally {
+      assert.equal((await put(seeded('van'))).status, 200);
+    }
+  });
+
+  test("vehicle categories: 0027 moves Car from 5 to 4 only while it holds 0018's numbers, and keeps admin text", async () => {
+    const car = () => pool.query("select passenger_capacity, luggage_capacity, description from public.booking_vehicles where id = 'car'").then((r) => r.rows[0]);
+    // 0027's type list predates the lorry (0029), so it replays without that row, as on a database 0029 hasn't reached.
+    const replay0027 = async () => {
+      await pool.query("delete from public.booking_vehicles where id = 'mini-lorry'");
+      await pool.query(MIGRATION_0027);
+    };
+    try {
+      await pool.query("update public.booking_vehicles set passenger_capacity = 5, luggage_capacity = 3 where id = 'car'");
+      await replay0027();
+      assert.deepEqual(await car(), { passenger_capacity: 4, luggage_capacity: 4, description: seeded('car').description });
+
+      await pool.query("update public.booking_vehicles set passenger_capacity = 6, luggage_capacity = 2, description = 'Staff wording' where id = 'car'");
+      await replay0027();
+      assert.deepEqual(await car(), { passenger_capacity: 6, luggage_capacity: 2, description: 'Staff wording' }, "an admin's edit stays");
+    } finally {
+      await pool.query("update public.booking_vehicles set passenger_capacity = 4, luggage_capacity = 4, description = $1 where id = 'car'", [seeded('car').description]);
+      await pool.query(MIGRATION_0028);
+      await pool.query(MIGRATION_0029);
+    }
   });
 
   test('a database failure is a generic 500, never a success', async () => {

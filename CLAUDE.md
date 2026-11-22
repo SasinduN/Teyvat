@@ -48,6 +48,11 @@ this file or anywhere else in git.
 | N | Nearby attractions: `attractions` (0023), the Nearby cards, small map markers, search, the wishlist; six new destinations and 30 attractions researched, imported as drafts by `npm run content:import` (`docs/reviews/places-sources.md`) | done (#57) |
 | B | Rebrand (the name, tagline and legal name are in `shared/brand.ts`): one brand source (`shared/brand.ts`, Admin → Settings, 0024), the wordmark and SL favicon, JSON-LD, `/site.webmanifest`, seed text (0025), `npm run brand:audit`, `npm run screenshots -- --brand` | in review |
 | Q | Bug and performance audit (`docs/reviews/audit-2026-11.md`): the `<body>` shift, compression, `/api/content` and header photos preloaded, `browser-hero-contrast`'s hang | done (#62) |
+| V | Ride page redesign (`docs/plans/ride-vehicle-picker.md`): vehicle categories (0027), the card picker, the passenger stepper, the phone bar, and the hero's "Book a ride" slide and button | done (#65) |
+| V+ | The buses (0028: AC Bus 1–20, Bus 1–52, bags per passenger) and the sketch-style icon set (plan, part 11) | done (#66) |
+| V++ | The Mini Lorry: goods mode on `/booking` (0029, plan part 12) | done (#67) |
+| TS | Tours on phones: a row to swipe, with a counter, dots and arrows (`docs/plans/tours-swipe-row.md`) | done (#68) |
+| TC | Tour categories (`docs/plans/tour-categories.md`): 0030, `/tours` row, a page per category, the Tours menu, the tailor-made card (PR 1); new tour drafts through `content:import` (PR 2) | done (#69, #70) |
 | R2 | Move R2 to the client's Cloudflare account: `images.serendibluxetours.com` always allowed, `R2_PREVIOUS_PUBLIC_BASE_URL`, `media:rebase` covers the credits, `docs/runbooks/move-r2-to-client.md` | in review |
 
 Update the Status column when a phase lands.
@@ -264,6 +269,32 @@ Update the Status column when a phase lands.
   a WhatsApp draft to `site_settings.whatsapp_number`, for the visitor to
   review and send. `/booking?tour=…`, the API and the admin's records stay.
 
+- **Vehicle categories** (0027, `shared/booking.ts`, `docs/plans/ride-vehicle-picker.md`):
+  - Passenger counts never include the driver: every ride comes with one. The page says "Driver
+    included" once and words capacity as passengers, never seats.
+  - `min_passengers` to `passenger_capacity` is the range; `checkCapacity`, the cards, the summary
+    and the WhatsApp line all read it (`passengerRange`, `smallestFit`, `maxPassengers`). No seat
+    numbers in components.
+  - The ride page offers only categories taking requests, in `sort_order`. Mini, Car, SUV, AC Bus and
+    Bus are on (0028); Mini Van and Van are seeded off until the owner confirms them.
+  - Luggage is one number for the vehicle (`luggage_capacity`) or per passenger
+    (`luggage_per_passenger`, the buses' 2), never both: `bagsLabel`, `groupBags`. `air_conditioned`
+    puts an AC badge on the card.
+  - Each category shows its icon (`VehicleIcon`: eight inline sketch-style SVGs, outlines in the
+    `--vehicle-ink` filled with the card's own colour, `--vehicle-paper`, so a selected card recolours
+    them), unless Admin → Bookings sets an image from the media library, which replaces it. Never a
+    committed image. The wobble is one SVG filter per page (`VehicleSketchFilter`), from 640 px up.
+  - **Goods** (0029, plan part 12): `kind` is `passenger` or `goods`. A goods category (the Mini
+    Lorry, 100 kg) has `max_load_kg` and no luggage, and its `passenger_capacity` is its seats next
+    to the driver; nobody rides in the back. It appears only on the ride page's Goods tab (shown
+    while one takes requests), never in the passenger picker or the tour selector, and
+    `checkCapacity` refuses it for a passenger request. Goods go through WhatsApp only
+    (`goodsSchema`, `checkLoad`, `checkRiders`, `goodsWhatsAppUrl`). The weight is optional.
+  - The floating Book a ride steps out while the hero's own Book a ride is on screen
+    (`FloatingActions`); `browser-floating-visible` expects it.
+  - The hero's "Book a ride" slide (second) and button exist only with bookings on
+    (`shared/ride-slide.ts`, which also holds the slide's image); `browser-hero-booking`.
+
 - **WhatsApp button** (`src/components/WhatsAppButton.tsx`,
   `shared/whatsapp.ts`):
   - Hidden while `site_settings.whatsapp_number` is NULL. A plain `wa.me`
@@ -275,7 +306,9 @@ Update the Status column when a phase lands.
   - **They hold still while the page scrolls.** Cards, links and buttons pass underneath
     (dodging every row looked broken, #54). 150 ms after the scroll stops they look once, and
     move in one 280 ms ease-out (`--te-float-lift`, no animation with reduced motion), only for
-    `AVOID`: the hero's slide controls, the map's controls and Quick Jump, scroll-to-top, the
+    `AVOID`: the hero's slide controls, the map's controls and Quick Jump, `/explore`'s search
+    form (`data-float-avoid`: under them at the top on phones; with it on the page, the h1 too,
+    so they never rise onto the headline), scroll-to-top, the
     footer's last row. Rising takes 16 px extra and coming down needs that room, so a boundary
     can't flip them. Don't add anything that scrolls away to `AVOID`. The footer's padding
     keeps the end of each page clear. `browser-floating-visible` counts the moves.
@@ -290,6 +323,29 @@ Update the Status column when a phase lands.
   redirects them in the browser; phase 8b adds the server's 301. Keep both.
   It also sends the home page's old sections (`/#planner`, `/#journal`…)
   to their pages (`LEGACY_HOME_SECTIONS`, `shared/site-paths.ts`).
+- **Tours on phones** (`ToursSection`, `docs/plans/tours-swipe-row.md`): below 768 px the list is a
+  scroll-snap row, a card `min(85vw, 26rem)`, with a counter, pointer-only dots (`aria-hidden`,
+  `tabindex="-1"`) and Previous/Next shown on keyboard focus. Its controls keep out of the floating
+  stack's column (`--tour-float-clear`) rather than joining `AVOID`. 768 px and up is unchanged, and
+  `browser-home-baseline` holds ToursSection's 1280 px to `d233e32` (`phoneBaseline` moves only 390 px).
+- **Tour categories** (0030, `docs/plans/tour-categories.md`, `TourCategoryRow`, `TourCategoryPage`, `TailorMadeCard`):
+  - `tour_categories` (8 seeded, published) and `tour_category_links` (a tour in several, in order; the first is
+    its card's label). `tours.category` stays in the database and the admin, shown nowhere.
+  - `/tours/category/<id>`: 200 with its own head, a BreadcrumbList and an ItemList (names and links only: no
+    prices, no ratings); 404 when unknown or unpublished; `/tours/category` 301s to `/tours`. No tour may have
+    the id `category`. In the sitemap and `llms.txt`.
+  - Tours is a header group: All tours, then the published categories, from `/api/content`
+    (`navItems(features, categories)`). The Footer's list follows. `activeNavigationTarget` takes the longest match.
+  - A missing or 0 price reads "Price on request" (`shared/tour-price.ts`), never blank or $0.
+  - The tailor-made card ends every tour list, after it (the swipe row counts tours only): the enquiry form with
+    "Tailor-made trip", and a WhatsApp link while a number is set.
+  - On phones the category row stops short of the floating buttons' column, like the tour cards' buttons;
+    nothing new in `AVOID` (`browser-tour-categories`).
+  - Seed photos: a category on its seed photo shows the destination's verified one (`PHOTO_CORRECTIONS.tour_categories`).
+  - Tour drafts (0031, `docs/plans/new-tours.md`): `scripts/content/tours.json` (11, unpublished, no price,
+    `best_months` set) goes in through `npm run content:import` after `places.json` (`server/src/tours-import.ts`),
+    with the places' rules: never over an admin's edit, never re-creating a deleted tour. Sources and seasons:
+    `docs/reviews/new-tours-sources.md`. The hill train runs only from Nanu Oya since Cyclone Ditwah (20 Jun 2026).
 - **Pages and links** (phase 8):
   - Routes are in `src/App.tsx`; every public URL is built with `paths`
     (`shared/site-paths.ts`), and every link is a real `<a href>` (`Link`,

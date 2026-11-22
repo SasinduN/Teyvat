@@ -83,6 +83,15 @@
   --accent-on-photo: #EBD6A4;
   --on-inverse: var(--palette-ivory-text);
   --on-accent: var(--palette-charcoal-ink);
+  /*
+   * The vehicle icons (VehicleIcon, vehicle-icon.css), sketch style: outlines in the ink, charcoal
+   * in the light theme and the design canvas's #ECEAE4 on dark ground (the dark theme, the hero's
+   * ride slide); gold for hubs, lights, cargo and the bus stripe; a selected (gold) card's ink is dark.
+   */
+  --vehicle-ink-on-dark: #ECEAE4;
+  --vehicle-ink: var(--palette-charcoal-ink);
+  --vehicle-gold: #F5C518;
+  --vehicle-selected-ink: #161616;
   --on-secondary: var(--white);
   --border: var(--palette-border);
   --border-strong: var(--palette-border-strong);
@@ -223,6 +232,7 @@
   --button-secondary-bg: var(--palette-night-sky);
   --button-secondary-hover: var(--palette-night-sky-raised);
   --button-secondary-text: var(--palette-ivory-text);
+  --vehicle-ink: var(--vehicle-ink-on-dark);
   --glass-saturation: 112%;
   --glass-noise-opacity: 0;
 }

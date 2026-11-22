@@ -1,3 +1,4 @@
+import { hasTourPrice, PRICE_ON_REQUEST } from '@shared/tour-price';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { HeroSection } from '@/components/HeroSection';
@@ -46,7 +47,7 @@ function RouteList() {
               <Link to={paths.tour(tour.id)} className="te-ed-list__link">
                 <span className="te-ed-list__title font-heading">{tour.title}</span>
                 <span className="te-ed-meta">{tour.route.join(', ')}</span>
-                <span className="te-ed-list__price">{tour.days} days, from ${tour.priceFrom}</span>
+                <span className="te-ed-list__price">{tour.days} days, {hasTourPrice(tour.priceFrom) ? `from $${tour.priceFrom}` : PRICE_ON_REQUEST.toLowerCase()}</span>
               </Link>
             </li>
           ))}

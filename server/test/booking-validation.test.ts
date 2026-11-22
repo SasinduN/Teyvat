@@ -10,13 +10,24 @@ import {
   bookingDataSchema,
   bookingSchema,
   canTransition,
+  bagsLabel,
   checkCapacity,
+  checkLoad,
+  checkRiders,
+  groupBags,
+  maxPassengers,
+  offeredGoodsVehicle,
+  offeredVehicle,
+  passengerRange,
+  smallestFit,
   sriLankaToday,
   tripInstant,
+  vehicleRange,
   vehicleSchema,
   type BookingInput
 } from '../../shared/booking';
 import { currentPickup, pickupWarning } from '../../src/lib/booking-geolocation';
+import { SEEDED_VEHICLES, seeded, switchedOn } from './vehicle-categories';
 
 const valid = (): BookingInput => ({
   tourId: null,
@@ -86,11 +97,124 @@ test('Sri Lanka time: midnight and the conversion are the same in any browser ti
 });
 
 test('capacity: a real one is required, and a full vehicle is refused', () => {
-  const v = { id: 'test-car', name: 'Test car', type: 'Car' as const, passengerCapacity: 3, luggageCapacity: null, acceptingRequests: true };
+  const v = { ...seeded('mini'), id: 'test-car', name: 'Test car' };
   assert.equal(checkCapacity(v, 3), null);
   assert.ok(checkCapacity(v, 4));
   assert.ok(!vehicleSchema.safeParse({ ...v, passengerCapacity: null }).success);
   assert.ok(checkCapacity({ ...v, acceptingRequests: false }, 1));
+});
+
+test("capacity: every category's own minimum and maximum, from its data", () => {
+  for (const id of SEEDED_VEHICLES.filter((v) => v.kind === 'passenger').map((v) => v.id)) {
+    const v = switchedOn(id);
+    const max = v.passengerCapacity!;
+    assert.equal(checkCapacity(v, v.minPassengers), null, `${id}: its minimum fits`);
+    assert.equal(checkCapacity(v, max), null, `${id}: its maximum fits`);
+    assert.equal(checkCapacity(v, max + 1), 'Passenger count exceeds vehicle capacity.', `${id}: one over`);
+    if (v.minPassengers > 1) assert.match(checkCapacity(v, v.minPassengers - 1)!, /at least/, `${id}: one under`);
+  }
+  // The seeded numbers themselves (passengers, never counting the driver).
+  assert.deepEqual(SEEDED_VEHICLES.filter((v) => v.kind === 'passenger').map((v) => [v.id, v.minPassengers, v.passengerCapacity]), [
+    ['mini', 1, 3], ['car', 1, 4], ['suv', 1, 5], ['mini-van', 1, 6], ['van', 1, 9], ['ac-bus', 1, 20], ['bus', 1, 52]
+  ]);
+});
+
+test('capacity: the AC Bus takes 1 to 20, the Bus any group up to 52, both taking requests (0028)', () => {
+  const ac = seeded('ac-bus');
+  const bus = seeded('bus');
+  for (const [v, max] of [[ac, 20], [bus, 52]] as const) {
+    assert.equal(v.acceptingRequests, true, `${v.id} is on`);
+    assert.equal(checkCapacity(v, 1), null, `${v.id}: one passenger`);
+    assert.equal(checkCapacity(v, max), null, `${v.id}: ${max}`);
+    assert.equal(checkCapacity(v, max + 1), 'Passenger count exceeds vehicle capacity.', `${v.id}: ${max + 1}`);
+  }
+  assert.equal(passengerRange(ac), 'up to 20 passengers');
+  assert.equal(passengerRange(bus), 'up to 52 passengers');
+  assert.equal(ac.airConditioned, true);
+  assert.equal(bus.airConditioned, false);
+});
+
+test('capacity: a category with a minimum still names it (none is seeded with one now)', () => {
+  const coach = { ...seeded('bus'), minPassengers: 30 };
+  assert.equal(checkCapacity(coach, 29), 'This category takes at least 30 passengers.');
+  assert.equal(checkCapacity(coach, 30), null);
+  assert.equal(passengerRange(coach), '30–52 passengers');
+});
+
+test('bags: one number for the vehicle, or per passenger worked out for the group', () => {
+  assert.equal(bagsLabel(seeded('car')), '4 bags');
+  assert.equal(bagsLabel(seeded('ac-bus')), '2 bags each');
+  assert.equal(bagsLabel(seeded('bus')), '2 bags each');
+  assert.equal(bagsLabel(seeded('van')), null, 'unknown: no badge');
+  assert.equal(groupBags(seeded('ac-bus'), 12), 24, '12 passengers, 2 each');
+  assert.equal(groupBags(seeded('bus'), 52), 104);
+  assert.equal(groupBags(seeded('bus'), NaN), null, 'no count yet');
+  assert.equal(groupBags(seeded('car'), 3), 4, 'the vehicle number, whatever the group');
+  assert.ok(!vehicleSchema.safeParse({ ...seeded('car'), luggagePerPassenger: 2 }).success, 'not both');
+  assert.ok(vehicleSchema.safeParse({ ...seeded('bus') }).success);
+});
+
+test('capacity: a minimum above the maximum is refused, and the words never count the driver', () => {
+  assert.ok(!vehicleSchema.safeParse({ ...seeded('car'), minPassengers: 5 }).success);
+  assert.ok(vehicleSchema.safeParse({ ...seeded('car'), imageUrl: '' }).success, 'an empty image is none');
+  assert.ok(!vehicleSchema.safeParse({ ...seeded('car'), imageUrl: 'javascript:alert(1)' }).success);
+  assert.ok(!vehicleSchema.safeParse({ ...seeded('car'), imageUrl: '/images/../secret.svg' }).success);
+  assert.ok(!vehicleSchema.safeParse({ ...seeded('car'), icon: 'rocket' }).success, 'one of the eight icons');
+  assert.ok(vehicleSchema.safeParse({ ...seeded('car'), icon: 'ac-bus' }).success);
+  assert.equal(vehicleSchema.parse({ ...seeded('car'), icon: undefined }).icon, 'car', 'the car by default');
+  assert.equal(passengerRange(seeded('car')), 'up to 4 passengers');
+  assert.equal(passengerRange({ minPassengers: 1, passengerCapacity: 1 }), 'up to 1 passenger');
+});
+
+test("the picker: only categories taking requests, the smallest that fits, and the stepper's limit", () => {
+  assert.deepEqual(SEEDED_VEHICLES.filter(offeredVehicle).map((v) => v.id), ['mini', 'car', 'suv', 'ac-bus', 'bus']);
+  assert.equal(smallestFit(SEEDED_VEHICLES, 2)?.id, 'mini');
+  assert.equal(smallestFit(SEEDED_VEHICLES, 4)?.id, 'car');
+  assert.equal(smallestFit(SEEDED_VEHICLES, 5)?.id, 'suv');
+  assert.equal(smallestFit(SEEDED_VEHICLES, 6)?.id, 'ac-bus', 'the vans are off, so the AC Bus');
+  assert.equal(smallestFit(SEEDED_VEHICLES, 20)?.id, 'ac-bus');
+  assert.equal(smallestFit(SEEDED_VEHICLES, 21)?.id, 'bus');
+  assert.equal(smallestFit(SEEDED_VEHICLES, 52)?.id, 'bus');
+  assert.equal(smallestFit(SEEDED_VEHICLES, 53), null);
+  assert.equal(maxPassengers(SEEDED_VEHICLES), 52, "the stepper's limit is the Bus's");
+  const allOn = SEEDED_VEHICLES.map((v) => switchedOn(v.id));
+  assert.equal(smallestFit(allOn, 7)?.id, 'van');
+  assert.equal(smallestFit(allOn, 12)?.id, 'ac-bus');
+  assert.equal(maxPassengers(allOn), 52);
+  assert.equal(maxPassengers([]), 1);
+  // The lorry carries goods: never offered, suggested or counted for passengers.
+  assert.ok(!allOn.filter(offeredVehicle).some((v) => v.id === 'mini-lorry'));
+  assert.notEqual(smallestFit(allOn, 1)?.id, 'mini-lorry');
+});
+
+test('goods: the Mini Lorry carries up to 100 kg, with one seat next to the driver (0029)', () => {
+  const lorry = seeded('mini-lorry');
+  assert.equal(lorry.kind, 'goods');
+  assert.equal(lorry.acceptingRequests, true, 'switched on');
+  assert.deepEqual(SEEDED_VEHICLES.filter(offeredGoodsVehicle).map((v) => v.id), ['mini-lorry']);
+  assert.equal(checkLoad(lorry, 100), null, '100 kg');
+  assert.equal(checkLoad(lorry, 101), 'The Mini Lorry carries up to 100 kg.');
+  assert.equal(checkLoad(lorry, null), null, 'no weight: not sure');
+  assert.match(checkLoad({ ...lorry, acceptingRequests: false }, 10)!, /not accepting/);
+  assert.match(checkLoad(seeded('car'), 10)!, /not accepting goods/, 'a passenger category takes no goods');
+  assert.equal(checkRiders(lorry, 0), null);
+  assert.equal(checkRiders(lorry, 1), null);
+  assert.equal(checkRiders(lorry, 2), 'The Mini Lorry has one seat next to the driver.');
+  assert.equal(checkCapacity(lorry, 1), 'This category carries goods, not passengers.', 'a ride or tour request is refused');
+  assert.equal(vehicleRange(lorry), 'up to 100 kg');
+  assert.equal(vehicleRange(seeded('car')), 'up to 4 passengers');
+  assert.equal(bagsLabel(lorry), null, 'no bags');
+});
+
+test('goods: a load only for goods, no bags for goods, and a load before taking requests', () => {
+  const lorry = seeded('mini-lorry');
+  assert.ok(vehicleSchema.safeParse(lorry).success);
+  assert.ok(!vehicleSchema.safeParse({ ...seeded('car'), maxLoadKg: 100 }).success, 'a passenger category has no load');
+  assert.ok(!vehicleSchema.safeParse({ ...lorry, luggageCapacity: 2 }).success, 'goods have no bags');
+  assert.ok(!vehicleSchema.safeParse({ ...lorry, luggagePerPassenger: 1 }).success);
+  assert.ok(!vehicleSchema.safeParse({ ...lorry, maxLoadKg: null }).success, 'taking requests needs a load');
+  assert.ok(vehicleSchema.safeParse({ ...lorry, maxLoadKg: null, acceptingRequests: false }).success, 'switched off, it can wait');
+  assert.equal(vehicleSchema.parse({ ...seeded('car'), kind: undefined, maxLoadKg: undefined }).kind, 'passenger', 'passengers by default');
 });
 
 test('the lifecycle: never confirmed by itself, never reopened', () => {

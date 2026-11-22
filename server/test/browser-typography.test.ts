@@ -46,6 +46,7 @@ const PAGES = [
   '/experiences/safari-yala',
   '/tours',
   '/tours/island-in-7-days',
+  '/tours/category/cultural',
   '/booking',
   '/about',
   '/photo-credits',

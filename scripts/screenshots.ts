@@ -15,7 +15,8 @@
  * `summary.md` there: identical, or how much differs and where. A PR lists
  * the pages that changed; the author drags those pairs into it on GitHub.
  *
- * `--text-size` sets the admin's text size in the "after" site only.
+ * `--text-size` sets the admin's text size in the "after" site only; with
+ * `--text-size-both`, in both, so a pair compares the same size.
  *
  * For a short run (the laptop's memory, a time limit): `--only-dark` skips the
  * light theme and `--no-states` the named states, so a set can go in batches.
@@ -38,6 +39,19 @@
  * phone menu, the admin's sign-in, light and dark, phone and laptop, and an email preview: the
  * new-enquiry email each version would send (subject, sender name, text), from its own
  * `composeEmail`, drawn as a plain message card.
+ *
+ * `--ride` takes only the ride page's pairs (docs/plans/ride-vehicle-picker.md): its states, light
+ * and dark, phone and laptop, the home hero's two slides and Admin → Bookings, with bookings on in both
+ * scratch databases. For a short retake: `--ride-states goods-empty,goods-filled` takes only those
+ * states (no hero, no admin), and `--phone-only` only the 375 px width (for pages too).
+ *
+ * `--tour-categories` takes only the twelve pairs for tour categories (docs/plans/tour-categories.md):
+ * `/tours` and a category's page (Beach), phone and laptop, light and dark; the Tours dropdown;
+ * the phone menu; Admin → Tour Categories and the tour form's categories. "Before", the category
+ * page is a 404, Tours is a plain link and the admin has neither.
+ *
+ * `--tour-form` takes only the tour editor, whole, on a laptop and a phone: two pairs (the new tour
+ * drafts' best months, docs/plans/new-tours.md).
  *
  * `--admin` adds the admin: the login page (empty, a password typed and
  * shown, after two wrong tries, locked), then (signed in as a throwaway
@@ -95,6 +109,7 @@ const { values } = parseArgs({
     'no-states': { type: 'boolean', default: false },
     admin: { type: 'boolean', default: false },
     'text-size': { type: 'string' },
+    'text-size-both': { type: 'boolean', default: false },
     /** A site's public URL: both versions show that site's R2 photos, as production does. */
     'live-photos': { type: 'string' },
     /** Every page opens with a saved wishlist, so /wishlist has cards and the header its count. */
@@ -107,6 +122,16 @@ const { values } = parseArgs({
     attractions: { type: 'boolean', default: false },
     /** Only the ten pairs for the rebrand: header, footer, hero, phone menu, admin sign-in, an email. */
     brand: { type: 'boolean', default: false },
+    /** Only the twelve pairs for tour categories: /tours, a category page, the menus, the admin. */
+    'tour-categories': { type: 'boolean', default: false },
+    /** Only the tour editor, whole, laptop and phone. */
+    'tour-form': { type: 'boolean', default: false },
+    /** Only the ride page's states, the home hero and Admin → Bookings, bookings on. */
+    ride: { type: 'boolean', default: false },
+    /** With --ride: only these states (comma-separated names), and no hero or admin. */
+    'ride-states': { type: 'string' },
+    /** With --ride: only the 375 px width. */
+    'phone-only': { type: 'boolean', default: false },
     out: { type: 'string' }
   },
   strict: true
@@ -225,7 +250,7 @@ async function prepare(site: Site): Promise<void> {
       await client.end();
     }
   }
-  if (site.label === 'after' && values['text-size']) {
+  if ((site.label === 'after' || values['text-size-both']) && values['text-size']) {
     const client = new Client({ connectionString: db });
     await client.connect();
     try {
@@ -234,7 +259,7 @@ async function prepare(site: Site): Promise<void> {
       await client.end();
     }
   }
-  if (values.admin || values['when-to-go'] || values.attractions) {
+  if (values.admin || values['when-to-go'] || values.attractions || values.ride || values['tour-categories'] || values['tour-form']) {
     const client = new Client({ connectionString: db });
     await client.connect();
     try {
@@ -254,7 +279,7 @@ async function prepare(site: Site): Promise<void> {
   // any variable that isn't set, so a deleted R2 key came back and only the base ran without R2.
   for (const key of ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET', 'R2_PUBLIC_BASE_URL', 'RESEND_API_KEY', 'NOTIFY_EMAIL_TO', 'NOTIFY_EMAIL_FROM']) env[key] = '';
   // The same for the switches: as the base would have them.
-  env.BOOKINGS_ENABLED = values['header-floating'] ? 'true' : '';
+  env.BOOKINGS_ENABLED = values['header-floating'] || values.ride ? 'true' : '';
   // The bucket's public origin, so the CSP lets the photos in. The rest only has to be set: nothing is uploaded.
   if (livePhotos) {
     Object.assign(env, { R2_ACCOUNT_ID: 'screenshots', R2_ACCESS_KEY_ID: 'screenshots', R2_SECRET_ACCESS_KEY: 'screenshots', R2_BUCKET: 'screenshots', R2_PUBLIC_BASE_URL: livePhotos.origin });
@@ -648,6 +673,69 @@ async function shootAttractions(chrome: Chrome, site: Site, out: string): Promis
   }
 }
 
+/** `--tour-categories`: twelve pairs. */
+const TOUR_CATEGORY_SHOTS: { name: string; viewport: typeof LAPTOP | typeof PHONE; dark?: boolean; path: string; kind: 'page' | 'dropdown' | 'menu' | 'admin'; whole?: boolean }[] = [
+  { name: 'tours-desktop', viewport: LAPTOP, path: '/tours', kind: 'page' },
+  { name: 'tours-desktop-dark', viewport: LAPTOP, dark: true, path: '/tours', kind: 'page' },
+  { name: 'tours-phone', viewport: PHONE, path: '/tours', kind: 'page' },
+  { name: 'tours-phone-dark', viewport: PHONE, dark: true, path: '/tours', kind: 'page' },
+  { name: 'category-beach-desktop', viewport: LAPTOP, path: '/tours/category/beach', kind: 'page' },
+  { name: 'category-beach-desktop-dark', viewport: LAPTOP, dark: true, path: '/tours/category/beach', kind: 'page' },
+  { name: 'category-beach-phone', viewport: PHONE, path: '/tours/category/beach', kind: 'page' },
+  { name: 'category-beach-phone-dark', viewport: PHONE, dark: true, path: '/tours/category/beach', kind: 'page' },
+  { name: 'tours-dropdown', viewport: LAPTOP, path: '/tours', kind: 'dropdown' },
+  { name: 'tours-phone-menu', viewport: PHONE, path: '/tours', kind: 'menu' },
+  { name: 'admin-tour-categories', viewport: LAPTOP, path: '/admin/tour-categories', kind: 'admin' },
+  { name: 'admin-tour-form-categories', viewport: LAPTOP, path: '/admin/tours/island-in-7-days', kind: 'admin' }
+];
+
+/** `--tour-form`: two pairs, the tour editor whole. */
+const TOUR_FORM_SHOTS: typeof TOUR_CATEGORY_SHOTS = [
+  { name: 'admin-tour-form-desktop', viewport: LAPTOP, path: '/admin/tours/wild-sri-lanka', kind: 'admin', whole: true },
+  { name: 'admin-tour-form-phone', viewport: PHONE, path: '/admin/tours/wild-sri-lanka', kind: 'admin', whole: true }
+];
+
+async function shootTourCategories(chrome: Chrome, site: Site, out: string, shots: typeof TOUR_CATEGORY_SHOTS): Promise<void> {
+  for (const shot of shots) {
+    const file = join(out, `${shot.name}-${site.label}.jpg`);
+    const dark = Boolean(shot.dark);
+    if (shot.kind === 'page') {
+      const page = await open(chrome, site.url + shot.path, shot.viewport, dark);
+      await settle(page);
+      await shoot(page, file, true);
+      await closePage(page);
+    } else if (shot.kind === 'dropdown' || shot.kind === 'menu') {
+      const page = await open(chrome, site.url + shot.path, shot.viewport, dark);
+      await settle(page);
+      await page.evaluate(
+        shot.kind === 'dropdown'
+          ? `[...document.querySelectorAll('.te-nav-trigger')].find((b) => b.textContent.trim() === 'Tours')?.click(), true`
+          : `document.querySelector('header button[aria-label*="menu" i]')?.click(), true`
+      );
+      await sleep(400);
+      await page.evaluate(QUIET);
+      await shoot(page, file, false);
+      await closePage(page);
+    } else {
+      const page = await openAdmin(chrome, `${site.url}/admin/login`, shot.viewport, dark);
+      const status = await page.evaluate<number>(`fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(${JSON.stringify(SHOTS_ADMIN)})
+      }).then((r) => r.status)`);
+      if (status !== 200) throw new Error(`[${site.label}] admin sign-in failed (${status})`);
+      await page.send('Page.navigate', { url: site.url + shot.path });
+      await waitFor(page, `document.querySelector('main h1') || document.querySelector('main')?.innerText.length > 40`, 10_000);
+      await page.evaluate(LOADED);
+      // The tour form: its categories (after), or where they go, by the price (before).
+      if (!shot.whole) await page.evaluate(`(document.querySelector('[data-tour-categories-field]') ?? document.querySelector('#field-price_from'))?.scrollIntoView({ block: 'center', behavior: 'instant' }), true`);
+      await page.evaluate(QUIET);
+      await shoot(page, file, Boolean(shot.whole) || shot.path.endsWith('tour-categories'));
+      await closePage(page);
+    }
+    console.log(`  ${shot.name}-${site.label}.jpg`);
+  }
+}
+
 /** `--brand`: ten pairs. */
 const BRAND_SHOTS: { name: string; viewport: typeof LAPTOP | typeof PHONE; dark?: boolean; kind: 'header' | 'footer' | 'hero' | 'menu' | 'login' | 'email' }[] = [
   { name: 'brand-header-desktop', viewport: LAPTOP, kind: 'header' },
@@ -746,6 +834,149 @@ async function shootBrand(chrome: Chrome, site: Site, out: string): Promise<void
   }
 }
 
+/** Sets a labelled field the way typing does, so React sees it (the ride form's fields, either version). */
+const FILL = (label: string, value: string) => `(() => {
+  const label = [...document.querySelectorAll('label')].find((l) => l.textContent.trim() === ${JSON.stringify(label)});
+  const input = label && document.getElementById(label.htmlFor);
+  if (!input) return false;
+  const proto = input.tagName === 'SELECT' ? HTMLSelectElement.prototype : input.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  Object.getOwnPropertyDescriptor(proto, 'value').set.call(input, ${JSON.stringify(value)});
+  input.dispatchEvent(new Event(input.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true }));
+  return true;
+})()`;
+/** Chooses a vehicle: a card's radio after, the dropdown before. */
+const CHOOSE = (id: string) => `(() => {
+  const radio = document.querySelector('.ride-vehicle__input[value="${id}"]');
+  if (radio) { radio.click(); return true; }
+  return ${FILL('Vehicle category', id)};
+})()`;
+const ROUTE = [FILL('Pickup location', 'Colombo airport'), FILL('Drop-off location', 'Galle'), FILL('Pickup date', '2099-12-20'), FILL('Pickup time', '09:00')];
+const ROUND_TRIP = `(document.querySelector('input[value=round_trip]')?.click(), true)`;
+/** The Goods tab (0029); before it there is none, so "before" stays on passengers. */
+const GOODS = `(document.querySelector('input[name=ride-mode][value=goods]')?.click(), true)`;
+const GOODS_WHAT = FILL('What are you moving?', 'Two suitcases, a bicycle and three boxes of books');
+const GOODS_WEIGHT = (kg: string) => FILL('Approximate weight in kg (optional)', kg);
+const GOODS_RIDER = `(document.querySelector('.ride-goods__rider input')?.click(), true)`;
+const GOODS_BACK = (load: string) => `(document.querySelector('input[name=ride-return-load][value=${load}]')?.click(), true)`;
+
+/**
+ * `--ride`: the ride page's states (nothing chosen, a vehicle chosen, a capacity error, the buses, a
+ * round trip, and the Goods tab: empty, filled in, over the weight limit, a round trip) at 1280 and
+ * 375 px, light and dark; the Admin → Bookings vehicle form (the Car, and the lorry); and the home hero with
+ * bookings on: its first slide and the "Book a ride" slide. With `--text-size 120`, the "after" site at
+ * 120%. Bookings are on in both scratch databases, and nowhere else.
+ * Before 0027 there is no Mini, so "before" shows the capacity error with the Car and 6 passengers.
+ */
+const RIDE_STATES: { name: string; steps: (before: boolean) => string[]; view?: string }[] = [
+  { name: 'ride-nothing-chosen', steps: () => [] },
+  { name: 'ride-vehicle-chosen', steps: () => [...ROUTE, FILL('Number of passengers', '2'), CHOOSE('car')] },
+  {
+    name: 'ride-capacity-error',
+    // Before, the error showed only on submitting; after, it shows as the count changes.
+    steps: (before) => before
+      ? [...ROUTE, CHOOSE('car'), FILL('Number of passengers', '6'), `(document.querySelector('.ride-form').requestSubmit(), true)`]
+      : [...ROUTE, CHOOSE('mini'), FILL('Number of passengers', '4')]
+  },
+  // The buses (0028): each chosen for a group it takes. Before 0028 neither is offered.
+  { name: 'ride-ac-bus-chosen', steps: () => [...ROUTE, FILL('Number of passengers', '12'), CHOOSE('ac-bus')] },
+  { name: 'ride-bus-chosen', steps: () => [...ROUTE, FILL('Number of passengers', '40'), CHOOSE('bus')] },
+  {
+    name: 'ride-round-trip',
+    steps: () => [...ROUTE, ROUND_TRIP, FILL('Return date', '2099-12-27'), FILL('Return time', '17:30'), FILL('Number of passengers', '2'), CHOOSE('car')]
+  },
+  // The Mini Lorry (0029). Phones show the goods fields rather than the cards.
+  { name: 'goods-empty', steps: () => [GOODS], view: '.ride-mode' },
+  { name: 'goods-filled', steps: () => [...ROUTE, GOODS, GOODS_WHAT, GOODS_WEIGHT('60'), GOODS_RIDER], view: '.ride-goods' },
+  { name: 'goods-over-weight', steps: () => [...ROUTE, GOODS, GOODS_WHAT, GOODS_WEIGHT('101')], view: '#ride-weight' },
+  {
+    name: 'goods-round-trip',
+    steps: () => [...ROUTE, ROUND_TRIP, FILL('Return date', '2099-12-27'), FILL('Return time', '17:30'), GOODS, GOODS_WHAT, GOODS_RIDER, GOODS_BACK('rider')],
+    view: '.ride-goods__rider'
+  }
+];
+
+
+async function shootRide(chrome: Chrome, site: Site, out: string): Promise<void> {
+  const before = site.label === 'before';
+  const only = values['ride-states']?.split(',').map((n) => n.trim()).filter(Boolean);
+  const unknown = only?.filter((n) => !RIDE_STATES.some((s) => s.name === n)) ?? [];
+  if (unknown.length) throw new Error(`--ride-states: no state named ${unknown.join(', ')}`);
+  const states = only ? RIDE_STATES.filter((s) => only.includes(s.name)) : RIDE_STATES;
+  const viewports = Object.entries(VIEWPORTS).filter(([, v]) => !values['phone-only'] || v.mobile);
+  for (const dark of [false, true]) {
+    for (const [name, viewport] of viewports) {
+      const suffix = `${name}${dark ? '-dark' : ''}-${site.label}.jpg`;
+      for (const state of states) {
+        const page = await open(chrome, `${site.url}/booking`, viewport, dark);
+        await waitFor(page, `document.querySelector('.ride-form')`);
+        // A draft would open WhatsApp: never, here.
+        await page.evaluate(`(window.open = () => null, true)`);
+        for (const step of state.steps(before)) {
+          await page.evaluate(step);
+          await sleep(120);
+        }
+        await page.evaluate('(document.activeElement?.blur(), true)');
+        // The chosen card in view along its row (five cards overflow it), without moving the page.
+        await page.evaluate(`(() => {
+          const card = document.querySelector('.ride-vehicle.is-selected');
+          const track = card?.closest('.ride-vehicles__track');
+          if (card && track) track.scrollLeft = card.offsetLeft - track.offsetLeft - 8;
+          return true;
+        })()`);
+        await page.evaluate(LOADED);
+        await page.evaluate(QUIET);
+        if (viewport.mobile) {
+          // The phone's bar sticks to the screen's bottom: a screenful, with the vehicles in it.
+          await page.evaluate(`(() => { const el = document.querySelector(${JSON.stringify(state.view ? `${state.view}, .ride-vehicles, .ride-form select` : '.ride-vehicles, .ride-form select')}); el?.scrollIntoView({ block: 'center' }); return true; })()`);
+          await page.evaluate(QUIET);
+          await shoot(page, join(out, `${state.name}-${suffix}`), false);
+        } else {
+          await shoot(page, join(out, `${state.name}-${suffix}`), true);
+        }
+        await closePage(page);
+        console.log(`  ${state.name}-${suffix}`);
+      }
+      if (only) continue;
+      // The home hero: the first slide, then the "Book a ride" slide (the second).
+      const home = await open(chrome, `${site.url}/`, viewport, dark);
+      await home.evaluate(LOADED);
+      await home.evaluate(QUIET);
+      await shoot(home, join(out, `hero-first-slide-${suffix}`), false);
+      await home.evaluate(`(document.querySelector('[aria-label="Next featured destination"]')?.click(), true)`);
+      await sleep(1200);
+      await home.evaluate(LOADED);
+      await home.evaluate(QUIET);
+      await shoot(home, join(out, `hero-second-slide-${suffix}`), false);
+      await closePage(home);
+      console.log(`  hero-*-${suffix}`);
+      // Admin → Bookings, its vehicle form open on the Car.
+      const blank = await chrome.newPage();
+      await blank.send('Network.clearBrowserCookies');
+      await closePage(blank);
+      const signIn = await openAdmin(chrome, `${site.url}/admin/login`, viewport, dark);
+      const status = await signIn.evaluate<number>(`fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(${JSON.stringify(SHOTS_ADMIN)})
+      }).then((r) => r.status)`);
+      if (status !== 200) throw new Error(`[${site.label}] admin sign-in failed (${status})`);
+      await closePage(signIn);
+      const admin = await openAdmin(chrome, `${site.url}/admin/bookings`, viewport, dark);
+      await waitFor(admin, `[...document.querySelectorAll('button')].some((b) => b.textContent.startsWith('Edit Car'))`);
+      await admin.evaluate(`([...document.querySelectorAll('button')].find((b) => b.textContent.startsWith('Edit Car'))?.click(), true)`);
+      await admin.evaluate(LOADED);
+      await admin.evaluate(QUIET);
+      await shoot(admin, join(out, `admin-bookings-${suffix}`), true);
+      // The lorry's form (0029); before it there is no lorry, so the Car's again.
+      await admin.evaluate(`([...document.querySelectorAll('button')].find((b) => b.textContent.startsWith('Edit Mini Lorry'))?.click(), true)`);
+      await sleep(150);
+      await admin.evaluate(QUIET);
+      await shoot(admin, join(out, `admin-bookings-lorry-${suffix}`), true);
+      await closePage(admin);
+      console.log(`  admin-bookings-${suffix}`);
+    }
+  }
+}
+
 async function main(): Promise<void> {
   const executable = findChrome();
   if (!executable) throw new Error('No Chrome found; set CHROME_PATH.');
@@ -795,8 +1026,20 @@ async function main(): Promise<void> {
         await shootBrand(chrome, site, out);
         continue;
       }
+      if (values['tour-categories']) {
+        await shootTourCategories(chrome, site, out, TOUR_CATEGORY_SHOTS);
+        continue;
+      }
+      if (values['tour-form']) {
+        await shootTourCategories(chrome, site, out, TOUR_FORM_SHOTS);
+        continue;
+      }
+      if (values.ride) {
+        await shootRide(chrome, site, out);
+        continue;
+      }
       for (const dark of themes) {
-        for (const [name, viewport] of Object.entries(VIEWPORTS)) {
+        for (const [name, viewport] of Object.entries(VIEWPORTS).filter(([, v]) => !values['phone-only'] || v.mobile)) {
           const suffix = `${name}${dark ? '-dark' : ''}-${site.label}.jpg`;
           for (const path of pages) {
             const page = await open(chrome, site.url + path, viewport, dark);

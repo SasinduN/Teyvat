@@ -132,7 +132,9 @@ describe('GET /api/content: imageCredits', () => {
     const used = new Set([
       ...payload.destinations.flatMap(row => [row.image, ...row.gallery]),
       ...[payload.experienceCategories, payload.featuredExperiences, payload.tours, payload.articles,
-        payload.hiddenGems, payload.photoStories, payload.heroSlides].flatMap(rows => rows.map(row => row.image))
+        payload.hiddenGems, payload.photoStories, payload.heroSlides].flatMap(rows => rows.map(row => row.image)),
+      // The tour categories' photos (0030) show on /tours and their pages, with their credits.
+      ...payload.tourCategories.flatMap(row => (row.image ? [row.image] : []))
     ]);
     for (const c of payload.imageCredits) assert.ok(used.has(c.url), `unused credit: ${c.url}`);
   });

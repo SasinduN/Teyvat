@@ -8,8 +8,13 @@ import '../styles/floating-booking.css';
 /**
  * The only things the stack moves for: they stay put on screen, or nearly, so a visitor can
  * need them where the buttons are. Everything else scrolls away, and passes underneath.
+ * `[data-float-avoid]` is /explore's search form, every field and its button: like the hero's
+ * controls, it's on a phone's first screen, right where the buttons rest, so they rise above it
+ * there. While it's on the page the page's h1 is in the way too (`HEADLINE`), so rising never
+ * puts them on the headline: where they don't fit between the two, they go above the h1.
  */
-const AVOID = '.te-hero-controls, .leaflet-control, #explore-map [data-keep-clear], [data-scroll-top], [data-footer-last-row]';
+const AVOID = '.te-hero-controls, .leaflet-control, #explore-map [data-keep-clear], [data-float-avoid], [data-scroll-top], [data-footer-last-row]';
+const HEADLINE = 'main h1';
 const MODAL = '[role="dialog"][aria-modal="true"]';
 
 /** Clearance when rising to a spot, and what it takes to come back down. The gap is the hysteresis. */
@@ -66,6 +71,8 @@ function nextLift(boxes: Box[], obstacles: Box[], current: number, most: number)
  * a moment they look once, and if they're on one of the few things in `AVOID` they rise above it
  * in one smooth move (`--te-float-lift`), and come back down when it has gone. They hide only
  * while a modal is open (`hidden`, or any modal dialog: the enquiry form, search, the phone menu).
+ * Book a ride also steps out while the home hero's own Book a ride button is on screen (the same
+ * link, and on phones at 120% the two met); it comes back once the hero scrolls away.
  * The footer's padding means the end of every page can be scrolled clear of them.
  */
 export function FloatingActions({ whatsappHref, bookingAllowed = true, hidden = false }: {
@@ -79,8 +86,30 @@ export function FloatingActions({ whatsappHref, bookingAllowed = true, hidden = 
   const lifted = useRef(0);
   const [modal, setModal] = useState(false);
   const [labels, setLabels] = useState(true);
+  const [heroBooking, setHeroBooking] = useState(false);
   const concealed = hidden || modal;
   const hasChat = Boolean(whatsappHref);
+
+  // The hero's Book a ride (`data-hero-booking`, bookings on only): found once it renders, then
+  // watched while it's on the page.
+  useEffect(() => {
+    if (!bookingEnabled) return;
+    let watched: Element | null = null;
+    let seen: IntersectionObserver | null = null;
+    const attach = () => {
+      const target = document.querySelector('[data-hero-booking]');
+      if (target === watched) return;
+      seen?.disconnect();
+      watched = target;
+      if (!target) { seen = null; setHeroBooking(false); return; }
+      seen = new IntersectionObserver(([entry]) => setHeroBooking(entry.isIntersecting));
+      seen.observe(target);
+    };
+    attach();
+    const pages = new MutationObserver(attach);
+    pages.observe(document.body, { childList: true, subtree: true });
+    return () => { pages.disconnect(); seen?.disconnect(); setHeroBooking(false); };
+  }, [bookingEnabled]);
 
   useLayoutEffect(() => {
     if (!bookingEnabled && !hasChat) return;
@@ -109,7 +138,9 @@ export function FloatingActions({ whatsappHref, bookingAllowed = true, hidden = 
           return { left: r.left, right: r.right, top: r.top - moved, bottom: r.bottom - moved };
         });
       if (boxes.length === 0) return;
-      const obstacles = [...document.querySelectorAll(AVOID)]
+      const avoid = [...document.querySelectorAll(AVOID)];
+      if (avoid.some((element) => element.matches('[data-float-avoid]'))) avoid.push(...document.querySelectorAll(HEADLINE));
+      const obstacles = avoid
         .filter(usable)
         .map((element) => element.getBoundingClientRect())
         .filter((r) => r.width > 0 && r.height > 0);
@@ -184,7 +215,7 @@ export function FloatingActions({ whatsappHref, bookingAllowed = true, hidden = 
   useLayoutEffect(() => reposition.current(), [labels]);
 
   return <div ref={stack} className="te-floating-actions" data-floating-actions data-labels={labels ? 'shown' : 'collapsed'}>
-    {bookingEnabled && <FloatingBookingCTA hidden={concealed} />}
+    {bookingEnabled && <FloatingBookingCTA hidden={concealed || heroBooking} />}
     {whatsappHref && <WhatsAppButton href={whatsappHref} hidden={concealed} />}
   </div>;
 }

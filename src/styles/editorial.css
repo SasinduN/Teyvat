@@ -122,15 +122,152 @@ a.te-ed-card:hover .te-ed-card__title, a.te-ed-row:hover .te-ed-card__title { te
 /* Tours: photo and text side by side, swapping sides down the page. */
 .te-tour-list { display: grid; gap: clamp(2.5rem, 6vw, 4.5rem); }
 .te-tour-row { display: grid; gap: 1.25rem clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
+/*
+ * Each row is in an <li> now (the phones' swipe row). The bare `.te-tour-row:nth-child(even)`
+ * is the markup before that, which browser-home-baseline still renders at d233e32 with
+ * today's stylesheet; in today's markup it matches nothing.
+ */
 @media (min-width: 900px) {
   .te-tour-row { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
-  .te-tour-row:nth-child(even) { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
-  .te-tour-row:nth-child(even) > .te-ed-photo { order: 2; }
+  .te-tour-item:nth-child(even) > .te-tour-row, .te-tour-row:nth-child(even) { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+  .te-tour-item:nth-child(even) > .te-tour-row > .te-ed-photo, .te-tour-row:nth-child(even) > .te-ed-photo { order: 2; }
 }
 .te-tour-row h3 { margin-top: .25rem; color: var(--brand-primary); font-size: var(--heading-sub); font-weight: 700; line-height: 1.2; }
 .te-tour-row__desc { margin-top: .75rem; color: var(--text-secondary); line-height: 1.6; }
 .te-tour-row__route { margin-top: .75rem; color: var(--text-primary); line-height: 1.5; }
 .te-tour-row__route strong { font-weight: 600; }
+
+/*
+ * Tours on phones: a row to swipe (ToursSection). Native scrolling and scroll-snap, no script
+ * moving the page; up and down still scroll it (no touch-action here). One card a view, the next
+ * peeking in; the spacer after the last card lets it snap to the start like the others. The
+ * controls under the row (counter, dots, and the arrows shown on focus) exist only here.
+ *
+ * The card's buttons and the controls keep clear of the floating Book a ride / WhatsApp stack
+ * (1rem from the right, 56 px wide, plus 8 px), so it never covers them once the page is still:
+ * `--tour-float-clear` is how far that column reaches into a card snapped at the start.
+ */
+.te-tour-swipe { display: none; }
+@media (max-width: 767px) {
+  .te-tour-list {
+    --tour-card: min(85vw, 26rem);
+    --tour-float-clear: max(0px, calc(1rem + 64px - (100vw - var(--page-gutter) - var(--tour-card))));
+    display: flex;
+    gap: 1rem;
+    margin-inline: calc(-1 * var(--page-gutter));
+    padding-inline: var(--page-gutter);
+    scroll-padding-inline: var(--page-gutter);
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .te-tour-list::-webkit-scrollbar { display: none; }
+  .te-tour-list::after { content: ''; flex: 0 0 max(0px, calc(100vw - 2 * var(--page-gutter) - var(--tour-card) - 1rem)); }
+  .te-tour-item { display: flex; flex: 0 0 var(--tour-card); min-width: 0; scroll-snap-align: start; }
+  .te-tour-row { display: flex; flex-direction: column; gap: 1rem; flex: 1; align-items: stretch; }
+  .te-tour-row__body { display: flex; flex-direction: column; flex: 1; }
+  .te-tour-row__label, .te-tour-row__route, .te-tour-row__map { display: none; }
+  .te-tour-row h3 { margin-top: 0; }
+  .te-tour-row__desc { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .te-tour-row__actions { margin-top: auto; padding-top: 1.25rem; padding-inline-end: var(--tour-float-clear); gap: .75rem; }
+
+  .te-tour-swipe {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem 1rem;
+    margin-top: 1.25rem;
+    padding-inline-end: max(0px, calc(1rem + 64px - var(--page-gutter)));
+  }
+  .te-tour-swipe__count { min-width: 3.5rem; color: var(--text-secondary); font-size: var(--text-sm); font-weight: 600; font-variant-numeric: tabular-nums; }
+  /* For keyboards and screen readers: out of sight until one of them has focus, then both show. */
+  .te-tour-swipe__arrow { position: absolute; width: 1px; height: 1px; min-height: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border-width: 0; }
+  .te-tour-swipe:has(.te-tour-swipe__arrow:focus-visible) .te-tour-swipe__arrow { position: static; width: 44px; height: 44px; min-height: 44px; clip-path: none; border-width: 1px; }
+  .te-tour-swipe__arrow[aria-disabled="true"] { opacity: .5; cursor: default; }
+  .te-tour-swipe__dots { display: flex; flex-wrap: wrap; }
+  .te-tour-swipe__dot { display: grid; place-items: center; width: 24px; height: 24px; cursor: pointer; }
+  /* Not colour alone: a ring, and the current one filled and larger. */
+  .te-tour-swipe__dot::before { content: ''; box-sizing: border-box; width: 8px; height: 8px; border: 1.5px solid var(--text-secondary); border-radius: 50%; transition: background-color 180ms ease, transform 180ms ease; }
+  .te-tour-swipe__dot[data-active]::before { border-color: var(--brand-primary); background: var(--brand-primary); transform: scale(1.25); }
+}
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .te-tour-swipe__dot::before { transition: none; }
+}
+
+/*
+ * Tour categories (0030), on /tours: each a photo tile linking to its page, the name and
+ * intro under the photo on the page's own colours (so AA holds over any photo). Two columns
+ * from 768 px, four from 1024 px. On phones a row to scroll sideways, photo and name only,
+ * that stops short of the floating buttons' column (1rem from the right, 56 px wide, plus
+ * 8 px), so they never cover a tile.
+ */
+.te-cat-section { padding-bottom: 0; }
+.te-cat-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem 1.5rem; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 1024px) {
+  .te-cat-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.te-cat-item { min-width: 0; }
+.te-cat-tile { display: flex; flex-direction: column; gap: .375rem; height: 100%; border-radius: .5rem; color: var(--text-primary); }
+.te-cat-tile__photo { display: block; aspect-ratio: 4 / 3; margin-bottom: .375rem; }
+.te-cat-tile__photo img { transition: transform 400ms var(--ease-premium); }
+.te-cat-tile__name {
+  color: var(--brand-primary); font-size: var(--heading-card); font-weight: 700; line-height: 1.2;
+  text-decoration: underline; text-decoration-color: transparent; text-underline-offset: .2em; transition: text-decoration-color 180ms ease;
+}
+.te-cat-tile__intro { color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.55; }
+@media (hover: hover) {
+  .te-cat-tile:hover .te-cat-tile__photo img { transform: scale(1.03); }
+  .te-cat-tile:hover .te-cat-tile__name { text-decoration-color: currentColor; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .te-cat-tile__photo img, .te-cat-tile__name { transition: none; }
+  .te-cat-tile:hover .te-cat-tile__photo img { transform: none; }
+}
+@media (max-width: 767px) {
+  .te-cat-list {
+    display: flex;
+    gap: .75rem;
+    margin-inline-start: calc(-1 * var(--page-gutter));
+    margin-inline-end: max(0px, calc(1rem + 64px - var(--page-gutter)));
+    padding-inline-start: var(--page-gutter);
+    padding-bottom: .25rem;
+    scroll-padding-inline-start: var(--page-gutter);
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  .te-cat-list::-webkit-scrollbar { display: none; }
+  .te-cat-item { flex: 0 0 9.5rem; scroll-snap-align: start; }
+  .te-cat-tile__name { font-size: var(--text-base); }
+  .te-cat-tile__intro { display: none; }
+}
+
+/* A category's page: its intro, then the best-time note with its link to When to go. */
+.te-cat-intro { padding-bottom: 0; }
+.te-cat-best { max-width: var(--reading-measure); margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border-strong); }
+.te-cat-best strong { color: var(--text-primary); font-weight: 600; }
+.te-cat-best p { color: var(--text-primary); }
+.te-cat-empty { padding-bottom: 0; }
+
+/*
+ * The tailor-made card, after every tour list: a plain tinted panel. On phones its buttons
+ * keep out of the floating buttons' column, as the tour cards' do.
+ */
+.te-tailor {
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border: 1px solid var(--border-strong); border-radius: .5rem;
+  background: var(--background-secondary); color: var(--text-primary);
+}
+.te-tailor__title { color: var(--brand-primary); font-size: var(--heading-sub); font-weight: 700; line-height: 1.2; }
+.te-tailor__text { max-width: var(--reading-measure); margin-top: .75rem; color: var(--text-secondary); line-height: 1.6; }
+@media (max-width: 767px) {
+  .te-tailor__actions { padding-inline-end: max(0px, calc(1rem + 64px - var(--page-gutter) - clamp(1.5rem, 4vw, 2.5rem))); }
+}
 
 /* Facts and simple lists on the detail pages. */
 .te-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: 1rem 2rem; padding-block: 1.25rem; border-block: 1px solid var(--border-strong); }

@@ -1,3 +1,4 @@
+import { hasTourPrice, PRICE_ON_REQUEST } from '@shared/tour-price';
 import { TravelImage } from '@/components/TravelImage';
 import React, { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -150,7 +151,7 @@ export const TourCard: React.FC<{ tour: TourPackage; saveable?: boolean }> = ({ 
       </div>
       <div className="te-ed-card__body">
         <h3 className="te-ed-card__title font-heading">{tour.title}</h3>
-        <p className="te-ed-meta mt-1">{tour.days} days, from ${tour.priceFrom}</p>
+        <p className="te-ed-meta mt-1">{tour.days} days, {hasTourPrice(tour.priceFrom) ? `from $${tour.priceFrom}` : PRICE_ON_REQUEST.toLowerCase()}</p>
       </div>
     </Link>
   </Saveable>

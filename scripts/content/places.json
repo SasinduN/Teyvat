@@ -207,6 +207,37 @@
         "https://en.wikivoyage.org/wiki/Sinharaja_Forest_Reserve",
         "https://www.openstreetmap.org/relation/6012712"
       ]
+    },
+    {
+      "id": "kitulgala",
+      "name": "Kitulgala",
+      "region": "Central",
+      "province": "Sabaragamuwa Province",
+      "latitude": 6.99787,
+      "longitude": 80.40849,
+      "category": [
+        "Adventure",
+        "Wildlife"
+      ],
+      "short_description": "A small town on the Kelani River in the west of the hill country, where white-water rafting trips start.",
+      "long_description": "Kitulgala is a small town on the Kelani River, in Kegalle District. Rafting trips start a few kilometres upstream, and the forests around it are home to many of the island's rainforest birds. The Bridge on the River Kwai was filmed on the river nearby; only the bridge's concrete foundations remain.",
+      "best_time": "",
+      "best_months": [],
+      "photo": {
+        "source": "https://commons.wikimedia.org/wiki/File:Kelani_Ganga_at_Kithulgala_Rest_House_-_panoramio_(1).jpg",
+        "download": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Kelani_Ganga_at_Kithulgala_Rest_House_-_panoramio_%281%29.jpg/1280px-Kelani_Ganga_at_Kithulgala_Rest_House_-_panoramio_%281%29.jpg",
+        "width": 1280,
+        "author": "Pol van den Scheetek…",
+        "license": "CC BY 3.0",
+        "license_url": "https://creativecommons.org/licenses/by/3.0"
+      },
+      "osm": "https://www.openstreetmap.org/node/1150497671",
+      "season_source": null,
+      "sources": [
+        "https://en.wikipedia.org/wiki/Kitulgala",
+        "https://www.openstreetmap.org/node/1150497671",
+        "https://commons.wikimedia.org/wiki/File:Kelani_Ganga_at_Kithulgala_Rest_House_-_panoramio_(1).jpg"
+      ]
     }
   ],
   "attractions": [

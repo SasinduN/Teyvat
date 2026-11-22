@@ -865,3 +865,35 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 :is(.te-logo[data-variant="light"], :root[data-theme="dark"] .te-logo, .te-nav[data-home="true"][data-scrolled="false"] .te-logo) .te-logo-file--on-light { display: none; }
 :is(.te-logo[data-variant="light"], :root[data-theme="dark"] .te-logo, .te-nav[data-home="true"][data-scrolled="false"] .te-logo) .te-logo-file--on-dark { display: block; }
 @media (max-width: 639px) { .te-nav .te-logo-file { height: 1.75rem; } }
+
+/*
+ * The "Book a ride" slide (bookings on only, shared/ride-slide.ts): the artwork on
+ * the dark page colour, under the same overlay as the photos. Its line and the
+ * photos' line share one grid cell, so the copy never changes height.
+ */
+.te-hero-slide--ride { background: var(--inverse-surface); }
+/* Clear of the floating buttons (lower right) and the slide controls. */
+.te-hero-ride-art { position: absolute; right: calc(max(1rem, (100vw - var(--container-max)) / 2) + 4rem); top: 50%; width: min(40vw, 38rem); height: auto; transform: translateY(-42%); }
+/* The icons: the van behind, the car in front and lower, on the same ground. */
+.te-hero-ride-icons { aspect-ratio: 2 / 1; }
+.te-hero-ride-icons .vehicle-icon { position: absolute; height: auto; }
+.te-hero-ride-van { left: 0; top: 0; width: 58%; }
+.te-hero-ride-car { right: 0; bottom: 0; width: 54%; }
+/* No photo under this slide's copy, so no photo overlay: the dark page colour holds the contrast. */
+.te-hero-overlay { transition: opacity 700ms ease; }
+.te-hero:has(.te-hero-slide--ride[data-active="true"]) .te-hero-overlay { opacity: 0; }
+.te-hero-subtitle--stack { display: grid; }
+.te-hero-subtitle--stack > span { grid-area: 1 / 1; transition: opacity 500ms ease, visibility 500ms; }
+.te-hero-subtitle--stack > span[data-active="false"] { opacity: 0; visibility: hidden; }
+.te-hero-subtitle--stack strong { font-weight: 700; color: var(--on-inverse); }
+/* Bookings on, phones: two stacked buttons, Plan Your Journey and Book a ride (Explore is in the menu). */
+@media (max-width: 639px) {
+  .te-hero-actions .te-hero-action--wide-only { display: none; }
+}
+@media (max-width: 767px) {
+  /* Only the height left under the copy (about 42.5rem, in rem so it grows with the text size): smaller, or none, rather than under the buttons. */
+  .te-hero-ride-art { top: auto; right: auto; left: 1rem; bottom: 4.5rem; width: clamp(0px, (100svh - 42.5rem) * 2, min(60vw, 18rem)); transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .te-hero-subtitle--stack > span, .te-hero-overlay { transition: none; }
+}

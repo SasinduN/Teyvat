@@ -19,6 +19,7 @@ import type {
   PhotoStoryRow,
   PillarRow,
   SiteSettingsRow,
+  TourCategoryRow,
   TourRow
 } from './database.types';
 import type { ImageCreditRow, PublicImageCredit } from './image-credits';
@@ -72,14 +73,17 @@ export const API_ROUTES = {
 export type PublicDestinationRow = Omit<DestinationRow, 'rating'>;
 export type PublicFeaturedExperienceRow = Omit<FeaturedExperienceRow, 'rating'>;
 
-/** A tour row with its route stops attached, in order. */
-export type PublicTourRow = TourRow & { stops: TourStopPayload[] };
+/**
+ * A tour row with its route stops attached, in order, and the ids of its published
+ * categories, in the admin's order (the first is its card's label).
+ */
+export type PublicTourRow = TourRow & { stops: TourStopPayload[]; category_ids: string[] };
 
 /**
  * `GET /api/admin/content/tours/:id`: the row plus its stops in the form's
  * shape. `PUT` and `POST` take `stops` in the same shape.
  */
-export type AdminTourRow = TourRow & { stops: TourStopInput[] };
+export type AdminTourRow = TourRow & { stops: TourStopInput[]; category_ids: string[] };
 
 export interface SiteContentPayload {
   destinations: PublicDestinationRow[];
@@ -88,6 +92,8 @@ export interface SiteContentPayload {
   experienceCategories: ExperienceCategoryRow[];
   featuredExperiences: PublicFeaturedExperienceRow[];
   tours: PublicTourRow[];
+  /** Published tour categories, in order (0030). */
+  tourCategories: TourCategoryRow[];
   articles: ArticleRow[];
   hiddenGems: HiddenGemRow[];
   photoStories: PhotoStoryRow[];

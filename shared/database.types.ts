@@ -28,13 +28,23 @@ export type StoredCategory =
 
 export type PhotoAspect = 'square' | 'portrait' | 'landscape';
 
-/** Since 0014_bookings; the request's own shape is `BookingInput` (shared/booking.ts). */
+/** Since 0014_bookings, with 0027's card fields; the request's own shape is `BookingInput` (shared/booking.ts). */
 export interface BookingVehicleRow {
   id: string;
   name: string;
-  type: 'Car' | 'SUV' | 'Van' | 'Minibus';
+  type: 'Car' | 'SUV' | 'Van' | 'Minibus' | 'Bus' | 'Lorry';
+  description: string | null;
+  example_models: string[];
+  min_passengers: number;
   passenger_capacity: number | null;
   luggage_capacity: number | null;
+  luggage_per_passenger: number | null;
+  air_conditioned: boolean;
+  kind: 'passenger' | 'goods';
+  max_load_kg: number | null;
+  icon: 'mini' | 'car' | 'suv' | 'mini-van' | 'van' | 'ac-bus' | 'bus' | 'mini-lorry';
+  image_url: string | null;
+  sort_order: number;
   accepting_requests: boolean;
 }
 export interface BookingRow {
@@ -177,9 +187,36 @@ export interface TourRow extends Timestamps, Orderable {
   image: string;
   highlights: string[];
   included_places: string[];
-  price_from: number;
+  /** NULL (or 0): "Price on request" (0030). */
+  price_from: number | null;
+  /** The old label (0001), no longer shown anywhere: `tour_category_links` replaced it (0030). */
   category: TourCategory;
   itinerary: ItineraryDayRow[];
+  /** Months 1 to 12, sorted (0031); empty: not set. */
+  best_months: number[];
+}
+
+/**
+ * A travel style with its own page, `/tours/category/<id>` (0030). Its tours are
+ * `tour_category_links`, in each tour's own order.
+ */
+export interface TourCategoryRow extends Timestamps, Orderable {
+  id: string;
+  name: string;
+  /** The page's h1 and title: "Beach tours in Sri Lanka". */
+  heading: string;
+  short_intro: string;
+  /** Paragraphs separated by a blank line. */
+  long_intro: string;
+  image: string | null;
+  best_time_note: string | null;
+}
+
+/** A tour in a category, at `position` among the tour's own categories (0 is its card's label). */
+export interface TourCategoryLinkRow {
+  tour_id: string;
+  category_id: string;
+  position: number;
 }
 
 /**
@@ -355,6 +392,7 @@ export interface ContentTables {
   experience_categories: ExperienceCategoryRow;
   featured_experiences: FeaturedExperienceRow;
   tours: TourRow;
+  tour_categories: TourCategoryRow;
   articles: ArticleRow;
   hidden_gems: HiddenGemRow;
   photo_stories: PhotoStoryRow;
@@ -371,6 +409,7 @@ export const CONTENT_TABLE_NAMES = [
   'experience_categories',
   'featured_experiences',
   'tours',
+  'tour_categories',
   'articles',
   'hidden_gems',
   'photo_stories',

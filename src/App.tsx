@@ -28,6 +28,7 @@ const ExperiencesPage = lazy(() => import('@/pages/ExperiencesPage').then((m) =>
 const ExperiencePage = lazy(() => import('@/pages/ExperiencePage').then((m) => ({ default: m.ExperiencePage })));
 const ToursPage = lazy(() => import('@/pages/ToursPage').then((m) => ({ default: m.ToursPage })));
 const TourPage = lazy(() => import('@/pages/TourPage').then((m) => ({ default: m.TourPage })));
+const TourCategoryPage = lazy(() => import('@/pages/TourCategoryPage').then((m) => ({ default: m.TourCategoryPage })));
 const ArticlePage = lazy(() => import('@/pages/ArticlePage').then((m) => ({ default: m.ArticlePage })));
 const AboutPage = lazy(() => import('@/pages/AboutPage').then((m) => ({ default: m.AboutPage })));
 const ExplorePage = lazy(() => import('@/pages/ExplorePage').then((m) => ({ default: m.ExplorePage })));
@@ -87,6 +88,9 @@ export function App() {
             <Route path="experiences" element={<ExperiencesPage />} />
             <Route path="experiences/:slug" element={<ExperiencePage />} />
             <Route path="tours" element={<ToursPage />} />
+            {/* /tours/category is no page of its own: the server 301s it; this is for in-app links. */}
+            <Route path="tours/category" element={<Navigate to={paths.tours} replace />} />
+            <Route path="tours/category/:slug" element={<TourCategoryPage />} />
             <Route path="tours/:slug" element={<TourPage />} />
             <Route path="journal" element={<JournalPage />} />
             <Route path="journal/:slug" element={<ArticlePage />} />

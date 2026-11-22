@@ -24,6 +24,7 @@ import {
 import { IMAGE_HOST_REFUSED, isAllowedImageUrl } from './image-hosts';
 import { MAX_TOUR_STOPS, STOP_NAME_MAX, TOUR_STOP_BOUNDS } from './tour-stops';
 import { parseSiteStats } from './site-stats';
+import { TOUR_CATEGORY_PATH_SEGMENT } from './site-paths';
 import { normalizeWhatsAppNumber, whatsappNumberProblem } from './whatsapp';
 
 export const CATEGORY_OPTIONS = [
@@ -53,6 +54,9 @@ export const TOUR_CATEGORY_OPTIONS = [
   'Full Island'
 ] as const;
 
+/** How many categories one tour can be in. */
+export const MAX_TOUR_CATEGORIES = 12;
+
 export const ASPECT_OPTIONS = ['square', 'portrait', 'landscape'] as const;
 
 /* --------------------------------------------------------------- field DSL */
@@ -67,7 +71,9 @@ interface FieldBase {
 }
 
 export type Field =
-  | (FieldBase & { type: 'text' | 'textarea' | 'slug'; rows?: number; maxLength?: number })
+  | (FieldBase & { type: 'text' | 'textarea'; rows?: number; maxLength?: number })
+  /** A row's id. `reserved`: ids this table can't use, on top of `RESERVED_SLUGS`. */
+  | (FieldBase & { type: 'slug'; reserved?: readonly string[] })
   | (FieldBase & { type: 'number'; min?: number; max?: number; step?: number; integer?: boolean })
   | (FieldBase & { type: 'select'; options: readonly string[]; allowEmpty?: boolean })
   | (FieldBase & { type: 'multiselect'; options: readonly string[] })
@@ -100,7 +106,15 @@ export type Field =
    * A tour's route stops. Not a column: they live in `public.tour_stops`, and
    * the API writes them alongside the row (see `writableColumns`).
    */
-  | (FieldBase & { type: 'tourStops' });
+  | (FieldBase & { type: 'tourStops' })
+  /**
+   * A tour's categories (0030), ids in the order picked. Not a column: they live in
+   * `public.tour_category_links`, and the API writes them alongside the row.
+   */
+  | (FieldBase & { type: 'tourCategories' });
+
+/** Fields that aren't a column of their row's table: the API writes them to a table of their own. */
+const VIRTUAL_FIELD_TYPES: ReadonlySet<Field['type']> = new Set(['tourStops', 'tourCategories']);
 
 /* ---------------------------------------------------------------- slugs */
 
@@ -112,7 +126,7 @@ export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
  */
 export const RESERVED_SLUGS = ['count', 'order'] as const;
 
-const idField: Field = {
+const idField: Extract<Field, { type: 'slug' }> = {
   name: 'id',
   label: 'URL slug (ID)',
   type: 'slug',
@@ -203,11 +217,13 @@ export const FIELDS_BY_TABLE: Record<ContentTableName, Field[]> = {
 
   tours: [
     { name: 'title', label: 'Title', type: 'text', required: true, span: 1 },
-    idField,
+    // /tours/category/<id> is a category's page.
+    { ...idField, reserved: [TOUR_CATEGORY_PATH_SEGMENT] },
     { name: 'subtitle', label: 'Subtitle', type: 'text', required: true, span: 2 },
     { name: 'days', label: 'Days', type: 'number', step: 1, min: 1, integer: true, required: true, span: 1 },
-    { name: 'price_from', label: 'Price from (USD)', type: 'number', step: 1, min: 0, required: true, span: 1 },
-    { name: 'category', label: 'Category', type: 'select', options: TOUR_CATEGORY_OPTIONS, required: true, span: 1 },
+    { name: 'price_from', label: 'Price from (USD)', type: 'number', step: 1, min: 0, span: 1, help: 'Optional. Empty or 0: “Price on request”.' },
+    { name: 'category_ids', label: 'Categories', type: 'tourCategories', span: 2, help: 'The tour is listed on each one’s page. The first is the label on its card.' },
+    { name: 'category', label: 'Old category', type: 'select', options: TOUR_CATEGORY_OPTIONS, required: true, span: 1, help: 'Not shown on the site any more: Categories above replaced it.' },
     { name: 'image', label: 'Cover image', type: 'image', folder: 'tours', required: true, span: 2 },
     { name: 'short_desc', label: 'Short description', type: 'textarea', rows: 3, required: true, span: 2 },
     { name: 'full_desc', label: 'Full description', type: 'textarea', rows: 4, required: true, span: 2 },
@@ -215,6 +231,18 @@ export const FIELDS_BY_TABLE: Record<ContentTableName, Field[]> = {
     { name: 'highlights', label: 'Highlights', type: 'stringList', span: 2 },
     { name: 'included_places', label: 'Included places', type: 'stringList', span: 2 },
     { name: 'itinerary', label: 'Day-by-day itinerary', type: 'itinerary', span: 2 },
+    { name: 'best_months', label: 'Best months', type: 'months', span: 2, help: 'Optional, and only from a source you can name. Say them in the description too.' },
+    publishedField
+  ],
+
+  tour_categories: [
+    { name: 'name', label: 'Name', type: 'text', maxLength: 60, required: true, span: 1, help: 'The tile, the menu and the footer, e.g. “Beach Tours”.' },
+    idField,
+    { name: 'heading', label: 'Page heading', type: 'text', maxLength: 120, required: true, span: 2, help: 'The page’s title and h1, e.g. “Beach tours in Sri Lanka”.' },
+    { name: 'short_intro', label: 'Short intro', type: 'textarea', rows: 2, maxLength: 300, required: true, span: 2, help: 'One or two plain sentences: the tile, and the page’s search and share description.' },
+    { name: 'long_intro', label: 'Long intro', type: 'textarea', rows: 8, maxLength: 3000, required: true, span: 2, help: 'Two or three short paragraphs, with a blank line between them.' },
+    { name: 'image', label: 'Photo', type: 'image', folder: 'tour-categories', span: 2, help: 'The tile and the page’s header. Without one, the header is plain.' },
+    { name: 'best_time_note', label: 'Best time note', type: 'textarea', rows: 2, maxLength: 500, span: 2, help: 'Optional, and only from a source you can name. Shown with a link to When to go.' },
     publishedField
   ],
 
@@ -400,6 +428,9 @@ function schemaForField(field: Field, options: SchemaOptions = {}): z.ZodTypeAny
         .regex(SLUG_PATTERN, 'Use lowercase letters, numbers and single dashes only.')
         .refine((v) => !(RESERVED_SLUGS as readonly string[]).includes(v), {
           message: `“${RESERVED_SLUGS.join('” and “')}” are reserved. Choose another slug.`
+        })
+        .refine((v) => !field.reserved?.includes(v), {
+          message: `“${field.reserved?.join('”, “')}” is reserved here. Choose another slug.`
         });
 
     case 'text': {
@@ -431,7 +462,10 @@ function schemaForField(field: Field, options: SchemaOptions = {}): z.ZodTypeAny
       if (field.integer) n = n.int(`${field.label} must be a whole number.`);
       if (field.min !== undefined) n = n.min(field.min, `Minimum is ${field.min}.`);
       if (field.max !== undefined) n = n.max(field.max, `Maximum is ${field.max}.`);
-      return z.preprocess(blankToUndefined, n);
+      // An optional number left empty is "not set": NULL (a tour's price: "Price on request").
+      return field.required
+        ? z.preprocess(blankToUndefined, n)
+        : z.preprocess(blankToUndefined, n.optional()).transform((v) => v ?? null);
     }
 
     case 'date':
@@ -531,6 +565,15 @@ function schemaForField(field: Field, options: SchemaOptions = {}): z.ZodTypeAny
 
     case 'tourStops':
       return tourStopsSchema;
+
+    case 'tourCategories':
+      return z
+        .array(z.string().trim().regex(SLUG_PATTERN, 'Choose categories from the list.'))
+        .max(MAX_TOUR_CATEGORIES, `At most ${MAX_TOUR_CATEGORIES} categories.`)
+        // Picked twice is picked once, in the first place.
+        .transform((ids) => [...new Set(ids)])
+        // Left out (an older client): the tour's categories stay as they are.
+        .optional();
   }
 }
 
@@ -600,12 +643,12 @@ export const siteSettingsSchema = objectSchema(SITE_SETTINGS_FIELDS);
 
 /**
  * The column names a write may set, for building SQL. Never from a request.
- * A tour's `stops` are validated with the row but are not a column.
+ * A tour's `stops` and `category_ids` are validated with the row but are not columns.
  */
 export function writableColumns(table: ContentTableName, mode: 'create' | 'update'): string[] {
   return FIELDS_BY_TABLE[table]
     .filter((f) => mode === 'create' || f.type !== 'slug')
-    .filter((f) => f.type !== 'tourStops')
+    .filter((f) => !VIRTUAL_FIELD_TYPES.has(f.type))
     .map((f) => f.name);
 }
 
