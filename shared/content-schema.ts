@@ -352,8 +352,8 @@ export const SITE_SETTINGS_FIELDS: Field[] = [
     name: 'palette',
     label: 'Site colour theme',
     type: 'palette',
-    span: 2,
-    help: 'For every visitor and this admin panel, from their next page load. Visitors still choose light or dark.'
+    span: 2
+    // Its note is inside the picker (PaletteField), next to the cards.
   },
   {
     name: 'stats',
