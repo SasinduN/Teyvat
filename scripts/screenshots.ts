@@ -18,6 +18,11 @@
  * `--text-size` sets the admin's text size in the "after" site only; with
  * `--text-size-both`, in both, so a pair compares the same size.
  *
+ * `--palette <sunset|emerald|ocean>` sets the colour theme in the "after" site only (the base
+ * may have no themes) and names its shots `<palette>-…`; it clears only that theme's shots, so
+ * runs for the three themes fill one folder and one summary. `--theme-picker` takes only Admin →
+ * Settings at the colour theme picker, light and dark (the base: where the settings start).
+ *
  * For a short run (the laptop's memory, a time limit): `--only-dark` skips the
  * light theme and `--no-states` the named states, so a set can go in batches.
  *
@@ -72,6 +77,7 @@
  */
 import '../shared/load-env';
 
+import { isPalette, PALETTES } from '../shared/palette';
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
@@ -110,6 +116,10 @@ const { values } = parseArgs({
     admin: { type: 'boolean', default: false },
     'text-size': { type: 'string' },
     'text-size-both': { type: 'boolean', default: false },
+    /** The colour theme in the "after" site (docs/plans/brand-themes.md); shots are named after it. */
+    palette: { type: 'string' },
+    /** Only Admin → Settings at the colour theme picker, light and dark. */
+    'theme-picker': { type: 'boolean', default: false },
     /** A site's public URL: both versions show that site's R2 photos, as production does. */
     'live-photos': { type: 'string' },
     /** Every page opens with a saved wishlist, so /wishlist has cards and the header its count. */
@@ -250,6 +260,16 @@ async function prepare(site: Site): Promise<void> {
       await client.end();
     }
   }
+  if (site.label === 'after' && values.palette) {
+    if (!isPalette(values.palette)) throw new Error(`--palette must be one of ${PALETTES.join(', ')}.`);
+    const client = new Client({ connectionString: db });
+    await client.connect();
+    try {
+      await client.query('update public.site_settings set palette = $1 where id', [values.palette]);
+    } finally {
+      await client.end();
+    }
+  }
   if ((site.label === 'after' || values['text-size-both']) && values['text-size']) {
     const client = new Client({ connectionString: db });
     await client.connect();
@@ -259,7 +279,7 @@ async function prepare(site: Site): Promise<void> {
       await client.end();
     }
   }
-  if (values.admin || values['when-to-go'] || values.attractions || values.ride || values['tour-categories'] || values['tour-form']) {
+  if (values.admin || values['when-to-go'] || values.attractions || values.ride || values['tour-categories'] || values['tour-form'] || values['theme-picker']) {
     const client = new Client({ connectionString: db });
     await client.connect();
     try {
@@ -736,6 +756,28 @@ async function shootTourCategories(chrome: Chrome, site: Site, out: string, shot
   }
 }
 
+/** `--theme-picker`: two pairs, Admin → Settings at the colour theme picker, light and dark. */
+async function shootThemePicker(chrome: Chrome, site: Site, out: string, prefix: string): Promise<void> {
+  for (const dark of [false, true]) {
+    const name = `${prefix}admin-theme-picker${dark ? '-dark' : ''}`;
+    const page = await openAdmin(chrome, `${site.url}/admin/login`, LAPTOP, dark);
+    const status = await page.evaluate<number>(`fetch('/api/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(${JSON.stringify(SHOTS_ADMIN)})
+    }).then((r) => r.status)`);
+    if (status !== 200) throw new Error(`[${site.label}] admin sign-in failed (${status})`);
+    await page.send('Page.navigate', { url: `${site.url}/admin/settings` });
+    await waitFor(page, `document.querySelector('[data-text-size-field]')`, 10_000);
+    await page.evaluate(LOADED);
+    // The picker (after), or where it goes, by the text size (before).
+    await page.evaluate(`(document.querySelector('[data-palette-field]') ?? document.querySelector('[data-text-size-field]')).scrollIntoView({ block: 'center', behavior: 'instant' }), true`);
+    await page.evaluate(QUIET);
+    await shoot(page, join(out, `${name}-${site.label}.jpg`), false);
+    await closePage(page);
+    console.log(`  ${name}-${site.label}.jpg`);
+  }
+}
+
 /** `--brand`: ten pairs. */
 const BRAND_SHOTS: { name: string; viewport: typeof LAPTOP | typeof PHONE; dark?: boolean; kind: 'header' | 'footer' | 'hero' | 'menu' | 'login' | 'email' }[] = [
   { name: 'brand-header-desktop', viewport: LAPTOP, kind: 'header' },
@@ -983,8 +1025,11 @@ async function main(): Promise<void> {
   const branch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim();
   const out = resolve(ROOT, values.out ?? join('docs', 'screenshots', branch.replace(/[^\w.-]+/g, '-')));
   mkdirSync(out, { recursive: true });
-  // Old shots would mix into the comparison.
-  for (const file of readdirSync(out)) if (/\.jpg$|^summary\.md$/.test(file)) rmSync(join(out, file));
+  // Old shots would mix into the comparison. With --palette, only that theme's: the others' stay.
+  const prefix = values.palette ? `${values.palette}-` : '';
+  for (const file of readdirSync(out)) {
+    if (file === 'summary.md' || (/\.jpg$/.test(file) && (!prefix || file.startsWith(prefix)))) rmSync(join(out, file));
+  }
   const pages = values.pages ? values.pages.split(',') : PAGES;
   for (const page of pages) {
     if (!/^\/[^:\\]*$/.test(page)) {
@@ -1038,15 +1083,19 @@ async function main(): Promise<void> {
         await shootRide(chrome, site, out);
         continue;
       }
+      if (values['theme-picker']) {
+        await shootThemePicker(chrome, site, out, prefix);
+        continue;
+      }
       for (const dark of themes) {
         for (const [name, viewport] of Object.entries(VIEWPORTS).filter(([, v]) => !values['phone-only'] || v.mobile)) {
           const suffix = `${name}${dark ? '-dark' : ''}-${site.label}.jpg`;
           for (const path of pages) {
             const page = await open(chrome, site.url + path, viewport, dark);
             await settle(page);
-            await shoot(page, join(out, `${slug(path)}-${suffix}`), true);
+            await shoot(page, join(out, `${prefix}${slug(path)}-${suffix}`), true);
             await closePage(page);
-            console.log(`  ${slug(path)}-${suffix}`);
+            console.log(`  ${prefix}${slug(path)}-${suffix}`);
           }
           if (states) {
             // The footer on its own, from a page whose footer every page shares.

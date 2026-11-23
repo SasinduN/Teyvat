@@ -204,6 +204,9 @@ describe('the floating buttons stay', { skip, timeout: 8 * 60_000 }, () => {
           await page.evaluate(`window.scrollTo(0, ${y}), true`);
           await sleep(SETTLE_MS);
           await assertVisible(page, `${width} px at ${y}`);
+          // Measured once the stack has arrived (its transform at the lift it was told), not mid-move: a
+          // busy laptop can start the 280 ms move late. A stack that doesn't settle clear in 1.5 s still fails.
+          await poll(page, `Math.abs(${LIFT} - ${TARGET_LIFT}) < 1`, `${width} px at ${y}: the stack settling`, 1500).catch(() => undefined);
           assert.deepEqual(await page.evaluate<string[]>(COVERED), [], `${width} px at ${y}: covering`);
         }
       }

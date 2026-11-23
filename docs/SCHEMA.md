@@ -31,6 +31,7 @@
 | `0023_attractions.sql` | `attractions` (places near a destination, drafts by default) and `content_imports` (what `npm run content:import` wrote, so it never overwrites an admin's edit) |
 | `0030_tour_categories.sql` | `tour_categories` (8 travel styles, seeded) and `tour_category_links`; `tours.price_from` may be NULL ("Price on request"); no tour may have the id `category` |
 | `0031_tour_drafts.sql` | `tours.best_months` (months 1 to 12, empty by default); `content_imports` may record tours (`npm run content:import`'s drafts) |
+| `0032_site_palette.sql` | `site_settings.palette` (`sunset`, the default, `emerald` or `ocean`): the site's colour theme |
 
 **Where the rules live.** There is no row-level security: every connection is
 the API's single database role. Rules are enforced in two layers:
@@ -343,6 +344,7 @@ The CHECK on `id` (always `true`) is what makes it single.
 | `instagram_url`, `facebook_url`, `tiktok_url`, `youtube_url`, `privacy_url`, `terms_url`, `sustainability_url` | `text` NULL | NULL (the Footer renders the link without an `href`) or `https://…`, ≤ 500 chars |
 | `whatsapp_number` | `text` NULL | since 0008. NULL (the WhatsApp button is hidden) or digits only, international format without `+`: 8–15 digits, not starting `0` or `940`, e.g. `94771234567`. The admin form strips spaces, dashes and a leading `+` (`shared/whatsapp.ts`) |
 | `text_size` | `smallint` | since 0019. 100 (the default), 110 or 120: a percent of the browser's default. Express writes it on `<html>` as `data-text-size`; `src/index.css` makes it the root font-size. Not in `GET /api/content` |
+| `palette` | `text` | since 0032. `sunset` (the default), `emerald` or `ocean`: the colour theme (`shared/palette.ts`). Express writes it on `<html>` as `data-palette`; `src/styles/tokens.css` gives each its colours. Not in `GET /api/content` |
 | `when_to_go_explainer` | `text` NULL | since 0022. The monsoon explainer on `/when-to-go`: paragraphs separated by a blank line. NULL or empty hides it |
 
 `GET /api/content` exposes only the columns in `PUBLIC_SITE_SETTINGS_COLUMNS`
