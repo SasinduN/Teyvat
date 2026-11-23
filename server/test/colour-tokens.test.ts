@@ -51,3 +51,21 @@ test('the allow-list only names files that still need it', () => {
   });
   assert.deepEqual(stale.map(([file]) => file), [], 'lower these entries to their current counts (or remove them at 0)');
 });
+
+/**
+ * The colour themes (docs/plans/brand-themes.md): each theme sets the swatches
+ * (`--palette-*`) in tokens.css, and everything else uses the semantic tokens. A swatch
+ * named anywhere else wouldn't follow a theme's dark version, or would show one theme's
+ * colour in another, so it fails here, in every stylesheet and component.
+ */
+test('no swatch (--palette-*) outside tokens.css', () => {
+  const found: string[] = [];
+  for (const file of files('src').map((f) => f.replace(/\\/g, '/'))) {
+    if (!/\.(css|tsx?)$/.test(file) || file.endsWith('src/styles/tokens.css')) continue;
+    readFileSync(join(REPO_ROOT, file), 'utf8').split('\n').forEach((line, i) => {
+      if (/var\(--palette-/.test(line)) found.push(`${file}:${i + 1}: ${line.trim()}`);
+    });
+  }
+  assert.ok(files('src').length > 50, 'the walk found the source');
+  assert.deepEqual(found, [], 'Use a semantic token from src/styles/tokens.css');
+});

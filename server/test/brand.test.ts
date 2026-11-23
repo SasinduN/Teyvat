@@ -8,6 +8,7 @@
  * The earlier brand is built from pieces here, so this file doesn't name it
  * (brand-strings).
  */
+import { PALETTE_BACKGROUND_COLOR, PALETTE_THEME_COLOR } from '../../shared/palette';
 import './test-db';
 
 import assert from 'node:assert/strict';
@@ -85,7 +86,7 @@ describe('shared/brand.ts', () => {
   test('blank settings fall back to the defaults; the admin form saves blanks as NULL', () => {
     assert.deepEqual(resolveBrand({ brand_name: '  ', brand_tagline: null }), BRAND);
     const parsed = siteSettingsSchema.safeParse({
-      postal_address: 'x', phone: 'x', contact_email: 'a@b.example', text_size: 100, stats: [],
+      postal_address: 'x', phone: 'x', contact_email: 'a@b.example', text_size: 100, palette: 'sunset', stats: [],
       instagram_url: null, facebook_url: null, tiktok_url: null, youtube_url: null, privacy_url: null,
       terms_url: null, sustainability_url: null, whatsapp_number: null, when_to_go_explainer: null,
       brand_name: '  ', brand_short_name: '', brand_tagline: 'A line', brand_legal_name: null, hero_headline: ''
@@ -208,7 +209,9 @@ describe('the brand from the database', () => {
       { src: '/brand/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
       { src: '/brand/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
     ]);
-    assert.equal(manifest.theme_color, BRAND.themeColor);
+    // The colours follow the admin's colour theme (palette.test): Sunset here, the default.
+    assert.equal(manifest.theme_color, PALETTE_THEME_COLOR.sunset);
+    assert.equal(manifest.background_color, PALETTE_BACKGROUND_COLOR.sunset);
 
     await saveOverride();
     manifest = await (await fetch(`${app.baseUrl}/site.webmanifest`)).json();

@@ -102,10 +102,10 @@
 }
 
 .te-floating-booking:focus-visible, .te-floating-chat:focus-visible {
-  outline: 3px solid var(--palette-sky); outline-offset: 3px;
+  outline: 3px solid var(--focus-ring-on-fill); outline-offset: 3px;
 }
 .te-floating-booking:focus-visible {
-  box-shadow: 0 0 0 6px var(--palette-deep-emerald);
+  box-shadow: 0 0 0 6px var(--focus-gap-on-fill);
 }
 /* Override the public shell's focus shadow only for this chat link. */
 .site .te-floating-chat[data-whatsapp-button]:focus-visible {

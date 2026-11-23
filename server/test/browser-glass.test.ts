@@ -35,7 +35,8 @@ const executable = findChrome();
 const built = existsSync(join(REPO_ROOT, 'dist', 'index.html'));
 const skip = !executable ? 'no Chrome found; set CHROME_PATH to run these' : !built ? 'no build; run `npm run build` first' : false;
 
-describe('glass surfaces: contrast and focus, in Chrome', { skip }, () => {
+// `--test-timeout` applies to the suite as a whole too; each test keeps its 60 s.
+describe('glass surfaces: contrast and focus, in Chrome', { skip, timeout: 6 * 60_000 }, () => {
   let app: RunningApp;
   let chrome: Chrome;
 
@@ -178,8 +179,18 @@ describe('glass surfaces: contrast and focus, in Chrome', { skip }, () => {
     return { edge: Math.round(edge * 1000) / 1000, worst };
   })`;
 
+  /*
+   * Every colour theme (docs/plans/brand-themes.md). The glass is the same CSS in each (96% of
+   * the page colour, a 24 px blur). The method's calibration (without the blur the text's edges
+   * still show) was set on Emerald, whose colours are unchanged, and is checked there; Sunset's
+   * and Ocean's darker tints already hide more than that unblurred (Sunset's 1.078:1), so for
+   * them the checks that the site meets are run without it: at most 1.04:1 through the blur,
+   * and the header's own text AA over what's behind it.
+   */
+  for (const palette of ['emerald', 'sunset', 'ocean'] as const)
   for (const size of [{ width: 1920, height: 870 }, { width: 1280, height: 800 }, { width: 390, height: 844 }]) {
-    test(`dark, ${size.width}×${size.height}: text scrolled under the header is only a soft blur, and the header's own text keeps AA over it`, async () => {
+    test(`${palette} dark, ${size.width}×${size.height}: text scrolled under the header is only a soft blur, and the header's own text keeps AA over it`, async () => {
+      await pool.query('update public.site_settings set palette = $1 where id', [palette]);
       const mobile = size.width < 640;
       // The decoder first: the page opened last is the one in front, where scrolling and painting run.
       const decoder = await chrome.newPage();
@@ -234,7 +245,7 @@ describe('glass surfaces: contrast and focus, in Chrome', { skip }, () => {
       // the bug this replaced), so the measure tells the two apart.
       await style(`header * { visibility: hidden !important; } header { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; } ${OUT_OF_THE_WAY}`);
       const unblurred = await measure();
-      assert.ok(unblurred.edge >= 1.08, `precondition: without the blur, the text's edges show (${unblurred.edge}:1)`);
+      if (palette === 'emerald') assert.ok(unblurred.edge >= 1.08, `precondition: without the blur, the text's edges show (${unblurred.edge}:1)`);
       await style(`header * { visibility: hidden !important; } ${OUT_OF_THE_WAY}`);
       const through = await measure();
       assert.ok(through.edge <= 1.04, `text behind the header shows edges at ${through.edge}:1 (at most 1.04:1)`);

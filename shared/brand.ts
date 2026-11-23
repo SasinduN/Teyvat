@@ -61,7 +61,10 @@ export interface BrandAssets {
    * previews don't read SVG. The default is the whole logo on ivory.
    */
   ogImage: string | null;
-  /** The web manifest's colours (hex): the header's green and the page's pearl. */
+  /**
+   * Emerald's colours (hex), the manifest's before the colour themes. The manifest now takes
+   * the admin's theme's (`PALETTE_THEME_COLOR`, `PALETTE_BACKGROUND_COLOR` in shared/palette.ts).
+   */
   themeColor: string;
   backgroundColor: string;
 }
