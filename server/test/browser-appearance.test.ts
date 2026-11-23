@@ -175,7 +175,9 @@ describe('Admin → Appearance and the default mode, in Chrome', { skip, timeout
   /** An admin page, signed in, the admin's own light or dark saved. */
   async function admin(path: string, options: { theme?: 'light' | 'dark'; width?: number; device?: 'light' | 'dark' } = {}): Promise<Page> {
     const page = await open('/admin/login', { theme: options.theme ?? 'light', width: options.width, device: options.device });
-    await poll(page, `document.querySelector('#admin-email')`, 'the sign-in form');
+    // Signed in by an earlier test (cookies are shared by every tab), /admin/login goes on to
+    // the dashboard: either is the same origin, which is all the sign-in request needs.
+    await poll(page, `document.querySelector('#admin-email, [data-appearance-button]')`, 'the sign-in form or the admin');
     await signIn(page);
     await page.send('Page.navigate', { url: app.baseUrl + path });
     await poll(page, `document.querySelector('[data-appearance-button]') && !document.querySelector('[aria-label="Loading"]')`, `${path}, signed in`);
