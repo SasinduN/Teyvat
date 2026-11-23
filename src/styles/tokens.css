@@ -1,31 +1,85 @@
 /*
- * Colour tokens: every colour the redesigned site uses, from #12's palette
- * (docs/plans/redesign-redo.md, PR 2). Components use these through
- * `var(--…)`, never a hex value, so the dark theme (PR 5) only has to give
- * them other values under `:root[data-theme="dark"]`.
+ * Colour tokens: every colour the site uses. Components use these through `var(--…)`,
+ * never a hex value (colour-tokens.test), so a theme only has to give them other values.
  *
- * Semantic names first (`--background`, `--brand-primary`, `--on-inverse`…);
- * the `--palette-*` swatches are what they point at.
+ * Three colour themes (docs/plans/brand-themes.md, PR B), chosen in Admin → Settings and
+ * written on <html> by the server as `data-palette` (no inline script, no flash): Sunset
+ * (the default, from the logo), Emerald (the site's colours until then, unchanged) and
+ * Ocean. Each has a light and a dark version; `data-theme`, the visitor's choice, picks
+ * that (public/theme-init.js).
+ *
+ *   1. Each theme declares its swatches (`--palette-*`) and channel values. The swatch names
+ *      are roles, named after Emerald's colours when there was one theme: in Sunset,
+ *      `--palette-deep-emerald` is the deep maroon. Nothing outside this file names a swatch.
+ *   2. The semantic tokens (`--background`, `--brand-primary`, `--on-inverse`…) point at the
+ *      swatches, declared once for light and once for dark, on `:root, [data-palette]`: so
+ *      they're worked out again wherever a theme applies, the page or a preview box in the
+ *      admin (`[data-palette][data-theme]` on any element).
+ *
+ * Photos keep neutral overlays in every theme (measured by browser-hero-contrast). Every
+ * text/background pair is AA in all six sets: the plan's appendix and browser-contrast-*.
  */
-/*
- * The palette: Green, Pearl and Sky (the friend import, docs/reviews/friend-import.md;
- * it replaced #12's emerald and teal). The swatch names are kept, so every
- * component that points at one follows.
- */
-:root {
+
+/* Sunset: deep maroon and saffron, sampled from the logo. The default: no attribute means Sunset. */
+:root, [data-palette="sunset"] {
+  --palette-deep-emerald: #4A0D1A;
+  --palette-tropical-teal: #7C1D2D;
+  --palette-link: #9A2F12;
+  --palette-champagne-gold: #EDA73A;
+  --palette-frosted-pearl: #FCF8F3;
+  --palette-mist-green: #F7EADD;
+  --palette-charcoal-ink: #2E1E22;
+  --palette-forest-night: #3E0612;
+  --palette-inverse-raised: #5A1A28;
+  --palette-lagoon-glow: #F2A93B;
+  --palette-link-dark: #F6B66B;
+  --palette-soft-gold: #F0B44C;
+  --palette-ivory-text: #F8EEE7;
+  --palette-muted-text: #D2BDB5;
+  --palette-secondary-text: #6A5357;
+  --palette-sage-ink: #5E4549;
+  --palette-lagoon-soft: #F7C474;
+  --palette-white: #FFFFFF;
+  --palette-sky: #F5D4AE;
+  --palette-sky-mist: #FBEBD9;
+  --palette-border: #EADDD3;
+  --palette-border-strong: #8A7772;
+  --palette-deep-gold: #8A4A06;
+  --palette-night: #1A0F12;
+  --palette-night-raised: #241519;
+  --palette-night-surface: #2E1B20;
+  --palette-night-sky: #3B2328;
+  --palette-night-sky-raised: #4D2E34;
+  --palette-accent-on-photo: #F7CB7E;
+  --palette-brand-channels: 74 13 26;
+  --palette-teal-channels: 124 29 45;
+  --palette-gold-channels: 237 167 58;
+  --palette-inverse-channels: 62 6 18;
+  --palette-brand-channels-dark: 42 22 27;
+  --palette-teal-channels-dark: 242 169 59;
+  --palette-surface-channels-dark: 46 27 32;
+  --palette-ivory-channels: 248 238 231;
+  --palette-night-channels: 26 15 18;
+  --palette-glass-tint-dark: rgb(48 20 26 / .38);
+  --palette-border-strong-dark: rgb(248 238 231 / .46);
+}
+
+/* Emerald: the site's colours before the themes, exactly (with #72's input edge). */
+[data-palette="emerald"] {
   --palette-deep-emerald: #194D3B;
   --palette-tropical-teal: #237A57;
+  --palette-link: #237A57;
   --palette-champagne-gold: #D5B67B;
   --palette-frosted-pearl: #FAFBF8;
   --palette-mist-green: #E5F3EA;
   --palette-charcoal-ink: #25352E;
   --palette-forest-night: #12382D;
-  --palette-glass-surface: #20382F;
+  --palette-inverse-raised: #20382F;
   --palette-lagoon-glow: #74D2A8;
+  --palette-link-dark: #74D2A8;
   --palette-soft-gold: #D5B67B;
   --palette-ivory-text: #F1F7F2;
   --palette-muted-text: #B7CEC3;
-  /* #60766B in the import; a shade darker, for AA on the mist green too. */
   --palette-secondary-text: #5A6F64;
   --palette-sage-ink: #52675B;
   --palette-lagoon-soft: #98E2BF;
@@ -33,18 +87,80 @@
   --palette-sky: #B9E3F4;
   --palette-sky-mist: #EAF7FC;
   --palette-border: #DCE7DF;
-  /* Input edges: #849B8E in the import was 2.97:1 on a card; a shade darker passes 3:1 on card, page and tint (brand-themes plan). */
   --palette-border-strong: #798F83;
   --palette-deep-gold: #80683B;
   --palette-night: #101F1B;
   --palette-night-raised: #172D26;
+  --palette-night-surface: #20382F;
   --palette-night-sky: #193441;
   --palette-night-sky-raised: #284E60;
-  --brand-channels: 25 77 59;
-  --teal-channels: 35 122 87;
-  --gold-channels: 213 182 123;
+  --palette-accent-on-photo: #EBD6A4;
+  --palette-brand-channels: 25 77 59;
+  --palette-teal-channels: 35 122 87;
+  --palette-gold-channels: 213 182 123;
+  --palette-inverse-channels: 18 56 45;
+  --palette-brand-channels-dark: 23 51 47;
+  --palette-teal-channels-dark: 116 210 168;
+  --palette-surface-channels-dark: 32 56 47;
+  --palette-ivory-channels: 240 245 239;
+  --palette-night-channels: 16 31 27;
+  --palette-glass-tint-dark: rgb(17 47 43 / .38);
+  --palette-border-strong-dark: rgb(240 245 239 / .42);
+}
+
+/* Ocean: deep teal-blue and warm sand. */
+[data-palette="ocean"] {
+  --palette-deep-emerald: #0D3A49;
+  --palette-tropical-teal: #146476;
+  --palette-link: #146476;
+  --palette-champagne-gold: #DDBF8E;
+  --palette-frosted-pearl: #F9F7F2;
+  --palette-mist-green: #EFE6D6;
+  --palette-charcoal-ink: #1E2C32;
+  --palette-forest-night: #0B2E3A;
+  --palette-inverse-raised: #134050;
+  --palette-lagoon-glow: #80D0DD;
+  --palette-link-dark: #80D0DD;
+  --palette-soft-gold: #E3C48F;
+  --palette-ivory-text: #EEF3F1;
+  --palette-muted-text: #AFC3C8;
+  --palette-secondary-text: #4F6168;
+  --palette-sage-ink: #4A5A60;
+  --palette-lagoon-soft: #A8E1EA;
+  --palette-white: #FFFFFF;
+  --palette-sky: #C4E2E9;
+  --palette-sky-mist: #E3F1F4;
+  --palette-border: #DCE3E0;
+  --palette-border-strong: #768A90;
+  --palette-deep-gold: #7A5A26;
+  --palette-night: #0B1A20;
+  --palette-night-raised: #11252D;
+  --palette-night-surface: #173039;
+  --palette-night-sky: #173B47;
+  --palette-night-sky-raised: #22505F;
+  --palette-accent-on-photo: #EBD6A4;
+  --palette-brand-channels: 13 58 73;
+  --palette-teal-channels: 20 100 118;
+  --palette-gold-channels: 221 191 142;
+  --palette-inverse-channels: 11 46 58;
+  --palette-brand-channels-dark: 20 44 52;
+  --palette-teal-channels-dark: 128 208 221;
+  --palette-surface-channels-dark: 23 48 57;
+  --palette-ivory-channels: 238 243 241;
+  --palette-night-channels: 11 26 32;
+  --palette-glass-tint-dark: rgb(14 40 48 / .38);
+  --palette-border-strong-dark: rgb(238 243 241 / .46);
+}
+
+/* The light theme's meanings, for every theme. */
+:root, [data-palette] {
+  /* #60766B in the import; a shade darker, for AA on the mist green too. */
+  /* Input edges: #849B8E in the import was 2.97:1 on a card; a shade darker passes 3:1 on card, page and tint (brand-themes plan). */
+  --brand-channels: var(--palette-brand-channels);
+  --teal-channels: var(--palette-teal-channels);
+  --gold-channels: var(--palette-gold-channels);
   --surface-channels: 255 255 255;
-  --inverse-channels: 18 56 45;
+  --inverse-channels: var(--palette-inverse-channels);
   --photo-channels: 24 30 32;
   /*
    * Photo overlays (#12's, lighter on the right): dark under the copy, which
@@ -72,16 +188,16 @@
   --text-secondary: var(--palette-secondary-text);
   --text-muted: var(--palette-secondary-text);
   /* Links and text-coloured actions on the page: the green (the mint in the dark theme). */
-  --text-link: var(--palette-tropical-teal);
+  --text-link: var(--palette-link);
   /* Small text on a tint (badges on the mist green). */
   --text-on-tint: var(--palette-sage-ink);
   /* Under photo gradients: the forest night, deep enough for AA over a white photo (browser-contrast). */
   --inverse-surface: var(--palette-forest-night);
   --inverse-deep: var(--palette-forest-night);
-  --inverse-raised: var(--palette-glass-surface);
+  --inverse-raised: var(--palette-inverse-raised);
   --inverse-accent: var(--palette-champagne-gold);
   /* Small gold text directly on a photo (eyebrows, the current breadcrumb): paler, for AA over the overlay. */
-  --accent-on-photo: #EBD6A4;
+  --accent-on-photo: var(--palette-accent-on-photo);
   --on-inverse: var(--palette-ivory-text);
   --on-accent: var(--palette-charcoal-ink);
   /*
@@ -174,24 +290,38 @@
   --season-ok-icon: var(--palette-charcoal-ink);
   --season-off-fill: var(--palette-white);
   --season-off-icon: var(--palette-secondary-text);
+  /*
+   * Named for what they do, so nothing outside this file names a swatch (colour-tokens.test):
+   * the gold for small text (the header resets --accent-text), the cool tint the header's and
+   * the ride summary's secondary surfaces use, the skip link (light in both themes, as before),
+   * the floating Book a ride's focus ring on its fill, and a dialog's backdrop.
+   */
+  --gold-text: var(--palette-deep-gold);
+  --cool-tint: var(--palette-sky-mist);
+  --cool-tint-hover: var(--palette-sky);
+  --skip-link-bg: var(--palette-frosted-pearl);
+  --skip-link-text: var(--palette-deep-emerald);
+  --focus-ring-on-fill: var(--palette-sky);
+  --focus-gap-on-fill: var(--palette-deep-emerald);
+  --scrim: rgb(var(--palette-night-channels) / .55);
 }
 
 /*
  * The dark theme (redesign PR 5): the same names, other values. Chosen by
  * public/theme-init.js before the first paint: the visitor's saved choice
- * (`site:theme`), else the system's. Photos keep their own overlays, which
- * are dark in both themes.
+ * (`site:theme`), else light. Photos keep their own overlays, which are dark in
+ * both themes.
  */
-:root[data-theme="dark"] {
+:root[data-theme="dark"], [data-palette][data-theme="dark"] {
   color-scheme: dark;
-  --brand-channels: 23 51 47;
-  --teal-channels: 116 210 168;
-  --gold-channels: 213 182 123;
-  --surface-channels: 32 56 47;
+  --brand-channels: var(--palette-brand-channels-dark);
+  --teal-channels: var(--palette-teal-channels-dark);
+  --gold-channels: var(--palette-gold-channels);
+  --surface-channels: var(--palette-surface-channels-dark);
   --inverse-channels: 0 0 0;
   --background: var(--palette-night);
   --background-secondary: var(--palette-night-raised);
-  --surface: var(--palette-glass-surface);
+  --surface: var(--palette-night-surface);
   --surface-glass: rgb(var(--surface-channels) / .9);
   /* Headings are ivory, like the body text; the mint is for buttons and links. */
   --brand-primary: var(--palette-ivory-text);
@@ -203,13 +333,13 @@
   --text-primary: var(--palette-ivory-text);
   --text-secondary: var(--palette-muted-text);
   --text-muted: var(--palette-muted-text);
-  --text-link: var(--palette-lagoon-glow);
+  --text-link: var(--palette-link-dark);
   --text-on-tint: var(--palette-muted-text);
   --inverse-surface: var(--palette-forest-night);
-  --border: rgb(240 245 239 / .13);
-  /* Input edges: .25 was 2.09:1 on a card; .42 passes 3:1 on card, page and tint (brand-themes plan). */
-  --border-strong: rgb(240 245 239 / .42);
-  --emerald-edge: var(--palette-lagoon-glow);
+  --border: rgb(var(--palette-ivory-channels) / .13);
+  /* Input edges: 3:1 or more on card, page and tint in every theme (brand-themes plan; Emerald's .25 was 2.09:1). */
+  --border-strong: var(--palette-border-strong-dark);
+  --emerald-edge: var(--palette-link-dark);
   --sand: var(--palette-ivory-text);
   --danger: #ffb4ab;
   --danger-hover: #ffd0ca;
@@ -219,7 +349,7 @@
   --shadow: 0 12px 40px rgb(0 0 0 / .3);
   --shadow-card: 0 8px 30px rgb(0 0 0 / .32);
   --shadow-card-hover: 0 18px 44px rgb(0 0 0 / .45);
-  --glass-tint: rgb(17 47 43 / .38);
+  --glass-tint: var(--palette-glass-tint-dark);
   --glass-bg: rgb(var(--surface-channels) / .54);
   /* Nearly opaque: map overlays sit on bright tiles (#12's .86 fails AA there). */
   --glass-strong-bg: rgb(var(--surface-channels) / .95);
@@ -239,6 +369,9 @@
   --vehicle-ink: var(--vehicle-ink-on-dark);
   --glass-saturation: 112%;
   --glass-noise-opacity: 0;
+  --gold-text: var(--palette-soft-gold);
+  --cool-tint: var(--palette-night-sky);
+  --cool-tint-hover: var(--palette-night-sky-raised);
 }
 
 /* Layout and type tokens: one scale for the header, sections, headings and cards. */

@@ -15,6 +15,7 @@
 import { Router, type Request, type Response } from 'express';
 
 import { BRAND, BRAND_ASSETS, type Brand } from '../../../shared/brand';
+import { DEFAULT_PALETTE, PALETTE_BACKGROUND_COLOR, PALETTE_THEME_COLOR, type Palette } from '../../../shared/palette';
 import { homeDescription, homeTitle, PAGE_DESCRIPTIONS, PAGE_NAMES, pageTitle, type PageName } from '../../../shared/page-meta';
 import { paths, TOUR_CATEGORY_PATH_SEGMENT } from '../../../shared/site-paths';
 import { SLUG_PATTERN } from '../../../shared/content-schema';
@@ -22,7 +23,7 @@ import { escapeHtml } from '../../../shared/html';
 import type { SiteConfig } from '../env';
 import { pool } from '../db';
 import { describeForLog } from '../http';
-import { injectHead, injectTextSize, renderHead, type PageMeta } from './head';
+import { injectHead, injectPalette, injectTextSize, renderHead, type PageMeta } from './head';
 import { fullSrcSet } from '../../../shared/photo-assets';
 import { photoResolver } from '../../../shared/public-photos';
 import { DEFAULT_TEXT_SIZE, type TextSize } from '../../../shared/text-size';
@@ -281,7 +282,7 @@ export async function resolvePage(
  * `/site.webmanifest`: what a phone uses when someone adds the site to their
  * home screen. A plain website (`display: browser`), no service worker.
  */
-export function webManifest(brand: Brand): Record<string, unknown> {
+export function webManifest(brand: Brand, palette: Palette = DEFAULT_PALETTE): Record<string, unknown> {
   return {
     name: brand.name,
     short_name: brand.shortName,
@@ -289,8 +290,9 @@ export function webManifest(brand: Brand): Record<string, unknown> {
     start_url: '/',
     scope: '/',
     display: 'browser',
-    theme_color: brand.themeColor,
-    background_color: brand.backgroundColor,
+    // The browser's bar follows the admin's colour theme.
+    theme_color: PALETTE_THEME_COLOR[palette],
+    background_color: PALETTE_BACKGROUND_COLOR[palette],
     icons: brand.manifestIcons
   };
 }
@@ -449,8 +451,8 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
   // The web manifest: the brand's names and icon, per request like everything here.
   router.get('/site.webmanifest', async (_req, res, next) => {
     try {
-      const { brand } = await loadPageSettings();
-      res.set('Cache-Control', 'no-cache').type('application/manifest+json').send(JSON.stringify(webManifest(brand)));
+      const { brand, palette } = await loadPageSettings();
+      res.set('Cache-Control', 'no-cache').type('application/manifest+json').send(JSON.stringify(webManifest(brand, palette)));
     } catch (error) {
       next(error);
     }
@@ -473,9 +475,10 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
     const origin = originOf(req, site);
     let resolved: Resolved;
     let textSize: TextSize = DEFAULT_TEXT_SIZE;
+    let palette: Palette = DEFAULT_PALETTE;
     let brand: Brand = BRAND;
     try {
-      ({ brand, textSize } = await loadPageSettings());
+      ({ brand, textSize, palette } = await loadPageSettings());
       resolved = await resolvePage(path, new URLSearchParams(search), features, brand);
     } catch (error) {
       // The database is down: still send the shell (it shows its own error),
@@ -507,7 +510,7 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
       head += `\n<link rel="preload" as="image" href="${escapeHtml(resolved.meta.image)}"${responsive} fetchpriority="high">`;
     }
     res.status(resolved.status).set('Cache-Control', 'no-cache');
-    await sendText(req, res, injectTextSize(injectHead(template, head), textSize), 'html');
+    await sendText(req, res, injectPalette(injectTextSize(injectHead(template, head), textSize), palette), 'html');
   });
 
   return router;

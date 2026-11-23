@@ -167,6 +167,7 @@ export async function resetContent(options: { whatsappNumber?: string | null } =
             privacy_url = null, terms_url = null, sustainability_url = null,
             whatsapp_number = $1,
             text_size = 100,
+            palette = 'sunset',
             brand_name = null, brand_short_name = null, brand_tagline = null, brand_legal_name = null,
             hero_headline = null
       where id`,

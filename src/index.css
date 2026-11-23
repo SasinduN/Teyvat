@@ -97,7 +97,7 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
 @media (forced-colors: active) { html, .site *, .te-admin * { scrollbar-color: auto; } }
 
 /* "Skip to content": off screen until it has keyboard focus. */
-.skip-link { position: fixed; top: 1rem; left: 1rem; z-index: 110; transform: translateY(-180%); background: var(--palette-frosted-pearl); color: var(--palette-deep-emerald); padding: .8rem 1.2rem; border-radius: .8rem; font-weight: 700; }
+.skip-link { position: fixed; top: 1rem; left: 1rem; z-index: 110; transform: translateY(-180%); background: var(--skip-link-bg); color: var(--skip-link-text); padding: .8rem 1.2rem; border-radius: .8rem; font-weight: 700; }
 .skip-link:focus { transform: translateY(0); }
 
 /* Type (#12): balanced headings, one scale for every section heading. */
@@ -139,6 +139,17 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   .te-text-size-preview { --preview-scale: 1; display: flex; flex-direction: column; gap: .4em; font-size: calc(16px * var(--preview-scale)); padding: 1.25em; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--background); color: var(--text-primary); }
   .te-text-size-preview[data-text-size-preview="110"] { --preview-scale: 1.1; }
   .te-text-size-preview[data-text-size-preview="120"] { --preview-scale: 1.2; }
+  /* The colour theme picker's previews (PaletteField): each box is its own theme and mode. */
+  .te-palette-preview { display: flex; flex-direction: column; gap: .3rem; padding: .7rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--background); color: var(--text-primary); font-size: var(--text-xs); line-height: 1.35; }
+  .te-palette-preview__swatches { display: flex; gap: .3rem; margin-bottom: .15rem; }
+  .te-palette-preview__swatch { width: 1rem; height: 1rem; border-radius: 999px; border: 1px solid var(--border-strong); }
+  .te-palette-preview__swatch--page { background: var(--surface); }
+  .te-palette-preview__swatch--brand { background: var(--button-primary-bg); }
+  .te-palette-preview__swatch--accent { background: var(--accent); }
+  .te-palette-preview__heading { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-sm); color: var(--brand-primary); }
+  .te-palette-preview__body { color: var(--text-secondary); }
+  .te-palette-preview__link { color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; }
+  .te-palette-preview__button { align-self: flex-start; padding: .2rem .6rem; border-radius: var(--radius-sm); background: var(--button-primary-bg); color: var(--button-primary-text); font-weight: 600; }
   .te-text-size-preview__label { font-size: .8125em; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-text); }
   .te-text-size-preview__heading { font-size: 1.75em; font-weight: 700; line-height: 1.2; color: var(--brand-primary); }
   .te-text-size-preview__body { font-size: 1.0625em; line-height: 1.6; }
@@ -317,21 +328,18 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
    */
   .te-nav, .te-mobile-navigation {
     --accent-text: var(--text-link);
-    --button-secondary-bg: var(--palette-sky-mist);
-    --button-secondary-hover: var(--palette-sky);
+    --button-secondary-bg: var(--cool-tint);
+    --button-secondary-hover: var(--cool-tint-hover);
     --button-secondary-text: var(--brand-primary);
     --button-edge: var(--border-strong);
     --button-hover-edge: var(--text-link);
-    /* The wordmark's small "TOURS": the darker gold on the pearl, for AA. */
-    --logo-accent: var(--palette-deep-gold);
+    /* The wordmark's small "TOURS": the gold for small text (darker on light, softer on dark), for AA. */
+    --logo-accent: var(--gold-text);
     background: var(--background);
     color: var(--brand-primary);
   }
   :root[data-theme="dark"] :is(.te-nav, .te-mobile-navigation) {
-    --button-secondary-bg: var(--palette-night-sky);
-    --button-secondary-hover: var(--palette-night-sky-raised);
     --button-secondary-text: var(--text-primary);
-    --logo-accent: var(--palette-soft-gold);
   }
   .te-nav {
     height: var(--header-height);

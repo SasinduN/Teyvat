@@ -275,14 +275,18 @@ describe('bookings off and on, in Chrome', { skip, timeout: 4 * 60_000 }, () => 
     assert.equal(await page.evaluate<string>(`document.querySelector('.ride-showcase svg[data-vehicle-icon]').dataset.vehicleIcon`), 'suv');
     // The sketch icons are outlines on the card's own colour. The selected card's ink is #161616 on
     // the gold, the hubs too; the others keep the theme's ink (charcoal here) and the gold hubs.
-    const ink = await page.evaluate<{ selected: { stroke: string; fill: string; hub: string }; other: { stroke: string; fill: string; hub: string } }>(`(() => {
+    const ink = await page.evaluate<{ accent: string; selected: { stroke: string; fill: string; hub: string }; other: { stroke: string; fill: string; hub: string } }>(`(() => {
       const card = (id) => document.querySelector('.ride-vehicle__input[value=' + id + ']').closest('.ride-vehicle');
       const look = (id) => { const body = getComputedStyle(card(id).querySelector('.vi-body')); return { stroke: body.stroke, fill: body.fill, hub: getComputedStyle(card(id).querySelector('.vi-gold')).fill }; };
-      return { selected: look('suv'), other: look('car') };
+      // The theme's --accent as a colour (the gold in Emerald, the saffron in Sunset).
+      const probe = document.createElement('i'); probe.style.color = 'var(--accent)'; document.body.append(probe);
+      const accent = getComputedStyle(probe).color; probe.remove();
+      return { accent, selected: look('suv'), other: look('car') };
     })()`);
     assert.equal(ink.selected.stroke, 'rgb(22, 22, 22)', 'selected ink: #161616');
     // (Not the card's computed background: that is still mid-transition here.)
-    assert.equal(ink.selected.fill, 'rgb(213, 182, 123)', 'the outline is filled with the card itself (the gold, --accent)');
+    assert.equal(ink.selected.fill, ink.accent, 'the outline is filled with the card itself (--accent, the theme’s gold)');
+    assert.notEqual(ink.accent, 'rgba(0, 0, 0, 0)');
     assert.equal(ink.selected.hub, 'rgb(22, 22, 22)', 'dark hubs on the gold');
     assert.notEqual(ink.other.stroke, ink.selected.stroke);
     assert.equal(ink.other.hub, 'rgb(245, 197, 24)', 'gold hubs elsewhere');

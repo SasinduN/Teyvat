@@ -7,6 +7,7 @@
 import { BRAND_ASSETS, type Brand } from '../../../shared/brand';
 import { escapeHtml } from '../../../shared/html';
 import type { TextSize } from '../../../shared/text-size';
+import { isPalette, type Palette } from '../../../shared/palette';
 
 export interface PageMeta {
   title: string;
@@ -187,6 +188,17 @@ const END = '<!--/page-meta-->';
  */
 export function injectTextSize(html: string, size: TextSize): string {
   return html.replace('<html', `<html data-text-size="${size}"`);
+}
+
+/**
+ * The admin's colour theme on <html> (`site_settings.palette`, docs/plans/brand-themes.md):
+ * like the text size, an attribute in the HTML itself, so the first paint is already in the
+ * theme, with no script and nothing for the CSP. Only the saved value is ever written:
+ * nothing in the request is read.
+ */
+export function injectPalette(html: string, palette: Palette): string {
+  if (!isPalette(palette)) throw new Error(`Not a colour theme: ${String(palette)}`);
+  return html.replace('<html', `<html data-palette="${palette}"`);
 }
 
 export function injectHead(template: string, head: string): string {
