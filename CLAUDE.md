@@ -55,7 +55,8 @@ this file or anywhere else in git.
 | TC | Tour categories (`docs/plans/tour-categories.md`): 0030, `/tours` row, a page per category, the Tours menu, the tailor-made card (PR 1); new tour drafts through `content:import` (PR 2) | done (#69, #70) |
 | R2 | Move R2 to the client's Cloudflare account: `images.serendibluxetours.com` always allowed, `R2_PREVIOUS_PUBLIC_BASE_URL`, `media:rebase` covers the credits, `docs/runbooks/move-r2-to-client.md` | done (#63); moved in production 22 Nov 2026 |
 | CH | One host: a page on www or `*.up.railway.app` gets a 301 to `PUBLIC_SITE_URL` (`server/src/canonical-host.ts`) | done (#71) |
-| BT | The client's logo, three colour themes, the new font mix (`docs/plans/brand-themes.md`): PR A the logo and fonts (colours stay Emerald); PR B the themes and the admin picker | PR A done (#72); PR B in review |
+| BT | The client's logo, three colour themes, the new font mix (`docs/plans/brand-themes.md`): PR A the logo and fonts (colours stay Emerald); PR B the themes and the admin picker | done (#72, #73) |
+| AP | Admin → Appearance (handoff Task 7): the theme picker as a top-bar panel, plus a default mode for first visits (`site_settings.default_mode`, 0033) | in review |
 
 Update the Status column when a phase lands.
 
@@ -197,8 +198,22 @@ Update the Status column when a phase lands.
   `src/styles/tokens.css`, with dark values under `:root[data-theme="dark"]`.
   `public/theme-init.js` (a classic script, above the stylesheets) sets the
   theme before the first paint: the saved choice (`site:theme`, from the
-  Navbar's toggle), else light (the system's setting doesn't count). Browser
-  tests that need dark save the choice (`saveTheme`, `server/test/chrome.ts`). The maps stay on a light
+  Navbar's toggle), else the site's default mode (below), else light. Browser
+  tests that need dark save the choice (`saveTheme`, `server/test/chrome.ts`).
+- **Default mode** (Admin → Appearance, `site_settings.default_mode`, 0033,
+  `shared/default-mode.ts`): what a first-time visitor sees, `light` (default), `dark` or `auto`
+  (the device's `prefers-color-scheme`, followed live). Express writes `data-default-mode` on
+  `<html>` next to `data-palette` (`injectDefaultMode`); `theme-init.js` reads it only when
+  nothing is saved, so the visitor's choice always wins (`resolveTheme` is the same rule for the
+  app). Nothing in a request or the browser sets it (`default-mode.test`, `browser-appearance`).
+- **Admin → Appearance** (`src/admin/components/AppearancePanel.tsx`, handoff Task 7): the
+  default mode and the colour theme in one panel, from the admin top bar's palette button (a
+  popover; a bottom sheet under 700 px) and inline in Admin → Settings. A choice previews on
+  the admin's tab at once (`src/admin/appearance.ts`, one preview shared by both copies) and
+  is saved only by "Save for all visitors" (the settings API with its 409 check); Cancel,
+  closing or leaving the page puts the tab back. Each group is a radiogroup with a roving
+  tabindex. The settings form keeps both values but renders neither, and its reload keeps
+  what's being typed (`keepDirtyValues`). `browser-appearance` covers it, AA in all six sets. The maps stay on a light
   basemap in both themes (#41): CARTO Voyager with `VITE_CARTO_KEY`,
   OpenStreetMap without it (`shared/map-tiles.ts`). `browser-contrast` measures AA on
   every page type in both themes, photos painted white (the worst case);
@@ -207,7 +222,7 @@ Update the Status column when a phase lands.
 - **Colour themes** (`docs/plans/brand-themes.md`, PR B, `shared/palette.ts`): Sunset (the
   default, from the logo), Emerald (the colours before, every token identical) and Ocean, each
   light and dark: six sets.
-  - Only an admin chooses (Admin → Settings → Site colour theme, `site_settings.palette`, 0032).
+  - Only an admin chooses (Admin → Appearance, `site_settings.palette`, 0032).
     Express writes `data-palette` on `<html>` next to `data-text-size` (`injectPalette`) in every
     page, public and admin: no script, no flash. No attribute means Sunset. Nothing in a request
     or the browser (query, cookie, header, storage) is read for it (`palette.test`,
@@ -216,7 +231,8 @@ Update the Status column when a phase lands.
     colours) and channels, on `:root, [data-palette="sunset"]`, `[data-palette="emerald"]`,
     `[data-palette="ocean"]`. The semantic tokens are declared once for light and once for dark
     on `:root, [data-palette]`, so they're worked out again wherever a theme applies: the
-    picker's previews are `[data-palette][data-theme]` boxes rendered with the real tokens.
+    Appearance panel's thumbnails and swatches are `[data-palette][data-theme]` boxes rendered
+    with the real tokens.
   - **Nothing outside `tokens.css` names a swatch** (`colour-tokens`): use a semantic token,
     adding one there if needed (`--cool-tint`, `--gold-text`, `--skip-link-*`,
     `--focus-*-on-fill`, `--scrim` came from this). Photo overlays stay neutral in every theme.
@@ -226,7 +242,8 @@ Update the Status column when a phase lands.
     `browser-hero-contrast` and `browser-glass`'s blur check run in every theme too (the blur
     check's calibration is Emerald's, where it was set).
   - `npm run screenshots -- --palette <name>` sets the "after" site's theme and names its shots
-    after it; `--theme-picker` takes the picker.
+    after it; `--appearance` takes the Appearance panel, its phone sheet, Settings and two
+    first visits (default Dark, Auto on a dark device).
 - **Error boundaries:** each public section is wrapped in `Section`
   (`src/pages/Section.tsx`, renders nothing on error), and each page in a
   boundary in `PublicLayout.tsx`; admin pages fall back to `PageCrash`.

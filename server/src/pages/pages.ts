@@ -16,6 +16,7 @@ import { Router, type Request, type Response } from 'express';
 
 import { BRAND, BRAND_ASSETS, type Brand } from '../../../shared/brand';
 import { DEFAULT_PALETTE, PALETTE_BACKGROUND_COLOR, PALETTE_THEME_COLOR, type Palette } from '../../../shared/palette';
+import { DEFAULT_DEFAULT_MODE, type DefaultMode } from '../../../shared/default-mode';
 import { homeDescription, homeTitle, PAGE_DESCRIPTIONS, PAGE_NAMES, pageTitle, type PageName } from '../../../shared/page-meta';
 import { paths, TOUR_CATEGORY_PATH_SEGMENT } from '../../../shared/site-paths';
 import { SLUG_PATTERN } from '../../../shared/content-schema';
@@ -23,7 +24,7 @@ import { escapeHtml } from '../../../shared/html';
 import type { SiteConfig } from '../env';
 import { pool } from '../db';
 import { describeForLog } from '../http';
-import { injectHead, injectPalette, injectTextSize, renderHead, type PageMeta } from './head';
+import { injectDefaultMode, injectHead, injectPalette, injectTextSize, renderHead, type PageMeta } from './head';
 import { fullSrcSet } from '../../../shared/photo-assets';
 import { photoResolver } from '../../../shared/public-photos';
 import { DEFAULT_TEXT_SIZE, type TextSize } from '../../../shared/text-size';
@@ -476,9 +477,10 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
     let resolved: Resolved;
     let textSize: TextSize = DEFAULT_TEXT_SIZE;
     let palette: Palette = DEFAULT_PALETTE;
+    let defaultMode: DefaultMode = DEFAULT_DEFAULT_MODE;
     let brand: Brand = BRAND;
     try {
-      ({ brand, textSize, palette } = await loadPageSettings());
+      ({ brand, textSize, palette, defaultMode } = await loadPageSettings());
       resolved = await resolvePage(path, new URLSearchParams(search), features, brand);
     } catch (error) {
       // The database is down: still send the shell (it shows its own error),
@@ -510,7 +512,8 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
       head += `\n<link rel="preload" as="image" href="${escapeHtml(resolved.meta.image)}"${responsive} fetchpriority="high">`;
     }
     res.status(resolved.status).set('Cache-Control', 'no-cache');
-    await sendText(req, res, injectPalette(injectTextSize(injectHead(template, head), textSize), palette), 'html');
+    const html = injectDefaultMode(injectPalette(injectTextSize(injectHead(template, head), textSize), palette), defaultMode);
+    await sendText(req, res, html, 'html');
   });
 
   return router;

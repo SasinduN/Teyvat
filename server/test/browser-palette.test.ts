@@ -8,10 +8,11 @@ import './test-db';
  *   - no flash: with JavaScript off, the first paint is already in the saved theme (the
  *     attribute is in the HTML, the colours in the stylesheet);
  *   - the visitor's light/dark choice works in every theme;
- *   - nothing a visitor's browser holds changes the theme (storage, the address);
- *   - Admin → Settings → Site colour theme: three radio cards with light and dark
- *     previews in their own colours, usable from the keyboard; a save changes this tab at
- *     once, and every page after it, public and admin.
+ *   - nothing a visitor's browser holds changes the theme (storage, the address).
+ *
+ * Choosing the theme (Admin → Appearance: its previews in their own colours, the keyboard,
+ * a save, this tab and every page after it) is browser-appearance, which replaced the
+ * radio-card picker's test here.
  *
  * Needs `npm run build` and Chrome; skipped otherwise.
  */
@@ -25,7 +26,7 @@ import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { PALETTES, type Palette } from '../../shared/palette';
 import { findChrome, launchChrome, saveTheme, type Chrome, type Page } from './chrome';
-import { assertConnectedToTestDatabase, createUser, listen, migrateTestDatabase, PASSWORD, resetAuthTables, resetContent, type RunningApp } from './helpers';
+import { assertConnectedToTestDatabase, createUser, listen, migrateTestDatabase, resetAuthTables, resetContent, type RunningApp } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
 
 const ROOT = resolve(import.meta.dirname, '..', '..');
@@ -148,62 +149,6 @@ describe('the colour themes, in Chrome', { skip, timeout: 4 * 60_000 }, () => {
       await poll(page, `document.documentElement.dataset.theme === 'dark'`, 'dark');
       assert.equal(await palette(page), 'ocean');
       assert.equal(await pageColour(page), PAGE.ocean.dark);
-    } finally {
-      await close(page);
-    }
-  });
-
-  test('Admin → Settings: the picker, its previews, the keyboard, a save, the next page load', async () => {
-    const page = await open('/admin/login');
-    try {
-      await poll(page, `document.querySelector('#admin-email')`, 'the sign-in form');
-      const status = await page.evaluate<number>(`fetch('/api/auth/login', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'admin@example.test', password: ${JSON.stringify(PASSWORD)} })
-      }).then((r) => r.status)`);
-      assert.equal(status, 200);
-      await page.send('Page.navigate', { url: `${app.baseUrl}/admin/settings` });
-      await poll(page, `document.querySelector('[data-palette-field]')`, 'the picker');
-      assert.equal(await palette(page), 'sunset', 'the admin follows the theme');
-
-      const picker = await page.evaluate<{ legend: string; radios: { value: string; checked: boolean; name: string }[]; previews: Record<string, string> }>(`(() => {
-        const field = document.querySelector('[data-palette-field]');
-        const previews = {};
-        for (const box of field.querySelectorAll('.te-palette-preview')) previews[box.dataset.palette + ' ' + box.dataset.theme] = getComputedStyle(box).backgroundColor;
-        return {
-          legend: field.querySelector('legend').textContent,
-          radios: [...field.querySelectorAll('input[type=radio]')].map((r) => ({ value: r.value, checked: r.checked, name: r.name })),
-          previews
-        };
-      })()`);
-      assert.equal(picker.legend, 'Site colour theme');
-      assert.deepEqual(picker.radios.map((r) => [r.value, r.checked]), [['sunset', true], ['emerald', false], ['ocean', false]]);
-      assert.equal(new Set(picker.radios.map((r) => r.name)).size, 1, 'one radio group');
-      for (const p of PALETTES) {
-        assert.equal(picker.previews[`${p} light`], PAGE[p].light, `${p} light preview`);
-        assert.equal(picker.previews[`${p} dark`], PAGE[p].dark, `${p} dark preview`);
-      }
-      assert.match(await page.evaluate<string>(`document.querySelector('[data-palette-field]').textContent`), /every visitor .* next page load/i);
-
-      // The keyboard: focus the chosen radio, then an arrow key moves the choice.
-      await page.evaluate(`document.querySelector('[data-palette-field] input[value="sunset"]').focus(), true`);
-      await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'ArrowDown', code: 'ArrowDown', windowsVirtualKeyCode: 40 });
-      await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'ArrowDown', code: 'ArrowDown', windowsVirtualKeyCode: 40 });
-      await poll(page, `document.querySelector('[data-palette-field] input[value="emerald"]').checked`, 'the arrow key');
-      assert.equal(await palette(page), 'sunset', 'choosing changes nothing until it is saved');
-      await page.evaluate(`document.querySelector('[data-palette-field] input[value="ocean"]').click(), true`);
-
-      await page.evaluate(`[...document.querySelectorAll('button[type="submit"]')].find((b) => /Save settings/.test(b.textContent)).click(), true`);
-      await poll(page, `document.documentElement.dataset.palette === 'ocean'`, 'the saved theme, applied here');
-      assert.equal(await pageColour(page), PAGE.ocean.light);
-      assert.equal((await pool.query('select palette from public.site_settings')).rows[0].palette, 'ocean');
-
-      for (const path of ['/', '/destinations/ella', '/admin/settings']) {
-        await page.send('Page.navigate', { url: app.baseUrl + path });
-        await poll(page, `document.readyState === 'complete' && (document.body.dataset.route || document.querySelector('[data-palette-field]'))`, path);
-        assert.equal(await palette(page), 'ocean', path);
-      }
-      assert.equal(await page.evaluate<boolean>(`document.querySelector('[data-palette-field] input[value="ocean"]').checked`), true, 'the form shows what is saved');
     } finally {
       await close(page);
     }

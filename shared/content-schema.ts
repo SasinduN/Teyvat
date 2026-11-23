@@ -15,6 +15,7 @@ import { z } from './zod';
 import { normalizeMonths } from './best-months';
 import { isTextSize, TEXT_SIZES } from './text-size';
 import { isPalette, PALETTE_LABELS, PALETTES } from './palette';
+import { DEFAULT_MODE_LABELS, DEFAULT_MODES, isDefaultMode } from './default-mode';
 import { BRAND_MAX_LENGTH, BRAND_TEXT_DEFAULTS } from './brand';
 
 import {
@@ -94,7 +95,13 @@ export type Field =
   | (FieldBase & { type: 'whatsapp' })
   /** The site-wide text size (`shared/text-size.ts`), with a live preview. */
   | (FieldBase & { type: 'textSize' })
+  /**
+   * The colour theme and a first visit's light or dark (`shared/palette.ts`,
+   * `shared/default-mode.ts`). Not form controls: Admin → Appearance
+   * (`src/admin/components/AppearancePanel.tsx`) edits and saves both.
+   */
   | (FieldBase & { type: 'palette' })
+  | (FieldBase & { type: 'defaultMode' })
   /** The stats strip (`shared/site-stats.ts`): up to four rows. */
   | (FieldBase & { type: 'stats' })
   /** Months 1 to 12 (`shared/best-months.ts`): twelve checkboxes, select all and clear. */
@@ -348,13 +355,10 @@ export const SITE_SETTINGS_FIELDS: Field[] = [
     span: 2,
     help: 'For the whole site and this admin panel, from the next page load.'
   },
-  {
-    name: 'palette',
-    label: 'Site colour theme',
-    type: 'palette',
-    span: 2
-    // Its note is inside the picker (PaletteField), next to the cards.
-  },
+  // Edited in the Appearance panel, not in this form (RecordForm renders nothing for them);
+  // here so a save of either keeps the other's value and the API validates both.
+  { name: 'palette', label: 'Theme', type: 'palette', span: 2 },
+  { name: 'default_mode', label: 'Default mode for visitors', type: 'defaultMode', span: 2 },
   {
     name: 'stats',
     label: 'Stats strip',
@@ -564,6 +568,11 @@ function schemaForField(field: Field, options: SchemaOptions = {}): z.ZodTypeAny
     case 'palette':
       return z.unknown().refine(isPalette, {
         message: `Choose ${PALETTES.slice(0, -1).map((p) => PALETTE_LABELS[p].name).join(', ')} or ${PALETTE_LABELS[PALETTES[PALETTES.length - 1]].name}.`
+      });
+
+    case 'defaultMode':
+      return z.unknown().refine(isDefaultMode, {
+        message: `Choose ${DEFAULT_MODES.slice(0, -1).map((m) => DEFAULT_MODE_LABELS[m]).join(', ')} or ${DEFAULT_MODE_LABELS[DEFAULT_MODES[DEFAULT_MODES.length - 1]]}.`
       });
 
     case 'whatsapp':

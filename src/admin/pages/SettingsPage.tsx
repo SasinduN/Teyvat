@@ -12,6 +12,8 @@ import { ApiRequestError } from '@/lib/api/http';
 import { describeError } from '@/lib/errors';
 import { queryKeys } from '@/lib/queryClient';
 import { RecordForm, type FormValues } from '@/admin/components/RecordForm';
+import { AppearancePanel } from '@/admin/components/AppearancePanel';
+import { adoptSavedAppearance } from '@/admin/appearance';
 import { Button, Card, ErrorNote, PageHeader, Spinner } from '@/admin/components/ui';
 
 /**
@@ -24,6 +26,10 @@ import { Button, Card, ErrorNote, PageHeader, Spinner } from '@/admin/components
  *
  * The text size is the root font-size of every page. The server writes it on
  * <html>; a save also sets it here, so this page shows it straight away.
+ *
+ * Appearance (the colour theme and a first visit's light or dark) is its own section, the
+ * same panel as the top bar's, with its own save. The form keeps those two values as loaded,
+ * and a reload after either save keeps whatever is being typed here (`keepDirtyValues`).
  */
 export const SettingsPage: React.FC = () => {
   const qc = useQueryClient();
@@ -47,7 +53,7 @@ export const SettingsPage: React.FC = () => {
     for (const field of SITE_SETTINGS_FIELDS) {
       values[field.name] = (current.data as unknown as FormValues)[field.name] ?? '';
     }
-    reset(values);
+    reset(values, { keepDirtyValues: true });
   }, [current.data, reset]);
 
   const save = useMutation({
@@ -59,7 +65,7 @@ export const SettingsPage: React.FC = () => {
       qc.setQueryData(queryKeys.admin.siteSettings, saved);
       document.documentElement.dataset.textSize = String(saved.text_size);
       // This tab follows at once; every other page gets it from the server on its next load.
-      document.documentElement.dataset.palette = saved.palette;
+      adoptSavedAppearance(saved);
       // The Footer reads these.
       void qc.invalidateQueries({ queryKey: queryKeys.siteContent });
       toast.success('Settings saved');
@@ -87,8 +93,12 @@ export const SettingsPage: React.FC = () => {
     <div>
       <PageHeader
         title="Site settings"
-        description="The contact details and links in the public site's footer, the number behind its WhatsApp button, and the site's text size. Links are optional: leave one empty and the footer shows it without a destination."
+        description="The site's appearance, the contact details and links in the public site's footer, the number behind its WhatsApp button, and the site's text size. Links are optional: leave one empty and the footer shows it without a destination."
       />
+
+      <Card className="mb-4 p-5 sm:p-7">
+        <AppearancePanel variant="inline" />
+      </Card>
 
       {current.isError ? (
         <ErrorNote>{describeError(current.error)}</ErrorNote>

@@ -8,6 +8,7 @@ import { BRAND_ASSETS, type Brand } from '../../../shared/brand';
 import { escapeHtml } from '../../../shared/html';
 import type { TextSize } from '../../../shared/text-size';
 import { isPalette, type Palette } from '../../../shared/palette';
+import { isDefaultMode, type DefaultMode } from '../../../shared/default-mode';
 
 export interface PageMeta {
   title: string;
@@ -199,6 +200,16 @@ export function injectTextSize(html: string, size: TextSize): string {
 export function injectPalette(html: string, palette: Palette): string {
   if (!isPalette(palette)) throw new Error(`Not a colour theme: ${String(palette)}`);
   return html.replace('<html', `<html data-palette="${palette}"`);
+}
+
+/**
+ * A first visit's light or dark (`site_settings.default_mode`) on <html>, for
+ * public/theme-init.js to read before the first paint when the visitor hasn't chosen. Like
+ * the palette, only the saved value is ever written: nothing in the request is read.
+ */
+export function injectDefaultMode(html: string, mode: DefaultMode): string {
+  if (!isDefaultMode(mode)) throw new Error(`Not a default mode: ${String(mode)}`);
+  return html.replace('<html', `<html data-default-mode="${mode}"`);
 }
 
 export function injectHead(template: string, head: string): string {

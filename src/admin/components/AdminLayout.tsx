@@ -24,6 +24,7 @@ import { ErrorBoundary } from '@/lib/ErrorBoundary';
 import { cn } from '@/utils/cn';
 import { documentBrand } from '@/lib/brand';
 import { LogoMark } from '@/components/Logo';
+import { AppearanceButton } from '@/admin/components/AppearancePanel';
 
 /** The brand as the server wrote it into this page (the admin doesn't load content). */
 const brand = documentBrand();
@@ -172,19 +173,20 @@ export const AdminLayout: React.FC = () => {
       )}
 
       <div className="lg:pl-64">
-        {/* Mobile top bar */}
-        <div className="te-admin-toolbar sticky top-0 z-40 flex items-center gap-3 border-b border-[var(--border-strong)]/50 bg-[var(--background)]/95 py-3 backdrop-blur lg:hidden">
+        {/* The top bar: on phones the menu and the name; everywhere the Appearance button. */}
+        <div className="te-admin-toolbar sticky top-0 z-40 flex items-center gap-3 border-b border-[var(--border-strong)]/50 bg-[var(--background)]/95 py-3 backdrop-blur lg:py-2">
           <button
             onClick={() => setMobileOpen((v) => !v)}
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileOpen} aria-controls="admin-navigation"
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--inverse-surface)] text-white"
+            className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--inverse-surface)] text-white lg:hidden"
           >
             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
-          <span className="font-heading text-base font-bold text-[var(--brand-primary)]">
+          <span className="font-heading text-base font-bold text-[var(--brand-primary)] lg:hidden">
             {brand.name} Admin
           </span>
+          <AppearanceButton className="ml-auto" />
         </div>
 
         <main className="te-container py-8">

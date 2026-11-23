@@ -26,7 +26,8 @@ export function useModalFocus(open: boolean, onClose: () => void) {
       branch = branch.parentElement;
     }
     document.body.style.overflow = 'hidden';
-    const controls = () => [...panel.querySelectorAll<HTMLElement>(focusable)].filter(el => el.getClientRects().length > 0 && !el.closest('[inert]'));
+    // Not tabindex=-1 ones: a radio group's unchosen options (roving tabindex) aren't in the Tab order.
+    const controls = () => [...panel.querySelectorAll<HTMLElement>(focusable)].filter(el => el.tabIndex >= 0 && el.getClientRects().length > 0 && !el.closest('[inert]'));
     const focusFirst = () => (panel.querySelector<HTMLElement>('[data-autofocus]') ?? controls()[0] ?? panel).focus({ preventScroll: true });
     const frame = requestAnimationFrame(focusFirst);
     const onKey = (event: KeyboardEvent) => {
