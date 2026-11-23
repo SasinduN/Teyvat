@@ -199,7 +199,12 @@ Update the Status column when a phase lands.
   `public/theme-init.js` (a classic script, above the stylesheets) sets the
   theme before the first paint: the saved choice (`site:theme`, from the
   Navbar's toggle), else the site's default mode (below), else light. Browser
-  tests that need dark save the choice (`saveTheme`, `server/test/chrome.ts`).
+  tests that need dark save the choice (`saveTheme`, `server/test/chrome.ts`). The maps stay on a light
+  basemap in both themes (#41): CARTO Voyager with `VITE_CARTO_KEY`,
+  OpenStreetMap without it (`shared/map-tiles.ts`). `browser-contrast` measures AA on
+  every page type in both themes, photos painted white (the worst case);
+  `browser-hero-contrast` the photo headers. Text on a gold fill is
+  `--on-accent`; `--brand-secondary` is a fill under white text, never text.
 - **Default mode** (Admin → Appearance, `site_settings.default_mode`, 0033,
   `shared/default-mode.ts`): what a first-time visitor sees, `light` (default), `dark` or `auto`
   (the device's `prefers-color-scheme`, followed live). Express writes `data-default-mode` on
@@ -213,12 +218,7 @@ Update the Status column when a phase lands.
   is saved only by "Save for all visitors" (the settings API with its 409 check); Cancel,
   closing or leaving the page puts the tab back. Each group is a radiogroup with a roving
   tabindex. The settings form keeps both values but renders neither, and its reload keeps
-  what's being typed (`keepDirtyValues`). `browser-appearance` covers it, AA in all six sets. The maps stay on a light
-  basemap in both themes (#41): CARTO Voyager with `VITE_CARTO_KEY`,
-  OpenStreetMap without it (`shared/map-tiles.ts`). `browser-contrast` measures AA on
-  every page type in both themes, photos painted white (the worst case);
-  `browser-hero-contrast` the photo headers. Text on a gold fill is
-  `--on-accent`; `--brand-secondary` is a fill under white text, never text.
+  what's being typed (`keepDirtyValues`). `browser-appearance` covers it, AA in all six sets.
 - **Colour themes** (`docs/plans/brand-themes.md`, PR B, `shared/palette.ts`): Sunset (the
   default, from the logo), Emerald (the colours before, every token identical) and Ocean, each
   light and dark: six sets.
