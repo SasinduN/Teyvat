@@ -55,7 +55,7 @@ this file or anywhere else in git.
 | TC | Tour categories (`docs/plans/tour-categories.md`): 0030, `/tours` row, a page per category, the Tours menu, the tailor-made card (PR 1); new tour drafts through `content:import` (PR 2) | done (#69, #70) |
 | R2 | Move R2 to the client's Cloudflare account: `images.serendibluxetours.com` always allowed, `R2_PREVIOUS_PUBLIC_BASE_URL`, `media:rebase` covers the credits, `docs/runbooks/move-r2-to-client.md` | done (#63); moved in production 22 Nov 2026 |
 | CH | One host: a page on www or `*.up.railway.app` gets a 301 to `PUBLIC_SITE_URL` (`server/src/canonical-host.ts`) | done (#71) |
-| BT | The client's logo, three colour themes, the new font mix (`docs/plans/brand-themes.md`): PR A the logo and fonts (colours stay Emerald); PR B the themes and the admin picker | PR A in review |
+| BT | The client's logo, three colour themes, the new font mix (`docs/plans/brand-themes.md`): PR A the logo and fonts (colours stay Emerald); PR B the themes and the admin picker | PR A done (#72); PR B in review |
 
 Update the Status column when a phase lands.
 
@@ -204,6 +204,29 @@ Update the Status column when a phase lands.
   every page type in both themes, photos painted white (the worst case);
   `browser-hero-contrast` the photo headers. Text on a gold fill is
   `--on-accent`; `--brand-secondary` is a fill under white text, never text.
+- **Colour themes** (`docs/plans/brand-themes.md`, PR B, `shared/palette.ts`): Sunset (the
+  default, from the logo), Emerald (the colours before, every token identical) and Ocean, each
+  light and dark: six sets.
+  - Only an admin chooses (Admin → Settings → Site colour theme, `site_settings.palette`, 0032).
+    Express writes `data-palette` on `<html>` next to `data-text-size` (`injectPalette`) in every
+    page, public and admin: no script, no flash. No attribute means Sunset. Nothing in a request
+    or the browser (query, cookie, header, storage) is read for it (`palette.test`,
+    `browser-palette`). A save changes the admin's tab at once, other pages on their next load.
+  - `tokens.css`: each theme sets only its swatches (`--palette-*`, role names after Emerald's
+    colours) and channels, on `:root, [data-palette="sunset"]`, `[data-palette="emerald"]`,
+    `[data-palette="ocean"]`. The semantic tokens are declared once for light and once for dark
+    on `:root, [data-palette]`, so they're worked out again wherever a theme applies: the
+    picker's previews are `[data-palette][data-theme]` boxes rendered with the real tokens.
+  - **Nothing outside `tokens.css` names a swatch** (`colour-tokens`): use a semantic token,
+    adding one there if needed (`--cool-tint`, `--gold-text`, `--skip-link-*`,
+    `--focus-*-on-fill`, `--scrim` came from this). Photo overlays stay neutral in every theme.
+  - The manifest's `theme_color` and `background_color` follow the theme (`PALETTE_THEME_COLOR`).
+  - `browser-contrast.test` (Sunset), `browser-contrast-emerald` and `browser-contrast-ocean`
+    share `contrast-suite.ts`: every page type, light and dark, 375 and 1280 px.
+    `browser-hero-contrast` and `browser-glass`'s blur check run in every theme too (the blur
+    check's calibration is Emerald's, where it was set).
+  - `npm run screenshots -- --palette <name>` sets the "after" site's theme and names its shots
+    after it; `--theme-picker` takes the picker.
 - **Error boundaries:** each public section is wrapped in `Section`
   (`src/pages/Section.tsx`, renders nothing on error), and each page in a
   boundary in `PublicLayout.tsx`; admin pages fall back to `PageCrash`.
@@ -580,7 +603,7 @@ Agreed, not started. Each one gets its own plan first.
   the exact logo files in `public/brand/` (`shared/brand-files.ts`).
 - **Screenshots are never committed** (`docs/screenshots/` is git-ignored, and
   `no-committed-images` fails if anything there is tracked).
-- **AA contrast in both themes. One `h1` per page.**
+- **AA contrast in every colour theme, light and dark. One `h1` per page.**
 - **Self-hosted fonts only: DM Sans for text, Playfair Display for headings, Allura for
   accent words. Body text at least 16 px on phones. The admin's text size options are 100,
   110 and 120%.**

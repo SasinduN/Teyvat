@@ -58,6 +58,8 @@ export const SettingsPage: React.FC = () => {
     onSuccess: (saved) => {
       qc.setQueryData(queryKeys.admin.siteSettings, saved);
       document.documentElement.dataset.textSize = String(saved.text_size);
+      // This tab follows at once; every other page gets it from the server on its next load.
+      document.documentElement.dataset.palette = saved.palette;
       // The Footer reads these.
       void qc.invalidateQueries({ queryKey: queryKeys.siteContent });
       toast.success('Settings saved');

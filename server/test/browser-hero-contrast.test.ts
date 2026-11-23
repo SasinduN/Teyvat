@@ -30,6 +30,7 @@ import { pool } from '../src/db';
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
 import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
+import { PALETTES } from '../../shared/palette';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const executable = findChrome();
@@ -98,7 +99,9 @@ const TARGETS = `(() => {
   return out;
 })()`;
 
-describe('text on photos: contrast over any photo, in Chrome', { skip }, () => {
+// Every colour theme (docs/plans/brand-themes.md): the overlays are neutral, but the gold on photos is each theme's.
+// `--test-timeout` applies to the suite as a whole too; each test keeps its 60 s.
+describe('text on photos: contrast over any photo, in every colour theme, in Chrome', { skip, timeout: 8 * 60_000 }, () => {
   let app: RunningApp;
   let chrome: Chrome;
   let decoder: Page;
@@ -114,6 +117,7 @@ describe('text on photos: contrast over any photo, in Chrome', { skip }, () => {
   }, HOOK_TIMEOUT);
 
   after(async () => {
+    await pool.query(`update public.site_settings set palette = 'sunset' where id`).catch(() => undefined);
     await chrome?.close();
     await app?.close();
     await pool.end();
@@ -180,12 +184,15 @@ describe('text on photos: contrast over any photo, in Chrome', { skip }, () => {
     })()`);
   }
 
-  for (const mobile of [false, true]) {
-    const width = mobile ? 'phone' : 'desktop';
-    for (const path of ['/', '/destinations', '/destinations/ella', '/tours/category/beach', '/plan', '/nope']) {
-      test(`${width} ${path}: the header's text, icons and controls meet AA over a white photo`, async () => {
-        assert.deepEqual(await shortfalls(path, mobile), [], path);
-      });
+  for (const palette of PALETTES) {
+    for (const mobile of [false, true]) {
+      const width = mobile ? 'phone' : 'desktop';
+      for (const path of ['/', '/destinations', '/destinations/ella', '/tours/category/beach', '/plan', '/nope']) {
+        test(`${palette}, ${width} ${path}: the header's text, icons and controls meet AA over a white photo`, async () => {
+          await pool.query('update public.site_settings set palette = $1 where id', [palette]);
+          assert.deepEqual(await shortfalls(path, mobile), [], `${palette} ${path}`);
+        });
+      }
     }
   }
 });
