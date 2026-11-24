@@ -49,7 +49,8 @@ off in a pull request, so the history shows when each was done.
       admin.
 - [ ] **5. Match CI's Postgres version to production.** Read the major
       version in Railway (or from `npm run migrate -- --dry-run`, which prints
-      it) and set the same in `.github/workflows/ci.yml` (`public.ecr.aws/docker/library/postgres:18` today).
+      it) and set the same in `.github/workflows/ci.yml` (`PG_IMAGE_DIGEST`: the
+      `postgres:18` image, 18.7, pinned by digest today).
       **Blocks:** CI testing what production runs. **Who:** Developer.
 - [x] **6. Protect `main`.** On since 6 November 2026: a branch ruleset in GitHub,
       *Settings → Rules → Rulesets*, targeting the default branch, enforcement

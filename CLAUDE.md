@@ -55,7 +55,8 @@ this file or anywhere else in git.
 | TC | Tour categories (`docs/plans/tour-categories.md`): 0030, `/tours` row, a page per category, the Tours menu, the tailor-made card (PR 1); new tour drafts through `content:import` (PR 2) | done (#69, #70) |
 | R2 | Move R2 to the client's Cloudflare account: `images.serendibluxetours.com` always allowed, `R2_PREVIOUS_PUBLIC_BASE_URL`, `media:rebase` covers the credits, `docs/runbooks/move-r2-to-client.md` | done (#63); moved in production 22 Nov 2026 |
 | CH | One host: a page on www or `*.up.railway.app` gets a 301 to `PUBLIC_SITE_URL` (`server/src/canonical-host.ts`) | done (#71) |
-| BT | The client's logo, three colour themes, the new font mix (`docs/plans/brand-themes.md`): PR A the logo and fonts (colours stay Emerald); PR B the themes and the admin picker | PR A done (#72); PR B in review |
+| BT | The client's logo, three colour themes, the new font mix (`docs/plans/brand-themes.md`): PR A the logo and fonts (colours stay Emerald); PR B the themes and the admin picker | done (#72, #73) |
+| CI2 | CI's Postgres image from the Actions cache, pinned by digest (`PG_IMAGE_DIGEST`), pulled from three registries only on a miss: no more runs lost to pull limits | in review |
 
 Update the Status column when a phase lands.
 
