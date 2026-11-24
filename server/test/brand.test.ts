@@ -88,7 +88,7 @@ describe('shared/brand.ts', () => {
   test('blank settings fall back to the defaults; the admin form saves blanks as NULL', () => {
     assert.deepEqual(resolveBrand({ brand_name: '  ', brand_tagline: null }), BRAND);
     const parsed = siteSettingsSchema.safeParse({
-      postal_address: 'x', phone: 'x', contact_email: 'a@b.example', text_size: 100, palette: 'sunset', stats: [],
+      postal_address: 'x', phone: 'x', contact_email: 'a@b.example', text_size: 100, palette: 'sunset', default_mode: 'light', stats: [],
       instagram_url: null, facebook_url: null, tiktok_url: null, youtube_url: null, privacy_url: null,
       terms_url: null, sustainability_url: null, whatsapp_number: null, when_to_go_explainer: null,
       brand_name: '  ', brand_short_name: '', brand_tagline: 'A line', brand_legal_name: null, hero_headline: ''

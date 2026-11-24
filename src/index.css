@@ -139,24 +139,82 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   .te-text-size-preview { --preview-scale: 1; display: flex; flex-direction: column; gap: .4em; font-size: calc(16px * var(--preview-scale)); padding: 1.25em; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--background); color: var(--text-primary); }
   .te-text-size-preview[data-text-size-preview="110"] { --preview-scale: 1.1; }
   .te-text-size-preview[data-text-size-preview="120"] { --preview-scale: 1.2; }
-  /* The colour theme picker's previews (PaletteField): each box is its own theme and mode. */
-  .te-palette-preview { display: flex; flex-direction: column; gap: .3rem; padding: .7rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--background); color: var(--text-primary); font-size: var(--text-xs); line-height: 1.35; }
-  .te-palette-preview__swatches { display: flex; gap: .3rem; margin-bottom: .15rem; }
-  .te-palette-preview__swatch { width: 1rem; height: 1rem; border-radius: 999px; border: 1px solid var(--border-strong); }
-  .te-palette-preview__swatch--page { background: var(--surface); }
-  .te-palette-preview__swatch--brand { background: var(--button-primary-bg); }
-  .te-palette-preview__swatch--accent { background: var(--accent); }
-  .te-palette-preview__heading { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-sm); color: var(--brand-primary); }
-  .te-palette-preview__body { color: var(--text-secondary); }
-  .te-palette-preview__link { color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; }
-  .te-palette-preview__button { align-self: flex-start; padding: .2rem .6rem; border-radius: var(--radius-sm); background: var(--button-primary-bg); color: var(--button-primary-text); font-weight: 600; }
+  /*
+   * Admin → Appearance (AppearancePanel, handoff Task 7): the site's default mode and colour
+   * theme. Each thumbnail and swatch carries its own data-palette and data-theme, so the real
+   * tokens colour it whatever the admin is showing. Selected: an accent-text border (AA on
+   * every surface), a ring and a bold label; theme tiles add a check and a soft tint.
+   */
+  .te-appearance { display: flex; flex-direction: column; min-height: 0; color: var(--text-primary); }
+  .te-appearance__body { display: flex; flex-direction: column; gap: 1rem; padding: 1.25rem; }
+  .te-appearance__title { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-xl); color: var(--brand-primary); }
+  .te-appearance__head { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+  /* The popover's close button (phones have no Escape key): a 44 px target, top right. */
+  .te-appearance__close { display: grid; place-items: center; flex-shrink: 0; width: 2.75rem; height: 2.75rem; margin: -.5rem -.625rem -.5rem 0; border-radius: 999px; color: var(--text-primary); cursor: pointer; touch-action: manipulation; transition: background-color .15s ease-out; }
+  .te-appearance__close:hover { background: var(--background-secondary); }
+  .te-appearance__label { font-size: var(--text-sm); font-weight: 700; color: var(--text-primary); }
+  .te-appearance__hint { font-size: var(--text-xs); color: var(--text-secondary); }
+  .te-appearance__divider { border: 0; border-top: 1px solid var(--border-strong); margin: .25rem 0; }
+  .te-appearance__note { font-size: var(--text-xs); line-height: 1.5; color: var(--text-secondary); }
+  .te-appearance__modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .625rem; }
+  .te-appearance__themes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .625rem; }
+  .te-appearance__footer { position: sticky; bottom: 0; display: flex; justify-content: flex-end; gap: .5rem; padding: .75rem 1.25rem calc(.75rem + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--border-strong); background: var(--surface); }
+  /* Inline in Admin → Settings: the card is the frame, and the page's own save bar is the sticky one. */
+  .te-appearance--inline .te-appearance__body { padding: 0; max-width: 32rem; }
+  .te-appearance--inline .te-appearance__footer { position: static; margin-top: 1.25rem; padding: 1rem 0 0; background: none; }
+
+  .te-appearance-option { display: flex; cursor: pointer; border: 2px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--text-primary); transition: border-color .15s ease-out, box-shadow .15s ease-out, background-color .15s ease-out; touch-action: manipulation; }
+  .te-appearance-option:hover { border-color: var(--text-secondary); }
+  .te-appearance-option[aria-checked="true"] { border-color: var(--accent-text); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-text) 28%, transparent); }
+  .te-appearance-option[aria-checked="true"] .te-appearance-option__name { font-weight: 700; }
+  .te-appearance-option__name { font-size: var(--text-sm); font-weight: 500; }
+
+  .te-appearance-option--mode { flex-direction: column; align-items: center; gap: .4rem; padding: .4rem .4rem .5rem; min-height: 2.75rem; }
+  .te-appearance-option--theme { align-items: center; gap: .75rem; min-height: 3.25rem; padding: .5rem .75rem; text-align: left; }
+  .te-appearance-option--theme[aria-checked="true"] { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+
+  /* A tiny drawing of the site: a side column and a page with lines, in one theme and mode. */
+  .te-mode-thumb { position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: calc(var(--radius-md) - .25rem); border: 1px solid var(--border); }
+  .te-mode-thumb__layer { position: absolute; inset: 0; display: grid; grid-template-columns: 32% 1fr; background: var(--background); }
+  .te-mode-thumb__layer + .te-mode-thumb__layer { clip-path: polygon(62% 0, 100% 0, 100% 100%, 38% 100%); }
+  .te-mode-thumb__side { display: flex; flex-direction: column; gap: 10%; padding: 12% 14%; background: var(--surface); border-right: 1px solid var(--border); }
+  .te-mode-thumb__main { display: flex; flex-direction: column; justify-content: center; gap: 12%; padding: 0 12%; }
+  .te-mode-thumb__dot { width: 32%; aspect-ratio: 1; border-radius: 20%; background: var(--button-primary-bg); }
+  .te-mode-thumb__line { display: block; height: .25rem; border-radius: 999px; background: var(--border-strong); }
+  .te-mode-thumb__line--head { width: 60%; background: var(--brand-primary); opacity: .7; }
+  .te-mode-thumb__line--accent { width: 45%; background: var(--accent); }
+
+  /* A theme's swatch: its button colour with an accent band, in the previewed mode. */
+  .te-theme-swatch { display: grid; place-items: center; flex-shrink: 0; width: 2rem; height: 2rem; border-radius: .5rem; background: var(--button-primary-bg); color: var(--button-primary-text); box-shadow: inset 0 -.5rem 0 var(--accent), 0 0 0 1px var(--border-strong); }
+  .te-theme-swatch svg { width: 1.125rem; height: 1.125rem; margin-bottom: .45rem; stroke-width: 3; }
+
+  /* The top bar's button: a 40 px circle inside a 44 px target. */
+  .te-appearance-button { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 999px; color: var(--brand-primary); }
+  .te-appearance-button__circle { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); transition: background-color .15s ease-out; }
+  .te-appearance-button:hover .te-appearance-button__circle, .te-appearance-button[aria-expanded="true"] .te-appearance-button__circle { background: var(--background-secondary); }
+
+  /* The popover under the button; a bottom sheet on phones. */
+  .te-appearance-layer { position: fixed; inset: 0; z-index: 60; }
+  .te-appearance-popover { position: fixed; top: var(--popover-top, 4rem); right: var(--popover-right, 1rem); width: min(25rem, calc(100vw - 2rem)); max-height: calc(100vh - var(--popover-top, 4rem) - 1rem); overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-card-hover); animation: te-appearance-in .18s ease-out; }
+  .te-appearance-scrim { display: none; }
+  @media (max-width: 699.98px) {
+    .te-appearance-scrim { display: block; position: absolute; inset: 0; background: var(--scrim); }
+    .te-appearance-popover { top: auto; right: 0; bottom: 0; left: 0; width: 100%; max-height: 85vh; border-radius: var(--radius-xl) var(--radius-xl) 0 0; border-bottom: 0; animation-name: te-appearance-up; animation-duration: .22s; }
+  }
+  @keyframes te-appearance-in { from { opacity: 0; transform: translateY(-.375rem); } }
+  @keyframes te-appearance-up { from { transform: translateY(100%); } }
+  @media (prefers-reduced-motion: reduce) {
+    .te-appearance-popover { animation: none; }
+    .te-appearance-option, .te-appearance-button__circle { transition: none; }
+  }
   .te-text-size-preview__label { font-size: .8125em; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-text); }
   .te-text-size-preview__heading { font-size: 1.75em; font-weight: 700; line-height: 1.2; color: var(--brand-primary); }
   .te-text-size-preview__body { font-size: 1.0625em; line-height: 1.6; }
   .te-text-size-preview__card { font-size: .9375em; line-height: 1.55; color: var(--text-secondary); }
 
-  /* The admin's phone top bar: the page gutter. */
-  .te-admin-toolbar { padding-inline: var(--page-gutter); }
+  /* The admin's top bar: the page gutter, and solid in every theme so nothing
+     scrolling under it shows through. */
+  .te-admin-toolbar { padding-inline: var(--page-gutter); background-color: var(--background); }
 
   /* The page's content column, as in the header and footer. */
   .te-container {

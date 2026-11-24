@@ -335,6 +335,8 @@ export interface SiteSettingsRow extends Timestamps {
   text_size: number;
   /** 0032: sunset (default), emerald or ocean (shared/palette.ts). */
   palette: 'sunset' | 'emerald' | 'ocean';
+  /** 0033: light (default), dark or auto: a first visit's theme (shared/default-mode.ts). */
+  default_mode: 'light' | 'dark' | 'auto';
   /** The stats strip, up to four (0021, `shared/site-stats.ts`). Empty: it is hidden. */
   stats: SiteStat[];
   /** /when-to-go's explainer: paragraphs separated by a blank line (0022). NULL hides it. */
