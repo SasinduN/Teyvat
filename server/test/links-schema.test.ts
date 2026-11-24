@@ -25,6 +25,7 @@ import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { entityJsonLd, organizationId, placeId } from '../src/pages/head';
 import { TOURIST_TYPES } from '../src/pages/pages';
+import { MAX_PLACES, placesOnTours } from '../../src/lib/placesOnTours';
 import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
 
@@ -205,5 +206,30 @@ describe('tours, destinations and attractions as structured data', { skip: built
     d = await place();
     want = await published();
     assert.deepEqual(d.includesAttraction.map((a: any) => a.name), want.map((a) => a.name), 'a draft attraction is left out');
+  });
+});
+
+describe('placesOnTours: the order of a category\'s "Places on these tours"', () => {
+  const tour = (...ids: (string | null)[]) => ({ stops: ids.map((destinationId) => ({ destinationId })) });
+  const places = (...ids: string[]) => ids.map((id) => ({ id }));
+  const order = (tours: ReturnType<typeof tour>[], published: { id: string }[]) => placesOnTours(tours, published).map((d) => d.id);
+
+  test('places more of the tours visit come first, then the tours take turns', () => {
+    const published = places('colombo', 'kandy', 'ella', 'yala', 'mirissa', 'galle', 'anuradhapura', 'sigiriya', 'dambulla');
+    assert.deepEqual(
+      order([tour('colombo', 'kandy', 'ella', 'yala', 'mirissa', 'galle'), tour('anuradhapura', 'sigiriya', 'dambulla', 'kandy')], published),
+      ['kandy', 'colombo', 'anuradhapura', 'sigiriya', 'ella', 'dambulla']
+    );
+  });
+
+  test(`at most ${MAX_PLACES}, each once, published only, and stops without a place are skipped`, () => {
+    assert.deepEqual(order([tour('a', 'b', 'a', null, 'draft', 'c')], places('a', 'b', 'c')), ['a', 'b', 'c']);
+    const many = 'abcdefghij'.split('');
+    assert.equal(order([tour(...many)], places(...many)).length, MAX_PLACES);
+    assert.deepEqual(order([tour('draft'), tour()], places('a')), []);
+  });
+
+  test('a draft stop never takes a turn: the tour\'s next published stop does', () => {
+    assert.deepEqual(order([tour('a', 'b'), tour('draft', 'x')], places('a', 'b', 'x')), ['a', 'x', 'b']);
   });
 });

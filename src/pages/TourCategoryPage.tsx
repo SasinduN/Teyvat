@@ -10,9 +10,7 @@ import type { TourCategory } from '@/types';
 import { NotFoundPage } from './NotFoundPage';
 import { Section } from './Section';
 import { CRUMB_NAMES } from '@shared/page-meta';
-
-/** How many places the "Places on these tours" row lists. */
-const MAX_PLACES = 6;
+import { placesOnTours } from '@/lib/placesOnTours';
 
 /**
  * `/tours/category/:slug`: one travel style (0030). Its photo and heading, the intro,
@@ -33,12 +31,7 @@ function TourCategoryView({ category }: { category: TourCategory }) {
   usePageSubject({ inquiry: category.name, whatsapp: { kind: 'tourCategory', id: category.id, name: category.name } });
   const tours = useTours().filter((tour) => tour.categoryIds.includes(category.id));
   const destinations = useDestinations();
-  // The published places its tours stop at, in the tours' order, at most six.
-  const placeIds = [...new Set(tours.flatMap((tour) => tour.stops.map((stop) => stop.destinationId).filter((id): id is string => Boolean(id))))];
-  const places = placeIds
-    .map((id) => destinations.find((d) => d.id === id))
-    .filter((d): d is NonNullable<typeof d> => Boolean(d))
-    .slice(0, MAX_PLACES);
+  const places = placesOnTours(tours, destinations);
   const { openInquiry } = usePublicSite();
   const navigate = useNavigate();
 

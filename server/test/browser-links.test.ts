@@ -5,7 +5,8 @@ import './test-db';
  * The medium SEO batch's internal links (handoff Task 9, M1), in Chrome:
  *
  *   - a tour links each route stop whose destination is published, and its published categories;
- *   - a category lists "Places on these tours": the published places its tours stop at, at most six;
+ *   - a category lists "Places on these tours": the published places its tours stop at, at most six,
+ *     those more of its tours visit first, then taking turns between the tours (`placesOnTours`);
  *   - a destination shows "Tours that visit <name>", at most four, and links to When to go;
  *   - only published targets (a draft is never linked), every link a real `<a href>` that answers
  *     200, and one h1 on each page.
@@ -21,6 +22,7 @@ import { after, before, beforeEach, describe, test } from 'node:test';
 
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
+import { MAX_PLACES, placesOnTours } from '../../src/lib/placesOnTours';
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
 import { assertConnectedToTestDatabase, listen, migrateTestDatabase, resetContent, type RunningApp } from './helpers';
 import { HOOK_TIMEOUT } from './timeouts';
@@ -30,7 +32,6 @@ const executable = findChrome();
 const built = existsSync(join(REPO_ROOT, 'dist', 'index.html'));
 const skip = !executable ? 'no Chrome found; set CHROME_PATH to run these' : !built ? 'no build; run `npm run build` first' : false;
 
-const MAX_PLACES = 6;
 const MAX_TOURS = 4;
 const EXTRA_TOURS = ['links-test-1', 'links-test-2', 'links-test-3', 'links-test-4'];
 
@@ -132,27 +133,39 @@ describe('internal links between tours, categories and destinations, in Chrome',
   });
 
   test('a category: "Places on these tours", the published places its tours stop at, at most six', async () => {
+    /** The row the database says: Cultural's published tours in their order, and the published places. */
     const expected = async () => {
-      const { rows } = await pool.query<{ id: string; name: string }>(
-        `select d.id, d.name, min(t.sort_order) as t_order, min(t.id) as t_id, min(s.position) as s_pos
-           from public.tour_category_links l
-           join public.tours t on t.id = l.tour_id and t.published
-           join public.tour_stops s on s.tour_id = t.id
-           join public.destinations d on d.id = s.destination_id and d.published
-          where l.category_id = 'cultural'
-          group by d.id, d.name`
-      );
-      return rows;
+      const tours = (
+        await pool.query<{ stops: string[] }>(
+          `select array_agg(s.destination_id order by s.position) filter (where s.destination_id is not null) as stops
+             from public.tour_category_links l
+             join public.tours t on t.id = l.tour_id and t.published
+             left join public.tour_stops s on s.tour_id = t.id
+            where l.category_id = 'cultural'
+            group by t.id, t.sort_order
+            order by t.sort_order, t.id`
+        )
+      ).rows.map((t) => ({ stops: (t.stops ?? []).map((destinationId) => ({ destinationId })) }));
+      const destinations = (await pool.query<{ id: string; name: string }>(`select id, name from public.destinations where published`)).rows;
+      const visited = new Set(tours.flatMap((t) => t.stops.map((s) => s.destinationId)));
+      return { row: placesOnTours(tours, destinations), all: destinations.filter((d) => visited.has(d.id)) };
     };
     let page = await open('/tours/category/cultural', `document.querySelector('[data-category-places]')`);
     try {
       assert.equal(await h1s(page), 1);
       const links = await linksIn(page, '[data-category-places]');
-      const all = await expected();
-      assert.ok(all.length > MAX_PLACES, `cultural's tours visit more than ${MAX_PLACES} places (${all.length})`);
+      const { row, all } = await expected();
+      assert.ok(all.length > MAX_PLACES, `cultural's tours visit more than ${MAX_PLACES} published places (${all.length})`);
       assert.equal(links.length, MAX_PLACES, 'capped');
-      const names = new Map(all.map((d) => [`/destinations/${d.id}`, d.name]));
-      for (const link of links) assert.equal(names.get(link.href!), link.text, `${link.href}: a published place on these tours`);
+      assert.deepEqual(
+        links,
+        row.map((d) => ({ text: d.name, href: `/destinations/${d.id}` })),
+        'most-visited first, then taking turns between the tours'
+      );
+      // Island in 7 Days alone has six stops; Cultural Sri Lanka's own places still make the row.
+      const later = links.filter((l) => ['/destinations/anuradhapura', '/destinations/sigiriya', '/destinations/dambulla'].includes(l.href!));
+      assert.ok(later.length > 0, `a later tour's stops make the row: ${links.map((l) => l.text).join(', ')}`);
+      assert.equal(links[0].href, '/destinations/kandy', 'Kandy, on both tours, comes first');
       assert.equal(new Set(links.map((l) => l.href)).size, links.length, 'each once');
       assert.equal(await page.evaluate<string>(`document.querySelector('[data-category-places] h2').textContent`), 'Places on these tours');
       await allAnswer(links.map((l) => l.href));
