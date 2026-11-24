@@ -264,6 +264,8 @@ html, .site *, .te-admin * { scrollbar-width: thin; scrollbar-color: var(--glass
   .te-button--lg { min-height: 48px; padding: .75rem 1.35rem; font-size: 1rem; }
   .te-button--text-link { --button-text: var(--button-outline-text); padding-inline: .25rem; text-underline-offset: .3rem; }
   .te-button > svg { flex-shrink: 0; }
+  /* The theme toggle holds both icons; the theme on <html> shows one (ThemeToggle, the server's first screen). */
+  :root:not([data-theme="dark"]) .te-theme-icon--sun, :root[data-theme="dark"] .te-theme-icon--moon { display: none; }
   .te-button:disabled, .te-button[aria-disabled="true"] { opacity: .6; cursor: not-allowed; box-shadow: none; transform: none; }
   /* Photo controls (the hero's slide buttons, close buttons on photos): a light blur under the dark tint. */
   @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {

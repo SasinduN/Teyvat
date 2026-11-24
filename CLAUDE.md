@@ -58,6 +58,7 @@ this file or anywhere else in git.
 | BT | The client's logo, three colour themes, the new font mix (`docs/plans/brand-themes.md`): PR A the logo and fonts (colours stay Emerald); PR B the themes and the admin picker | done (#72, #73) |
 | CI2 | CI's Postgres image from the Actions cache, pinned by digest (`PG_IMAGE_DIGEST`), pulled from three registries only on a miss: no more runs lost to pull limits | done (#74) |
 | AP | Admin → Appearance (handoff Task 7): the theme picker as a top-bar panel, plus a default mode for first visits (`site_settings.default_mode`, 0033) | done (#76) |
+| SSR | Server-rendered first screens (`docs/plans/server-rendered-headers.md`): PR 1 the plumbing and home; PR 2 every other page's header | in review (PR 1) |
 
 Update the Status column when a phase lands.
 
@@ -486,6 +487,16 @@ Update the Status column when a phase lands.
   - Internal links (`browser-links`): a tour links each stop whose destination is published and
     its published categories; a category lists "Places on these tours" (at most six); a
     destination "Tours that visit <name>" (at most four) and When to go. Only published targets.
+  - **The first screen is server-rendered** (`docs/plans/server-rendered-headers.md`; home only in
+    PR 1): Express puts the Navbar and the page's header inside `#root[data-ssr]`, rendered by the
+    app's own components (`src/ssr/first-screen.tsx`, built into `dist/.ssr/`, never served) from
+    the same payload as `/api/content` (`loadContentPayload`, `toSiteContent`). `main.tsx` waits
+    for the content and the page's chunk (`lazyPage`), then React's first render replaces it with
+    identical markup: never hydration. Anything in `SiteFrame`, the `Navbar` or a header must not
+    touch `window`, `document` or storage while rendering, and per-visitor state needs a server
+    snapshot (the wishlist: nothing saved; the theme toggle: both icons, CSS picks one). A failure
+    sends the empty shell. `Server-Timing` on every page. `ssr.test`, `browser-ssr-no-js`,
+    `browser-ssr-handover` (identical pixels before and after, CLS 0, LCP before React).
   - `GET /llms.txt` (llmstxt.org) is Markdown built per request from the
     published rows and `paths`, like the sitemap, and only when
     `SITE_INDEXABLE` is true. Row text goes through `markdownText`.
@@ -510,7 +521,9 @@ Agreed, not started. Each one gets its own plan first.
   and not before: the seeded `rating` columns stay in the database and the admin API,
   and are neither shown nor in `/api/content` (`no-ratings`).
 - **Remove `'unsafe-inline'` from `style-src`:** it is there only for the `<style>` the
-  admin's toasts (Sonner) inject.
+  admin's toasts (Sonner) inject. The server-rendered first screen also writes each photo's
+  focal point as `style="object-position:…"` (`TravelImage`): those need a class, or a CSS
+  custom property set by a stylesheet, first (`ssr.test` lists every `style=`).
 - **Booking flow fixes:** Sasindu will list them.
 - **Mobile performance to 90** (`docs/reviews/audit-2026-11.md`, "Left"): measure
   production first; then server-rendered page headers or a smaller entry, each its own plan.

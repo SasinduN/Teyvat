@@ -2,7 +2,6 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { Outlet, useLocation, useNavigationType } from 'react-router-dom';
 import { MotionConfig } from 'framer-motion';
 
-import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { FloatingActions } from '@/components/FloatingActions';
@@ -15,6 +14,7 @@ import { focusPageHeading, goToSection } from '@/lib/routeFocus';
 import { keepsScroll } from '@/lib/ScrollRestorer';
 import { whatsappMessage, whatsappUrl } from '@shared/whatsapp';
 import { Section } from './Section';
+import { SiteFrame } from './SiteFrame';
 
 /**
  * The enquiry and search modals are their own chunks, out of every page's
@@ -103,81 +103,65 @@ export function PublicLayout() {
     <PublicSiteContext.Provider value={api}>
       {/* Framer's animations follow the visitor's reduced-motion setting (#12). */}
       <MotionConfig reducedMotion="user">
-      <div className="site min-h-screen bg-[var(--background)] text-[var(--text-primary)] font-sans selection:bg-[var(--brand-secondary)] selection:text-[var(--on-inverse)]">
-        {/* The first Tab stop: straight past the header to the page. */}
-        <a
-          className="skip-link"
-          href="#main-content"
-          onClick={(event) => {
-            event.preventDefault();
-            const main = document.getElementById('main-content');
-            main?.focus({ preventScroll: true });
-            main?.scrollIntoView();
-          }}
+      <SiteFrame
+        onOpenSearch={openSearch}
+        after={
+          <>
+            <Section name="Footer">
+              <Footer />
+            </Section>
+
+            {inquiryMounted && (
+              <Section name="InquiryModal">
+                <Suspense fallback={null}>
+                  <InquiryModal
+                    isOpen={inquiryOpen}
+                    onClose={() => setInquiryOpen(false)}
+                    prefilledSubject={inquirySubject}
+                    prefilledMessage={inquiryMessage}
+                  />
+                </Suspense>
+              </Section>
+            )}
+
+            {searchMounted && (
+              <Section name="SearchModal">
+                <Suspense fallback={null}>
+                  <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+                </Suspense>
+              </Section>
+            )}
+
+            <Section name="ScrollToTop">
+              <ScrollToTop hidden={inquiryOpen || searchOpen} />
+            </Section>
+
+            <Section name="FloatingActions">
+              <FloatingActions whatsappHref={whatsappHref} bookingAllowed={content.features.bookings}
+                hidden={inquiryOpen || searchOpen} />
+            </Section>
+          </>
+        }
+      >
+        {/* A page that fails shows the error screen in its place; the next page tries again. */}
+        <ErrorBoundary
+          name="page"
+          resetKey={location.pathname}
+          fallback={
+            <SiteError
+              message="Something went wrong showing this page. Please try again."
+              onRetry={() => window.location.reload()}
+            />
+          }
         >
-          Skip to content
-        </a>
-        <Section name="Navbar">
-          <Navbar
-            onOpenSearch={openSearch}
-          />
-        </Section>
-
-        <main id="main-content" tabIndex={-1} data-route-focus>
-          {/* A page that fails shows the error screen in its place; the next page tries again. */}
-          <ErrorBoundary
-            name="page"
-            resetKey={location.pathname}
-            fallback={
-              <SiteError
-                message="Something went wrong showing this page. Please try again."
-                onRetry={() => window.location.reload()}
-              />
-            }
-          >
-            {/* Only while a page's code first loads; later navigations keep the current page up instead. */}
-            <Suspense fallback={<div className="min-h-screen bg-[var(--background)]" />}>
-              <Outlet />
-              {/* Inside the boundary: its effects run once the page itself has rendered. */}
-              <RouteEffects />
-            </Suspense>
-          </ErrorBoundary>
-        </main>
-
-        <Section name="Footer">
-          <Footer />
-        </Section>
-
-        {inquiryMounted && (
-          <Section name="InquiryModal">
-            <Suspense fallback={null}>
-              <InquiryModal
-                isOpen={inquiryOpen}
-                onClose={() => setInquiryOpen(false)}
-                prefilledSubject={inquirySubject}
-                prefilledMessage={inquiryMessage}
-              />
-            </Suspense>
-          </Section>
-        )}
-
-        {searchMounted && (
-          <Section name="SearchModal">
-            <Suspense fallback={null}>
-              <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
-            </Suspense>
-          </Section>
-        )}
-
-        <Section name="ScrollToTop">
-          <ScrollToTop hidden={inquiryOpen || searchOpen} />
-        </Section>
-
-        <Section name="FloatingActions">
-          <FloatingActions whatsappHref={whatsappHref} bookingAllowed={content.features.bookings}
-            hidden={inquiryOpen || searchOpen} />
-        </Section>
-      </div>
+          {/* Only while a page's code first loads; later navigations keep the current page up instead. */}
+          <Suspense fallback={<div className="min-h-screen bg-[var(--background)]" />}>
+            <Outlet />
+            {/* Inside the boundary: its effects run once the page itself has rendered. */}
+            <RouteEffects />
+          </Suspense>
+        </ErrorBoundary>
+      </SiteFrame>
       </MotionConfig>
     </PublicSiteContext.Provider>
   );

@@ -43,6 +43,8 @@ import { NO_BUSINESS_DETAILS, type BusinessDetails } from '../../../shared/busin
 import { loadPageSettings } from '../brand';
 import { loadPhotoSets } from '../media/photo-sets';
 import { sendText } from '../compress';
+import { loadContentPayload } from '../routes/content';
+import { firstScreen as loadFirstScreen, injectFirstScreen, type FirstScreen } from './first-screen';
 
 type Resolved = { redirect: string } | { status: 200 | 404; meta: PageMeta; noindexHeader?: boolean };
 
@@ -598,9 +600,16 @@ export async function llmsTxt(origin: string, brand: Brand = BRAND): Promise<str
  * `robots.txt`, `sitemap.xml`, `llms.txt`, and every other GET that reaches it (after the
  * API and the static files): the page shell with that page's status and head.
  */
-export function pagesRouter(options: { template: string; site: SiteConfig; bookings?: boolean }): Router {
+export function pagesRouter(options: {
+  template: string;
+  site: SiteConfig;
+  bookings?: boolean;
+  /** The server-rendered first screen (`./first-screen.ts`); none, and every page renders in the browser. */
+  firstScreen?: FirstScreen;
+}): Router {
   const { template, site } = options;
   const features = { bookings: options.bookings === true };
+  const firstScreen = options.firstScreen ?? loadFirstScreen('');
   const router = Router();
 
   router.get('/robots.txt', (req, res) => {
@@ -663,6 +672,10 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
     }
 
     const origin = originOf(req, site);
+    // What the page cost on the server, in ms: the Server-Timing header (Lighthouse and DevTools show it).
+    const timing: string[] = [];
+    const since = (name: string, start: number) => timing.push(`${name};dur=${(performance.now() - start).toFixed(1)}`);
+    let started = performance.now();
     let resolved: Resolved;
     let textSize: TextSize = DEFAULT_TEXT_SIZE;
     let palette: Palette = DEFAULT_PALETTE;
@@ -682,6 +695,7 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
       return;
     }
 
+    since('db', started);
     if ('redirect' in resolved) {
       res.redirect(301, resolved.redirect);
       return;
@@ -701,8 +715,23 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
       const responsive = srcSet ? ` imagesrcset="${escapeHtml(srcSet)}" imagesizes="100vw"` : '';
       head += `\n<link rel="preload" as="image" href="${escapeHtml(resolved.meta.image)}"${responsive} fetchpriority="high">`;
     }
-    res.status(resolved.status).set('Cache-Control', 'no-cache');
-    const html = injectDefaultMode(injectPalette(injectTextSize(injectHead(template, head), textSize), palette), defaultMode);
+    let html = injectDefaultMode(injectPalette(injectTextSize(injectHead(template, head), textSize), palette), defaultMode);
+    // The first screen in the HTML (home only for now): the same content /api/content sends,
+    // drawn by the app's own components. Any failure sends the empty shell, as before.
+    if (resolved.status === 200 && (await firstScreen.covers(path))) {
+      try {
+        started = performance.now();
+        const payload = await loadContentPayload(features.bookings);
+        since('content', started);
+        started = performance.now();
+        const markup = await firstScreen.render(path, payload);
+        since('render', started);
+        if (markup) html = injectFirstScreen(html, markup);
+      } catch (error) {
+        console.error(`[pages] couldn't load the first screen's content: ${describeForLog(error)}`);
+      }
+    }
+    res.status(resolved.status).set('Cache-Control', 'no-cache').set('Server-Timing', timing.join(', '));
     await sendText(req, res, html, 'html');
   });
 

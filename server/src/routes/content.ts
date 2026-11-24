@@ -111,110 +111,120 @@ function withoutRating<T extends { rating: number }>({ rating: _rating, ...row }
   return row;
 }
 
+/**
+ * The whole public payload: what `GET /api/content` sends, and what the page server
+ * renders the first screen from (`server/src/pages/first-screen.ts`), so both draw the
+ * same thing. `bookings` is `BOOKINGS_ENABLED` (`app.locals.bookings`).
+ */
+export async function loadContentPayload(bookings: boolean): Promise<SiteContentPayload> {
+  // One round trip per table, all in flight together. Ten small reads in
+  // parallel beat one join that would have to be unpicked client-side.
+  const [
+    destinations,
+    experienceCategories,
+    featuredExperiences,
+    tours,
+    articles,
+    hiddenGems,
+    photoStories,
+    heroSlides,
+    pillars,
+    siteSettings,
+    stopsByTour,
+    imageCredits,
+    attractions,
+    tourCategories,
+    categoryIdsByTour
+  ] = await Promise.all([
+    selectPublished<DestinationRow>('destinations'),
+    selectPublished<ExperienceCategoryRow>('experience_categories'),
+    selectPublished<FeaturedExperienceRow>('featured_experiences'),
+    selectPublished<TourRow>('tours'),
+    selectPublished<ArticleRow>('articles'),
+    selectPublished<HiddenGemRow>('hidden_gems'),
+    selectPublished<PhotoStoryRow>('photo_stories'),
+    selectPublished<HeroSlideRow>('hero_slides'),
+    selectPublished<PillarRow>('pillars'),
+    selectSiteSettings(),
+    publicStopsByTour(pool),
+    publicImageCredits(pool),
+    selectPublishedAttractions(),
+    selectPublished<TourCategoryRow>('tour_categories'),
+    publicCategoryIdsByTour(pool)
+  ]);
+  const photoSets = await loadPhotoSets(pool);
+  const { resolvedPhoto, publicPhoto, publicGallery, photoStoryLocation, photoStoryCopy } = photoResolver(photoSets);
+
+  const payload: SiteContentPayload = {
+    destinations: destinations.map(withoutRating),
+    attractions,
+    experienceCategories,
+    featuredExperiences: featuredExperiences.map(withoutRating),
+    // Each tour carries its route stops, resolved, and its published categories, so the client joins nothing.
+    tours: tours.map((tour) => ({
+      ...tour,
+      stops: stopsByTour.get(tour.id) ?? [],
+      category_ids: categoryIdsByTour.get(tour.id) ?? []
+    })),
+    tourCategories,
+    articles,
+    hiddenGems,
+    photoStories,
+    heroSlides,
+    pillars,
+    siteSettings,
+    imageCredits,
+    photoSets,
+    features: { bookings }
+  };
+
+  // Pin existing destination covers to their verified places; restore other
+  // exact legacy seed photos while preserving curated replacements and rows.
+  const photoCollections = [
+    ['destinations', payload.destinations], ['experience_categories', payload.experienceCategories],
+    ['featured_experiences', payload.featuredExperiences], ['tours', payload.tours],
+    ['articles', payload.articles], ['hidden_gems', payload.hiddenGems],
+    ['photo_stories', payload.photoStories], ['hero_slides', payload.heroSlides]
+  ] as const;
+  for (const [table, rows] of photoCollections) {
+    for (const row of rows) {
+      if (table === 'photo_stories' && 'location' in row) {
+        row.location = photoStoryLocation(row.id, row.image, row.location);
+        if ('caption' in row && 'title' in row) Object.assign(row, photoStoryCopy(row.id, row.image, row.title, row.caption));
+      }
+      row.image = publicPhoto(table, row.id, row.image);
+    }
+  }
+  for (const row of payload.destinations) row.gallery = publicGallery(row.id, row.gallery).map(resolvedPhoto);
+  // An attraction's photo is its own upload (or none): only an R2 set to resolve.
+  for (const row of payload.attractions) if (row.image) row.image = resolvedPhoto(row.image);
+  // A tour category still on its seed photo shows that destination's verified one (0030); none stays none.
+  for (const row of payload.tourCategories) if (row.image) row.image = publicPhoto('tour_categories', row.id, row.image);
+  const used = new Set(photoCollections.flatMap(([, rows]) => rows.map(row => row.image)));
+  for (const row of payload.destinations) for (const image of row.gallery) used.add(image);
+  for (const row of payload.attractions) if (row.image) used.add(row.image);
+  for (const row of payload.tourCategories) if (row.image) used.add(row.image);
+  payload.imageCredits = payload.imageCredits
+    .map(credit => ({ ...credit, url: resolvedPhoto(credit.url) }))
+    .filter(credit => used.has(credit.url));
+  for (const photo of photographs) {
+    for (const url of new Set([resolvedPhoto(photo.image), resolvedPhoto(photo.original)])) {
+      if (used.has(url) && !payload.imageCredits.some(credit => credit.url === url)) {
+        payload.imageCredits.push({ url, author: photo.author, license: photo.license,
+          license_url: photo.licenseUrl, source_url: photo.source });
+      }
+    }
+  }
+
+  return payload;
+}
+
 export const contentRouter = Router();
 
 contentRouter.get(
   '/content',
   asyncRoute(async (req, res) => {
-    // One round trip per table, all in flight together. Ten small reads in
-    // parallel beat one join that would have to be unpicked client-side.
-    const [
-      destinations,
-      experienceCategories,
-      featuredExperiences,
-      tours,
-      articles,
-      hiddenGems,
-      photoStories,
-      heroSlides,
-      pillars,
-      siteSettings,
-      stopsByTour,
-      imageCredits,
-      attractions,
-      tourCategories,
-      categoryIdsByTour
-    ] = await Promise.all([
-      selectPublished<DestinationRow>('destinations'),
-      selectPublished<ExperienceCategoryRow>('experience_categories'),
-      selectPublished<FeaturedExperienceRow>('featured_experiences'),
-      selectPublished<TourRow>('tours'),
-      selectPublished<ArticleRow>('articles'),
-      selectPublished<HiddenGemRow>('hidden_gems'),
-      selectPublished<PhotoStoryRow>('photo_stories'),
-      selectPublished<HeroSlideRow>('hero_slides'),
-      selectPublished<PillarRow>('pillars'),
-      selectSiteSettings(),
-      publicStopsByTour(pool),
-      publicImageCredits(pool),
-      selectPublishedAttractions(),
-      selectPublished<TourCategoryRow>('tour_categories'),
-      publicCategoryIdsByTour(pool)
-    ]);
-    const photoSets = await loadPhotoSets(pool);
-    const { resolvedPhoto, publicPhoto, publicGallery, photoStoryLocation, photoStoryCopy } = photoResolver(photoSets);
-
-    const payload: SiteContentPayload = {
-      destinations: destinations.map(withoutRating),
-      attractions,
-      experienceCategories,
-      featuredExperiences: featuredExperiences.map(withoutRating),
-      // Each tour carries its route stops, resolved, and its published categories, so the client joins nothing.
-      tours: tours.map((tour) => ({
-        ...tour,
-        stops: stopsByTour.get(tour.id) ?? [],
-        category_ids: categoryIdsByTour.get(tour.id) ?? []
-      })),
-      tourCategories,
-      articles,
-      hiddenGems,
-      photoStories,
-      heroSlides,
-      pillars,
-      siteSettings,
-      imageCredits,
-      photoSets,
-      features: { bookings: req.app.locals.bookings === true }
-    };
-
-    // Pin existing destination covers to their verified places; restore other
-    // exact legacy seed photos while preserving curated replacements and rows.
-    const photoCollections = [
-      ['destinations', payload.destinations], ['experience_categories', payload.experienceCategories],
-      ['featured_experiences', payload.featuredExperiences], ['tours', payload.tours],
-      ['articles', payload.articles], ['hidden_gems', payload.hiddenGems],
-      ['photo_stories', payload.photoStories], ['hero_slides', payload.heroSlides]
-    ] as const;
-    for (const [table, rows] of photoCollections) {
-      for (const row of rows) {
-        if (table === 'photo_stories' && 'location' in row) {
-          row.location = photoStoryLocation(row.id, row.image, row.location);
-          if ('caption' in row && 'title' in row) Object.assign(row, photoStoryCopy(row.id, row.image, row.title, row.caption));
-        }
-        row.image = publicPhoto(table, row.id, row.image);
-      }
-    }
-    for (const row of payload.destinations) row.gallery = publicGallery(row.id, row.gallery).map(resolvedPhoto);
-    // An attraction's photo is its own upload (or none): only an R2 set to resolve.
-    for (const row of payload.attractions) if (row.image) row.image = resolvedPhoto(row.image);
-    // A tour category still on its seed photo shows that destination's verified one (0030); none stays none.
-    for (const row of payload.tourCategories) if (row.image) row.image = publicPhoto('tour_categories', row.id, row.image);
-    const used = new Set(photoCollections.flatMap(([, rows]) => rows.map(row => row.image)));
-    for (const row of payload.destinations) for (const image of row.gallery) used.add(image);
-    for (const row of payload.attractions) if (row.image) used.add(row.image);
-    for (const row of payload.tourCategories) if (row.image) used.add(row.image);
-    payload.imageCredits = payload.imageCredits
-      .map(credit => ({ ...credit, url: resolvedPhoto(credit.url) }))
-      .filter(credit => used.has(credit.url));
-    for (const photo of photographs) {
-      for (const url of new Set([resolvedPhoto(photo.image), resolvedPhoto(photo.original)])) {
-        if (used.has(url) && !payload.imageCredits.some(credit => credit.url === url)) {
-          payload.imageCredits.push({ url, author: photo.author, license: photo.license,
-            license_url: photo.licenseUrl, source_url: photo.source });
-        }
-      }
-    }
-
+    const payload = await loadContentPayload(req.app.locals.bookings === true);
     // An admin save must show on the next page load. `no-cache` lets the
     // browser keep a copy but makes it revalidate every time (the ETag Express
     // adds turns an unchanged payload into a 304). Nothing else caches this:

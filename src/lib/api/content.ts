@@ -98,7 +98,15 @@ export const EMPTY_CONTENT: SiteContent = {
 };
 
 export async function fetchSiteContent(): Promise<SiteContent> {
-  const payload = await getJson<SiteContentPayload>(API_ROUTES.content);
+  return toSiteContent(await getJson<SiteContentPayload>(API_ROUTES.content));
+}
+
+/**
+ * The payload mapped to what the components read. The server's first screen uses it
+ * too (`src/ssr/first-screen.tsx`), with the same payload, so both draw the same thing.
+ * Registers the payload's photo sets (`TravelImage`'s `srcset`).
+ */
+export function toSiteContent(payload: SiteContentPayload): SiteContent {
   registerPhotoSets(payload.photoSets);
 
   return {
