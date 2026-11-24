@@ -4,12 +4,13 @@ import { PageHero } from '@/components/PageHero';
 import { TailorMadeCard } from '@/components/TailorMadeCard';
 import { ToursSection } from '@/components/ToursSection';
 import { usePageSubject, useContentTitle, usePublicSite } from '@/context/PublicSiteContext';
-import { useTourCategories, useTours } from '@/hooks/useSiteContent';
+import { useDestinations, useTourCategories, useTours } from '@/hooks/useSiteContent';
 import { paths } from '@shared/site-paths';
 import type { TourCategory } from '@/types';
 import { NotFoundPage } from './NotFoundPage';
 import { Section } from './Section';
 import { CRUMB_NAMES } from '@shared/page-meta';
+import { placesOnTours } from '@/lib/placesOnTours';
 
 /**
  * `/tours/category/:slug`: one travel style (0030). Its photo and heading, the intro,
@@ -29,6 +30,8 @@ function TourCategoryView({ category }: { category: TourCategory }) {
   useContentTitle('tourCategory', category.heading);
   usePageSubject({ inquiry: category.name, whatsapp: { kind: 'tourCategory', id: category.id, name: category.name } });
   const tours = useTours().filter((tour) => tour.categoryIds.includes(category.id));
+  const destinations = useDestinations();
+  const places = placesOnTours(tours, destinations);
   const { openInquiry } = usePublicSite();
   const navigate = useNavigate();
 
@@ -57,6 +60,20 @@ function TourCategoryView({ category }: { category: TourCategory }) {
               <Link to={paths.whenToGo} className="te-ed-link">
                 See when to go <ArrowRight aria-hidden="true" />
               </Link>
+            </div>
+          )}
+          {places.length > 0 && (
+            <div className="te-cat-places" data-category-places>
+              <h2 className="te-cat-places__title font-heading">Places on these tours</h2>
+              <ul>
+                {places.map((d) => (
+                  <li key={d.id}>
+                    <Link to={paths.destination(d.id)} className="te-ed-link">
+                      {d.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>

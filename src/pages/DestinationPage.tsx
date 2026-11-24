@@ -16,6 +16,9 @@ import { NotFoundPage } from './NotFoundPage';
 import { Section } from './Section';
 import { CRUMB_NAMES } from '@shared/page-meta';
 
+/** How many tours "Tours that visit <name>" shows. */
+const MAX_TOURS_THROUGH = 4;
+
 /** `/destinations/:slug`: what the destination modal showed, as a page. */
 export function DestinationPage() {
   const { slug } = useParams();
@@ -34,7 +37,8 @@ function DestinationView({ d }: { d: Destination }) {
   const [photo, setPhoto] = useState(d.image);
 
   const photos = [d.image, ...(d.gallery ?? [])];
-  const through = tours.filter((t) => t.stops.some((s) => s.destinationId === d.id));
+  // The published tours that stop here, at most four.
+  const through = tours.filter((t) => t.stops.some((s) => s.destinationId === d.id)).slice(0, MAX_TOURS_THROUGH);
   // Same region first, then the rest, in the site's order.
   const more = [
     ...all.filter((x) => x.id !== d.id && x.region === d.region),
@@ -183,9 +187,9 @@ function DestinationView({ d }: { d: Destination }) {
 
       {through.length > 0 && (
         <Section name="ToursThrough">
-          <section className="bg-[var(--background-secondary)] py-16 sm:py-20">
+          <section className="bg-[var(--background-secondary)] py-16 sm:py-20" data-tours-through>
             <div className="te-container">
-              <SectionHead title={`Tours through ${d.name}`} />
+              <SectionHead title={`Tours that visit ${d.name}`} />
               <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
                 {through.map((t) => (
                   <TourCard key={t.id} tour={t} />

@@ -226,7 +226,7 @@ export const RecordEditorPage: React.FC = () => {
             />
           </Card>
 
-          <div className="sticky bottom-0 mt-4 flex items-center justify-end gap-2 rounded-2xl border border-[var(--border-strong)]/50 bg-[var(--background)]/95 p-3 backdrop-blur">
+          <div className="sticky bottom-0 mt-4 flex items-center justify-end gap-2 rounded-2xl border border-[var(--border-strong)]/50 bg-[var(--background)] p-3" data-save-bar>
             <Link to={`/admin/${collection.slug}`}>
               <Button type="button" variant="secondary">
                 Cancel

@@ -240,7 +240,9 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
       const ld = await page.evaluate<string[]>(`[...document.querySelectorAll('script[type="application/ld+json"]')].map((s) => JSON.parse(s.textContent)['@type'])`);
       const lists = ['/tours', '/destinations', '/experiences', '/journal'].includes(path) || path.startsWith('/tours/category/');
       const unlisted = path.startsWith('/unsubscribe') || path === '/no-such-page';
-      const expected = unlisted ? ['TravelAgency'] : lists ? ['TravelAgency', 'BreadcrumbList', 'ItemList'] : ['TravelAgency', 'BreadcrumbList'];
+      // A tour and a destination add what they're about (TouristTrip, TouristDestination).
+      const entity = /^\/tours\/(?!category\/)[^/]+$/.test(path) ? ['TouristTrip'] : /^\/destinations\/[^/]+$/.test(path) ? ['TouristDestination'] : [];
+      const expected = unlisted ? ['TravelAgency'] : lists ? ['TravelAgency', 'BreadcrumbList', 'ItemList'] : ['TravelAgency', 'BreadcrumbList', ...entity];
       assert.deepEqual(ld, expected, `${path}: its JSON-LD blocks`);
       const height = await page.evaluate<number>('document.body.scrollHeight');
       for (let y = 0; y <= height; y += 900) {

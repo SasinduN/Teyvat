@@ -155,7 +155,7 @@ export const SettingsPage: React.FC = () => {
             />
           </Card>
 
-          <div className="sticky bottom-0 mt-4 flex items-center justify-end gap-2 rounded-2xl border border-[var(--border-strong)]/50 bg-[var(--background)]/95 p-3 backdrop-blur">
+          <div className="sticky bottom-0 mt-4 flex items-center justify-end gap-2 rounded-2xl border border-[var(--border-strong)]/50 bg-[var(--background)] p-3" data-save-bar>
             <Button type="submit" icon={Save} loading={save.isPending}>
               Save settings
             </Button>
