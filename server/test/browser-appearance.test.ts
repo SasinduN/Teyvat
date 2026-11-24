@@ -349,6 +349,31 @@ describe('Admin → Appearance and the default mode, in Chrome', { skip, timeout
     }
   });
 
+  test('opened before the settings arrive: focus still ends on the chosen mode, not the close button', async () => {
+    const page = await admin('/admin');
+    try {
+      // The settings answer 1.5 s late, so the panel opens while they load.
+      await page.send('Page.addScriptToEvaluateOnNewDocument', {
+        source: `{
+          const send = window.fetch;
+          window.fetch = (input, init) => String(input && input.url ? input.url : input).includes('/api/admin/site-settings') && !(init && init.method && init.method !== 'GET')
+            ? new Promise((resolve) => setTimeout(resolve, 1500)).then(() => send(input, init))
+            : send(input, init);
+        }`
+      });
+      await page.send('Page.navigate', { url: `${app.baseUrl}/admin` });
+      await poll(page, `document.querySelector('[data-appearance-button]')`, 'the button');
+      await click(page, '[data-appearance-button]');
+      await poll(page, `document.querySelector('[data-appearance-popover]')`, 'the panel');
+      assert.equal(await page.evaluate<boolean>(`Boolean(document.querySelector('[data-appearance-popover] [data-appearance-modes]'))`), false, 'precondition: still loading');
+      assert.ok(await closeButton(page), 'the close button is there while it loads');
+      await poll(page, `document.querySelector('[data-appearance-popover] [data-appearance-modes]')`, 'the settings');
+      await poll(page, `document.activeElement && document.activeElement.dataset.mode === 'light'`, 'focus on the chosen mode');
+    } finally {
+      await close(page);
+    }
+  });
+
   test('the keyboard: roving tabindex, arrows move and preview, Tab between groups; nothing saved; Cancel and closing put it back', async () => {
     const page = await admin('/admin');
     try {

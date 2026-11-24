@@ -124,12 +124,16 @@ export const AppearancePanel: React.FC<{
   const draft = useAppearanceDraft();
   const root = useRef<HTMLDivElement>(null);
 
-  // Opened before the settings arrived: the dialog itself had focus; the chosen mode takes it.
+  // Opened before the settings arrived: focus went to the dialog or its close button (the only
+  // control while loading); the chosen mode takes it once they're here.
   const loaded = Boolean(current.data);
   useEffect(() => {
     if (variant !== 'popover' || !loaded) return;
     const dialog = root.current?.closest<HTMLElement>('[role="dialog"]');
-    if (dialog && document.activeElement === dialog) root.current?.querySelector<HTMLElement>('[data-autofocus]')?.focus({ preventScroll: true });
+    const active = document.activeElement;
+    if (dialog && (active === dialog || (active instanceof HTMLElement && active.hasAttribute('data-appearance-close') && dialog.contains(active)))) {
+      root.current?.querySelector<HTMLElement>('[data-autofocus]')?.focus({ preventScroll: true });
+    }
   }, [variant, loaded]);
 
   // Leaving Settings ends an inline preview, like closing the popover does.
