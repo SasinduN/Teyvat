@@ -286,7 +286,18 @@ describe('Admin → Appearance and the default mode, in Chrome', { skip, timeout
 
   /* ------------------------------------------------------------ the panel */
 
-  test('the top bar’s button opens the panel; Escape and a click outside close it, focus back on the button', async () => {
+  /** The popover's close button: its label, target and place (top right, inside the panel). */
+  const closeButton = (page: Page) =>
+    page.evaluate<{ label: string | null; size: number[]; topRight: boolean; visible: boolean } | null>(`(() => {
+      const d = document.querySelector('[data-appearance-popover]'), b = d && d.querySelector('[data-appearance-close]');
+      if (!b) return null;
+      const p = d.getBoundingClientRect(), r = b.getBoundingClientRect(), cs = getComputedStyle(b);
+      return { label: b.getAttribute('aria-label'), size: [Math.round(r.width), Math.round(r.height)],
+        topRight: r.top >= p.top && r.top - p.top < 24 && r.right <= p.right && p.right - r.right < 24,
+        visible: cs.visibility === 'visible' && cs.display !== 'none' && r.width > 0 };
+    })()`);
+
+  test('the top bar’s button opens the panel; Escape, a click outside and its close button close it, focus back on the button', async () => {
     const page = await admin('/admin');
     try {
       const button = await page.evaluate<{ label: string | null; popup: string | null; expanded: string | null; target: number[]; circle: number[] }>(`(() => {
@@ -325,6 +336,14 @@ describe('Admin → Appearance and the default mode, in Chrome', { skip, timeout
       await clickAt(page, 300, 600);
       await poll(page, `!document.querySelector('[data-appearance-popover]')`, 'a click outside closes it');
       assert.equal(await focused(page), 'button');
+
+      // A visible close button, top right, a 44 px target.
+      await openPanel(page);
+      assert.deepEqual(await closeButton(page), { label: 'Close', size: [44, 44], topRight: true, visible: true });
+      await click(page, '[data-appearance-close]');
+      await poll(page, `!document.querySelector('[data-appearance-popover]')`, 'the close button closes it');
+      assert.equal(await focused(page), 'button', 'focus back on the button');
+      assert.equal(await page.evaluate<string>(`document.querySelector('[data-appearance-button]').getAttribute('aria-expanded')`), 'false');
     } finally {
       await close(page);
     }
@@ -395,6 +414,14 @@ describe('Admin → Appearance and the default mode, in Chrome', { skip, timeout
       assert.deepEqual([await attr(page, 'data-palette'), await attr(page, 'data-theme')], ['sunset', 'light']);
       await openPanel(page);
       assert.deepEqual((await checked(page, 'themes')).map((o) => o.checked), ['true', 'false', 'false'], 'reopened: the saved choice');
+
+      // So does the close button.
+      await click(page, '[data-appearance-popover] [data-palette-option="emerald"]');
+      await click(page, '[data-appearance-popover] [data-mode="dark"]');
+      assert.deepEqual([await attr(page, 'data-palette'), await attr(page, 'data-theme')], ['emerald', 'dark']);
+      await click(page, '[data-appearance-close]');
+      await poll(page, `!document.querySelector('[data-appearance-popover]')`, 'closed by its button');
+      assert.deepEqual([await attr(page, 'data-palette'), await attr(page, 'data-theme')], ['sunset', 'light']);
       assert.deepEqual(await stored(), { palette: 'sunset', default_mode: 'light' });
     } finally {
       await close(page);
@@ -509,7 +536,7 @@ describe('Admin → Appearance and the default mode, in Chrome', { skip, timeout
     }
   });
 
-  test('a bottom sheet at 375 px: full width, at the bottom, at most 85% high, scrolls, the scrim closes it', async () => {
+  test('a bottom sheet at 375 px: full width, at the bottom, at most 85% high, scrolls; the scrim and its close button close it', async () => {
     const page = await admin('/admin', { width: 375 });
     try {
       await openPanel(page);
@@ -535,6 +562,16 @@ describe('Admin → Appearance and the default mode, in Chrome', { skip, timeout
       await clickAt(page, 187, 40);
       await poll(page, `!document.querySelector('[data-appearance-popover]')`, 'the scrim closes it');
       assert.equal(await attr(page, 'data-theme'), 'light', 'and ends the preview');
+
+      // Phones have no Escape key: a visible close button at the sheet's top right.
+      await openPanel(page);
+      await click(page, '[data-appearance-popover] [data-mode="dark"]');
+      await page.evaluate(`document.querySelector('[data-appearance-popover]').scrollTop = 0, true`);
+      assert.deepEqual(await closeButton(page), { label: 'Close', size: [44, 44], topRight: true, visible: true });
+      await click(page, '[data-appearance-close]');
+      await poll(page, `!document.querySelector('[data-appearance-popover]')`, 'the close button closes it');
+      assert.equal(await attr(page, 'data-theme'), 'light', 'and ends the preview');
+      assert.equal(await focused(page), 'button');
     } finally {
       await close(page);
     }
@@ -542,7 +579,7 @@ describe('Admin → Appearance and the default mode, in Chrome', { skip, timeout
 
   /* ------------------------------------------------------------ contrast */
 
-  test('the open panel is AA in all six colour sets', async () => {
+  test('the open panel is AA, and the top bar opaque, in all six colour sets', async () => {
     const decoder = await newDecoder(chrome);
     try {
       for (const palette of PALETTES) {
@@ -552,6 +589,15 @@ describe('Admin → Appearance and the default mode, in Chrome', { skip, timeout
           await setSaved(palette, 'auto');
           const page = await admin('/admin', { theme, device: theme });
           try {
+            // The top bar is solid: the page scrolling under it never shows through.
+            const bar = await page.evaluate<{ alpha: number; blur: string; colour: string; page: string }>(`(() => {
+              const bar = document.querySelector('.te-admin-toolbar'), cs = getComputedStyle(bar);
+              const probe = document.createElement('canvas').getContext('2d');
+              probe.fillStyle = cs.backgroundColor; probe.fillRect(0, 0, 1, 1);
+              return { alpha: probe.getImageData(0, 0, 1, 1).data[3], blur: cs.backdropFilter, colour: cs.backgroundColor,
+                page: getComputedStyle(document.querySelector('.te-admin')).backgroundColor };
+            })()`);
+            assert.deepEqual(bar, { alpha: 255, blur: 'none', colour: bar.page, page: bar.page }, `${palette} ${theme}: an opaque top bar`);
             await openPanel(page);
             await click(page, `[data-appearance-popover] [data-mode="${theme}"]`);
             await poll(page, `document.querySelector('[data-appearance-footer]')`, 'the footer');

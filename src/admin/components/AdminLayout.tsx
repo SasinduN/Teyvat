@@ -174,7 +174,7 @@ export const AdminLayout: React.FC = () => {
 
       <div className="lg:pl-64">
         {/* The top bar: on phones the menu and the name; everywhere the Appearance button. */}
-        <div className="te-admin-toolbar sticky top-0 z-40 flex items-center gap-3 border-b border-[var(--border-strong)]/50 bg-[var(--background)]/95 py-3 backdrop-blur lg:py-2">
+        <div className="te-admin-toolbar sticky top-0 z-40 flex items-center gap-3 border-b border-[var(--border-strong)]/50 py-3 lg:py-2">
           <button
             onClick={() => setMobileOpen((v) => !v)}
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}

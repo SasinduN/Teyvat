@@ -2,7 +2,7 @@ import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'reac
 import { createPortal } from 'react-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Check, Palette as PaletteIcon, RotateCcw } from 'lucide-react';
+import { Check, Palette as PaletteIcon, RotateCcw, X } from 'lucide-react';
 
 import { SITE_SETTINGS_COLUMNS, type SiteSettingsValues } from '@shared/content-schema';
 import { DEFAULT_MODE_LABELS, DEFAULT_MODES, type DefaultMode } from '@shared/default-mode';
@@ -112,7 +112,7 @@ const ModeThumb: React.FC<{ palette: Palette; mode: DefaultMode }> = ({ palette,
 
 export const AppearancePanel: React.FC<{
   variant: 'popover' | 'inline';
-  /** The popover: close it (after a save or Cancel). */
+  /** The popover: close it (the close button, or after a save or Cancel). */
   onClose?: () => void;
   titleId?: string;
 }> = ({ variant, onClose, titleId }) => {
@@ -165,10 +165,19 @@ export const AppearancePanel: React.FC<{
   const modeProps = useRovingRadios(DEFAULT_MODES, shown?.mode ?? 'light', (mode) => choose({ mode }));
   const themeProps = useRovingRadios(PALETTES, shown?.palette ?? 'sunset', (palette) => choose({ palette }));
 
+  // The popover's title row has a close button: phones have no Escape key, and the scrim isn't
+  // obviously tappable. Closing ends an unsaved preview, as Escape and Cancel do.
   const title = (
-    <h2 id={titleId} className="te-appearance__title">
-      Appearance
-    </h2>
+    <div className="te-appearance__head">
+      <h2 id={titleId} className="te-appearance__title">
+        Appearance
+      </h2>
+      {variant === 'popover' && onClose && (
+        <button type="button" className="te-appearance__close" aria-label="Close" onClick={onClose} data-appearance-close>
+          <X className="h-5 w-5" aria-hidden="true" />
+        </button>
+      )}
+    </div>
   );
 
   if (!shown) {
@@ -283,8 +292,8 @@ export const AppearancePanel: React.FC<{
 };
 
 /**
- * The admin top bar's Appearance button and its popover. Escape, a click outside or Cancel
- * close it and end the preview; focus goes back to the button.
+ * The admin top bar's Appearance button and its popover. Escape, a click outside, the close
+ * button or Cancel close it and end the preview; focus goes back to the button.
  */
 export const AppearanceButton: React.FC<{ className?: string }> = ({ className }) => {
   const [open, setOpen] = useState(false);
