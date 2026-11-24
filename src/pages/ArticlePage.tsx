@@ -1,12 +1,13 @@
 import { useParams } from 'react-router-dom';
 import { HeroChip, PageHero } from '@/components/PageHero';
 import { ArticleCard, SectionHead } from '@/components/PageCards';
-import { usePageTitle } from '@/context/PublicSiteContext';
+import { useContentTitle } from '@/context/PublicSiteContext';
 import { useArticles } from '@/hooks/useSiteContent';
 import { paths } from '@shared/site-paths';
 import type { Article } from '@/types';
 import { NotFoundPage } from './NotFoundPage';
 import { Section } from './Section';
+import { CRUMB_NAMES } from '@shared/page-meta';
 
 /**
  * `/journal/:slug`: what the article reader modal showed, in a reading
@@ -21,14 +22,14 @@ export function ArticlePage() {
 }
 
 function ArticleView({ a }: { a: Article }) {
-  usePageTitle(a.title);
+  useContentTitle('article', a.title);
   const all = useArticles();
 
   return (
     <>
       <PageHero
         image={a.image}
-        crumbs={[{ label: 'Home', to: paths.home }, { label: 'Journal', to: paths.journal }, { label: a.title }]}
+        crumbs={[{ label: CRUMB_NAMES.home, to: paths.home }, { label: CRUMB_NAMES.journal, to: paths.journal }, { label: a.title }]}
         chips={<HeroChip gold>{a.category}</HeroChip>}
         title={a.title}
       />

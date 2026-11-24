@@ -3,7 +3,7 @@ import { FeaturedExperiences } from '@/components/FeaturedExperiences';
 import { ExperiencesSection } from '@/components/ExperiencesSection';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useFeaturedExperiences } from '@/hooks/useSiteContent';
-import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
+import { CRUMB_NAMES, PAGE_DESCRIPTIONS } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
@@ -13,14 +13,14 @@ import { Section } from './Section';
  * page it filters the map.
  */
 export function ExperiencesPage() {
-  usePageTitle(PAGE_NAMES.experiences);
+  usePageTitle('experiences');
   const featured = useFeaturedExperiences();
   return (
     <>
       <PageHero
         compact
         image={featured[0]?.image}
-        crumbs={[{ label: 'Home', to: paths.home }, { label: 'Experiences' }]}
+        crumbs={[{ label: CRUMB_NAMES.home, to: paths.home }, { label: CRUMB_NAMES.experiences }]}
         title="Experiences"
         subtitle={PAGE_DESCRIPTIONS.experiences}
       />

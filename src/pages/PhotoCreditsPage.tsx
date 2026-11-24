@@ -3,7 +3,7 @@ import { ExternalLink } from 'lucide-react';
 import { PageHero } from '@/components/PageHero';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useHeroSlides, useImageCredits } from '@/hooks/useSiteContent';
-import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
+import { CRUMB_NAMES, PAGE_DESCRIPTIONS } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 
 /**
@@ -13,7 +13,7 @@ import { paths } from '@shared/site-paths';
  * Edited under Admin → Photo credits.
  */
 export function PhotoCreditsPage() {
-  usePageTitle(PAGE_NAMES.photoCredits);
+  usePageTitle('photoCredits');
   const credits = useImageCredits();
   const slides = useHeroSlides();
 
@@ -22,7 +22,7 @@ export function PhotoCreditsPage() {
       <PageHero
         compact
         image={slides[0]?.url}
-        crumbs={[{ label: 'Home', to: paths.home }, { label: 'Photo Credits' }]}
+        crumbs={[{ label: CRUMB_NAMES.home, to: paths.home }, { label: CRUMB_NAMES.photoCredits }]}
         eyebrow="Thank You"
         title="Photo Credits"
         subtitle={PAGE_DESCRIPTIONS.photoCredits}

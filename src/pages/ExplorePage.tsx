@@ -12,7 +12,7 @@ import { useDestinations, useTours } from '@/hooks/useSiteContent';
 import { goToSection } from '@/lib/routeFocus';
 import type { CategoryType } from '@/types';
 import { KEEP_SCROLL } from '@/lib/ScrollRestorer';
-import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
+import { CRUMB_NAMES, PAGE_DESCRIPTIONS } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
@@ -31,7 +31,7 @@ import { Section } from './Section';
  * still loads only as it nears the screen.
  */
 export function ExplorePage() {
-  usePageTitle(PAGE_NAMES.explore);
+  usePageTitle('explore');
   const destinations = useDestinations();
   const tours = useTours();
   const { openInquiry } = usePublicSite();
@@ -62,7 +62,7 @@ export function ExplorePage() {
     <>
       <PageHero
         image={destinations.find((d) => d.featured)?.image ?? destinations[0]?.image}
-        crumbs={[{ label: 'Home', to: paths.home }, { label: 'Explore' }]}
+        crumbs={[{ label: CRUMB_NAMES.home, to: paths.home }, { label: CRUMB_NAMES.explore }]}
         title={<>Explore <Accent>Sri Lanka</Accent></>}
         subtitle={PAGE_DESCRIPTIONS.explore}
       />

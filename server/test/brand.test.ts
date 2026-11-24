@@ -19,7 +19,7 @@ import { after, before, beforeEach, describe, test } from 'node:test';
 
 import { BRAND, emailSender, heroHeadlineParts, resolveBrand, wordmarkLines } from '../../shared/brand';
 import { siteSettingsSchema } from '../../shared/content-schema';
-import { homeTitle, pageTitle, PAGE_NAMES } from '../../shared/page-meta';
+import { contentTitle, fixedTitle, homeTitle } from '../../shared/page-meta';
 import { createApp } from '../src/app';
 import { findOldBrand } from '../src/brand-audit';
 import { loadBrand } from '../src/brand';
@@ -54,10 +54,12 @@ const meta = (head: string, key: string): string | null => {
   return m ? unescape(m[1]) : null;
 };
 const titleOf = (head: string) => unescape(head.match(/<title>([^<]*)<\/title>/)?.[1] ?? '');
+/** The brand's block: exactly one TravelAgency (pages below home add their breadcrumbs too). */
 function jsonLdOf(head: string): Record<string, unknown> {
-  const blocks = [...head.matchAll(/<script type="application\/ld\+json">([^<]*)<\/script>/g)];
-  assert.equal(blocks.length, 1, 'one JSON-LD block');
-  return JSON.parse(blocks[0][1]);
+  const blocks = [...head.matchAll(/<script type="application\/ld\+json">([^<]*)<\/script>/g)].map((m) => JSON.parse(m[1]) as Record<string, unknown>);
+  const agencies = blocks.filter((block) => block['@type'] === 'TravelAgency');
+  assert.equal(agencies.length, 1, 'one TravelAgency block');
+  return agencies[0];
 }
 
 /* ------------------------------------------------------------------- pure */
@@ -69,7 +71,7 @@ describe('shared/brand.ts', () => {
     assert.equal(BRAND.tagline, 'Sri Lanka, planned around you.');
     assert.equal(BRAND.legalName, 'Serendib Luxe Tours');
     assert.equal(BRAND.emailDomain, 'serendibluxetours.com');
-    assert.equal(homeTitle(BRAND), 'Serendib Luxe Tours | Sri Lanka, planned around you.');
+    assert.equal(homeTitle(BRAND), 'Sri Lanka Tours, Planned Around You | Serendib Luxe Tours');
   });
 
   test('the wordmark: the short name large, the rest small; any name works', () => {
@@ -175,10 +177,10 @@ describe('the brand from the database', () => {
       assert.ok(meta(home, 'description')!.includes(brand.name));
 
       for (const [path, title] of [
-        ['/destinations/ella', pageTitle('Ella', brand)],
-        ['/about', pageTitle(PAGE_NAMES.about, brand)],
-        ['/admin', pageTitle(PAGE_NAMES.admin, brand)],
-        ['/nope', pageTitle(PAGE_NAMES.notFound, brand)]
+        ['/destinations/ella', contentTitle('destination', 'Ella', brand)],
+        ['/about', fixedTitle('about', brand)],
+        ['/admin', fixedTitle('admin', brand)],
+        ['/nope', fixedTitle('notFound', brand)]
       ]) {
         const head = await page(path);
         assert.equal(titleOf(head), title, path);
@@ -247,7 +249,7 @@ describe('the brand from the database', () => {
     assert.ok(text.startsWith(`# ${BRAND.name}\n\n> ${BRAND.tagline} `), text.slice(0, 120));
     await saveOverride();
     text = await (await fetch(`${app.baseUrl}/llms.txt`)).text();
-    assert.ok(text.startsWith('# Lagoon & Hills Journeys\n\n> Slow trips, \\<fast\\> answers. Tea country'), text.slice(0, 120));
+    assert.ok(text.startsWith('# Lagoon & Hills Journeys\n\n> Slow trips, \\<fast\\> answers. Sri Lanka tours planned around you'), text.slice(0, 120));
   });
 
   test('the enquiry email: subject, text and sender name follow a saved name', async () => {

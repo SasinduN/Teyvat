@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BOOKING_API, bagsLabel, checkCapacity, checkLoad, checkRiders, groupBags, maxPassengers, offeredGoodsVehicle, offeredVehicle, smallestFit, sriLankaToday, vehicleRange, type BookingCatalog, type BookingVehicle } from '@shared/booking';
 import { goodsSchema, initialRide, RETURN_LOAD_LABELS, rideSchema, withTripType, type GoodsInput, type RideInput } from '@shared/ride';
-import { PAGE_NAMES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useFeatures, useSiteSettings } from '@/hooks/useSiteContent';
@@ -47,7 +46,7 @@ export function BookingPage() {
 }
 
 function RideBookingForm() {
-  usePageTitle(PAGE_NAMES.booking);
+  usePageTitle('booking');
   const [params] = useSearchParams();
   const [catalog, setCatalog] = useState<BookingCatalog | null>(null);
   const { whatsappNumber } = useSiteSettings();

@@ -4,7 +4,7 @@ import { PageHero } from '@/components/PageHero';
 import { DestinationCard } from '@/components/PageCards';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useDestinations } from '@/hooks/useSiteContent';
-import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
+import { CRUMB_NAMES, PAGE_DESCRIPTIONS } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import type { CategoryType } from '@/types';
 import { KEEP_SCROLL } from '@/lib/ScrollRestorer';
@@ -27,7 +27,7 @@ const CATEGORIES: Exclude<CategoryType, 'All'>[] = [
  * list can be shared; an unknown category shows everything.
  */
 export function DestinationsPage() {
-  usePageTitle(PAGE_NAMES.destinations);
+  usePageTitle('destinations');
   const all = useDestinations();
   const [params, setParams] = useSearchParams();
   const asked = params.get('category');
@@ -42,7 +42,7 @@ export function DestinationsPage() {
       <PageHero
         compact
         image={all.find((d) => d.featured)?.image ?? all[0]?.image}
-        crumbs={[{ label: 'Home', to: paths.home }, { label: 'Destinations' }]}
+        crumbs={[{ label: CRUMB_NAMES.home, to: paths.home }, { label: CRUMB_NAMES.destinations }]}
         title="Destinations"
         subtitle={PAGE_DESCRIPTIONS.destinations}
       />

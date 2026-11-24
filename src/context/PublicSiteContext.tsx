@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect } from 'react';
 import type { WhatsAppContext } from '@shared/whatsapp';
-import { homeTitle, pageTitle } from '@shared/page-meta';
+import { contentTitle, fixedTitle, homeTitle, type ContentKind, type PageName } from '@shared/page-meta';
 import { useBrand } from '@/hooks/useSiteContent';
 
 /**
@@ -46,13 +46,22 @@ export function usePageSubject(subject: PageSubject | null): void {
 }
 
 /**
- * Sets `document.title` while the page is shown: "<name> | <brand>", or the
- * home page's title for `null`. The brand comes from the content, so a name
- * saved in Admin → Settings shows here as it does in the server's `<title>`.
+ * Sets `document.title` while a fixed page is shown (`fixedTitle`), or the home page's title for
+ * `null`: the same as the server's `<title>`. The brand comes from the content, so a name saved in
+ * Admin → Settings shows here as it does there.
  */
-export function usePageTitle(name: string | null): void {
+export function usePageTitle(page: PageName | null): void {
   const brand = useBrand();
-  const title = name === null ? homeTitle(brand) : pageTitle(name, brand);
+  useDocumentTitle(page === null ? homeTitle(brand) : fixedTitle(page, brand));
+}
+
+/** Sets `document.title` for a content page from its own name (`contentTitle`), as the server does. */
+export function useContentTitle(kind: ContentKind, name: string): void {
+  const brand = useBrand();
+  useDocumentTitle(contentTitle(kind, name, brand));
+}
+
+function useDocumentTitle(title: string): void {
   useEffect(() => {
     document.title = title;
   }, [title]);

@@ -7,13 +7,14 @@ import { AttractionCard, DestinationCard, SectionHead, TourCard } from '@/compon
 import { PlanCard } from '@/components/PlanCard';
 import { SaveButton } from '@/components/SaveButton';
 import { WishlistTextLink } from '@/components/WishlistLink';
-import { usePageSubject, usePageTitle } from '@/context/PublicSiteContext';
+import { usePageSubject, useContentTitle } from '@/context/PublicSiteContext';
 import { useAttractions, useDestinations, useTours } from '@/hooks/useSiteContent';
 import { airportTravelTime, googleMapsUrl } from '@/lib/googleMaps';
 import { paths } from '@shared/site-paths';
 import type { Destination } from '@/types';
 import { NotFoundPage } from './NotFoundPage';
 import { Section } from './Section';
+import { CRUMB_NAMES } from '@shared/page-meta';
 
 /** `/destinations/:slug`: what the destination modal showed, as a page. */
 export function DestinationPage() {
@@ -25,7 +26,7 @@ export function DestinationPage() {
 }
 
 function DestinationView({ d }: { d: Destination }) {
-  usePageTitle(d.name);
+  useContentTitle('destination', d.name);
   usePageSubject({ inquiry: d.name, whatsapp: { kind: 'destination', id: d.id, name: d.name } });
   const all = useDestinations();
   const tours = useTours();
@@ -44,7 +45,7 @@ function DestinationView({ d }: { d: Destination }) {
     <>
       <PageHero
         image={photo}
-        crumbs={[{ label: 'Home', to: paths.home }, { label: 'Destinations', to: paths.destinations }, { label: d.name }]}
+        crumbs={[{ label: CRUMB_NAMES.home, to: paths.home }, { label: CRUMB_NAMES.destinations, to: paths.destinations }, { label: d.name }]}
         chips={
           <>
             <HeroChip>{d.region} region</HeroChip>

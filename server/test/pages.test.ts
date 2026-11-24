@@ -22,7 +22,7 @@ import { fileURLToPath } from 'node:url';
 import { after, before, beforeEach, describe, test } from 'node:test';
 
 import type { SiteContentPayload } from '../../shared/api';
-import { homeDescription, homeTitle, PAGE_DESCRIPTIONS, PAGE_NAMES, pageTitle } from '../../shared/page-meta';
+import { contentTitle, fixedTitle, homeDescription, homeTitle, metaDescription, PAGE_DESCRIPTIONS } from '../../shared/page-meta';
 import { createApp } from '../src/app';
 import type { SiteConfig } from '../src/env';
 import { pool } from '../src/db';
@@ -237,19 +237,23 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
 
   test('a destination, tour, experience and article each get their own head', async () => {
     const pages = [
-      ['/destinations/ella', 'destinations', 'name', 'short_description', 'ella'],
-      ['/tours/island-in-7-days', 'tours', 'title', 'short_desc', 'island-in-7-days'],
-      ['/experiences/safari-yala', 'featured_experiences', 'title', 'description', 'safari-yala'],
-      ['/journal/ultimate-ella-guide', 'articles', 'title', 'snippet', 'ultimate-ella-guide']
+      ['/destinations/ella', 'destinations', 'name', 'short_description', 'ella', 'destination'],
+      ['/tours/island-in-7-days', 'tours', 'title', 'short_desc', 'island-in-7-days', 'tour'],
+      ['/experiences/safari-yala', 'featured_experiences', 'title', 'description', 'safari-yala', 'experience'],
+      ['/journal/ultimate-ella-guide', 'articles', 'title', 'snippet', 'ultimate-ella-guide', 'article']
     ] as const;
-    for (const [path, table, titleColumn, descriptionColumn, id] of pages) {
+    for (const [path, table, titleColumn, descriptionColumn, id, kind] of pages) {
       const row = (await pool.query(`select ${titleColumn} as title, ${descriptionColumn} as description, image from public.${table} where id = $1`, [id])).rows[0];
       const { status, head: h } = await head(open, path);
       assert.equal(status, 200, path);
-      assert.equal(titleOf(h), `${row.title} | ${BRAND.name}`, path);
-      assert.equal(metaContent(h, 'og:title'), `${row.title} | ${BRAND.name}`, path);
-      assert.equal(metaContent(h, 'description'), summarise(row.description), path);
-      assert.equal(metaContent(h, 'og:description'), summarise(row.description), path);
+      // From the row's own name (seo-test covers the patterns and lengths).
+      assert.equal(titleOf(h), contentTitle(kind, row.title, BRAND), path);
+      assert.equal(metaContent(h, 'og:title'), contentTitle(kind, row.title, BRAND), path);
+      // The row's own description first: a short one gains a sentence (fillDescription).
+      const description = metaContent(h, 'description')!;
+      assert.ok(description.startsWith(summarise(row.description).replace(/[.…]$/, '')), `${path}: ${description}`);
+      assert.ok(description.length <= 160, path);
+      assert.equal(metaContent(h, 'og:description'), description, path);
       assert.equal(canonicalOf(h), `${SITE}${path}`, path);
       assert.equal(metaContent(h, 'og:url'), `${SITE}${path}`, path);
       assert.equal(metaContent(h, 'og:type'), table === 'articles' ? 'article' : 'website', path);
@@ -339,18 +343,18 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     assert.equal(canonicalOf(h), `${SITE}/`);
 
     ({ head: h } = await head(open, '/about'));
-    assert.equal(titleOf(h), pageTitle(PAGE_NAMES.about, BRAND));
-    assert.equal(metaContent(h, 'description'), PAGE_DESCRIPTIONS.about);
+    assert.equal(titleOf(h), fixedTitle('about', BRAND));
+    assert.equal(metaContent(h, 'description'), metaDescription('about'));
 
     // A filtered list's canonical is the list itself.
     ({ head: h } = await head(open, '/destinations?category=Beaches'));
-    assert.equal(titleOf(h), pageTitle(PAGE_NAMES.destinations, BRAND));
+    assert.equal(titleOf(h), fixedTitle('destinations', BRAND));
     assert.equal(canonicalOf(h), `${SITE}/destinations`);
     assert.equal(metaContent(h, 'og:url'), `${SITE}/destinations`);
 
     // The 404: never indexed, and no canonical to point at.
     ({ head: h } = await head(open, '/nope'));
-    assert.equal(titleOf(h), pageTitle(PAGE_NAMES.notFound, BRAND));
+    assert.equal(titleOf(h), fixedTitle('notFound', BRAND));
     assert.equal(metaContent(h, 'robots'), 'noindex');
     assert.equal(canonicalOf(h), null);
     assert.equal(metaContent(h, 'og:url'), null);
@@ -358,8 +362,8 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     // Redesign PR 3's pages: their own titles (the brand once), descriptions and canonicals.
     for (const page of ['explore', 'plan', 'journal'] as const) {
       ({ head: h } = await head(open, `/${page}`));
-      assert.equal(titleOf(h), pageTitle(PAGE_NAMES[page], BRAND), page);
-      assert.equal(metaContent(h, 'description'), PAGE_DESCRIPTIONS[page], page);
+      assert.equal(titleOf(h), fixedTitle(page, BRAND), page);
+      assert.equal(metaContent(h, 'description'), metaDescription(page), page);
       assert.equal(canonicalOf(h), `${SITE}/${page}`, page);
       assert.equal(titleOf(h)!.split(BRAND.name).length - 1, 1, `${page}: the brand once`);
     }
@@ -373,21 +377,21 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
 
     // The wishlist: a page, but different for every visitor, so never indexed, even when the site is open.
     ({ head: h } = await head(open, '/wishlist'));
-    assert.equal(titleOf(h), pageTitle(PAGE_NAMES.wishlist, BRAND));
+    assert.equal(titleOf(h), fixedTitle('wishlist', BRAND));
     assert.equal(metaContent(h, 'description'), PAGE_DESCRIPTIONS.wishlist);
     assert.equal(metaContent(h, 'robots'), 'noindex');
     assert.equal(canonicalOf(h), null);
     assert.equal((await get(open, '/wishlist')).headers.get('x-robots-tag'), 'noindex');
 
     ({ head: h } = await head(open, '/photo-credits'));
-    assert.equal(titleOf(h), pageTitle(PAGE_NAMES.photoCredits, BRAND));
-    assert.equal(metaContent(h, 'description'), PAGE_DESCRIPTIONS.photoCredits);
+    assert.equal(titleOf(h), fixedTitle('photoCredits', BRAND));
+    assert.equal(metaContent(h, 'description'), metaDescription('photoCredits'));
     assert.equal(canonicalOf(h), `${SITE}/photo-credits`);
 
     // Reached only from newsletter emails: never indexed, whatever SITE_INDEXABLE says.
     const unsubscribe = await head(open, '/unsubscribe?token=00000000-0000-4000-8000-000000000000');
     assert.equal(unsubscribe.status, 200);
-    assert.equal(titleOf(unsubscribe.head), pageTitle(PAGE_NAMES.unsubscribe, BRAND));
+    assert.equal(titleOf(unsubscribe.head), fixedTitle('unsubscribe', BRAND));
     assert.equal(metaContent(unsubscribe.head, 'robots'), 'noindex');
     assert.equal(unsubscribe.res.headers.get('x-robots-tag'), 'noindex');
     assert.equal(canonicalOf(unsubscribe.head), null);
@@ -397,7 +401,7 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     assert.equal((await get(open, '/booking?tour=island-in-7-days')).status, 404);
     const booking1 = await head(booking, '/booking?tour=island-in-7-days');
     assert.equal(booking1.status, 200);
-    assert.equal(titleOf(booking1.head), pageTitle(PAGE_NAMES.booking, BRAND));
+    assert.equal(titleOf(booking1.head), fixedTitle('booking', BRAND));
     assert.equal(metaContent(booking1.head, 'robots'), 'noindex');
     assert.equal(booking1.res.headers.get('x-robots-tag'), 'noindex');
     assert.equal(canonicalOf(booking1.head), null);
@@ -428,10 +432,12 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
     const html = await res.text();
     const h = headOf(html);
     assert.doesNotMatch(h, /<b>|<\/b>/, 'no raw tag in the head');
-    assert.ok(h.includes(`<title>Ella &quot;Rock&quot; &lt;b&gt;&amp;&lt;/b&gt; &#39;Peak&#39; | ${escapeHtml(BRAND.name)}</title>`), h);
-    assert.equal(titleOf(h), `${name} | ${BRAND.name}`);
-    assert.equal(metaContent(h, 'og:title'), `${name} | ${BRAND.name}`);
-    assert.equal(metaContent(h, 'og:image:alt'), name);
+    assert.ok(h.includes(`<title>Ella &quot;Rock&quot; &lt;b&gt;&amp;&lt;/b&gt; &#39;Peak&#39;, Sri Lanka | ${escapeHtml(BRAND.name)}</title>`), h);
+    assert.equal(titleOf(h), contentTitle('destination', name, BRAND));
+    assert.equal(titleOf(h), `${name}, Sri Lanka | ${BRAND.name}`);
+    assert.equal(metaContent(h, 'og:title'), `${name}, Sri Lanka | ${BRAND.name}`);
+    // The breadcrumbs' JSON-LD carries the name too, escaped for the script element.
+    assert.doesNotMatch(h.split('application/ld+json').slice(1).join(''), /<b>/);
   });
 
   test("a relative or http image: absolute https, or none", async () => {
@@ -472,8 +478,9 @@ describe('pages over HTTP', { skip: built ? false : 'no build; run `npm run buil
   });
 
   test('an admin edit shows in the very next response', async () => {
-    assert.equal(titleOf((await head(open, '/tours/island-in-7-days')).head), `Island in 7 Days | ${BRAND.name}`);
+    assert.equal(titleOf((await head(open, '/tours/island-in-7-days')).head), `Island in 7 Days: Sri Lanka Itinerary | ${BRAND.name}`);
     await pool.query(`update public.tours set title = 'Island in Seven Days' where id = 'island-in-7-days'`);
+    // Too long for ": Sri Lanka Itinerary" in 60 characters: the title alone.
     assert.equal(titleOf((await head(open, '/tours/island-in-7-days')).head), `Island in Seven Days | ${BRAND.name}`);
   });
 

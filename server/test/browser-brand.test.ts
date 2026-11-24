@@ -19,7 +19,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { after, before, describe, test } from 'node:test';
 
 import { BRAND } from '../../shared/brand';
-import { homeTitle } from '../../shared/page-meta';
+import { fixedTitle, homeTitle } from '../../shared/page-meta';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { findChrome, launchChrome, saveTheme, type Chrome, type Page } from './chrome';
@@ -108,7 +108,7 @@ describe('the brand in the browser', { skip, timeout: 4 * 60_000 }, () => {
       assert.deepEqual(logo.emblem, { alt: '', hidden: 'true', loaded: true, height: 40, before: true });
       assert.equal(logo.name, 'Serendib Luxe Tours homepage', 'the link reads as words, with a space between the lines');
       assert.ok(logo.subBelow, '"TOURS" sits under "SERENDIB LUXE", left-aligned');
-      assert.equal(await page.evaluate<string>('document.title'), `About Us | ${BRAND.name}`);
+      assert.equal(await page.evaluate<string>('document.title'), fixedTitle('about', BRAND));
     } finally {
       await close(page);
     }
@@ -211,7 +211,7 @@ describe('the brand in the browser', { skip, timeout: 4 * 60_000 }, () => {
       try {
         assert.equal(await page.evaluate<string>(`document.querySelector('.te-nav .te-logo-main').textContent`), 'Lagoon Hills');
         assert.equal(await page.evaluate<string>(`document.querySelector('.te-nav .te-logo-sub').textContent`), 'Journeys');
-        assert.equal(await page.evaluate<string>('document.title'), 'About Us | Lagoon Hills Journeys');
+        assert.equal(await page.evaluate<string>('document.title'), 'About Our Sri Lanka Travel Team | Lagoon Hills Journeys');
         assert.ok((await page.evaluate<string>(`document.querySelector('[data-footer-last-row]').textContent`)).includes('Lagoon Hills (Pvt) Ltd'));
       } finally {
         await close(page);

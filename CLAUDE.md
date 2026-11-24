@@ -317,7 +317,9 @@ Update the Status column when a phase lands.
   `require` encrypts without verifying, for Railway's public proxy; the
   deployed app uses the internal URL with no `sslmode`.
 - **Site settings links** are NULL or `https://…` (migration 0004). An unset
-  link renders without an `href`.
+  link, or a placeholder (`realLink`, `shared/business.ts`: a site's bare home page
+  such as `https://www.instagram.com/`), isn't rendered at all: the footer never has
+  an `<a>` without an `href` (`browser-seo`).
 - **Tests:** `npm test` runs `scripts/run-tests.mjs`: each file in its own
   process, 60 s per test, and every hook passes `HOOK_TIMEOUT`.
 - **Tour routes** live in `tour_stops` (0007 replaced `tours.route`). A
@@ -463,7 +465,19 @@ Update the Status column when a phase lands.
   - `.site main` is `display: flow-root`: without it a page header's top margin
     collapsed into `<body>`, which jumped 80 px as each page arrived (CLS 0.1).
   - Titles come from `shared/page-meta.ts`, and the brand from
-    `shared/brand.ts`, for the client too.
+    `shared/brand.ts`, for the client too. A title is the search phrase
+    (`PAGE_TITLES`) or the content's own name (`contentTitle`: "Ella, Sri Lanka",
+    "<tour>: Sri Lanka Itinerary" when it fits), then the brand, in at most 60
+    characters. Meta descriptions are `META_DESCRIPTIONS` (the header subtitles stay
+    `PAGE_DESCRIPTIONS`); a row's short one gains a sentence of what its page shows
+    (`fillDescription`). The SEO audit's quick wins: `docs/reviews/seo-audit-2026-11.md`.
+  - JSON-LD: `TravelAgency` on every page, each contact detail and profile only when
+    Admin → Settings really has it (`shared/business.ts` drops empty and placeholder
+    values; never ratings, reviews, prices or hours); a `BreadcrumbList` on every indexed
+    page below home, named as the page's breadcrumbs (`CRUMB_NAMES`); an `ItemList` on
+    the list pages. `og:image:alt` is the photo's own alt (`photoAlt`). Every sitemap URL
+    has a `<lastmod>`: a row's `updated_at`, or the day the server started for the fixed
+    pages. `seo.test`, `browser-seo`.
   - `GET /llms.txt` (llmstxt.org) is Markdown built per request from the
     published rows and `paths`, like the sitemap, and only when
     `SITE_INDEXABLE` is true. Row text goes through `markdownText`.

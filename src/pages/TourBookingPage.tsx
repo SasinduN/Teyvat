@@ -11,7 +11,6 @@ import {
   type BookingInput,
   type BookingRecord
 } from '@shared/booking';
-import { PAGE_NAMES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useFeatures } from '@/hooks/useSiteContent';
@@ -61,7 +60,7 @@ export function TourBookingPage() {
  * sent from this browser are listed below for 30 days, to edit or cancel.
  */
 function BookingForm() {
-  usePageTitle(PAGE_NAMES.booking);
+  usePageTitle('booking');
   const [params] = useSearchParams();
   const [catalog, setCatalog] = useState<BookingCatalog | null>(null);
   const [form, setForm] = useState<BookingInput>(initial);

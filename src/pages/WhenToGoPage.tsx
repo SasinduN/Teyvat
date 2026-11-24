@@ -18,7 +18,7 @@ import {
   SUITABILITY_MEANINGS,
   type Suitability
 } from '@shared/best-months';
-import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
+import { CRUMB_NAMES, PAGE_DESCRIPTIONS } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import type { Destination } from '@/types';
 import { Section } from './Section';
@@ -82,7 +82,7 @@ function PlaceGrid({ places }: { places: Destination[] }) {
  * is. Places with no best months say "not set" on the map and stay out of the lists.
  */
 export function WhenToGoPage() {
-  usePageTitle(PAGE_NAMES.whenToGo);
+  usePageTitle('whenToGo');
   const destinations = useDestinations();
   const attractions = useAttractions();
   const { whenToGoExplainer } = useSiteSettings();
@@ -102,7 +102,7 @@ export function WhenToGoPage() {
       <PageHero
         compact
         image={destinations.find((d) => d.featured)?.image ?? destinations[0]?.image}
-        crumbs={[{ label: 'Home', to: paths.home }, { label: 'When to go' }]}
+        crumbs={[{ label: CRUMB_NAMES.home, to: paths.home }, { label: CRUMB_NAMES.whenToGo }]}
         title="When to go"
         subtitle={PAGE_DESCRIPTIONS.whenToGo}
       />

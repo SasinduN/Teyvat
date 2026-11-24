@@ -3,13 +3,13 @@ import { JournalSection } from '@/components/JournalSection';
 import { PhotoStorySection } from '@/components/PhotoStorySection';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useArticles } from '@/hooks/useSiteContent';
-import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
+import { CRUMB_NAMES, PAGE_DESCRIPTIONS } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
 /** `/journal`: every published article, then the photo stories. */
 export function JournalPage() {
-  usePageTitle(PAGE_NAMES.journal);
+  usePageTitle('journal');
   const articles = useArticles();
 
   return (
@@ -17,7 +17,7 @@ export function JournalPage() {
       <PageHero
         compact
         image={articles[0]?.image}
-        crumbs={[{ label: 'Home', to: paths.home }, { label: 'Journal' }]}
+        crumbs={[{ label: CRUMB_NAMES.home, to: paths.home }, { label: CRUMB_NAMES.journal }]}
         title="Journal"
         subtitle={PAGE_DESCRIPTIONS.journal}
       />

@@ -8,6 +8,7 @@
  * truthiness and optional chaining.
  */
 import { resolveBrand } from '@shared/brand';
+import { realLink } from '@shared/business';
 import type {
   Article,
   Attraction,
@@ -218,14 +219,15 @@ export const toSiteSettings = (r: PublicSiteSettings): SiteSettings => ({
   postalAddress: r.postal_address,
   phone: r.phone,
   contactEmail: r.contact_email,
-  // NULL means "not set": undefined, so React leaves the href off entirely.
-  instagramUrl: r.instagram_url ?? undefined,
-  facebookUrl: r.facebook_url ?? undefined,
-  tiktokUrl: r.tiktok_url ?? undefined,
-  youtubeUrl: r.youtube_url ?? undefined,
-  privacyUrl: r.privacy_url ?? undefined,
-  termsUrl: r.terms_url ?? undefined,
-  sustainabilityUrl: r.sustainability_url ?? undefined,
+  // NULL, or a placeholder like a bare https://www.instagram.com/ (`realLink`), means "not set":
+  // undefined, and the Footer leaves that link out.
+  instagramUrl: realLink(r.instagram_url),
+  facebookUrl: realLink(r.facebook_url),
+  tiktokUrl: realLink(r.tiktok_url),
+  youtubeUrl: realLink(r.youtube_url),
+  privacyUrl: realLink(r.privacy_url),
+  termsUrl: realLink(r.terms_url),
+  sustainabilityUrl: realLink(r.sustainability_url),
   whatsappNumber: r.whatsapp_number ?? undefined,
   stats: r.stats ?? [],
   whenToGoExplainer: r.when_to_go_explainer ?? undefined,

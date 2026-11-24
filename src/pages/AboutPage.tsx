@@ -7,7 +7,7 @@ import { WhyUs } from '@/components/WhyUs';
 import { InquiryForm } from '@/components/InquiryForm';
 import { usePageTitle, usePublicSite } from '@/context/PublicSiteContext';
 import { useHeroSlides, useSiteSettings } from '@/hooks/useSiteContent';
-import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
+import { CRUMB_NAMES, PAGE_DESCRIPTIONS } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
@@ -17,7 +17,7 @@ import { Section } from './Section';
  * form, inline. The Navbar's "Contact" comes here.
  */
 export function AboutPage() {
-  usePageTitle(PAGE_NAMES.about);
+  usePageTitle('about');
   const settings = useSiteSettings();
   const slides = useHeroSlides();
   const { whatsappHref } = usePublicSite();
@@ -29,7 +29,7 @@ export function AboutPage() {
       <PageHero
         compact
         image={slides[1]?.url ?? slides[0]?.url}
-        crumbs={[{ label: 'Home', to: paths.home }, { label: 'About' }]}
+        crumbs={[{ label: CRUMB_NAMES.home, to: paths.home }, { label: CRUMB_NAMES.about }]}
         title="About Us"
         subtitle={PAGE_DESCRIPTIONS.about}
       />

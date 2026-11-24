@@ -70,6 +70,20 @@ export function fullSrcSet(src: string, sets: PhotoSets): string | undefined {
   return undefined;
 }
 
+/**
+ * A photo's alt text from its URL, for the server (which has `sets` to hand): a known seed or
+ * original URL, or any file of a photo's R2 set. Undefined for a photo the catalogue doesn't
+ * describe (an admin's own upload).
+ */
+export function photoAlt(src: string, sets: PhotoSets): string | undefined {
+  const known = assets.get(src)?.alt;
+  if (known) return known;
+  for (const [key, variants] of Object.entries(sets)) {
+    if (variants.some(v => v.url === src)) return photographs.find(photo => photo.key === key)?.alt;
+  }
+  return undefined;
+}
+
 /** Match only a known seed photo, including resized/reordered Unsplash parameters. */
 export function sameSeedPhoto(image: string, seed: string): boolean {
   if (image === seed) return true;

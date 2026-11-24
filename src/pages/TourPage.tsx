@@ -5,12 +5,13 @@ import { SectionHead, TourCard } from '@/components/PageCards';
 import { PlanCard } from '@/components/PlanCard';
 import { RouteMap } from '@/components/RouteMap';
 import { SaveButton } from '@/components/SaveButton';
-import { usePageSubject, usePageTitle } from '@/context/PublicSiteContext';
+import { usePageSubject, useContentTitle } from '@/context/PublicSiteContext';
 import { useFeatures, useTours } from '@/hooks/useSiteContent';
 import { paths } from '@shared/site-paths';
 import type { TourPackage } from '@/types';
 import { NotFoundPage } from './NotFoundPage';
 import { Section } from './Section';
+import { CRUMB_NAMES } from '@shared/page-meta';
 
 /** `/tours/:slug`: what the tour modal showed, plus its route on a map. */
 export function TourPage() {
@@ -21,7 +22,7 @@ export function TourPage() {
 }
 
 function TourView({ t }: { t: TourPackage }) {
-  usePageTitle(t.title);
+  useContentTitle('tour', t.title);
   usePageSubject({ inquiry: t.title, whatsapp: { kind: 'tour', id: t.id, title: t.title } });
   const tours = useTours();
   const { bookings } = useFeatures();
@@ -30,7 +31,7 @@ function TourView({ t }: { t: TourPackage }) {
     <>
       <PageHero
         image={t.image}
-        crumbs={[{ label: 'Home', to: paths.home }, { label: 'Tours', to: paths.tours }, { label: t.title }]}
+        crumbs={[{ label: CRUMB_NAMES.home, to: paths.home }, { label: CRUMB_NAMES.tours, to: paths.tours }, { label: t.title }]}
         chips={
           <>
             <HeroChip gold>
