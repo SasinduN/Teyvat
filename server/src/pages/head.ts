@@ -28,10 +28,124 @@ export interface PageMeta {
   breadcrumbs?: ReadonlyArray<{ name: string; path: string }>;
   /** What the page lists, in order: an ItemList. Names and links only: no ratings, no prices. */
   itemList?: ReadonlyArray<{ name: string; path: string }>;
+  /** What the page is about, for search engines: a tour or a destination (`entityJsonLd`). */
+  entity?: PageEntity;
+}
+
+/** A point on the map. */
+export interface Geo {
+  lat: number;
+  lng: number;
+}
+
+/**
+ * A tour or destination as schema.org describes it (Task 9, M2), with paths relative to the site:
+ * only published rows, and a field only when the content has it. Never ratings, reviews, prices,
+ * offers, opening hours or dates.
+ */
+export type PageEntity =
+  | {
+      type: 'TouristTrip';
+      name: string;
+      description: string | null;
+      path: string;
+      image: string | null;
+      /** Who it suits, where a category names a kind of traveller (`TOURIST_TYPES`). */
+      touristType: string[];
+      /** The published destinations on its route, in order. */
+      itinerary: ReadonlyArray<{ name: string; path: string }>;
+    }
+  | {
+      type: 'TouristDestination';
+      name: string;
+      description: string | null;
+      path: string;
+      image: string | null;
+      geo: Geo | null;
+      /** Its published attractions, each a card on this page (`paths.attraction`). */
+      attractions: ReadonlyArray<{ name: string; description: string | null; path: string; image: string | null; geo: Geo | null }>;
+    };
+
+/** The TravelAgency's `@id`, so a tour's `provider` can point to it. */
+export const organizationId = (origin: string): string => `${origin}/#organization`;
+
+/** A destination's `@id`, so its attractions' `containedInPlace` can point to it. */
+export const placeId = (origin: string, path: string): string => `${origin}${path}#place`;
+
+/** A path or URL as an absolute https URL, or undefined. */
+function absoluteHttps(value: string | null | undefined, origin: string): string | undefined {
+  if (!value?.trim()) return undefined;
+  try {
+    const url = new URL(value, `${origin}/`);
+    return url.protocol === 'https:' ? url.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+const geoOf = (geo: Geo | null) =>
+  geo && Number.isFinite(geo.lat) && Number.isFinite(geo.lng) ? { '@type': 'GeoCoordinates', latitude: geo.lat, longitude: geo.lng } : undefined;
+
+/** Only the fields that have a value: no empty strings, empty lists or undefined. */
+function present(fields: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(fields).filter(([, v]) => v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && v.length === 0))
+  );
+}
+
+/** The page's TouristTrip or TouristDestination (with its TouristAttractions), absolute URLs. */
+export function entityJsonLd(entity: PageEntity, origin: string): Record<string, unknown> {
+  const url = `${origin}${entity.path}`;
+  const text = (value: string | null) => value?.replace(/\s+/g, ' ').trim() || undefined;
+  if (entity.type === 'TouristTrip') {
+    return present({
+      '@context': 'https://schema.org',
+      '@type': 'TouristTrip',
+      name: entity.name,
+      description: text(entity.description),
+      url,
+      image: absoluteHttps(entity.image, origin),
+      touristType: entity.touristType.length === 1 ? entity.touristType[0] : entity.touristType,
+      itinerary: entity.itinerary.length
+        ? {
+            '@type': 'ItemList',
+            numberOfItems: entity.itinerary.length,
+            itemListElement: entity.itinerary.map((place, i) => ({
+              '@type': 'ListItem',
+              position: i + 1,
+              item: { '@type': 'TouristDestination', name: place.name, url: `${origin}${place.path}` }
+            }))
+          }
+        : undefined,
+      provider: { '@id': organizationId(origin) }
+    });
+  }
+  const id = placeId(origin, entity.path);
+  return present({
+    '@context': 'https://schema.org',
+    '@type': 'TouristDestination',
+    '@id': id,
+    name: entity.name,
+    description: text(entity.description),
+    url,
+    image: absoluteHttps(entity.image, origin),
+    geo: geoOf(entity.geo),
+    includesAttraction: entity.attractions.map((a) =>
+      present({
+        '@type': 'TouristAttraction',
+        name: a.name,
+        description: text(a.description),
+        url: `${origin}${a.path}`,
+        image: absoluteHttps(a.image, origin),
+        geo: geoOf(a.geo),
+        containedInPlace: { '@id': id }
+      })
+    )
+  });
 }
 
 /** schema.org's BreadcrumbList and ItemList for a page, with absolute URLs. */
-export function pageJsonLd(meta: Pick<PageMeta, 'breadcrumbs' | 'itemList'>, origin: string): Record<string, unknown>[] {
+export function pageJsonLd(meta: Pick<PageMeta, 'breadcrumbs' | 'itemList' | 'entity'>, origin: string): Record<string, unknown>[] {
   const url = (path: string) => `${origin}${path}`;
   const blocks: Record<string, unknown>[] = [];
   if (meta.breadcrumbs?.length) {
@@ -49,6 +163,7 @@ export function pageJsonLd(meta: Pick<PageMeta, 'breadcrumbs' | 'itemList'>, ori
       itemListElement: meta.itemList.map((item, i) => ({ '@type': 'ListItem', position: i + 1, name: item.name, url: url(item.path) }))
     });
   }
+  if (meta.entity) blocks.push(entityJsonLd(meta.entity, origin));
   return blocks;
 }
 
@@ -100,6 +215,8 @@ export function brandJsonLd(brand: Brand, origin: string, business: BusinessDeta
   return {
     '@context': 'https://schema.org',
     '@type': 'TravelAgency',
+    // Tours point to it as their provider.
+    '@id': organizationId(origin),
     name: brand.name,
     ...(brand.shortName !== brand.name ? { alternateName: brand.shortName } : {}),
     legalName: brand.legalName,

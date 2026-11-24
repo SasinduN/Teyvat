@@ -6,7 +6,7 @@ import { PlanCard } from '@/components/PlanCard';
 import { RouteMap } from '@/components/RouteMap';
 import { SaveButton } from '@/components/SaveButton';
 import { usePageSubject, useContentTitle } from '@/context/PublicSiteContext';
-import { useFeatures, useTours } from '@/hooks/useSiteContent';
+import { useFeatures, useTourCategories, useTours } from '@/hooks/useSiteContent';
 import { paths } from '@shared/site-paths';
 import type { TourPackage } from '@/types';
 import { NotFoundPage } from './NotFoundPage';
@@ -26,6 +26,11 @@ function TourView({ t }: { t: TourPackage }) {
   usePageSubject({ inquiry: t.title, whatsapp: { kind: 'tour', id: t.id, title: t.title } });
   const tours = useTours();
   const { bookings } = useFeatures();
+  // Its published categories, in its own order (the first is its card's label).
+  const allCategories = useTourCategories();
+  const categories = t.categoryIds
+    .map((id) => allCategories.find((c) => c.id === id))
+    .filter((c): c is NonNullable<typeof c> => Boolean(c));
 
   return (
     <>
@@ -52,6 +57,16 @@ function TourView({ t }: { t: TourPackage }) {
             <div className="space-y-4">
               <h2 className="font-heading text-3xl font-bold text-[var(--brand-primary)]">Tour Overview</h2>
               <p className="te-prose text-[var(--text-primary)]/85">{t.fullDesc}</p>
+              {categories.length > 0 && (
+                <p className="te-tour-styles" data-tour-categories-links>
+                  <span className="te-ed-label">{categories.length === 1 ? 'Travel style' : 'Travel styles'}</span>
+                  {categories.map((c) => (
+                    <Link key={c.id} to={paths.tourCategory(c.id)} className="te-ed-link">
+                      {c.name}
+                    </Link>
+                  ))}
+                </p>
+              )}
             </div>
 
             {t.highlights.length > 0 && (
@@ -69,9 +84,19 @@ function TourView({ t }: { t: TourPackage }) {
               <Section name="TourRoute">
                 <div>
                   <h2 className="mb-4 font-heading text-3xl font-bold text-[var(--brand-primary)]">The Route</h2>
-                  <ol className="mb-4 flex flex-wrap gap-x-1.5 text-[var(--text-primary)]" aria-label="Stops, in order">
-                    {t.route.map((place, i) => (
-                      <li key={i}>{place}{i < t.route.length - 1 ? ',' : ''}</li>
+                  {/* A stop whose destination is published links to its page; any other is its name. */}
+                  <ol className="te-route-stops mb-4 text-[var(--text-primary)]" aria-label="Stops, in order" data-route-stops>
+                    {t.stops.map((stop, i) => (
+                      <li key={i}>
+                        {stop.destinationId ? (
+                          <Link to={paths.destination(stop.destinationId)} className="te-ed-link">
+                            {stop.name}
+                          </Link>
+                        ) : (
+                          <span>{stop.name}</span>
+                        )}
+                        {i < t.stops.length - 1 ? ',' : ''}
+                      </li>
                     ))}
                   </ol>
                   <div className="h-[380px] overflow-hidden rounded-lg border border-[var(--border-strong)]/60 sm:h-[460px]">

@@ -57,7 +57,7 @@ this file or anywhere else in git.
 | CH | One host: a page on www or `*.up.railway.app` gets a 301 to `PUBLIC_SITE_URL` (`server/src/canonical-host.ts`) | done (#71) |
 | BT | The client's logo, three colour themes, the new font mix (`docs/plans/brand-themes.md`): PR A the logo and fonts (colours stay Emerald); PR B the themes and the admin picker | done (#72, #73) |
 | CI2 | CI's Postgres image from the Actions cache, pinned by digest (`PG_IMAGE_DIGEST`), pulled from three registries only on a miss: no more runs lost to pull limits | done (#74) |
-| AP | Admin → Appearance (handoff Task 7): the theme picker as a top-bar panel, plus a default mode for first visits (`site_settings.default_mode`, 0033) | in review (#76) |
+| AP | Admin → Appearance (handoff Task 7): the theme picker as a top-bar panel, plus a default mode for first visits (`site_settings.default_mode`, 0033) | done (#76) |
 
 Update the Status column when a phase lands.
 
@@ -478,6 +478,14 @@ Update the Status column when a phase lands.
     the list pages. `og:image:alt` is the photo's own alt (`photoAlt`). Every sitemap URL
     has a `<lastmod>`: a row's `updated_at`, or the day the server started for the fixed
     pages. `seo.test`, `browser-seo`.
+  - A tour is also a `TouristTrip` (its published destinations as the itinerary; `touristType`
+    only where a category names travellers, `TOURIST_TYPES`; `provider` → the agency's `@id`), and
+    a destination a `TouristDestination` (its pin, its published attractions as
+    `TouristAttraction`s inside it by `@id`): `PageEntity`, `entityJsonLd` (`head.ts`). Never
+    ratings, reviews, prices, offers, hours or dates. `links-schema.test`.
+  - Internal links (`browser-links`): a tour links each stop whose destination is published and
+    its published categories; a category lists "Places on these tours" (at most six); a
+    destination "Tours that visit <name>" (at most four) and When to go. Only published targets.
   - `GET /llms.txt` (llmstxt.org) is Markdown built per request from the
     published rows and `paths`, like the sitemap, and only when
     `SITE_INDEXABLE` is true. Row text goes through `markdownText`.

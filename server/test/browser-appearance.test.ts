@@ -536,6 +536,14 @@ describe('Admin → Appearance and the default mode, in Chrome', { skip, timeout
       })`);
       assert.deepEqual(old, { field: false, radios: 0, legend: false, previews: 0 }, 'the radio-card picker is gone');
       assert.equal(await page.evaluate<string>(`document.querySelector('[data-appearance-panel="inline"] h2').textContent`), 'Appearance');
+      // The form's sticky save bar is solid, like the top bar: nothing scrolling under it shows through.
+      const bar = await page.evaluate<{ alpha: number; blur: string }>(`(() => {
+        const cs = getComputedStyle(document.querySelector('[data-save-bar]'));
+        const probe = document.createElement('canvas').getContext('2d');
+        probe.fillStyle = cs.backgroundColor; probe.fillRect(0, 0, 1, 1);
+        return { alpha: probe.getImageData(0, 0, 1, 1).data[3], blur: cs.backdropFilter };
+      })()`);
+      assert.deepEqual(bar, { alpha: 255, blur: 'none' }, 'an opaque save bar');
 
       await click(page, '[data-appearance-panel="inline"] [data-mode="auto"]');
       await click(page, '[data-appearance-panel="inline"] [data-palette-option="emerald"]');

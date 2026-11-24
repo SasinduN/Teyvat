@@ -35,7 +35,7 @@ import { escapeHtml } from '../../../shared/html';
 import type { SiteConfig } from '../env';
 import { pool } from '../db';
 import { describeForLog } from '../http';
-import { DESCRIPTION_MAX, injectDefaultMode, injectHead, injectPalette, injectTextSize, renderHead, type PageMeta } from './head';
+import { DESCRIPTION_MAX, injectDefaultMode, injectHead, injectPalette, injectTextSize, renderHead, type PageEntity, type PageMeta } from './head';
 import { fullSrcSet, photoAlt, type PhotoSets } from '../../../shared/photo-assets';
 import { photoResolver } from '../../../shared/public-photos';
 import { DEFAULT_TEXT_SIZE, type TextSize } from '../../../shared/text-size';
@@ -109,6 +109,81 @@ const ROW_PAGES: ReadonlyArray<{
     tails: (_name, brand) => [`From the ${brand.name} journal of Sri Lanka travel guides.`, `From the ${brand.name} journal.`]
   }
 ];
+
+/**
+ * Who a tour suits, where a category names a kind of traveller. The other categories name a kind
+ * of trip (beaches, wildlife, culture…), which isn't a `touristType`, so they're left out.
+ */
+export const TOURIST_TYPES: Readonly<Record<string, string>> = { family: 'Families', honeymoon: 'Couples' };
+
+/**
+ * A tour as a TouristTrip: its published categories' traveller types, and the published
+ * destinations on its route, in order (a stop without a published destination is left out, as
+ * the page doesn't link it either).
+ */
+async function tourEntity(id: string, row: { title: string; description: string | null }, image: string): Promise<PageEntity> {
+  const { rows: categories } = await pool.query<{ id: string }>(
+    `select c.id from public.tour_category_links l
+       join public.tour_categories c on c.id = l.category_id and c.published
+      where l.tour_id = $1
+      order by l.position asc`,
+    [id]
+  );
+  const { rows: stops } = await pool.query<{ id: string; name: string }>(
+    `select d.id, d.name from public.tour_stops s
+       join public.destinations d on d.id = s.destination_id and d.published
+      where s.tour_id = $1
+      order by s.position asc`,
+    [id]
+  );
+  const seen = new Set<string>();
+  const itinerary = stops.filter((stop) => !seen.has(stop.id) && seen.add(stop.id)).map((stop) => ({ name: stop.name, path: paths.destination(stop.id) }));
+  return {
+    type: 'TouristTrip',
+    name: row.title,
+    description: row.description,
+    path: paths.tour(id),
+    image,
+    touristType: [...new Set(categories.map((c) => TOURIST_TYPES[c.id]).filter((t): t is string => Boolean(t)))],
+    itinerary
+  };
+}
+
+/** A destination as a TouristDestination: its map pin, and its published attractions (each a card on the page). */
+async function destinationEntity(
+  id: string,
+  row: { title: string; description: string | null },
+  image: string,
+  sets: PhotoSets
+): Promise<PageEntity> {
+  const { rows: pins } = await pool.query<{ latitude: number; longitude: number }>(
+    'select latitude, longitude from public.destinations where id = $1',
+    [id]
+  );
+  const { rows: attractions } = await pool.query<{ id: string; name: string; short_description: string; latitude: number; longitude: number; image: string | null }>(
+    `select id, name, short_description, latitude, longitude, image from public.attractions
+      where destination_id = $1 and published
+      order by sort_order asc, id asc`,
+    [id]
+  );
+  const { resolvedPhoto } = photoResolver(sets);
+  const pin = pins[0];
+  return {
+    type: 'TouristDestination',
+    name: row.title,
+    description: row.description,
+    path: paths.destination(id),
+    image,
+    geo: pin ? { lat: Number(pin.latitude), lng: Number(pin.longitude) } : null,
+    attractions: attractions.map((a) => ({
+      name: a.name,
+      description: a.short_description,
+      path: paths.attraction(id, a.id),
+      image: a.image ? resolvedPhoto(a.image) : null,
+      geo: { lat: Number(a.latitude), lng: Number(a.longitude) }
+    }))
+  };
+}
 
 /** Descriptions shorter than this gain a tail (search results show about 120 to 160 characters). */
 export const DESCRIPTION_MIN = 120;
@@ -325,6 +400,12 @@ export async function resolvePage(
     if (!row) return notFound();
     const sets = await loadPhotoSets(pool);
     const image = photoResolver(sets).publicPhoto(page.table, slug, row.image);
+    const entity =
+      page.kind === 'tour'
+        ? await tourEntity(slug, row, image)
+        : page.kind === 'destination'
+          ? await destinationEntity(slug, row, image, sets)
+          : undefined;
     return {
       status: 200,
       meta: {
@@ -335,7 +416,8 @@ export async function resolvePage(
         imageAlt: altFor(image, sets, row.title),
         type: page.type,
         // As the page's own breadcrumbs: Home, its list, the row.
-        breadcrumbs: [{ name: CRUMB_NAMES.home, path: paths.home }, page.list, { name: row.title, path: page.path(slug) }]
+        breadcrumbs: [{ name: CRUMB_NAMES.home, path: paths.home }, page.list, { name: row.title, path: page.path(slug) }],
+        ...(entity ? { entity } : {})
       }
     };
   }
