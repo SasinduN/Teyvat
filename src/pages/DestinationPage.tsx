@@ -190,7 +190,7 @@ function DestinationView({ d }: { d: Destination }) {
           <section className="bg-[var(--background-secondary)] py-16 sm:py-20" data-tours-through>
             <div className="te-container">
               <SectionHead title={`Tours that visit ${d.name}`} />
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
                 {through.map((t) => (
                   <TourCard key={t.id} tour={t} />
                 ))}

@@ -255,7 +255,8 @@ a.te-ed-card:hover .te-ed-card__title, a.te-ed-row:hover .te-ed-card__title { te
 .te-cat-empty { padding-bottom: 0; }
 /* "Places on these tours": the published places its tours stop at, as links (Task 9, M1). */
 .te-cat-places { max-width: var(--reading-measure); margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border-strong); }
-.te-cat-places__title { color: var(--text-primary); font-size: var(--text-lg); font-weight: 600; }
+/* `.site`: above `.site main section h2`, which sizes section titles. */
+.site .te-cat-places__title { color: var(--text-primary); font-size: var(--text-lg); font-weight: 600; line-height: 1.4; }
 .te-cat-places ul { display: flex; flex-wrap: wrap; column-gap: 1.5rem; margin-top: .25rem; }
 
 /* A tour's route: each published stop a link; and its travel styles under the overview. */
