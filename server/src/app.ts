@@ -30,6 +30,7 @@ import { inquiriesRouter } from './routes/inquiries';
 import { newsletterRouter } from './routes/newsletter';
 import { mediaRouter } from './routes/media';
 import { pagesRouter } from './pages/pages';
+import { firstScreen } from './pages/first-screen';
 import { securityHeaders } from './security-headers';
 
 /**
@@ -41,6 +42,8 @@ import { securityHeaders } from './security-headers';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const CLIENT_DIST = join(REPO_ROOT, 'dist');
 const CLIENT_INDEX = join(CLIENT_DIST, 'index.html');
+/** The server-rendered first screen, built with the client (`scripts/build-server.mjs`). */
+const FIRST_SCREEN_RENDERER = join(CLIENT_DIST, '.ssr', 'first-screen.js');
 
 export interface AppOptions {
   /**
@@ -169,7 +172,8 @@ export function createApp(options: AppOptions = {}): Express {
       pagesRouter({
         template: readFileSync(CLIENT_INDEX, 'utf8'),
         site: options.site ?? siteConfig,
-        bookings: app.locals.bookings as boolean
+        bookings: app.locals.bookings as boolean,
+        firstScreen: firstScreen(FIRST_SCREEN_RENDERER)
       })
     );
   } else if (isProduction) {

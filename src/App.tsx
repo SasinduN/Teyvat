@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 
+import { lazyPage } from '@/lib/lazyPage';
 import { queryClient } from '@/lib/queryClient';
 import { ScrollRestorer } from '@/lib/ScrollRestorer';
 import { PublicLayout } from '@/pages/PublicLayout';
@@ -21,7 +22,8 @@ const AdminApp = lazy(() => import('@/admin/AdminApp'));
  * transition, so the current page stays on screen while the next one's code
  * arrives.
  */
-const HomePage = lazy(() => import('@/pages/HomePage').then((m) => ({ default: m.HomePage })));
+// Loadable before it renders: the server sends home's first screen (`preloadFirstScreen`).
+const HomePage = lazyPage(() => import('@/pages/HomePage').then((m) => m.HomePage));
 const DestinationsPage = lazy(() => import('@/pages/DestinationsPage').then((m) => ({ default: m.DestinationsPage })));
 const DestinationPage = lazy(() => import('@/pages/DestinationPage').then((m) => ({ default: m.DestinationPage })));
 const ExperiencesPage = lazy(() => import('@/pages/ExperiencesPage').then((m) => ({ default: m.ExperiencesPage })));
@@ -40,6 +42,15 @@ const PhotoCreditsPage = lazy(() => import('@/pages/PhotoCreditsPage').then((m) 
 const WishlistPage = lazy(() => import('@/pages/WishlistPage').then((m) => ({ default: m.WishlistPage })));
 const UnsubscribePage = lazy(() => import('@/pages/UnsubscribePage').then((m) => ({ default: m.UnsubscribePage })));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
+
+/**
+ * The page whose first screen the server rendered at `pathname` (`src/ssr/first-screen.tsx`):
+ * its chunk, to load before React's first render. Home only for now (PR 1 of
+ * `docs/plans/server-rendered-headers.md`); every other page renders in the browser.
+ */
+export function firstScreenPage(pathname: string): (() => Promise<unknown>) | null {
+  return pathname === paths.home ? HomePage.preload : null;
+}
 
 /**
  * The home page, unless the URL is an old link: `/?tour=<id>` and

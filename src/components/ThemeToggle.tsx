@@ -20,7 +20,10 @@ export const ThemeToggle: React.FC<{ className?: string }> = ({ className = '' }
       title={label}
       data-theme-toggle
     >
-      {theme === 'dark' ? <Sun className="w-5 h-5" aria-hidden="true" /> : <Moon className="w-5 h-5" aria-hidden="true" />}
+      {/* Both, and CSS shows the one for <html data-theme> (index.css): right from the first paint,
+          the server's first screen included, which can't know the theme. */}
+      <Sun className="te-theme-icon te-theme-icon--sun w-5 h-5" aria-hidden="true" />
+      <Moon className="te-theme-icon te-theme-icon--moon w-5 h-5" aria-hidden="true" />
     </button>
   );
 };

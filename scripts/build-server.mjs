@@ -25,3 +25,26 @@ await build({
     rollupOptions: { output: { format: 'es', entryFileNames: 'index.js' } }
   }
 });
+
+// The server-rendered first screen (src/ssr/first-screen.tsx, docs/plans/server-rendered-headers.md):
+// the app's own components, built for Node with the app's aliases. Next to the client build,
+// so the two always come from the same build, in a dot-directory express.static never serves.
+// React and the other packages stay imports from node_modules (Vite's SSR default).
+await build({
+  configFile: false,
+  publicDir: false,
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('../src', import.meta.url)),
+      '@shared': fileURLToPath(new URL('../shared', import.meta.url))
+    }
+  },
+  build: {
+    ssr: 'src/ssr/first-screen.tsx',
+    outDir: 'dist/.ssr',
+    emptyOutDir: true,
+    target: 'node22',
+    minify: false,
+    rollupOptions: { output: { format: 'es', entryFileNames: 'first-screen.js' } }
+  }
+});

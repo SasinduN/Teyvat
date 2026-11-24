@@ -91,9 +91,18 @@ export interface Wishlist {
   clear: () => void;
 }
 
+/**
+ * On the server (the first screen, `src/ssr/first-screen.tsx`): nothing saved, and storage
+ * assumed, so the header's heart is drawn and doesn't appear later. The browser's own
+ * list replaces it once the app runs.
+ */
+const NOTHING_SAVED: WishlistItem[] = [];
+const serverItems = () => NOTHING_SAVED;
+const serverAvailable = () => true;
+
 export function useWishlist(): Wishlist {
-  const stored = useSyncExternalStore(subscribe, snapshot);
-  const canStore = useSyncExternalStore(subscribe, isStorageAvailable);
+  const stored = useSyncExternalStore(subscribe, snapshot, serverItems);
+  const canStore = useSyncExternalStore(subscribe, isStorageAvailable, serverAvailable);
   const { destinations, attractions, featuredExperiences, tours } = useSiteContent().content;
 
   const live = useMemo(() => {
