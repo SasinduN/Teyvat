@@ -20,8 +20,12 @@
  *
  * `--palette <sunset|emerald|ocean>` sets the colour theme in the "after" site only (the base
  * may have no themes) and names its shots `<palette>-…`; it clears only that theme's shots, so
- * runs for the three themes fill one folder and one summary. `--theme-picker` takes only Admin →
- * Settings at the colour theme picker, light and dark (the base: where the settings start).
+ * runs for the three themes fill one folder and one summary.
+ *
+ * `--appearance` takes only the six pairs for Admin → Appearance (handoff Task 7): the top bar's
+ * panel open on a laptop, light and dark; the bottom sheet at 375 px; Settings → Appearance (the
+ * base: its radio-card picker); and a first visit with the default mode Dark, and Auto on a dark
+ * device (the base: light, as it had no setting).
  *
  * For a short run (the laptop's memory, a time limit): `--only-dark` skips the
  * light theme and `--no-states` the named states, so a set can go in batches.
@@ -118,8 +122,8 @@ const { values } = parseArgs({
     'text-size-both': { type: 'boolean', default: false },
     /** The colour theme in the "after" site (docs/plans/brand-themes.md); shots are named after it. */
     palette: { type: 'string' },
-    /** Only Admin → Settings at the colour theme picker, light and dark. */
-    'theme-picker': { type: 'boolean', default: false },
+    /** Only the six pairs for Admin → Appearance: the panel, the sheet, Settings, two first visits. */
+    appearance: { type: 'boolean', default: false },
     /** A site's public URL: both versions show that site's R2 photos, as production does. */
     'live-photos': { type: 'string' },
     /** Every page opens with a saved wishlist, so /wishlist has cards and the header its count. */
@@ -279,7 +283,7 @@ async function prepare(site: Site): Promise<void> {
       await client.end();
     }
   }
-  if (values.admin || values['when-to-go'] || values.attractions || values.ride || values['tour-categories'] || values['tour-form'] || values['theme-picker']) {
+  if (values.admin || values['when-to-go'] || values.attractions || values.ride || values['tour-categories'] || values['tour-form'] || values.appearance) {
     const client = new Client({ connectionString: db });
     await client.connect();
     try {
@@ -756,26 +760,91 @@ async function shootTourCategories(chrome: Chrome, site: Site, out: string, shot
   }
 }
 
-/** `--theme-picker`: two pairs, Admin → Settings at the colour theme picker, light and dark. */
-async function shootThemePicker(chrome: Chrome, site: Site, out: string, prefix: string): Promise<void> {
-  for (const dark of [false, true]) {
-    const name = `${prefix}admin-theme-picker${dark ? '-dark' : ''}`;
-    const page = await openAdmin(chrome, `${site.url}/admin/login`, LAPTOP, dark);
-    const status = await page.evaluate<number>(`fetch('/api/auth/login', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(${JSON.stringify(SHOTS_ADMIN)})
-    }).then((r) => r.status)`);
-    if (status !== 200) throw new Error(`[${site.label}] admin sign-in failed (${status})`);
-    await page.send('Page.navigate', { url: `${site.url}/admin/settings` });
-    await waitFor(page, `document.querySelector('[data-text-size-field]')`, 10_000);
-    await page.evaluate(LOADED);
-    // The picker (after), or where it goes, by the text size (before).
-    await page.evaluate(`(document.querySelector('[data-palette-field]') ?? document.querySelector('[data-text-size-field]')).scrollIntoView({ block: 'center', behavior: 'instant' }), true`);
+/** Signs in to `site`'s admin on `page` (already on /admin/login), then opens `path`. */
+async function signInTo(page: Page, site: Site, path: string): Promise<void> {
+  const status = await page.evaluate<number>(`fetch('/api/auth/login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(${JSON.stringify(SHOTS_ADMIN)})
+  }).then((r) => r.status)`);
+  if (status !== 200) throw new Error(`[${site.label}] admin sign-in failed (${status})`);
+  await page.send('Page.navigate', { url: site.url + path });
+  await waitFor(page, `document.querySelector('main h1')`, 10_000);
+  await page.evaluate(LOADED);
+}
+
+/** Sets the "after" site's default mode (the base has no such setting). */
+async function setDefaultMode(site: Site, mode: 'light' | 'dark' | 'auto'): Promise<void> {
+  if (site.label !== 'after') return;
+  const client = new Client({ connectionString: scratchUrl(site.database) });
+  await client.connect();
+  try {
+    await client.query('update public.site_settings set default_mode = $1 where id', [mode]);
+  } finally {
+    await client.end();
+  }
+}
+
+/** `--appearance`: six pairs. */
+async function shootAppearance(chrome: Chrome, site: Site, out: string): Promise<void> {
+  const save = async (page: Page, name: string, fullPage = false) => {
     await page.evaluate(QUIET);
-    await shoot(page, join(out, `${name}-${site.label}.jpg`), false);
+    await shoot(page, join(out, `${name}-${site.label}.jpg`), fullPage);
     await closePage(page);
     console.log(`  ${name}-${site.label}.jpg`);
+  };
+  const openPanel = async (page: Page) => {
+    // The base has no button: its shot is the same page without it.
+    const found = await page.evaluate<boolean>(`(() => { const b = document.querySelector('[data-appearance-button]'); b?.click(); return Boolean(b); })()`);
+    if (found) await waitFor(page, `document.querySelector('[data-appearance-popover] [data-appearance-modes]')`, 10_000);
+    await sleep(400);
+  };
+
+  // The top bar's panel, laptop, light and dark; the bottom sheet on a phone.
+  for (const [name, viewport, dark] of [
+    ['appearance-panel-desktop', LAPTOP, false],
+    ['appearance-panel-desktop-dark', LAPTOP, true],
+    ['appearance-sheet-phone', PHONE, false]
+  ] as const) {
+    const page = await openAdmin(chrome, `${site.url}/admin/login`, viewport, dark);
+    await signInTo(page, site, '/admin');
+    await openPanel(page);
+    await save(page, name);
   }
+
+  // Settings → Appearance (after), or the radio-card picker it replaces (before).
+  {
+    const page = await openAdmin(chrome, `${site.url}/admin/login`, LAPTOP, false);
+    await signInTo(page, site, '/admin/settings');
+    await waitFor(page, `document.querySelector('[data-appearance-panel="inline"], [data-palette-field]')`, 10_000);
+    await page.evaluate(`document.querySelector('[data-appearance-panel="inline"], [data-palette-field]').scrollIntoView({ block: 'center', behavior: 'instant' }), true`);
+    await save(page, 'settings-appearance-desktop');
+  }
+
+  // A first visit (nothing saved) with the default mode Dark, then Auto on a dark device.
+  for (const [name, mode, device] of [
+    ['first-visit-default-dark-desktop', 'dark', false],
+    ['first-visit-default-auto-dark-device-desktop', 'auto', true]
+  ] as const) {
+    await setDefaultMode(site, mode);
+    const page = await chrome.newPage();
+    // Needed before addScriptToEvaluateOnNewDocument, as in saveTheme.
+    await page.send('Page.enable');
+    await page.send('Emulation.setDeviceMetricsOverride', { ...LAPTOP, deviceScaleFactor: 1 });
+    await page.send('Emulation.setEmulatedMedia', {
+      features: [
+        { name: 'prefers-color-scheme', value: device ? 'dark' : 'light' },
+        { name: 'prefers-reduced-motion', value: 'reduce' }
+      ]
+    });
+    await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `try { localStorage.removeItem('site:theme'); } catch {}` });
+    await page.send('Page.navigate', { url: `${site.url}/` });
+    await waitFor(page, `document.readyState === 'complete' && document.body.dataset.route`);
+    await sleep(1000);
+    await settle(page);
+    // The whole page: its first screen is mostly the photo, the same in both modes.
+    await save(page, name, true);
+  }
+  await setDefaultMode(site, 'light');
 }
 
 /** `--brand`: ten pairs. */
@@ -1083,8 +1152,8 @@ async function main(): Promise<void> {
         await shootRide(chrome, site, out);
         continue;
       }
-      if (values['theme-picker']) {
-        await shootThemePicker(chrome, site, out, prefix);
+      if (values.appearance) {
+        await shootAppearance(chrome, site, out);
         continue;
       }
       for (const dark of themes) {

@@ -1,5 +1,4 @@
 import type { SiteStatDraft } from '@shared/site-stats';
-import { DEFAULT_PALETTE, isPalette } from '@shared/palette';
 import React from 'react';
 import { Controller, type Control, type FieldErrors } from 'react-hook-form';
 import { CircleAlert } from 'lucide-react';
@@ -17,7 +16,6 @@ import {
   MultiSelectField,
   StringListField,
   TextSizeField,
-  PaletteField,
   ToggleField
 } from '@/admin/components/fields';
 import { cn } from '@/utils/cn';
@@ -64,6 +62,9 @@ export const RecordForm: React.FC<RecordFormProps> = ({
 }) => (
   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
     {fields.flatMap((field) => {
+      // The colour theme and default mode are kept in the form's values (a save keeps them)
+      // but edited and saved in the Appearance panel, not here.
+      if (field.type === 'palette' || field.type === 'defaultMode') return [];
       const error = errors[field.name];
       // The stops editor shows each row's messages on the row itself; only a
       // message about the whole list ("Add at least one stop.") goes below.
@@ -81,8 +82,8 @@ export const RecordForm: React.FC<RecordFormProps> = ({
           key={field.name}
           className={cn('space-y-2', (field.span ?? 1) === 2 && 'sm:col-span-2')}
         >
-          {/* Toggles, the text size, the colour theme and the months carry their own label inside the control. */}
-          {field.type !== 'boolean' && field.type !== 'textSize' && field.type !== 'palette' && field.type !== 'months' &&
+          {/* Toggles, the text size and the months carry their own label inside the control. */}
+          {field.type !== 'boolean' && field.type !== 'textSize' && field.type !== 'months' &&
             (extra ? (
               <div className="flex items-center justify-between gap-3">
                 {label}
@@ -322,7 +323,9 @@ function renderControl(
       return <TextSizeField value={typeof value === 'number' ? value : DEFAULT_TEXT_SIZE} label={field.label} onChange={onChange} />;
 
     case 'palette':
-      return <PaletteField value={isPalette(value) ? value : DEFAULT_PALETTE} label={field.label} onChange={onChange} />;
+    case 'defaultMode':
+      // Never reached: RecordForm skips them (the Appearance panel edits both).
+      return <></>;
 
     case 'months':
       return <MonthsField value={asMonths(value)} label={field.label} onChange={onChange} />;
