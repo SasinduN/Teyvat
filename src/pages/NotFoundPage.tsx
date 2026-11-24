@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { DestinationCard, SectionHead } from '@/components/PageCards';
 import { usePageTitle } from '@/context/PublicSiteContext';
 import { useDestinations } from '@/hooks/useSiteContent';
-import { PAGE_NAMES } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
@@ -13,7 +12,7 @@ import { Section } from './Section';
  * published row. Phase 8b makes the server answer these with HTTP 404.
  */
 export function NotFoundPage() {
-  usePageTitle(PAGE_NAMES.notFound);
+  usePageTitle('notFound');
   const featured = useDestinations().filter((d) => d.featured);
   return (
     <>

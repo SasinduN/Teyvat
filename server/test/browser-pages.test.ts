@@ -31,7 +31,7 @@ import { after, before, beforeEach, describe, test } from 'node:test';
 import { navLinks } from '../../shared/site-paths';
 import { TOUR_CATEGORIES } from '../../scripts/fixtures/tourCategories';
 import { BRAND } from '../../shared/brand';
-import { homeTitle } from '../../shared/page-meta';
+import { contentTitle, fixedTitle, homeTitle } from '../../shared/page-meta';
 import { createApp } from '../src/app';
 import { pool } from '../src/db';
 import { findChrome, launchChrome, type Chrome, type Page } from './chrome';
@@ -264,12 +264,12 @@ describe('pages and links, in Chrome', { skip, timeout: 4 * 60_000 }, () => {
     await at(page, '/destinations');
     await waitFor(page, `document.activeElement?.tagName === 'H1'`, 'focus on the h1', 2_000);
     assert.equal(await page.evaluate<string>('document.activeElement.textContent.trim()'), 'Destinations');
-    assert.equal(await page.evaluate<string>('document.title'), `Destinations | ${BRAND.name}`);
+    assert.equal(await page.evaluate<string>('document.title'), fixedTitle('destinations', BRAND));
 
     await page.evaluate(`document.querySelector('main a[href="/destinations/ella"]').click(), true`);
     await at(page, '/destinations/ella');
     await waitFor(page, `document.activeElement?.textContent.trim() === 'Ella'`, "focus on Ella's h1", 2_000);
-    assert.equal(await page.evaluate<string>('document.title'), `Ella | ${BRAND.name}`);
+    assert.equal(await page.evaluate<string>('document.title'), contentTitle('destination', 'Ella', BRAND));
     assert.equal(
       await page.evaluate<string>(`getComputedStyle(document.activeElement).outlineStyle`),
       'none',

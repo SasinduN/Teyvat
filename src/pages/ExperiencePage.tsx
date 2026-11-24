@@ -4,12 +4,13 @@ import { HeroChip, PageHero } from '@/components/PageHero';
 import { DestinationCard, ExperienceCard, SectionHead } from '@/components/PageCards';
 import { PlanCard } from '@/components/PlanCard';
 import { SaveButton } from '@/components/SaveButton';
-import { usePageSubject, usePageTitle } from '@/context/PublicSiteContext';
+import { usePageSubject, useContentTitle } from '@/context/PublicSiteContext';
 import { useDestinations, useFeaturedExperiences } from '@/hooks/useSiteContent';
 import { paths } from '@shared/site-paths';
 import type { Destination, ExperienceItem } from '@/types';
 import { NotFoundPage } from './NotFoundPage';
 import { Section } from './Section';
+import { CRUMB_NAMES } from '@shared/page-meta';
 
 /** `/experiences/:slug`: one featured experience. */
 export function ExperiencePage() {
@@ -32,7 +33,7 @@ function whereItHappens(e: ExperienceItem, destinations: Destination[]): Destina
 }
 
 function ExperienceView({ e }: { e: ExperienceItem }) {
-  usePageTitle(e.title);
+  useContentTitle('experience', e.title);
   usePageSubject({
     // The subject the home page's experience cards have always used.
     inquiry: `Experience: ${e.title} (${e.location})`,
@@ -52,7 +53,7 @@ function ExperienceView({ e }: { e: ExperienceItem }) {
     <>
       <PageHero
         image={e.image}
-        crumbs={[{ label: 'Home', to: paths.home }, { label: 'Experiences', to: paths.experiences }, { label: e.title }]}
+        crumbs={[{ label: CRUMB_NAMES.home, to: paths.home }, { label: CRUMB_NAMES.experiences, to: paths.experiences }, { label: e.title }]}
         chips={
           <>
             <HeroChip>{categoryLabel(e.category)}</HeroChip>

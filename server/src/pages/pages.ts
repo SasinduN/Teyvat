@@ -16,67 +16,132 @@ import { Router, type Request, type Response } from 'express';
 
 import { BRAND, BRAND_ASSETS, type Brand } from '../../../shared/brand';
 import { DEFAULT_PALETTE, PALETTE_BACKGROUND_COLOR, PALETTE_THEME_COLOR, type Palette } from '../../../shared/palette';
-import { homeDescription, homeTitle, PAGE_DESCRIPTIONS, PAGE_NAMES, pageTitle, type PageName } from '../../../shared/page-meta';
+import {
+  contentTitle,
+  CRUMB_NAMES,
+  fixedTitle,
+  homeDescription,
+  homeTitle,
+  metaDescription,
+  PAGE_DESCRIPTIONS,
+  PAGE_NAMES,
+  type ContentKind,
+  type PageName
+} from '../../../shared/page-meta';
 import { paths, TOUR_CATEGORY_PATH_SEGMENT } from '../../../shared/site-paths';
 import { SLUG_PATTERN } from '../../../shared/content-schema';
 import { escapeHtml } from '../../../shared/html';
 import type { SiteConfig } from '../env';
 import { pool } from '../db';
 import { describeForLog } from '../http';
-import { injectHead, injectPalette, injectTextSize, renderHead, type PageMeta } from './head';
-import { fullSrcSet } from '../../../shared/photo-assets';
+import { DESCRIPTION_MAX, injectHead, injectPalette, injectTextSize, renderHead, type PageMeta } from './head';
+import { fullSrcSet, photoAlt, type PhotoSets } from '../../../shared/photo-assets';
 import { photoResolver } from '../../../shared/public-photos';
 import { DEFAULT_TEXT_SIZE, type TextSize } from '../../../shared/text-size';
+import { NO_BUSINESS_DETAILS, type BusinessDetails } from '../../../shared/business';
 import { loadPageSettings } from '../brand';
 import { loadPhotoSets } from '../media/photo-sets';
 import { sendText } from '../compress';
 
 type Resolved = { redirect: string } | { status: 200 | 404; meta: PageMeta; noindexHeader?: boolean };
 
-/** The pages that are a content row, by URL prefix. Table and column names are constants, never from a request. */
-const ROW_PAGES = [
+/** A trail entry, a list entry: a name and a path on the site. */
+type Named = { name: string; path: string };
+
+/**
+ * The pages that are a content row, by URL prefix. Table and column names are constants, never
+ * from a request. `list`: the page that lists them (their breadcrumbs' middle step). `tails`:
+ * what a description shorter than DESCRIPTION_MIN gains, each only what the page itself shows,
+ * the first that keeps it within DESCRIPTION_MAX.
+ */
+const ROW_PAGES: ReadonlyArray<{
+  prefix: string;
+  table: 'destinations' | 'featured_experiences' | 'tours' | 'articles';
+  sql: string;
+  path: (id: string) => string;
+  type: 'website' | 'article';
+  kind: ContentKind;
+  list: Named;
+  tails: (name: string, brand: Brand) => string[];
+}> = [
   {
     prefix: '/destinations/',
     table: 'destinations',
     sql: 'select name as title, short_description as description, image from public.destinations where id = $1 and published',
     path: paths.destination,
-    type: 'website'
+    type: 'website',
+    kind: 'destination',
+    list: { name: CRUMB_NAMES.destinations, path: paths.destinations },
+    // The page's own "Plan a trip to <name>".
+    tails: (name, brand) => [`Plan a trip to ${name}, Sri Lanka, with ${brand.name}.`, `Plan a trip to ${name}, Sri Lanka.`]
   },
   {
     prefix: '/experiences/',
     table: 'featured_experiences',
     sql: 'select title, description, image from public.featured_experiences where id = $1 and published',
     path: paths.experience,
-    type: 'website'
+    type: 'website',
+    kind: 'experience',
+    list: { name: CRUMB_NAMES.experiences, path: paths.experiences },
+    // Its "Where It Happens" and "Enquire About This Experience".
+    tails: (_name, brand) => [`Where it happens in Sri Lanka, and how to ask ${brand.name} about it.`, 'Where it happens in Sri Lanka.']
   },
   {
     prefix: '/tours/',
     table: 'tours',
     sql: 'select title, short_desc as description, image from public.tours where id = $1 and published',
     path: paths.tour,
-    type: 'website'
+    type: 'website',
+    kind: 'tour',
+    list: { name: CRUMB_NAMES.tours, path: paths.tours },
+    // Its route and day-by-day, as /tours says, changeable.
+    tails: (_name, brand) => [`A Sri Lanka route and day-by-day plan from ${brand.name}, which can change to suit you.`, 'A Sri Lanka route, day by day.']
   },
   {
     prefix: '/journal/',
     table: 'articles',
     sql: 'select title, snippet as description, image from public.articles where id = $1 and published',
     path: paths.article,
-    type: 'article'
+    type: 'article',
+    kind: 'article',
+    list: { name: CRUMB_NAMES.journal, path: paths.journal },
+    tails: (_name, brand) => [`From the ${brand.name} journal of Sri Lanka travel guides.`, `From the ${brand.name} journal.`]
   }
-] as const;
+];
 
-/** The first published row's image in a table, for a fixed page's share image. */
-async function firstImage(table: 'hero_slides' | 'destinations' | 'featured_experiences' | 'tours' | 'articles', where = 'published'): Promise<string | null> {
-  const { rows } = await pool.query<{ id: string; image: string }>(
-    `select id, image from public.${table} where ${where} order by sort_order asc, id asc limit 1`
+/** Descriptions shorter than this gain a tail (search results show about 120 to 160 characters). */
+export const DESCRIPTION_MIN = 120;
+
+/** `text`, ending a sentence, with the first tail that keeps it within DESCRIPTION_MAX; as it is when long enough. */
+export function fillDescription(text: string, tails: readonly string[]): string {
+  const line = text.replace(/\s+/g, ' ').trim();
+  if (line.length >= DESCRIPTION_MIN) return line;
+  const sentence = /[.!?…]$/.test(line) ? line : `${line}.`;
+  for (const tail of tails) {
+    const filled = `${sentence} ${tail}`;
+    if (filled.length <= DESCRIPTION_MAX) return filled;
+  }
+  return line;
+}
+
+/** A fixed page's share image, and what the page calls that photo (its alt where it's shown). */
+type FirstImage = { image: string; label: string };
+
+/** The label column each table's cards and slides use as their photo's alt. Constants, never from a request. */
+const LABEL_COLUMN = { hero_slides: 'title', destinations: 'name', featured_experiences: 'title', tours: 'title', articles: 'title' } as const;
+
+/** The first published row's image in a table, for a fixed page's share image, with its row's label. */
+async function firstImage(table: keyof typeof LABEL_COLUMN, where = 'published'): Promise<FirstImage | null> {
+  const { rows } = await pool.query<{ id: string; image: string; label: string }>(
+    `select id, image, ${LABEL_COLUMN[table]} as label from public.${table} where ${where} order by sort_order asc, id asc limit 1`
   );
-  return rows[0] ? photoResolver(await loadPhotoSets(pool)).publicPhoto(table, rows[0].id, rows[0].image) : null;
+  return rows[0] ? { image: photoResolver(await loadPhotoSets(pool)).publicPhoto(table, rows[0].id, rows[0].image), label: rows[0].label } : null;
 }
 
 const notFoundFor = (brand: Brand): Resolved => ({
   status: 404,
   meta: {
-    title: pageTitle(PAGE_NAMES.notFound, brand),
+    title: fixedTitle('notFound', brand),
     description: PAGE_DESCRIPTIONS.notFound,
     path: null,
     image: null,
@@ -85,30 +150,27 @@ const notFoundFor = (brand: Brand): Resolved => ({
   }
 });
 
-/** The fixed pages: [name (null: the home page), description, share image]. */
-const FIXED_PAGES: Record<string, () => Promise<[PageName | null, string | null, string | null]>> = {
-  [paths.home]: async () => [null, null, await firstImage('hero_slides')],
+/** The fixed pages: [name (null: the home page), share image]. Their titles and descriptions are `shared/page-meta.ts`'s. */
+const FIXED_PAGES: Record<string, () => Promise<[PageName | null, FirstImage | null]>> = {
+  [paths.home]: async () => [null, await firstImage('hero_slides')],
   [paths.destinations]: async () => [
     'destinations',
-    PAGE_DESCRIPTIONS.destinations,
     (await firstImage('destinations', 'published and featured')) ?? (await firstImage('destinations'))
   ],
-  [paths.experiences]: async () => ['experiences', PAGE_DESCRIPTIONS.experiences, await firstImage('featured_experiences')],
-  [paths.tours]: async () => ['tours', PAGE_DESCRIPTIONS.tours, await firstImage('tours')],
-  [paths.about]: async () => ['about', PAGE_DESCRIPTIONS.about, await firstImage('hero_slides')],
+  [paths.experiences]: async () => ['experiences', await firstImage('featured_experiences')],
+  [paths.tours]: async () => ['tours', await firstImage('tours')],
+  [paths.about]: async () => ['about', await firstImage('hero_slides')],
   [paths.explore]: async () => [
     'explore',
-    PAGE_DESCRIPTIONS.explore,
     (await firstImage('destinations', 'published and featured')) ?? (await firstImage('destinations'))
   ],
-  [paths.plan]: async () => ['plan', PAGE_DESCRIPTIONS.plan, await firstImage('hero_slides')],
-  [paths.journal]: async () => ['journal', PAGE_DESCRIPTIONS.journal, await firstImage('articles')],
+  [paths.plan]: async () => ['plan', await firstImage('hero_slides')],
+  [paths.journal]: async () => ['journal', await firstImage('articles')],
   [paths.whenToGo]: async () => [
     'whenToGo',
-    PAGE_DESCRIPTIONS.whenToGo,
     (await firstImage('destinations', 'published and featured')) ?? (await firstImage('destinations'))
   ],
-  [paths.photoCredits]: async () => ['photoCredits', PAGE_DESCRIPTIONS.photoCredits, await firstImage('hero_slides')]
+  [paths.photoCredits]: async () => ['photoCredits', await firstImage('hero_slides')]
 };
 
 const isAdminPath = (path: string): boolean => path === '/admin' || path.startsWith('/admin/');
@@ -118,7 +180,7 @@ const TOUR_CATEGORY_ROOT = `${paths.tours}/${TOUR_CATEGORY_PATH_SEGMENT}`;
 const TOUR_CATEGORY_PREFIX = `${TOUR_CATEGORY_ROOT}/`;
 
 /** Published tours, in the site's order: all of them, or one category's. Names and links only. */
-async function tourItems(categoryId?: string): Promise<{ name: string; path: string }[]> {
+async function tourItems(categoryId?: string): Promise<Named[]> {
   const { rows } = categoryId
     ? await pool.query<{ id: string; title: string }>(
         `select t.id, t.title from public.tours t
@@ -130,6 +192,26 @@ async function tourItems(categoryId?: string): Promise<{ name: string; path: str
     : await pool.query<{ id: string; title: string }>('select id, title from public.tours where published order by sort_order asc, id asc');
   return rows.map((row) => ({ name: row.title, path: paths.tour(row.id) }));
 }
+
+/**
+ * What a list page shows, in its order (`/api/content`'s: sort order, then id): an ItemList.
+ * Table and column names are constants, never from a request.
+ */
+const LISTS: Partial<Record<string, () => Promise<Named[]>>> = {
+  [paths.tours]: () => tourItems(),
+  [paths.destinations]: () => rowItems('select id, name as title from public.destinations', paths.destination),
+  [paths.experiences]: () => rowItems('select id, title from public.featured_experiences', paths.experience),
+  [paths.journal]: () => rowItems('select id, title from public.articles', paths.article)
+};
+
+async function rowItems(select: string, path: (id: string) => string): Promise<Named[]> {
+  const { rows } = await pool.query<{ id: string; title: string }>(`${select} where published order by sort_order asc, id asc`);
+  return rows.map((row) => ({ name: row.title, path: path(row.id) }));
+}
+
+/** The share image's alt text: the photo's own, or `fallback` for one the catalogue doesn't describe. */
+const altFor = (image: string | null, sets: PhotoSets, fallback: string): string | undefined =>
+  image ? (photoAlt(image, sets) ?? fallback) : undefined;
 
 /**
  * A tour category's page: its heading as the title, its short intro as the description,
@@ -144,22 +226,34 @@ async function tourCategoryPage(slug: string, brand: Brand): Promise<Resolved> {
   );
   const row = rows[0];
   if (!row) return notFoundFor(brand);
+  const items = await tourItems(slug);
+  const sets = await loadPhotoSets(pool);
+  // The photo the page shows (`GET /api/content`): a seed photo becomes its verified one.
+  const image = row.image ? photoResolver(sets).publicPhoto('tour_categories', slug, row.image) : null;
   return {
     status: 200,
     meta: {
-      title: pageTitle(row.heading, brand),
-      description: row.short_intro,
+      title: contentTitle('tourCategory', row.heading, brand),
+      // Its tours, as the page lists them, when the intro is short.
+      description: fillDescription(
+        row.short_intro,
+        items.length
+          ? [
+              `${items.length} ${items.length === 1 ? 'tour' : 'tours'} from ${brand.name}; each can change to suit you.`,
+              `${items.length} ${items.length === 1 ? 'tour' : 'tours'} to start from.`
+            ]
+          : []
+      ),
       path: paths.tourCategory(slug),
-      // The photo the page shows (`GET /api/content`): a seed photo becomes its verified one.
-      image: row.image ? photoResolver(await loadPhotoSets(pool)).publicPhoto('tour_categories', slug, row.image) : null,
-      imageAlt: row.heading,
+      image,
+      imageAlt: altFor(image, sets, row.heading),
       type: 'website',
       breadcrumbs: [
-        { name: 'Home', path: paths.home },
-        { name: PAGE_NAMES.tours, path: paths.tours },
+        { name: CRUMB_NAMES.home, path: paths.home },
+        { name: CRUMB_NAMES.tours, path: paths.tours },
         { name: row.name, path: paths.tourCategory(slug) }
       ],
-      itemList: await tourItems(slug)
+      itemList: items
     }
   };
 }
@@ -189,8 +283,8 @@ export async function resolvePage(
 ): Promise<Resolved> {
   const notFound = () => notFoundFor(brand);
   const fixedMeta = (name: PageName): Pick<PageMeta, 'title' | 'description'> => ({
-    title: pageTitle(PAGE_NAMES[name], brand),
-    description: PAGE_DESCRIPTIONS[name as keyof typeof PAGE_DESCRIPTIONS] ?? homeDescription(brand)
+    title: fixedTitle(name, brand),
+    description: metaDescription(name) ?? homeDescription(brand)
   });
 
   // Old links, already in WhatsApp chats: /?tour=<id> and /?destination=<id>.
@@ -203,15 +297,18 @@ export async function resolvePage(
 
   const fixed = FIXED_PAGES[path];
   if (fixed) {
-    const [name, description, image] = await fixed();
-    const title = name ? pageTitle(PAGE_NAMES[name], brand) : homeTitle(brand);
-    // /tours lists every tour: its breadcrumbs and an ItemList of them (0030).
-    const structured =
-      path === paths.tours
-        ? { breadcrumbs: [{ name: 'Home', path: paths.home }, { name: PAGE_NAMES.tours, path: paths.tours }], itemList: await tourItems() }
-        : {};
+    const [name, first] = await fixed();
+    const image = first?.image ?? null;
+    const title = name ? fixedTitle(name, brand) : homeTitle(brand);
+    const description = (name && metaDescription(name)) || homeDescription(brand);
+    // Every page below home: its breadcrumbs (as PageHero shows them); a list page, an ItemList too.
+    const crumbs = name ? { breadcrumbs: [{ name: CRUMB_NAMES.home, path: paths.home }, { name: CRUMB_NAMES[name as keyof typeof CRUMB_NAMES], path }] } : {};
+    const list = LISTS[path];
+    const structured = { ...crumbs, ...(list ? { itemList: await list() } : {}) };
+    // The photo's own alt text, else what the page calls it (a slide's title, a card's name).
+    const imageAlt = altFor(image, await loadPhotoSets(pool), first?.label ?? brand.name);
     // A filtered list (/destinations?category=…) is the same page: the canonical path has no query.
-    return { status: 200, meta: { title, description: description ?? homeDescription(brand), path, image, type: 'website', ...structured } };
+    return { status: 200, meta: { title, description, path, image, imageAlt, type: 'website', ...structured } };
   }
 
   // Tour categories (0030), before the tours' own /tours/<id>.
@@ -222,18 +319,22 @@ export async function resolvePage(
     if (!path.startsWith(page.prefix)) continue;
     const slug = path.slice(page.prefix.length);
     if (!SLUG_PATTERN.test(slug)) return notFound();
-    const { rows } = await pool.query<{ title: string; description: string; image: string }>(page.sql, [slug]);
+    const { rows } = await pool.query<{ title: string; description: string | null; image: string }>(page.sql, [slug]);
     const row = rows[0];
     if (!row) return notFound();
+    const sets = await loadPhotoSets(pool);
+    const image = photoResolver(sets).publicPhoto(page.table, slug, row.image);
     return {
       status: 200,
       meta: {
-        title: pageTitle(row.title, brand),
-        description: row.description,
+        title: contentTitle(page.kind, row.title, brand),
+        description: fillDescription(row.description ?? '', page.tails(row.title, brand)),
         path: page.path(slug),
-        image: photoResolver(await loadPhotoSets(pool)).publicPhoto(page.table, slug, row.image),
-        imageAlt: row.title,
-        type: page.type
+        image,
+        imageAlt: altFor(image, sets, row.title),
+        type: page.type,
+        // As the page's own breadcrumbs: Home, its list, the row.
+        breadcrumbs: [{ name: CRUMB_NAMES.home, path: paths.home }, page.list, { name: row.title, path: page.path(slug) }]
       }
     };
   }
@@ -263,7 +364,7 @@ export async function resolvePage(
       status: 200,
       noindexHeader: true,
       // Its header is the first slide; noindex, so only the preload uses this.
-      meta: { ...fixedMeta('wishlist'), path: null, image: await firstImage('hero_slides'), type: 'website', noindex: true }
+      meta: { ...fixedMeta('wishlist'), path: null, image: (await firstImage('hero_slides'))?.image ?? null, type: 'website', noindex: true }
     };
   }
 
@@ -333,8 +434,14 @@ export function robotsTxt(origin: string, indexable: boolean): string {
   ].join('\n');
 }
 
-/** Every published page, for the sitemap: the fixed pages, then each row's. */
-async function sitemapXml(origin: string): Promise<string> {
+/**
+ * When this server started: each deploy starts it, so it stands for the fixed pages' last change
+ * in the sitemap (their text ships with the code). Rows use their own `updated_at`.
+ */
+const STARTED_ON = new Date().toISOString().slice(0, 10);
+
+/** Every published page, for the sitemap: the fixed pages, then each row's, each with its `<lastmod>`. */
+export async function sitemapXml(origin: string, deployedOn = STARTED_ON): Promise<string> {
   const tables = [
     ['destinations', paths.destination],
     ['featured_experiences', paths.experience],
@@ -342,7 +449,7 @@ async function sitemapXml(origin: string): Promise<string> {
     ['tour_categories', paths.tourCategory],
     ['articles', paths.article]
   ] as const;
-  const entries: { loc: string; lastmod?: string }[] = Object.keys(FIXED_PAGES).map((path) => ({ loc: origin + path }));
+  const entries: { loc: string; lastmod?: string }[] = Object.keys(FIXED_PAGES).map((path) => ({ loc: origin + path, lastmod: deployedOn }));
   for (const [table, path] of tables) {
     const { rows } = await pool.query<{ id: string; updated_at: Date }>(
       `select id, updated_at from public.${table} where published order by sort_order asc, id asc`
@@ -477,8 +584,9 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
     let textSize: TextSize = DEFAULT_TEXT_SIZE;
     let palette: Palette = DEFAULT_PALETTE;
     let brand: Brand = BRAND;
+    let business: BusinessDetails = NO_BUSINESS_DETAILS;
     try {
-      ({ brand, textSize, palette } = await loadPageSettings());
+      ({ brand, textSize, palette, business } = await loadPageSettings());
       resolved = await resolvePage(path, new URLSearchParams(search), features, brand);
     } catch (error) {
       // The database is down: still send the shell (it shows its own error),
@@ -495,7 +603,7 @@ export function pagesRouter(options: { template: string; site: SiteConfig; booki
       return;
     }
     if (resolved.noindexHeader) res.set('X-Robots-Tag', 'noindex');
-    let head = renderHead(resolved.meta, { origin, indexable: site.indexable, brand });
+    let head = renderHead(resolved.meta, { origin, indexable: site.indexable, brand, business });
     // Every public page renders from /api/content, which otherwise starts only once
     // the JS has loaded and run. Same URL, mode and credentials as the app's fetch,
     // so the browser hands that fetch this response. The admin doesn't read it.

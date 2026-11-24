@@ -8,6 +8,7 @@ import { BRAND_ASSETS, type Brand } from '../../../shared/brand';
 import { escapeHtml } from '../../../shared/html';
 import type { TextSize } from '../../../shared/text-size';
 import { isPalette, type Palette } from '../../../shared/palette';
+import { NO_BUSINESS_DETAILS, type BusinessDetails } from '../../../shared/business';
 
 export interface PageMeta {
   title: string;
@@ -17,6 +18,7 @@ export interface PageMeta {
   path: string | null;
   /** The share image as stored: absolute, or relative to the site. */
   image: string | null;
+  /** The share image's alt text: the photo's own, where it has one (`photoAlt`). */
   imageAlt?: string;
   type: 'website' | 'article';
   /** Never indexed, whatever SITE_INDEXABLE says (the 404, the admin). */
@@ -56,6 +58,8 @@ export interface HeadSite {
   indexable: boolean;
   /** `shared/brand.ts` with the admin's settings on top. */
   brand: Brand;
+  /** The contact details and profiles really set in Admin → Settings (none: left out). */
+  business?: BusinessDetails;
 }
 
 /**
@@ -70,11 +74,28 @@ export function jsonForScript(value: unknown): string {
   );
 }
 
-/** The brand as schema.org's TravelAgency: what search engines show for the business. */
-export function brandJsonLd(brand: Brand, origin: string): Record<string, unknown> {
-  const absolute = (path: string | null) => (path ? new URL(path, `${origin}/`).toString() : undefined);
-  const logo = absolute(brand.logo.onLight);
+/** The logo search engines show: the brand's square PNG icon (they don't take SVG). */
+export const SCHEMA_LOGO =
+  BRAND_ASSETS.manifestIcons.find((icon) => icon.purpose === 'any' && icon.sizes === '512x512')?.src ?? BRAND_ASSETS.manifestIcons[0]?.src;
+
+/**
+ * The business as schema.org's TravelAgency: what search engines know it by. The name, logo and
+ * area, then each contact detail and profile only when Admin → Settings really has it
+ * (`shared/business.ts`: empty and placeholder settings are left out). Never a rating, review,
+ * price or opening hours.
+ */
+export function brandJsonLd(brand: Brand, origin: string, business: BusinessDetails = NO_BUSINESS_DETAILS): Record<string, unknown> {
+  const absolute = (path: string | null | undefined) => (path ? new URL(path, `${origin}/`).toString() : undefined);
+  const logo = absolute(SCHEMA_LOGO);
   const image = absolute(brand.ogImage);
+  const address = business.address
+    ? {
+        '@type': 'PostalAddress',
+        streetAddress: business.address,
+        // Only when the address itself says so.
+        ...(/sri lanka/i.test(business.address) ? { addressCountry: 'LK' } : {})
+      }
+    : undefined;
   return {
     '@context': 'https://schema.org',
     '@type': 'TravelAgency',
@@ -84,7 +105,12 @@ export function brandJsonLd(brand: Brand, origin: string): Record<string, unknow
     slogan: brand.tagline,
     url: `${origin}/`,
     ...(logo ? { logo } : {}),
-    ...(image ? { image } : {})
+    ...(image ? { image } : {}),
+    ...(business.email ? { email: business.email } : {}),
+    ...(business.phone ? { telephone: business.phone } : {}),
+    ...(address ? { address } : {}),
+    areaServed: { '@type': 'Country', name: 'Sri Lanka' },
+    ...(business.profiles.length ? { sameAs: business.profiles } : {})
   };
 }
 
@@ -146,7 +172,8 @@ export function renderHead(meta: PageMeta, site: HeadSite): string {
   const description = summarise(meta.description);
   const url = meta.path ? `${site.origin}${meta.path}` : null;
   const image = shareImage(meta.image ?? site.brand.ogImage, site.origin);
-  const alt = meta.imageAlt ?? meta.title;
+  // The photo's own alt text; the default share image is the brand's logo.
+  const alt = meta.imageAlt ?? (meta.image ? meta.title : `${site.brand.name} logo`);
 
   const property = (name: string, content: string) => `<meta property="${name}" content="${e(content)}">`;
   const named = (name: string, content: string) => `<meta name="${name}" content="${e(content)}">`;
@@ -169,7 +196,7 @@ export function renderHead(meta: PageMeta, site: HeadSite): string {
   tags.push(named('twitter:card', image ? 'summary_large_image' : 'summary'));
   tags.push(named('twitter:title', meta.title), named('twitter:description', description));
   if (image) tags.push(named('twitter:image', image.url), named('twitter:image:alt', alt));
-  tags.push(`<script type="application/ld+json">${jsonForScript(brandJsonLd(site.brand, site.origin))}</script>`);
+  tags.push(`<script type="application/ld+json">${jsonForScript(brandJsonLd(site.brand, site.origin, site.business))}</script>`);
   for (const block of pageJsonLd(meta, site.origin)) tags.push(`<script type="application/ld+json">${jsonForScript(block)}</script>`);
 
   return tags.join('\n    ');

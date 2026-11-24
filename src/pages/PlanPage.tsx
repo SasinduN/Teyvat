@@ -6,7 +6,7 @@ import { TravelPlanner } from '@/components/TravelPlanner';
 import { WishlistTextLink } from '@/components/WishlistLink';
 import { usePageTitle, usePublicSite } from '@/context/PublicSiteContext';
 import { useHeroSlides } from '@/hooks/useSiteContent';
-import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
+import { CRUMB_NAMES, PAGE_DESCRIPTIONS } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
@@ -16,7 +16,7 @@ import { Section } from './Section';
  * the choices as its subject.
  */
 export function PlanPage() {
-  usePageTitle(PAGE_NAMES.plan);
+  usePageTitle('plan');
   const slides = useHeroSlides();
   const { openInquiry } = usePublicSite();
 
@@ -25,7 +25,7 @@ export function PlanPage() {
       <PageHero
         compact
         image={slides[0]?.url}
-        crumbs={[{ label: 'Home', to: paths.home }, { label: 'Plan Your Trip' }]}
+        crumbs={[{ label: CRUMB_NAMES.home, to: paths.home }, { label: CRUMB_NAMES.plan }]}
         title="Plan Your Trip"
         subtitle={PAGE_DESCRIPTIONS.plan}
       />

@@ -7,7 +7,7 @@ import { useHeroSlides } from '@/hooks/useSiteContent';
 import { postJson } from '@/lib/api/http';
 import { describeError } from '@/lib/errors';
 import { API_ROUTES } from '@shared/api';
-import { PAGE_NAMES } from '@shared/page-meta';
+import { CRUMB_NAMES } from '@shared/page-meta';
 import { paths, UNSUBSCRIBE_TOKEN_PATTERN } from '@shared/site-paths';
 
 /**
@@ -17,7 +17,7 @@ import { paths, UNSUBSCRIBE_TOKEN_PATTERN } from '@shared/site-paths';
  * from the site, and `noindex` (server/src/pages/pages.ts).
  */
 export function UnsubscribePage() {
-  usePageTitle(PAGE_NAMES.unsubscribe);
+  usePageTitle('unsubscribe');
   const slides = useHeroSlides();
   const [params] = useSearchParams();
   const token = params.get('token')?.trim() ?? '';
@@ -42,7 +42,7 @@ export function UnsubscribePage() {
       <PageHero
         compact
         image={slides[0]?.url}
-        crumbs={[{ label: 'Home', to: paths.home }, { label: 'Unsubscribe' }]}
+        crumbs={[{ label: CRUMB_NAMES.home, to: paths.home }, { label: CRUMB_NAMES.unsubscribe }]}
         eyebrow="Newsletter"
         title="Unsubscribe"
       />

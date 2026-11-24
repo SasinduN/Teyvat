@@ -236,10 +236,12 @@ describe('Content-Security-Policy in a real browser', { skip }, () => {
     for (const [path, ready] of pages) {
       await visit(path, ready);
       // The brand's JSON-LD is in every page: inline, but data, never run, so the CSP lets it be.
-      // The tour lists add their breadcrumbs and an ItemList (0030).
+      // Every indexed page below home adds its breadcrumbs, and the list pages an ItemList.
       const ld = await page.evaluate<string[]>(`[...document.querySelectorAll('script[type="application/ld+json"]')].map((s) => JSON.parse(s.textContent)['@type'])`);
-      const lists = path === '/tours' || path.startsWith('/tours/category/');
-      assert.deepEqual(ld, lists ? ['TravelAgency', 'BreadcrumbList', 'ItemList'] : ['TravelAgency'], `${path}: its JSON-LD blocks`);
+      const lists = ['/tours', '/destinations', '/experiences', '/journal'].includes(path) || path.startsWith('/tours/category/');
+      const unlisted = path.startsWith('/unsubscribe') || path === '/no-such-page';
+      const expected = unlisted ? ['TravelAgency'] : lists ? ['TravelAgency', 'BreadcrumbList', 'ItemList'] : ['TravelAgency', 'BreadcrumbList'];
+      assert.deepEqual(ld, expected, `${path}: its JSON-LD blocks`);
       const height = await page.evaluate<number>('document.body.scrollHeight');
       for (let y = 0; y <= height; y += 900) {
         await page.evaluate(`window.scrollTo(0, ${y})`);

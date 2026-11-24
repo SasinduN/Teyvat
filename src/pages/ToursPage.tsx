@@ -5,7 +5,7 @@ import { TourCategoryRow } from '@/components/TourCategoryRow';
 import { ToursSection } from '@/components/ToursSection';
 import { usePageTitle, usePublicSite } from '@/context/PublicSiteContext';
 import { useTours } from '@/hooks/useSiteContent';
-import { PAGE_DESCRIPTIONS, PAGE_NAMES } from '@shared/page-meta';
+import { CRUMB_NAMES, PAGE_DESCRIPTIONS } from '@shared/page-meta';
 import { paths } from '@shared/site-paths';
 import { Section } from './Section';
 
@@ -14,7 +14,7 @@ import { Section } from './Section';
  * tailor-made card. "View route on map" goes to the Explore map with that tour's route.
  */
 export function ToursPage() {
-  usePageTitle(PAGE_NAMES.tours);
+  usePageTitle('tours');
   const tours = useTours();
   const { openInquiry } = usePublicSite();
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ export function ToursPage() {
       <PageHero
         compact
         image={tours[0]?.image}
-        crumbs={[{ label: 'Home', to: paths.home }, { label: 'Tours' }]}
+        crumbs={[{ label: CRUMB_NAMES.home, to: paths.home }, { label: CRUMB_NAMES.tours }]}
         title="Tours"
         subtitle={PAGE_DESCRIPTIONS.tours}
       />
