@@ -35,25 +35,17 @@ jobs:
     # expected to run longer there.
     timeout-minutes: 50
 
-    services:
-      postgres:
-        # Keep the major version in step with production (docs/LAUNCH-CHECKLIST.md, item 5).
-        # The official image, from AWS's public mirror of Docker Hub's library:
-        # Docker Hub's anonymous pull limit failed CI on #24 before any check ran.
-        # No login or secret needed.
-        image: public.ecr.aws/docker/library/postgres:18
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: site_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
+    # PostgreSQL is not a `services:` container: those are pulled before any step runs,
+    # so a registry's pull limit failed the job before any code ran (Docker Hub on #24,
+    # public.ecr.aws "Data limit exceeded" on #73). The "Postgres" steps below load the
+    # image from the Actions cache instead, and pull it only on a cache miss.
     env:
+      # The official postgres:18 image (18.7, Debian 13) pinned by its multi-arch index
+      # digest, which Docker Hub, public.ecr.aws and mirror.gcr.io all serve unchanged.
+      # Keep the major version in step with production (docs/LAUNCH-CHECKLIST.md,
+      # item 5). To update: read the new digest of `postgres:18` (any of the three
+      # registries), and change it here; the cache key follows it.
+      PG_IMAGE_DIGEST: sha256:eb63372c1e05c755f55fa30cbd07aecc443676fc6c0fa90b9002d01537841e1a
       # Satisfies the test guard: localhost, an explicit port, a *_test database.
       TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/site_test
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/site_test
@@ -99,6 +91,72 @@ jobs:
       - name: Docs-only change, so the checks below are skipped
         if: steps.changes.outputs.code != 'true'
         run: echo "Only documentation changed. Typecheck, build, verify:roundtrip and the tests are skipped."
+
+      # The image as a `docker save` tarball, keyed by its digest: a new digest is a new
+      # key, so a stale image is never loaded. Restore and save are separate steps, so
+      # a pull is cached straight away, even when a later check fails. Caches made on
+      # a pull request stay with it; the first run on main makes the one every branch
+      # can use. No login or secret anywhere.
+      - name: Postgres image (cache)
+        id: pg-cache
+        if: steps.changes.outputs.code == 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/postgres-image.tar
+          key: postgres-image-${{ runner.os }}-${{ env.PG_IMAGE_DIGEST }}
+
+      - name: Postgres image (load from the cache)
+        if: steps.changes.outputs.code == 'true' && steps.pg-cache.outputs.cache-hit == 'true'
+        run: docker load --input "$RUNNER_TEMP/postgres-image.tar"
+
+      # On a miss: the same digest from three registries in turn, three rounds, waiting
+      # longer between rounds. Pulling by digest means whichever registry answers, the
+      # image is byte for byte the same.
+      - name: Postgres image (pull on a cache miss)
+        if: steps.changes.outputs.code == 'true' && steps.pg-cache.outputs.cache-hit != 'true'
+        run: |
+          for round in 1 2 3; do
+            for registry in public.ecr.aws/docker/library mirror.gcr.io/library docker.io/library; do
+              ref="$registry/postgres@$PG_IMAGE_DIGEST"
+              if docker pull --quiet "$ref"; then
+                docker tag "$ref" ci-postgres:pinned
+                docker save --output "$RUNNER_TEMP/postgres-image.tar" ci-postgres:pinned
+                echo "Pulled from $registry (round $round)."
+                exit 0
+              fi
+              echo "::warning::Pull from $registry failed (round $round)."
+            done
+            sleep $((round * 30))
+          done
+          echo "::error::Couldn't pull postgres@$PG_IMAGE_DIGEST from any registry."
+          exit 1
+
+      - name: Postgres image (save to the cache)
+        if: steps.changes.outputs.code == 'true' && steps.pg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/postgres-image.tar
+          key: postgres-image-${{ runner.os }}-${{ env.PG_IMAGE_DIGEST }}
+
+      # Readiness is checked over TCP inside the container: while the image initialises
+      # the database it runs a temporary server on the Unix socket only, so a plain
+      # `pg_isready` could pass before the real server is up.
+      - name: Postgres (start)
+        if: steps.changes.outputs.code == 'true'
+        run: |
+          docker run --detach --name postgres \
+            --env POSTGRES_PASSWORD=postgres --env POSTGRES_DB=site_test \
+            --publish 5432:5432 ci-postgres:pinned
+          for i in $(seq 1 60); do
+            if docker exec postgres pg_isready --host 127.0.0.1 --username postgres --dbname site_test >/dev/null 2>&1; then
+              docker exec postgres psql --username postgres --tuples-only --command 'select version()'
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs postgres
+          echo "::error::Postgres didn't become ready in 60 s."
+          exit 1
 
       # ~/.npm is cached, keyed on package-lock.json (npm ci took 4 s with it).
       # Chrome needs no cache: the tests use the runner image's /usr/bin/google-chrome.

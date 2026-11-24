@@ -56,7 +56,8 @@ this file or anywhere else in git.
 | R2 | Move R2 to the client's Cloudflare account: `images.serendibluxetours.com` always allowed, `R2_PREVIOUS_PUBLIC_BASE_URL`, `media:rebase` covers the credits, `docs/runbooks/move-r2-to-client.md` | done (#63); moved in production 22 Nov 2026 |
 | CH | One host: a page on www or `*.up.railway.app` gets a 301 to `PUBLIC_SITE_URL` (`server/src/canonical-host.ts`) | done (#71) |
 | BT | The client's logo, three colour themes, the new font mix (`docs/plans/brand-themes.md`): PR A the logo and fonts (colours stay Emerald); PR B the themes and the admin picker | done (#72, #73) |
-| AP | Admin → Appearance (handoff Task 7): the theme picker as a top-bar panel, plus a default mode for first visits (`site_settings.default_mode`, 0033) | in review |
+| CI2 | CI's Postgres image from the Actions cache, pinned by digest (`PG_IMAGE_DIGEST`), pulled from three registries only on a miss: no more runs lost to pull limits | done (#74) |
+| AP | Admin → Appearance (handoff Task 7): the theme picker as a top-bar panel, plus a default mode for first visits (`site_settings.default_mode`, 0033) | in review (#76) |
 
 Update the Status column when a phase lands.
 
